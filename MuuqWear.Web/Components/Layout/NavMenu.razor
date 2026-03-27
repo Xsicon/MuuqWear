@@ -1,4 +1,4 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+﻿@* <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">MuuqWear.Web</a>
     </div>
@@ -27,4 +27,297 @@
         </div>
     </nav>
 </div>
+ *@
+
+
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@implements IDisposable
+
+<!-- ═══════════════════════════════════════════════════════
+     MuuqWear Header Navigation
+     Figma spec: white bg, #1e2b48 navy, 80px tall desktop
+     Logo left + nav links | search + locale + cart right
+     Mobile: logo + icons only, hamburger → slide-in panel
+═══════════════════════════════════════════════════════════ -->
+
+<header class="mw-header" role="banner">
+    <div class="container">
+        <div class="mw-header__inner">
+            <a href="/" class="mw-logo">
+                <img src="/images/muuqwearlogo.png" alt="MuuqWear logo" class="mw-logo__img" />
+                <span class="mw-logo__text text-uppercase fw-bolder">MuuqWear</span>
+            </a>
+
+
+            <div class="mw-header__center">
+                <nav class="mw-nav" aria-label="Main navigation">
+                    <NavLink class="mw-nav__link" href="" Match="NavLinkMatch.Prefix">
+                        Home
+                    </NavLink>
+                    <NavLink class="mw-nav__link" href="/shop/apparel" Match="NavLinkMatch.Prefix">
+                        Apparel
+                    </NavLink>
+                    <NavLink class="mw-nav__link" href="/shop/accessories" Match="NavLinkMatch.Prefix">
+                        Accessories
+                    </NavLink>
+                    <NavLink class="mw-nav__link" href="/community" Match="NavLinkMatch.Prefix">
+                        Community
+                    </NavLink>
+                    <NavLink class="mw-nav__link" href="/journal" Match="NavLinkMatch.Prefix">
+                        Journal
+                    </NavLink>
+                </nav>
+
+                <div class="mw-header__icons">
+                    <button class="mw-icon-btn" @onclick="OpenSearch" @onclick:preventDefault>
+                        <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="10" cy="10" r="7" stroke="#1E2B48" stroke-width="2" stroke-linecap="round" />
+                            <path d="M15 15L20 20" stroke="#1E2B48" stroke-width="2" stroke-linecap="round" />
+                        </svg>
+                    </button>
+
+                    <button class="mw-icon-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                             class="lucide lucide-shopping-bag" data-fg-d5jy21="1.210:178.4:/src/app/components/Header.tsx:155:19:6270:25:e:ShoppingBag::::::BxU0" data-fgid-d5jy21=":ro:">
+                            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path>
+                            <path d="M3 6h18"></path>
+                            <path d="M16 10a4 4 0 0 1-8 0"></path>
+                        </svg>
+                    </button>
+                    <button class="mw-icon-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                             class="lucide lucide-user" data-fg-d5jy26="1.210:178.4:/src/app/components/Header.tsx:163:19:6778:18:e:User::::::wpV"
+                             data-fgid-d5jy26=":rr:">
+                            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2">
+
+                            </path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+
+                    </button>
+                    <button class="mw-icon-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                             stroke-linejoin="round" class="lucide lucide-map-pin"
+                             data-fg-d5jy30="1.210:178.4:/src/app/components/Header.tsx:173:21:7253:20:e:MapPin::::::BveZ"
+                             data-fgid-d5jy30=":ru:">
+                            <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0">
+
+                            </path>
+                            <circle cx="12" cy="10" r="3"></circle>
+                        </svg>
+                    </button>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+@* <!-- ── Mobile slide-in nav panel ─────────────────────────── -->
+<div class="mw-mobile-nav @(mobileNavOpen ? "mw-mobile-nav--open" : "")"
+     id="mw-mobile-nav"
+     role="dialog"
+     aria-modal="true"
+     aria-label="Mobile navigation"
+     aria-hidden="@(!mobileNavOpen)">
+
+    <div class="mw-mobile-nav__panel">
+
+        <div class="mw-mobile-nav__header">
+            <a href="/" class="mw-logo" @onclick="CloseMobileNav">
+                <svg class="mw-logo__icon" viewBox="0 0 25 22.5" fill="none">
+                    <path d="M12.5 0L25 6.75V15.75L12.5 22.5L0 15.75V6.75L12.5 0Z
+                             M12.5 3.5L3 8.5V14.5L12.5 19.5L22 14.5V8.5L12.5 3.5Z
+                             M12.5 7L18 10.5V14.5L12.5 18L7 14.5V10.5L12.5 7Z"
+                          fill="#1E2B48" />
+                </svg>
+                <span class="mw-logo__text">MuuqWear</span>
+            </a>
+            <button class="mw-mobile-nav__close mw-haptic"
+                    @onclick="ToggleMobileNav"
+                    aria-label="Close menu">
+                <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                    <path d="M2 2l18 18M20 2L2 20" stroke="#1E2B48" stroke-width="2" stroke-linecap="round" />
+                </svg>
+            </button>
+        </div>
+
+        <nav class="mw-mobile-nav__links" aria-label="Mobile navigation">
+            <NavLink class="mw-mobile-nav__link" href="/" Match="NavLinkMatch.All" @onclick="CloseMobileNav">
+                Home
+            </NavLink>
+            <NavLink class="mw-mobile-nav__link" href="/shop" Match="NavLinkMatch.Prefix" @onclick="CloseMobileNav">
+                Shop All
+            </NavLink>
+            <NavLink class="mw-mobile-nav__link" href="/shop/apparel" Match="NavLinkMatch.Prefix" @onclick="CloseMobileNav">
+                Apparel
+            </NavLink>
+            <NavLink class="mw-mobile-nav__link" href="/shop/accessories" Match="NavLinkMatch.Prefix" @onclick="CloseMobileNav">
+                Accessories
+            </NavLink>
+            <NavLink class="mw-mobile-nav__link" href="/community" Match="NavLinkMatch.Prefix" @onclick="CloseMobileNav">
+                Community
+            </NavLink>
+            <NavLink class="mw-mobile-nav__link" href="/journal" Match="NavLinkMatch.Prefix" @onclick="CloseMobileNav">
+                Journal
+            </NavLink>
+            <NavLink class="mw-mobile-nav__link mw-mobile-nav__link--sale" href="/shop/sale" Match="NavLinkMatch.Prefix" @onclick="CloseMobileNav">
+                Sale
+            </NavLink>
+        </nav>
+
+        <!-- Locale selector inside mobile panel -->
+        <div class="mw-mobile-nav__footer">
+            <span class="mw-mobile-nav__footer-label">Country / Currency</span>
+            <div class="mw-mobile-nav__locales">
+                @foreach (var locale in locales)
+                {
+                    <button class="mw-mobile-nav__locale-btn @(locale.Code == currentLocaleCode ? "mw-mobile-nav__locale-btn--active" : "")"
+                            @onclick="() => SelectLocale(locale)">
+                        @locale.Label
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Backdrop -->
+    <div class="mw-mobile-nav__backdrop" @onclick="ToggleMobileNav" aria-hidden="true"></div>
+</div> *@
+
+@* ═══════════════════════════════════════════════════════════
+   ADD THIS @code BLOCK AT THE BOTTOM OF NavMenu.razor
+   (after all the HTML markup above)
+═══════════════════════════════════════════════════════════ *@
+
+@code {
+    bool isSearchOpen = false; // start closed
+
+    void OpenSearch()
+    {
+        Console.WriteLine("CLICK WORKED");
+        isSearchOpen = true;
+    }
+    void CloseSearch() => isSearchOpen = false;
+    // // ── Search state ─────────────────────────────────────
+    // private bool searchOpen = false;
+    // private string searchQuery = string.Empty;
+    // private ElementReference searchOverlayInput;
+
+    // private readonly List<string> quickSearchTerms = new()
+    // {
+    //     "Jackets", "Hoodies", "Knitwear", "Runners", "Accessories"
+    // };
+
+    // private async Task ToggleSearch()
+    // {
+    //     searchOpen = !searchOpen;
+    //     searchQuery = string.Empty;
+
+    //     if (searchOpen)
+    //     {
+    //         // Focus the overlay input after render
+    //         await Task.Delay(50);
+    //         try { await searchOverlayInput.FocusAsync(); } catch { }
+    //     }
+    // }
+
+    // private void HandleSearchKey(KeyboardEventArgs e)
+    // {
+    //     if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(searchQuery))
+    //     {
+    //         RunSearch(searchQuery);
+    //     }
+    //     if (e.Key == "Escape")
+    //     {
+    //         searchOpen = false;
+    //     }
+    // }
+
+    // private void RunSearch(string query)
+    // {
+    //     searchOpen = false;
+    //     Nav.NavigateTo($"/shop?q={Uri.EscapeDataString(query)}");
+    // }
+
+    // private void RunQuickSearch(string term)
+    // {
+    //     searchOpen = false;
+    //     Nav.NavigateTo($"/shop?q={Uri.EscapeDataString(term)}");
+    // }
+
+    // // ── Locale state ─────────────────────────────────────
+    // private bool localeOpen = false;
+    // private string currentLocaleCode = "USD";
+    // private string currentLocale = "USA (USD $)";
+
+    // private record LocaleOption(string Code, string Label, string Currency);
+
+    // private readonly List<LocaleOption> locales = new()
+    // {
+    //     new("USD", "USA (USD $)",        "$"),
+    //     new("GBP", "UK (GBP £)",         "£"),
+    //     new("EUR", "Europe (EUR €)",      "€"),
+    //     new("PKR", "Pakistan (PKR ₨)",    "₨"),
+    //     new("AED", "UAE (AED د.إ)",      "د.إ"),
+    // };
+
+    // private void ToggleLocale()
+    // {
+    //     localeOpen = !localeOpen;
+    // }
+
+    // private void SelectLocale(LocaleOption locale)
+    // {
+    //     currentLocaleCode = locale.Code;
+    //     currentLocale = locale.Label;
+    //     localeOpen = false;
+    //     // TODO: inject ILocaleService and persist selection
+    //     // await LocaleService.SetLocaleAsync(locale.Code);
+    // }
+
+    // // ── Cart state ───────────────────────────────────────
+    // // TODO: replace with injected ICartService
+    // // [Parameter] public int CartCount { get; set; }
+    // private int cartCount = 2; // hardcoded until CartService exists
+
+    // private void OpenCart()
+    // {
+    //     // TODO: trigger CartDrawer.razor overlay
+    //     // CartService.OpenDrawer();
+    //     Nav.NavigateTo("/cart");
+    // }
+
+    // // ── Mobile nav state ─────────────────────────────────
+    // private bool mobileNavOpen = false;
+
+    // private async Task ToggleMobileNav()
+    // {
+    //     mobileNavOpen = !mobileNavOpen;
+    //     // Lock / unlock body scroll
+    //     await JS.InvokeVoidAsync(
+    //         "document.body.classList.toggle",
+    //         "mw-nav-open", mobileNavOpen);
+    // }
+
+    // private async Task CloseMobileNav()
+    // {
+    //     mobileNavOpen = false;
+    //     await JS.InvokeVoidAsync(
+    //         "document.body.classList.remove",
+    //         "mw-nav-open");
+    // }
+
+    // ── Cleanup ──────────────────────────────────────────
+    public void Dispose()
+    {
+        // Nothing to dispose currently.
+        // If you add a timer or event subscription later, clean it here.
+    }
+
+
+}
 
