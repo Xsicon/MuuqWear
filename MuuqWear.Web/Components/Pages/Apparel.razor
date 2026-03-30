@@ -1,0 +1,196 @@
+﻿@page "/shop/apparel"
+@rendermode InteractiveServer
+@inject IJSRuntime JS
+
+<PageTitle>Apparel</PageTitle>
+<section class="mw-shop container py-4 py-md-5">
+
+    <!-- BREADCRUMB -->
+    <div class="mw-breadcrumb small text-muted mb-2">
+        <a href="/" class="text-decoration-none">Home</a>
+        <span class="mx-2">/</span>
+        <span class="fw-bold text-dark">Shop All</span>
+    </div>
+
+    <!-- TITLE -->
+    <h1 class="mw-title">Shop All</h1>
+
+    <!-- DESCRIPTION -->
+    <p class="mw-desc">
+        Discover our curated collection of technical outerwear, premium knitwear,
+        and essential accessories designed for the modern explorer.
+    </p>
+
+    <!-- MOBILE FILTER BUTTON -->
+    <button class="btn btn-outline-dark d-lg-none mb-4">
+        Filters
+    </button>
+
+    <div class="row g-4">
+
+        <!-- SIDEBAR (DESKTOP ONLY) -->
+        <aside class="col-lg-3 d-none d-lg-block">
+            <div class="mw-filter">
+
+                <div class="d-flex justify-content-between mb-3">
+                    <h5 class="fw-bold">Filters</h5>
+                    <button class="btn btn-sm text-muted">Clear All</button>
+                </div>
+
+                <!-- CATEGORY -->
+                <div class="mb-4">
+                    <h6 class="mw-filter-title">Categories</h6>
+
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" />
+                        <label class="form-check-label">Outerwear</label>
+                    </div>
+
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" />
+                        <label class="form-check-label">Knitwear</label>
+                    </div>
+
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" />
+                        <label class="form-check-label">Accessories</label>
+                    </div>
+                </div>
+
+                <!-- SIZE -->
+                <div class="mb-4">
+                    <h6 class="mw-filter-title">Size</h6>
+
+                    <div class="d-flex flex-wrap gap-2">
+                        <button class="mw-size">XS</button>
+                        <button class="mw-size active">S</button>
+                        <button class="mw-size">M</button>
+                        <button class="mw-size">L</button>
+                    </div>
+                </div>
+
+                <!-- PRICE -->
+                <div>
+                    <h6 class="mw-filter-title">Price</h6>
+                    <input type="range" class="form-range" />
+                </div>
+
+            </div>
+        </aside>
+
+        <!-- PRODUCTS -->
+        <div class="col-12 col-lg-9">
+
+            <!-- TOP BAR -->
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+                <p class="text-muted small mb-0">
+                    Showing <span class="fw-bold text-dark">6</span> products
+                </p>
+
+                <select class="form-select w-auto">
+                    <option>Featured</option>
+                    <option>Price: Low to High</option>
+                </select>
+            </div>
+
+            <!-- GRID -->
+            <div class="row g-3 g-md-4">
+
+                @foreach (var item in Products)
+                {
+                    <div class="col-6 col-lg-4">
+
+                        <div class="mw-product">
+
+                            <div class="mw-product-img">
+                                <img src="@item.Image" />
+                            </div>
+
+                            <p class="mw-product-category">@item.Category</p>
+
+                            <h6 class="mw-product-title">@item.Title</h6>
+
+                            <p class="mw-product-price">$@item.Price</p>
+
+                        </div>
+
+                    </div>
+                }
+
+            </div>
+
+            <!-- PAGINATION -->
+            <div class="d-flex justify-content-center mt-5 gap-2">
+
+                <button class="mw-page-btn">‹</button>
+                <button class="mw-page-btn active">1</button>
+                <button class="mw-page-btn">2</button>
+                <button class="mw-page-btn">›</button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+@code {
+
+    public class Product
+    {
+        public string Image { get; set; }
+        public string Category { get; set; }
+        public string Title { get; set; }
+        public decimal Price { get; set; }
+    }
+
+    private List<Product> Products = new()
+    {
+        new Product
+        {
+            Image = "https://images.unsplash.com/photo-1704716720991-cf3197cfb190?w=400&h=500&fit=crop",
+            Category = "Outerwear",
+            Title = "Elements Waterproof Parka",
+            Price = 185
+        },
+        new Product
+        {
+            Image = "https://images.unsplash.com/photo-1642853474532-9aca78f70629?w=400&h=500&fit=crop",
+            Category = "Knitwear",
+            Title = "Merino Essential Crew",
+            Price = 72
+        },
+        new Product
+        {
+            Image = "https://images.unsplash.com/photo-1555689502-c4b22d76c56f?w=400&h=500&fit=crop",
+            Category = "Trousers",
+            Title = "Raw Selvedge Denim",
+            Price = 120
+        },
+        new Product
+        {
+            Image = "https://images.unsplash.com/photo-1620231151282-957594b30e94?w=400&h=500&fit=crop",
+            Category = "Outerwear",
+            Title = "Utility Field Jacket",
+            Price = 145
+        },
+        new Product
+        {
+            Image = "https://images.unsplash.com/photo-1770385436782-e47efd8d1e80?w=400&h=500&fit=crop",
+            Category = "Accessories",
+            Title = "City Commuter 20L",
+            Price = 95
+        },
+        new Product
+        {
+            Image = "https://images.unsplash.com/photo-1718802323158-b32c0330ad4a?w=400&h=500&fit=crop",
+            Category = "Accessories",
+            Title = "M-01 Court Sneaker",
+            Price = 110
+        }
+    };
+
+}

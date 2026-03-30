@@ -1,0 +1,140 @@
+﻿.mw-profile {
+    max-width: 1280px;
+}
+
+.mw-profile-mobile-toggle {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid rgba(169,183,204,0.4);
+    display: flex;
+    justify-content: space-between;
+    background: white;
+}
+
+.mw-avatar {
+    width: 55px;
+    height: 55px;
+    background: #1E2A47;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.mw-user-name {
+    font-weight: 700;
+    color: #1E2A47;
+}
+
+.mw-user-meta {
+    font-size: 12px;
+    color: #4A5C7A;
+}
+
+.mw-profile-nav {
+    margin: 20px 0;
+}
+
+.mw-nav-item {
+    width: 100%;
+    padding: 10px;
+    text-align: right;
+    background: none;
+    border: none;
+    color: #4A5C7A;
+    font-weight: 600;
+}
+
+    .mw-nav-item.active {
+        background: #F4F6F9;
+        color: #1E2A47;
+        font-weight: 700;
+    }
+
+.mw-affiliate {
+    border: 1px solid rgba(169,183,204,0.4);
+    padding: 12px;
+    text-align: right;
+    margin-bottom: 10px;
+}
+
+.mw-affiliate-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: #4A5C7A;
+}
+
+.mw-affiliate-value {
+    font-weight: 700;
+}
+
+.mw-signout {
+    width: 100%;
+    padding: 10px;
+    color: #C44545;
+    border: none;
+    background: transparent;
+}
+
+.mw-stat-card {
+    border: 1px solid rgba(169,183,204,0.4);
+    padding: 16px;
+}
+
+.mw-stat-value {
+    font-size: 20px;
+    font-weight: 300;
+    color: #1E2A47;
+}
+
+.mw-stat-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: #4A5C7A;
+}
+
+.mw-orders {
+    border: 1px solid rgba(169,183,204,0.4);
+    padding: 20px;
+}
+
+.mw-section-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    margin-bottom: 15px;
+}
+
+.mw-order-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(169,183,204,0.1);
+}
+
+.mw-order-id {
+    font-weight: 600;
+}
+
+.mw-order-meta {
+    font-size: 12px;
+    color: #4A5C7A;
+}
+
+.mw-order-price {
+    font-weight: 600;
+}
+
+.mw-order-status {
+    font-size: 12px;
+    font-weight: 600;
+}
+
+    .mw-order-status.delivered {
+        color: green;
+    }
+
+    .mw-order-status.transit {
+        color: #D4A843;
+    }

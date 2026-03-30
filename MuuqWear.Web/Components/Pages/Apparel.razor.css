@@ -1,0 +1,92 @@
+﻿/* Typography */
+
+.mw-title {
+    font-size: 28px;
+    font-weight: 800;
+    color: #1E2A47;
+}
+
+@media (min-width: 768px) {
+    .mw-title {
+        font-size: 36px;
+    }
+}
+
+.mw-desc {
+    max-width: 500px;
+    color: #4A5C7A;
+    margin-bottom: 24px;
+}
+
+/*  Filter Panel */
+
+.mw-filter {
+    border: 1px solid rgba(169,183,204,0.4);
+    padding: 20px;
+    background: white;
+}
+
+.mw-filter-title {
+    font-size: 12px;
+    letter-spacing: 1px;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+/* Size Button*/
+
+.mw-filter {
+    border: 1px solid rgba(169,183,204,0.4);
+    padding: 20px;
+    background: white;
+}
+
+.mw-filter-title {
+    font-size: 12px;
+    letter-spacing: 1px;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+/*Product Card*/
+
+.mw-product-img {
+    aspect-ratio: 3/4;
+    background: #E6ECF5;
+    overflow: hidden;
+}
+
+    .mw-product-img img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+.mw-product-category {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: #4A5C7A;
+}
+
+.mw-product-title {
+    font-weight: 700;
+    color: #1E2A47;
+}
+
+.mw-product-price {
+    font-weight: 700;
+}
+
+/*Pagination*/
+
+.mw-page-btn {
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: transparent;
+}
+
+    .mw-page-btn.active {
+        background: #1E2A47;
+        color: white;
+    }

@@ -14,7 +14,7 @@
                     <img src="/images/muuqwearlogo.png"
                          alt="MuuqWear logo"
                          class="mw-logo__img img-fluid" />
-                    <span class="mw-logo__text text-uppercase fw-bolder ms-2">
+                    <span class="mw-logo__text text-uppercase fw-bolder ms-2 d-none d-md-flex">
                         MuuqWear
                     </span>
                 </a>
@@ -34,7 +34,7 @@
                     <!-- ICONS -->
                     <div class="mw-header__icons d-flex align-items-center gap-2">
 
-                        <button class="mw-icon-btn" aria-label="Search">
+                        <button class="mw-icon-btn" aria-label="Search" @onclick="OpenSearch">
                             <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
                                 <circle cx="10" cy="10" r="7" stroke="#1E2B48" stroke-width="2" />
                                 <path d="M15 15L20 20" stroke="#1E2B48" stroke-width="2" />
@@ -50,24 +50,25 @@
                                 <path d="M16 10a4 4 0 0 1-8 0"></path>
                             </svg>
                         </button>
+                        <NavLink href="/profile" aria-label="Profile">
+                            <button class="mw-icon-btn" aria-label="Profile">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                            </button>
+                            </NavLink>
 
-                        <button class="mw-icon-btn" aria-label="Profile">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
-                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="12" cy="7" r="4"></circle>
-                            </svg>
-                        </button>
-
-                        <button class="mw-icon-btn" aria-label="Location">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
-                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path>
-                                <circle cx="12" cy="10" r="3"></circle>
-                            </svg>
-                        </button>
+                            <button class="mw-icon-btn" aria-label="Location">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path>
+                                    <circle cx="12" cy="10" r="3"></circle>
+                                </svg>
+                            </button>
 
                     </div>
 
@@ -97,6 +98,65 @@
             </div>
         </div>
     </header>
+
+    <!-- Search Panel-->
+
+    <div class="mw-search-overlay @(isSearchOpen ? "open" : "")"
+         @onclick="CloseSearch">
+
+        <!-- PANEL -->
+        <div class="mw-search-panel" @onclick:stopPropagation="true">
+
+            <!-- CLOSE BUTTON -->
+            <button class="mw-search-close" @onclick="CloseSearch">
+                ✕
+            </button>
+
+            <!-- CONTENT -->
+            <div class="mw-search-content container">
+
+                <!-- INPUT -->
+                <div class="row">
+                    <div class="col-12">
+                        <input class="mw-search-input" @ref="searchInputRef"
+                               placeholder="Search for 'Hoodie', 'Sapphire'..." />
+                    </div>
+                </div>
+
+                <!-- BODY -->
+                <div class="row mt-4 justify-content-center text-center">
+
+                    <!-- LEFT: TAGS -->
+                    <div class="col-12 col-md-6">
+                        <div class="mw-search-tags justify-content-center">
+                            <span>New Arrivals</span>
+                            <span>Hoodies</span>
+                            <span>Accessories</span>
+                            <span>Sale</span>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT: POPULAR -->
+                    <div class="row mt-5">
+                        <div class="col-12 col-md-4 ms-md-auto text-md-end text-start">
+                            <p class="mw-search-label">POPULAR SEARCHES</p>
+
+                            <ul class="mw-search-list">
+                                <li>Sapphire Hoodie</li>
+                                <li>Cargo Pants</li>
+                                <li>Veil Crossbody</li>
+                                <li>Tech Jacket</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+
 
     <!-- OVERLAY — sibling to header, both inside the wrapper div -->
     <div class="mw-mobile-nav d-md-none @(isMenuOpen ? "mw-mobile-nav--open" : "")"
@@ -144,12 +204,34 @@
 
 @code {
 
+    private ElementReference searchInputRef;
     private bool isMenuOpen = false;
+    private bool shouldFocusInput = false;
 
-    private void ToggleMenu() => isMenuOpen = !isMenuOpen;
-    private void CloseMenu() => isMenuOpen = false;
+    async Task ToggleMenu()
+    {
+        isMenuOpen = !isMenuOpen;
+
+        if (isMenuOpen)
+            await JS.InvokeVoidAsync("disableScroll");
+        else
+            await JS.InvokeVoidAsync("enableScroll");
+    }
+
+    async Task CloseMenu()
+    {
+        isMenuOpen = false;
+        await JS.InvokeVoidAsync("enableScroll");
+    }
     private void HandleOverlayClick() => isMenuOpen = false;
+    private bool isSearchOpen = false;
 
+    void OpenSearch()
+    {
+        isSearchOpen = true;
+        shouldFocusInput = true;
+    }
+    void CloseSearch() => isSearchOpen = false;
     protected override void OnInitialized()
     {
         Nav.LocationChanged += OnLocationChanged;
@@ -167,5 +249,21 @@
     public void Dispose()
     {
         Nav.LocationChanged -= OnLocationChanged;
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (shouldFocusInput)
+        {
+            shouldFocusInput = false;
+
+            try
+            {
+                await JS.InvokeVoidAsync("focusElement", searchInputRef);
+            }
+            catch
+            {
+                // prevents crash if component unmounted
+            }
+        }
     }
 }

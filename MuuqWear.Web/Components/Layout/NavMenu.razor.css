@@ -158,8 +158,6 @@ body {
     transition: transform 0.35s ease;
     z-index: 2001; /* 🔥 above overlay */
 
-    border-top-left-radius: 16px; /* match figma */
-    border-bottom-left-radius: 16px;
 }
 /* MENU header row */
 .mw-mobile-nav__header {
@@ -218,4 +216,123 @@ body {
 ::deep .mw-mobile-nav__link.active {
     font-weight: 700;
     color: #0f172a !important;
+}
+
+
+/* Overlay */
+.mw-search-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.2); /* dim background */
+
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease;
+}
+
+    .mw-search-overlay.open {
+        opacity: 1;
+        visibility: visible;
+    }
+
+/* Panel */
+.mw-search-panel {
+    width: 100%;
+    background: white;
+    padding: 16px 0; /* mobile first */
+
+    transform: translateY(-20px);
+    transition: transform 0.3s ease;
+}
+
+.mw-search-content {
+    position: relative;
+}
+
+.mw-search-overlay.open .mw-search-panel {
+    transform: translateY(0);
+}
+/* Close button */
+.mw-search-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 40px;
+    height: 40px;
+    border: 1px solid #ccc;
+    background: white;
+    cursor: pointer;
+    z-index: 10000;
+}
+
+/* Input */
+.mw-search-input {
+    width: 100%;
+    border: none;
+    border-bottom: 1px solid #ccc;
+    font-size: 20px;
+    padding: 10px 0;
+    outline: none;
+}
+
+/* Tags */
+.mw-search-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center
+}
+
+    .mw-search-tags span {
+        border: 1px solid #ccc;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        cursor: pointer;
+    }
+
+/* Popular */
+
+.mw-search-label {
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: #6c7a92;
+    margin-bottom: 10px;
+}
+
+.mw-search-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+    .mw-search-list li {
+        margin-bottom: 8px;
+        cursor: pointer;
+    }
+
+
+@media (min-width: 768px) {
+
+    .mw-search-panel {
+        padding: 40px 0;
+    }
+
+    .mw-search-input {
+        font-size: 32px;
+        text-align: center;
+    }
+
+        .mw-search-input::placeholder {
+            text-align: center;
+        }
+
+    .mw-search-close {
+        top: 24px;
+        right: 24px;
+    }
 }
