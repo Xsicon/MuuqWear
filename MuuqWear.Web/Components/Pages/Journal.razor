@@ -1,0 +1,236 @@
+﻿@page "/journal"
+@rendermode InteractiveServer
+@inject IJSRuntime JS
+
+
+<PageTitle>Journal</PageTitle>
+
+
+<section class="mw-journal-hero">
+
+    <div class="mw-journal-hero__container">
+
+        <div class="mw-journal-hero__card">
+
+            <!-- Content -->
+            <div class="mw-journal-hero__content">
+
+                <p class="mw-journal-hero__category">
+                    Culture
+                </p>
+
+                <h1 class="mw-journal-hero__title">
+                    The Art of Minimalist Performance: A New Era
+                </h1>
+
+                <p class="mw-journal-hero__description">
+                    Exploring the intersection of technical excellence and aesthetic purity in the modern wardrobe.
+                </p>
+
+                <span class="mw-journal-hero__cta">
+                    Read More
+                    <svg viewBox="0 0 24 24" class="mw-journal-hero__icon">
+                        <path d="M5 12h14"></path>
+                        <path d="m12 5 7 7-7 7"></path>
+                    </svg>
+                </span>
+
+            </div>
+
+            <!-- Image -->
+            <div class="mw-journal-hero__image-wrapper">
+                <img src="https://images.unsplash.com/photo-1508427953056-b00b8d78ebf5?w=600&h=400&fit=crop"
+                     class="mw-journal-hero__image"
+                     alt="Journal hero" />
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+<section class="mw-journal-filters mb-3">
+
+    <div class="mw-journal-hero__container">
+
+        <div class="d-flex flex-nowrap gap-2 overflow-auto mw-tabs-scroll">
+
+            <button class="mw-filter-tab active">All</button>
+            <button class="mw-filter-tab">Design</button>
+            <button class="mw-filter-tab">Innovation</button>
+            <button class="mw-filter-tab">Lifestyle</button>
+            <button class="mw-filter-tab">Tech</button>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<section class="mw-articles pb-5">
+
+    <div class="mw-journal-hero__container">
+
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+
+            <h2 class="mw-articles__title">Latest Articles</h2>
+
+            <div class="mw-carousel_nav">
+                <button @onclick="() => ScrollLeft(articleRef)" class="d-flex align-items-center">
+                    <!-- LEFT -->
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m15 18-6-6 6-6"></path>
+                    </svg>
+                </button>
+                <button @onclick="() => ScrollRight(articleRef)" class="d-flex align-items-center">
+                    <!-- RIGHT -->
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m9 18 6-6-6-6"></path>
+                    </svg>
+
+                </button>
+            </div>
+
+        </div>
+
+        <!-- Carousel -->
+        <div class="mw-carousel__track" @ref="articleRef">
+
+            <div class="mw-carousel-inner">
+
+                @foreach (var item in Articles)
+                {
+                    <div class="mw-carousel-item">
+
+                        <article class="mw-article-card d-flex">
+
+                            <!-- Image -->
+                            <div class="mw-article-card__img">
+                                <img src="@item.Image" alt="@item.Title" />
+                            </div>
+
+                            <!-- Content -->
+                            <div class="mw-article-card__content">
+
+                                <p class="mw-article-card__category">@item.Category</p>
+
+                                <h3 class="mw-article-card__title">
+                                    @item.Title
+                                </h3>
+
+                                <p class="mw-article-card__desc">
+                                    @item.Description
+                                </p>
+
+                                <span class="mw-article-card__link">
+                                    Read More →
+                                </span>
+
+                            </div>
+
+                        </article>
+
+                    </div>
+                }
+
+            </div>
+
+        </div>
+
+        <!-- CTA -->
+        <div class="text-center mt-4">
+            <button class="mw-articles__btn">
+                Load More Articles
+            </button>
+        </div>
+
+    </div>
+
+</section>
+
+
+
+@code {
+
+    private ElementReference articleRef;
+
+    private async Task ScrollRight(ElementReference el)
+    {
+        await JS.InvokeVoidAsync("mwScrollRight", el, ".mw-carousel-item");
+    }
+
+    private async Task ScrollLeft(ElementReference el)
+    {
+        await JS.InvokeVoidAsync("mwScrollLeft", el, ".mw-carousel-item");
+    }
+
+    public class Article
+    {
+        public string Image { get; set; }
+        public string Category { get; set; }
+        public string Title { get; set; }
+        public string Description { get; set; }
+    }
+
+    public List<Article> Articles = new()
+    {
+        new Article
+        {
+            Image = "https://images.unsplash.com/photo-1538516089546-40b08c9c9866?w=500&h=400&fit=crop",
+            Category = "Design",
+            Title = "The Evolution of Technical Outerwear",
+            Description = "From mountaineering to urban streets - how performance wear became everyday."
+        },
+        new Article
+        {
+            Image = "https://images.unsplash.com/photo-1620231151282-957594b30e94?w=500&h=400&fit=crop",
+            Category = "Tech",
+            Title = "Smart Fabrics: The Future of Wearable Innovation",
+            Description = "Exploring responsive textiles and temperature-regulating materials."
+        },
+        new Article
+        {
+            Image = "https://images.unsplash.com/photo-1704716720991-cf3197cfb190?w=500&h=400&fit=crop",
+            Category = "Innovation",
+            Title = "Zero Waste Pattern Cutting: A New Approach",
+            Description = "Our design team's revolutionary approach to eliminating textile waste."
+        },
+        new Article
+        {
+            Image = "https://images.unsplash.com/photo-1634225180401-ccdcee2c101c?w=500&h=400&fit=crop",
+            Category = "Design",
+            Title = "Behind the Sapphire Veil Palette: Color Theory",
+            Description = "How we developed our signature shade through months of textile experimentation."
+        },
+        new Article
+        {
+            Image = "https://images.unsplash.com/photo-1632263532338-45575eba6aba?w=500&h=400&fit=crop",
+            Category = "Innovation",
+            Title = "Sustainable Futures: Our Commitment to the Earth",
+            Description = "Our journey towards a 100% circular production model and ethical sourcing."
+        },
+        new Article
+        {
+            Image = "https://images.unsplash.com/photo-1558303522-d7a2bdfdbd82?w=500&h=400&fit=crop",
+            Category = "Lifestyle",
+            Title = "Form Follows Function: Inside Our Material Lab",
+            Description = "A deep dive into the technical fabrics that define our seasonal collection."
+        }
+    };
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+
+            await JS.InvokeVoidAsync("mwStartAutoSlide", articleRef, ".mw-carousel-item", 3000);
+        }
+    }
+
+}

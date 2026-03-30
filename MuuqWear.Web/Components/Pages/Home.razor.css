@@ -1,8 +1,55 @@
-﻿.mw-hero {
+﻿/* UTILITY CLASSES*/
+
+
+.mw-carousel_nav {
+    display: flex;
+    gap: 8px;
+}
+
+
+    .mw-carousel_nav button {
+        width: 40px;
+        height: 40px;
+        border: 1px solid #A9B7CC;
+        background: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #1E2A47;
+        SVG uses this transition: all 0.2s ease;
+    }
+
+        .mw-carousel_nav button:hover {
+            background: #1E2A47;
+            color: white;
+        }
+/* UTILITY CLASSES END HERE*/
+
+
+/* HERO SECTION */
+
+
+.mw-hero {
     width: 100%;
-    height: 90vh;
-    min-height: 520px;
-    max-height: 780px;
+    height: 70vh;
+    min-height: 420px;
+}
+
+/* Tablet */
+@media (min-width: 768px) {
+    .mw-hero {
+        height: 80vh;
+        min-height: 520px;
+    }
+}
+
+/* Desktop */
+@media (min-width: 1200px) {
+    .mw-hero {
+        height: 90vh;
+        max-height: 780px;
+    }
 }
 
 .mw-slide {
@@ -11,57 +58,57 @@
 }
 
 .mw-slide__img {
+    position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
-    object-position: center;
 }
 
 .mw-slide__overlay {
     position: absolute;
     inset: 0;
-    background: linear-gradient(to right, rgba(13,19,33,0.72) 0%, rgba(13,19,33,0.10) 100%);
+    background: linear-gradient( to right, rgba(13,19,33,0.75) 0%, rgba(13,19,33,0.15) 100% );
 }
 
 .mw-slide__content {
     position: absolute;
-    bottom: 13%;
-    left: 6%;
-    color: #fff;
-    max-width: 560px;
+    bottom: 10%;
+    left: 0;
+    right: 0;
+    color: white;
 }
 
 .mw-slide__label {
-    font-size: 0.72rem;
+    font-size: 11px;
     font-weight: 600;
-    letter-spacing: 0.22em;
+    letter-spacing: 2px;
     text-transform: uppercase;
     color: rgba(255,255,255,0.75);
-    margin: 0 0 14px;
+    margin-bottom: 12px;
 }
 
 .mw-slide__title {
-    font-size: clamp(2.4rem, 5vw, 4rem);
+    font-size: clamp(1.8rem, 5vw, 4rem);
     font-weight: 800;
-    line-height: 1.08;
-    margin: 0 0 30px;
-    color: #fff;
+    line-height: 1.1;
+    margin-bottom: 24px;
 }
 
 .mw-slide__cta {
     display: inline-flex;
     align-items: center;
     gap: 10px;
-    padding: 15px 28px;
+    padding: 12px 22px;
     background: #fff;
     color: #1E2B48;
-    font-size: 0.72rem;
+    font-size: 11px;
     font-weight: 700;
-    letter-spacing: 0.18em;
+    letter-spacing: 2px;
     text-transform: uppercase;
     text-decoration: none;
     border: 2px solid #fff;
-    transition: background 0.25s, color 0.25s;
+    transition: all 0.25s ease;
 }
 
     .mw-slide__cta:hover {
@@ -69,7 +116,8 @@
         color: #fff;
     }
 
-.swiper-button-prev, .swiper-button-next {
+.swiper-button-prev,
+.swiper-button-next {
     color: #fff;
 }
 
@@ -77,26 +125,61 @@
     background: #fff;
 }
 
+/*HERO SECTON ENDS HERE*/
 
-/*Shopping Category*/
 
-/* Swiper container spacing */
 
-.mw-category-swiper {
-    margin-top: 20px;
+/*SHOPPING CATEGORY SECTION*/
+
+/* Section */
+
+.mw-category {
+    background-color: #f5f6f8;
+    padding: 40px 0;
 }
-    /* Each slide */
-    .mw-category-swiper .swiper-slide {
-        display: flex;
-        justify-content: center;
+
+/* Track */
+.mw-carousel__track {
+    overflow-x: auto;
+    scroll-behavior: smooth;
+}
+
+    /* Fix Bootstrap negative margins inside carousel */
+    .mw-carousel__track .row {
+        margin: 0;
     }
 
-/* Your card */
+/* Header */
+.mw-category__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 30px;
+}
+
+/* Title */
+.mw-category__title {
+    font-size: 30px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    text-transform: uppercase;
+    color: #1E2A47;
+}
+
+/* Underline */
+.mw-category__underline {
+    width: 55px;
+    height: 3px;
+    background: #1E2A47;
+    margin-top: 10px;
+}
+
+/* Card */
 .mw-category__card {
-    width: 100%;
-    height: 460px;
     position: relative;
+    display: block;
     overflow: hidden;
+    height: 420px; /* SAME as your design */
 }
 
     /* Image */
@@ -104,8 +187,8 @@
         width: 100%;
         height: 100%;
         object-fit: cover;
-        object-position: center 90%;
-        transform: scale(1.08);
+        transition: transform 0.4s ease;
+        display: block;
     }
 
     /* Hover */
@@ -117,22 +200,17 @@
 .mw-category__overlay {
     position: absolute;
     inset: 0;
-    background: linear-gradient( to top, rgba(0,0,0,0.5), rgba(0,0,0,0.1), transparent );
 }
 
-.mw-category {
-    background: #EEF2F7;
-    padding: 80px 0;
-}
-
-/* Text */
+/* Content */
 .mw-category__content {
     position: absolute;
-    bottom: 30px; /* 🔥 increase from 20 */
-    left: 24px;
+    bottom: 20px;
+    left: 20px;
     color: white;
 }
 
+    /* Title */
     .mw-category__content h3 {
         font-size: 22px;
         font-weight: 800;
@@ -140,61 +218,35 @@
         text-transform: uppercase;
     }
 
+    /* Subtitle */
     .mw-category__content span {
         font-size: 14px;
         opacity: 0.9;
     }
 
-.mw-category__title {
-    font-family: 'Inter', sans-serif;
-    font-size: 28px;
-    font-weight: 700;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    color: #1E2B48;
-}
-
-.mw-category__underline {
-    width: 40px;
-    height: 2px;
-    background: #1E2B48;
-    margin-top: 10px;
-}
-
-.mw-category__controls {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-}
-
-    .mw-category__controls button {
-        width: 40px;
-        height: 40px;
-        border: 1px solid #D0D7E2;
-        background: transparent;
-        color: #1E2B48;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-
-        .mw-category__controls button:hover {
-            background: #1E2B48;
-            color: white;
-        }
-
+/* Header */
 .mw-category__header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-end;
     margin-bottom: 30px;
 }
 
-/*New Arrival Section*/
-/* Section */
+
+
+
+/*CATEGORY SECTION ENDS HERE*/
+
+
+
+
+
+/*NEW ARRIVAL SECTION*/
 .mw-arrivals {
     background: white;
     padding: 60px 0;
 }
+
 
 /* Header */
 .mw-arrivals__header {
@@ -208,7 +260,6 @@
 .mw-arrivals__title {
     font-size: 30px;
     font-weight: 800;
-    letter-spacing: -0.5px;
     text-transform: uppercase;
     color: #1E2A47;
 }
@@ -221,31 +272,15 @@
     margin-top: 10px;
 }
 
-/* Buttons */
-.mw-arrivals__controls button {
-    width: 40px;
-    height: 40px;
-    border: 1px solid #A9B7CC;
-    background: white;
-    cursor: pointer;
-    transition: 0.3s;
-}
-
-    .mw-arrivals__controls button:hover {
-        background: #1E2A47;
-        color: white;
-    }
-
 /* Card */
 .mw-arrivals__card {
-    text-decoration: none;
     display: block;
 }
 
-/* Image */
+/* Image (CRITICAL for equal height) */
 .mw-arrivals__image {
     position: relative;
-    aspect-ratio: 3/4;
+    height: 390px; /* fixed → all equal */
     overflow: hidden;
     background: #E6ECF5;
     margin-bottom: 12px;
@@ -255,7 +290,7 @@
         width: 100%;
         height: 100%;
         object-fit: cover;
-        transition: 0.6s;
+        transition: 0.4s ease;
     }
 
 .mw-arrivals__card:hover img {
@@ -271,9 +306,15 @@
     color: white;
     font-size: 10px;
     font-weight: 700;
-    letter-spacing: 1px;
     padding: 5px 10px;
 }
+
+
+mw-newarrivalcarousel-item {
+    scroll-snap-align: start;
+}
+
+/* ADD */
 
 /* Text */
 .mw-arrivals__card h3 {
@@ -289,19 +330,13 @@
     margin-top: 5px;
 }
 
-.mw-arrivals__controls {
-    display: flex;
-    gap: 8px;
-}
-
-    .mw-arrivals__controls button {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
+/* NEW ARRIVAL SECTION ENDS HERE*/
 
 
-/*Feature Arrivals*/
+
+
+/* FEATURED SECTION*/
+
 .mw-featured {
     background: #E6ECF5;
     padding: 60px 0;
@@ -315,6 +350,7 @@
     margin-bottom: 30px;
 }
 
+/* Title */
 .mw-featured__title {
     font-size: 30px;
     font-weight: 800;
@@ -329,55 +365,52 @@
     margin-top: 8px;
 }
 
-/* Buttons */
-.mw-featured__controls button {
-    width: 40px;
-    height: 40px;
-    border: 1px solid #A9B7CC;
-    background: white;
-    cursor: pointer;
-}
-
 /* Card */
 .mw-featured__card {
     background: white;
     overflow: hidden;
+    height: 100%; /* equal height cards */
+    display: flex;
+    flex-direction: column;
 }
 
-/* Image */
+/* Image (IMPORTANT for same size) */
 .mw-featured__img-wrap {
     height: 330px;
     overflow: hidden;
+    flex-shrink: 0;
 }
 
     .mw-featured__img-wrap img {
         width: 100%;
         height: 100%;
         object-fit: cover;
-        transition: transform 0.6s ease;
+        transition: transform 0.5s ease;
     }
 
+/* Hover */
 .mw-featured__card:hover img {
     transform: scale(1.05);
 }
 
 /* Content */
 .mw-featured__content {
-    padding: 30px;
+    padding: 24px;
+    flex-grow: 1;
 }
 
     .mw-featured__content h3 {
-        font-size: 24px;
+        font-size: 22px;
         font-weight: 800;
         text-transform: uppercase;
-        margin-bottom: 12px;
+        margin-bottom: 10px;
         color: #1E2A47;
     }
 
     .mw-featured__content p {
-        font-size: 15px;
+        font-size: 14px;
         color: #4A5C7A;
-        margin-bottom: 20px;
+        margin-bottom: 16px;
     }
 
     .mw-featured__content a {
@@ -385,7 +418,6 @@
         font-weight: 700;
         text-transform: uppercase;
         border-bottom: 2px solid #1E2A47;
-        padding-bottom: 4px;
         text-decoration: none;
         color: #1E2A47;
     }
@@ -400,19 +432,12 @@
     padding: 34px 0;
 }
 
-/* Grid */
-.mw-benefits__grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 34px;
-}
-
 /* Item */
 .mw-benefits__item {
     display: flex;
     align-items: center;
-    gap: 20px;
-    padding: 0 20px;
+    gap: 16px;
+    height: 100%;
 }
 
 /* Icon box */
@@ -431,12 +456,14 @@
     font-size: 18px;
     font-weight: 700;
     color: #1E2A47;
+    margin-bottom: 4px;
 }
 
 /* Text */
 .mw-benefits__item p {
     font-size: 14px;
     color: #4A5C7A;
+    margin-bottom: 4px;
 }
 
 
@@ -448,6 +475,23 @@
     padding: 60px 0;
 }
 
+.bestsellers-slide {
+    flex: 0 0 100%; /* mobile: 1 item */
+}
+
+
+/* Tablet */
+@media (min-width: 576px) {
+    .bestsellers-slide {
+        flex: 0 0 50%; /* 2 items */
+    }
+}
+
+@media (min-width: 992px) {
+    .bestsellers-slide {
+        flex: 0 0 calc(25% - 6px);
+    }
+}
 /* Header */
 .mw-bestsellers__header {
     display: flex;
@@ -492,16 +536,26 @@
         color: white;
     }
 
-/* Card */
+
 .mw-bestsellers__card {
     text-decoration: none;
     display: block;
 }
 
+    .mw-bestsellers__card h3 {
+        font-size: 16px;
+        margin-top: 10px;
+    }
+
+    .mw-bestsellers__card p {
+        font-size: 14px;
+        color: #6c757d;
+    }
+
 /* Image */
 .mw-bestsellers__image {
     position: relative;
-    aspect-ratio: 3/4;
+    height: 390px; /* adjust to figma */
     overflow: hidden;
     background: #E6ECF5;
     margin-bottom: 12px;
@@ -555,3 +609,5 @@
         align-items: center;
         justify-content: center;
     }
+
+/*NEW ARRIVAL SECTION ENDS HERE*/

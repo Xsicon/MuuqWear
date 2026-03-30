@@ -1,4 +1,6 @@
 ﻿@page "/"
+@rendermode InteractiveServer
+@inject IJSRuntime JS
 
 <PageTitle>Home</PageTitle>
 
@@ -9,28 +11,42 @@
         <div class="swiper-slide mw-slide">
             <img src="https://images.unsplash.com/photo-1756361771567-e276865b77cb?w=1400&h=700&fit=crop" class="mw-slide__img" />
             <div class="mw-slide__overlay"></div>
-            <div class="mw-slide__content">
-                <p class="mw-slide__label">Limited Release</p>
-                <h1 class="mw-slide__title">The Sapphire Veil Collection</h1>
-                <a href="/shop/apparel" class="mw-slide__cta">Explore the Collection →</a>
+            <div class="mw-slide__content container">
+                <div class="row">
+                    <div class="col-12 col-md-8 col-lg-6">
+                        <p class="mw-slide__label">Limited Release</p>
+                        <h1 class="mw-slide__title">The Sapphire Veil Collection</h1>
+                        <a href="/shop/apparel" class="mw-slide__cta">Explore the Collection →</a>
+                    </div>
+                </div>
             </div>
         </div>
         <div class="swiper-slide mw-slide">
             <img src="https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=1600&h=900&fit=crop" class="mw-slide__img" />
             <div class="mw-slide__overlay"></div>
-            <div class="mw-slide__content">
-                <p class="mw-slide__label">New Arrivals</p>
-                <h1 class="mw-slide__title">Modern Modest Essentials</h1>
-                <a href="/shop/apparel" class="mw-slide__cta">Shop Now →</a>
+            <div class="mw-slide__content container">
+                <div class="row">
+                    <div class="col-12 col-md-8 col-lg-6">
+
+                        <p class="mw-slide__label">New Arrivals</p>
+                        <h1 class="mw-slide__title">Modern Modest Essentials</h1>
+                        <a href="/shop/apparel" class="mw-slide__cta">Shop Now →</a>
+                    </div>
+                </div>
             </div>
         </div>
         <div class="swiper-slide mw-slide">
             <img src="https://images.unsplash.com/photo-1761957375235-46acb4862151?w=1400&h=700&fit=crop" class="mw-slide__img" />
             <div class="mw-slide__overlay"></div>
-            <div class="mw-slide__content">
-                <p class="mw-slide__label">Limited Release</p>
-                <h1 class="mw-slide__title">Built by Community</h1>
-                <a href="/shop/accessories" class="mw-slide__cta">Discover More →</a>
+            <div class="mw-slide__content container">
+                <div class="row">
+                    <div class="col-12 col-md-8 col-lg-6">
+
+                        <p class="mw-slide__label">Limited Release</p>
+                        <h1 class="mw-slide__title">Built by Community</h1>
+                        <a href="/shop/accessories" class="mw-slide__cta">Discover More →</a>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -39,9 +55,11 @@
     <div class="swiper-pagination"></div>
 </div>
 
-<section class="mw-category">
+<!-- ***Shopping Category Section*** -->
 
-    <div class="mw-container">
+<section class="mw-category mt-2">
+
+    <div class="container">
 
         <!-- Header -->
         <div class="mw-category__header">
@@ -50,21 +68,35 @@
                 <div class="mw-category__underline"></div>
             </div>
 
-            <!-- Controls -->
-            <div class="mw-category__controls">
-                <button class="mw-category-prev">‹</button>
-                <button class="mw-category-next">›</button>
+            <div class="mw-carousel_nav">
+                <button @onclick="() => ScrollLeft(categoryRef)" class="d-flex align-items-center">
+                    <!-- LEFT -->
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m15 18-6-6 6-6"></path>
+                    </svg>
+                </button>
+                <button @onclick="() => ScrollRight(categoryRef)" class="d-flex align-items-center">
+                    <!-- RIGHT -->
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m9 18 6-6-6-6"></path>
+                    </svg>
+
+                </button>
             </div>
         </div>
 
-        <!-- Swiper -->
-        <div class="swiper mw-category-swiper">
+        <!-- Carousel -->
+        <div class="mw-carousel__track overflow-hidden" @ref="categoryRef">
 
-            <div class="swiper-wrapper">
+            <div class="row flex-nowrap gx-3">
 
                 @foreach (var item in Categories)
                 {
-                    <div class="swiper-slide">
+                    <div class="col-12 col-sm-6 col-md-6 col-lg-4 mw-categorycarousel-item">
 
                         <a href="@item.Link" class="mw-category__card">
                             <img src="@item.Image" />
@@ -88,9 +120,10 @@
 
 </section>
 
+
 <section class="mw-arrivals">
 
-    <div class="mw-container">
+    <div class="container">
 
         <!-- Header -->
         <div class="mw-arrivals__header">
@@ -99,33 +132,44 @@
                 <div class="mw-arrivals__underline"></div>
             </div>
 
-            <div class="mw-arrivals__controls">
-                <button class="mw-arrivals-prev">‹</button>
-                <button class="mw-arrivals-next">›</button>
+            <div class="mw-carousel_nav">
+                <button @onclick="() => ScrollLeft(newArrivalRef)" class="d-flex align-items-center">
+                    <!-- LEFT -->
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m15 18-6-6 6-6"></path>
+                    </svg>
+                </button>
+                <button @onclick="() => ScrollRight(newArrivalRef)" class="d-flex align-items-center">
+                    <!-- RIGHT -->
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m9 18 6-6-6-6"></path>
+                    </svg>
+
+                </button>
             </div>
         </div>
+        <!-- Carousel -->
+        <div class="carousel__track overflow-hidden" @ref="newArrivalRef">
 
-        <!-- Swiper -->
-        <div class="swiper mw-arrivals-swiper">
-
-            <div class="swiper-wrapper">
+            <div class="d-flex gap-3">
 
                 @foreach (var item in Products)
                 {
-                    <div class="swiper-slide">
+                    <div class="col-12 col-sm-6 col-md-4 col-lg-3 mw-newarrivalcarousel-item">
 
-                        <a href="@item.Link" class="mw-arrivals__card">
-
+                        <div class="mw-arrivals__card">
                             <div class="mw-arrivals__image">
                                 <img src="@item.Image" />
-
                                 <div class="mw-arrivals__badge">NEW</div>
                             </div>
 
                             <h3>@item.Name</h3>
                             <p>@item.Price</p>
-
-                        </a>
+                        </div>
 
                     </div>
                 }
@@ -133,13 +177,14 @@
             </div>
 
         </div>
+
     </div>
 
 </section>
 
 <section class="mw-featured">
 
-    <div class="mw-container">
+    <div class="container">
 
         <!-- Header -->
         <div class="mw-featured__header">
@@ -148,20 +193,35 @@
                 <div class="mw-featured__underline"></div>
             </div>
 
-            <div class="mw-featured__controls">
-                <button class="mw-featured-prev">‹</button>
-                <button class="mw-featured-next">›</button>
+            <div class="mw-carousel_nav">
+                <button @onclick="() => ScrollLeft(featuredRef)" class="d-flex align-items-center">
+                    <!-- LEFT -->
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m15 18-6-6 6-6"></path>
+                    </svg>
+                </button>
+                <button @onclick="() => ScrollRight(featuredRef)" class="d-flex align-items-center">
+                    <!-- RIGHT -->
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m9 18 6-6-6-6"></path>
+                    </svg>
+
+                </button>
             </div>
         </div>
 
-        <!-- Swiper -->
-        <div class="swiper mw-featured-swiper">
+        <!-- Grid -->
+        <div class="carousel__track overflow-hidden" @ref="featuredRef">
 
-            <div class="swiper-wrapper">
+            <div class="d-flex gap-3">
 
                 @foreach (var item in Featured)
                 {
-                    <div class="swiper-slide">
+                    <div class="col-12 col-md-6">
 
                         <div class="mw-featured__card">
 
@@ -183,7 +243,6 @@
                 }
 
             </div>
-
         </div>
 
     </div>
@@ -194,66 +253,71 @@
 
     <div class="mw-container">
 
-        <div class="mw-benefits__grid">
+        <div class="row gy-3">
 
             <!-- Item 1 -->
-            <div class="mw-benefits__item">
+            <div class="col-12 col-sm-6 col-lg-4">
+                <div class="mw-benefits__item">
 
-                <div class="mw-benefits__icon">
-                    <!-- Truck -->
-                    <svg width="24" height="24" fill="none" stroke="#1E2A47" stroke-width="2">
-                        <path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"></path>
-                        <path d="M15 18H9"></path>
-                        <path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"></path>
-                        <circle cx="17" cy="18" r="2"></circle>
-                        <circle cx="7" cy="18" r="2"></circle>
-                    </svg>
+                    <div class="mw-benefits__icon">
+                        <!-- Truck -->
+                        <svg width="24" height="24" fill="none" stroke="#1E2A47" stroke-width="2">
+                            <path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"></path>
+                            <path d="M15 18H9"></path>
+                            <path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"></path>
+                            <circle cx="17" cy="18" r="2"></circle>
+                            <circle cx="7" cy="18" r="2"></circle>
+                        </svg>
+                    </div>
+
+                    <div>
+                        <h3>Free Shipping</h3>
+                        <p>Complimentary on orders over $150</p>
+                    </div>
+
                 </div>
-
-                <div>
-                    <h3>Free Shipping</h3>
-                    <p>Complimentary on orders over $150</p>
-                </div>
-
             </div>
 
             <!-- Item 2 -->
-            <div class="mw-benefits__item">
+            <div class="col-12 col-sm-6 col-lg-4">
+                <div class="mw-benefits__item">
 
-                <div class="mw-benefits__icon">
-                    <!-- Rotate -->
-                    <svg width="24" height="24" fill="none" stroke="#1E2A47" stroke-width="2">
-                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
-                        <path d="M3 3v5h5"></path>
-                    </svg>
+                    <div class="mw-benefits__icon">
+                        <!-- Rotate -->
+                        <svg width="24" height="24" fill="none" stroke="#1E2A47" stroke-width="2">
+                            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                            <path d="M3 3v5h5"></path>
+                        </svg>
+                    </div>
+
+                    <div>
+                        <h3>30-Day Returns</h3>
+                        <p>Hassle-free exchange policy</p>
+                    </div>
+
                 </div>
-
-                <div>
-                    <h3>30-Day Returns</h3>
-                    <p>Hassle-free exchange policy</p>
-                </div>
-
             </div>
-
             <!-- Item 3 -->
-            <div class="mw-benefits__item">
+            <div class="col-12 col-sm-6 col-lg-4">
 
-                <div class="mw-benefits__icon">
-                    <!-- Shield -->
-                    <svg width="24" height="24" fill="none" stroke="#1E2A47" stroke-width="2">
-                        <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path>
-                    </svg>
-                </div>
+                <div class="mw-benefits__item">
 
-                <div>
-                    <h3>Secure Checkout</h3>
-                    <p>AES-256 encrypted payments</p>
+                    <div class="mw-benefits__icon">
+                        <!-- Shield -->
+                        <svg width="24" height="24" fill="none" stroke="#1E2A47" stroke-width="2">
+                            <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path>
+                        </svg>
+                    </div>
+
+                    <div>
+                        <h3>Secure Checkout</h3>
+                        <p>AES-256 encrypted payments</p>
+                    </div>
+
                 </div>
 
             </div>
-
         </div>
-
     </div>
 
 </section>
@@ -270,9 +334,8 @@
                 <div class="mw-bestsellers__underline"></div>
             </div>
 
-            <div class="mw-bestsellers__controls">
-                <button class="mw-bestsellers-prev">
-
+            <div class="mw-carousel_nav">
+                <button @onclick="() => ScrollLeft(bestSellersRef)" class="d-flex align-items-center">
                     <!-- LEFT -->
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
                          stroke="currentColor" stroke-width="2"
@@ -280,25 +343,25 @@
                         <path d="m15 18-6-6 6-6"></path>
                     </svg>
                 </button>
-                <button class="mw-bestsellers-next">
+                <button @onclick="() => ScrollRight(bestSellersRef)" class="d-flex align-items-center">
                     <!-- RIGHT -->
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
                          stroke="currentColor" stroke-width="2"
                          stroke-linecap="round" stroke-linejoin="round">
                         <path d="m9 18 6-6-6-6"></path>
                     </svg>
-                                   </button>
+
+                </button>
             </div>
         </div>
 
         <!-- Swiper -->
-        <div class="swiper mw-bestsellers-swiper">
-
-            <div class="swiper-wrapper">
+        <div class="carousel__track overflow-hidden" @ref="bestSellersRef">
+            <div class="d-flex gap-3">
 
                 @foreach (var item in BestSellers)
                 {
-                    <div class="swiper-slide">
+                    <div class="bestsellers-slide">
 
                         <a href="@item.Link" class="mw-bestsellers__card">
 
@@ -333,35 +396,7 @@
         navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' },
         pagination: { el: '.swiper-pagination', clickable: true },
     });
-        new Swiper('.mw-category-swiper', {
-        slidesPerView: 3,     // correct
-        spaceBetween: 20,
-        loop: true,
-        autoplay: {
-            delay: 3000,
-            disableOnInteraction: false
-        },
-        navigation: {
-            nextEl: '.mw-category-next',
-            prevEl: '.mw-category-prev'
-        },
-    });
-        new Swiper('.mw-arrivals-swiper', {
-        slidesPerView: 4,
-        spaceBetween: 20,
-
-        loop: true,
-        autoplay: {
-            delay: 3000,
-            disableOnInteraction: false
-        },
-
-        navigation: {
-            nextEl: '.mw-arrivals-next',
-            prevEl: '.mw-arrivals-prev'
-        }
-    });
-     new Swiper('.mw-featured-swiper', {
+                       new Swiper('.mw-featured-swiper', {
         slidesPerView: 2,
         spaceBetween: 20,
     loop: true,
@@ -396,25 +431,44 @@
 </script>
 
 @code {
+    private ElementReference finishedRef;
+    private ElementReference categoryRef;
+    private ElementReference newArrivalRef;
+    private ElementReference bestSellersRef;
+    private ElementReference featuredRef;
+
+    private async Task ScrollRight(ElementReference el)
+    {
+        await JS.InvokeVoidAsync("mwScrollRight", el, ".mw-categorycarousel-item");
+        await JS.InvokeVoidAsync("mwScrollRight", el, ".mw-newarrivalcarousel-item");
+        await JS.InvokeVoidAsync("mwScrollRight", el, ".bestsellers-slide");
+    }
+
+    private async Task ScrollLeft(ElementReference el)
+    {
+        await JS.InvokeVoidAsync("mwScrollLeft", el, ".mw-categorycarousel-item");
+        await JS.InvokeVoidAsync("mwScrollLeft", el, ".mw-newarrivalcarousel-item");
+        await JS.InvokeVoidAsync("mwScrollLeft", el, ".bestsellers-slide");
+    }
     private List<CategoryModel> Categories = new()
     {
-        new("Men", "https://images.unsplash.com/photo-1762232975039-7b36432bcac6?w=600", "/shop"),
-        new("Women", "https://images.unsplash.com/photo-1506619928596-bb8c201545cc?w=600", "/shop"),
-        new("Kids", "https://images.unsplash.com/photo-1759313560190-d160c3567170?w=600", "/shop"),
-        new("Accessories", "https://images.unsplash.com/photo-1693592401248-c9544518318a?w=600", "/shop"),
-        new("Outerwear", "https://images.unsplash.com/photo-1704716720991-cf3197cfb190?w=600", "/shop")
+    new("Men", "https://images.unsplash.com/photo-1762232975039-7b36432bcac6?w=600", "/shop"),
+    new("Women", "https://images.unsplash.com/photo-1506619928596-bb8c201545cc?w=600", "/shop"),
+    new("Kids", "https://images.unsplash.com/photo-1759313560190-d160c3567170?w=600", "/shop"),
+    new("Accessories", "https://images.unsplash.com/photo-1693592401248-c9544518318a?w=600", "/shop"),
+    new("Outerwear", "https://images.unsplash.com/photo-1704716720991-cf3197cfb190?w=600", "/shop")
     };
 
     private record CategoryModel(string Name, string Image, string Link);
 
     private List<ProductModel> Products = new()
     {
-        new("City Commuter Pack", "$95.00", "https://images.unsplash.com/photo-1770385436782-e47efd8d1e80?w=400&h=530&fit=crop", "/product"),
-        new("Aero Tech Jacket", "$145.00", "https://images.unsplash.com/photo-1654182603195-b7bee5d08270?w=400&h=530&fit=crop", "/product"),
-        new("Lunar Knit Sweater", "$95.00", "https://images.unsplash.com/photo-1642853474532-9aca78f70629?w=400&h=530&fit=crop", "/product"),
-        new("Apex Runners", "$160.00", "https://images.unsplash.com/photo-1718802323158-b32c0330ad4a?w=400&h=530&fit=crop", "/product"),
-        new("Nova Canvas Tote","$55.00","https://images.unsplash.com/photo-1693592401248-c9544518318a?w=400&amph=530&ampfit=crop","/product"),
-        new("Field Utility Jacket","$175.00","https://images.unsplash.com/photo-1620231151282-957594b30e94?w=400&amph=530&ampfit=crop","/product")
+    new("City Commuter Pack", "$95.00", "https://images.unsplash.com/photo-1770385436782-e47efd8d1e80?w=400&h=530&fit=crop", "/product"),
+    new("Aero Tech Jacket", "$145.00", "https://images.unsplash.com/photo-1654182603195-b7bee5d08270?w=400&h=530&fit=crop", "/product"),
+    new("Lunar Knit Sweater", "$95.00", "https://images.unsplash.com/photo-1642853474532-9aca78f70629?w=400&h=530&fit=crop", "/product"),
+    new("Apex Runners", "$160.00", "https://images.unsplash.com/photo-1718802323158-b32c0330ad4a?w=400&h=530&fit=crop", "/product"),
+    new("Nova Canvas Tote","$55.00","https://images.unsplash.com/photo-1693592401248-c9544518318a?w=400&amph=530&ampfit=crop","/product"),
+    new("Field Utility Jacket","$175.00","https://images.unsplash.com/photo-1620231151282-957594b30e94?w=400&amph=530&ampfit=crop","/product")
 
     };
 
@@ -422,34 +476,44 @@
 
     private List<FeaturedModel> Featured = new()
     {
-        new("Minimalist Knitwear",
-            "Refined textures for the discerning wardrobe. Essential pieces for effortless layering.",
-            "https://images.unsplash.com/photo-1642853474532-9aca78f70629?w=600",
-            "/shop"),
+    new("Minimalist Knitwear",
+    "Refined textures for the discerning wardrobe. Essential pieces for effortless layering.",
+    "https://images.unsplash.com/photo-1642853474532-9aca78f70629?w=600",
+    "/shop"),
 
-        new("Urban Explorer",
-            "City-proof essentials built for all-day comfort. From dawn commute to evening out.",
-            "https://images.unsplash.com/photo-1762232975039-7b36432bcac6?w=600",
-            "/shop"),
+    new("Urban Explorer",
+    "City-proof essentials built for all-day comfort. From dawn commute to evening out.",
+    "https://images.unsplash.com/photo-1762232975039-7b36432bcac6?w=600",
+    "/shop"),
 
-        new("The Technical Layer",
-            "Advanced materials meets urban utility. Discover performance-ready outerwear.",
-            "https://images.unsplash.com/photo-1620231151282-957594b30e94?w=600",
-            "/shop"),
+    new("The Technical Layer",
+    "Advanced materials meets urban utility. Discover performance-ready outerwear.",
+    "https://images.unsplash.com/photo-1620231151282-957594b30e94?w=600",
+    "/shop"),
     };
 
     private record FeaturedModel(string Title, string Description, string Image, string Link);
 
     private List<BestSellersModel> BestSellers = new()
     {
-        new("Classic Navy Tee", "$45.00", "https://images.unsplash.com/photo-1618840198256-abe11bda33dc?w=400&amph=530&ampfit=crop", "/product"),
-        new("Sapphire Hoodie", "$85.00", "https://images.unsplash.com/photo-1722620197153-eb2549909098?w=400&amph=530&ampfit=crop", "/product"),
-        new("Azure Chinos", "$70.00", "https://images.unsplash.com/photo-1768696081520-76c372aa0d00?w=400&amph=530&ampfit=crop", "/product"),
-        new("Cobalt Jacket", "$120.00", "https://images.unsplash.com/photo-1538516089546-40b08c9c9866?w=400&amph=530&ampfit=crop", "/product"),
-        new("Selvedge Denim","$120.00","https://images.unsplash.com/photo-1555689502-c4b22d76c56f?w=400&amph=530&ampfit=crop","/product"),
-        new("Court Sneakers","$175.00","https://images.unsplash.com/photo-1718802323158-b32c0330ad4a?w=400&amph=530&ampfit=crop","/product")
+    new("Classic Navy Tee", "$45.00", "https://images.unsplash.com/photo-1618840198256-abe11bda33dc?w=400&amph=530&ampfit=crop", "/product"),
+    new("Sapphire Hoodie", "$85.00", "https://images.unsplash.com/photo-1722620197153-eb2549909098?w=400&amph=530&ampfit=crop", "/product"),
+    new("Azure Chinos", "$70.00", "https://images.unsplash.com/photo-1768696081520-76c372aa0d00?w=400&amph=530&ampfit=crop", "/product"),
+    new("Cobalt Jacket", "$120.00", "https://images.unsplash.com/photo-1538516089546-40b08c9c9866?w=400&amph=530&ampfit=crop", "/product"),
+    new("Selvedge Denim","$120.00","https://images.unsplash.com/photo-1555689502-c4b22d76c56f?w=400&amph=530&ampfit=crop","/product"),
+    new("Court Sneakers","$175.00","https://images.unsplash.com/photo-1718802323158-b32c0330ad4a?w=400&amph=530&ampfit=crop","/product")
 
     };
 
     private record BestSellersModel(string Name, string Price, string Image, string Link);
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+
+            // await JS.InvokeVoidAsync("mwStartAutoSlide", categoryRef, ".mw-carousel-item", 3000);
+            await JS.InvokeVoidAsync("mwStartAutoSlide", newArrivalRef, ".mw-newarrivalcarousel-item", 3000);
+            await JS.InvokeVoidAsync("mwStartAutoSlide", bestSellersRef, ".bestsellers-slide", 3000);
+        }
+    }
 }

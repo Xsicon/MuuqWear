@@ -1,78 +1,33 @@
-﻿.mw-logo {
-    display: flex;
-    align-items: center;
-    gap: 10px; /* controls space between logo and text */
-    text-decoration: none;
-}
-
+﻿/* ── Logo ────────────────────────────────── */
 .mw-logo__img {
-    width: 32px; /* adjust based on Figma */
+    width: 32px;
     height: 32px;
     object-fit: contain;
 }
 
 .mw-logo__text {
-    font-weight: 600;
-    font-size: 18px;
-    color: #1E2B48;
-    letter-spacing: 0.5px;
-}
-
-/* Header */
-.mw-header {
-    height: 80px;
-    background: white;
-    display: flex;
-    align-items: center;
-/*    border-bottom: 1px solid #f1f5f9;
-*/}
-
-/* Inner container */
-.mw-header__inner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-/* Left side */
-.mw-header__left {
-    display: flex;
-    align-items: center;
-    gap: 40px;
-}
-
-/* Logo */
-.mw-logo {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    text-decoration: none;
-}
-/* This is your key container */
-.mw-header__center {
-    display: flex;
-    align-items: center;
-    gap: 24px; /* controls space between nav and icons */
-}
-
-.mw-logo__text {
     font-size: 20px;
-    font-weight: 700;
     color: #1E2B48;
 }
 
-/* Navigation */
-.mw-nav {
-    display: flex;
-    gap: 28px;
+body {
+    overflow-x: hidden;
 }
 
-.mw-header__icons {
-    display: flex;
-    align-items: center;
-    gap: 14px;
+/* ── Header ──────────────────────────────── */
+/* No fixed height — lets the drawer push content down naturally */
+.mw-header {
+    background: white;
+    position: sticky; /* sticks to top as user scrolls */
+    top: 0;
+    z-index: 1000; /* stays above page content */
 }
-/* Nav links */
+
+.mw-header__topbar {
+    background: white;
+}
+
+/* ── Desktop nav links ───────────────────── */
 ::deep .mw-nav .mw-nav__link {
     text-decoration: none;
     color: #1E2B48;
@@ -82,126 +37,185 @@
     font-weight: 500;
 }
 
+::deep .mw-nav__link.active {
+    color: #0f172a !important;
+    font-weight: 700;
+}
 
+/* ── Icon buttons ────────────────────────── */
 .mw-icon-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 36px; /* clickable area */
+    width: 36px;
     height: 36px;
     border: none;
     background: transparent;
     cursor: pointer;
+    padding: 0;
 }
 
-    /* Optional: make icons consistent */
     .mw-icon-btn svg {
         width: 20px;
         height: 20px;
     }
 
-
-::deep .mw-nav__link:hover::after {
-    width: 100%;
+/* ── Hamburger ───────────────────────────── */
+.mw-hamburger {
+    width: 44px;
+    height: 44px;
 }
 
-::deep .mw-nav__link.active {
-    color: #0f172a !important; /* darker */
-    font-weight: 700; /* stronger */
-}
-
-/* Right side */
-::deep .mw-header__right {
+/* ── Mobile drawer links ─────────────────── */
+.mw-mobile-nav__link {
     display: flex;
     align-items: center;
-    gap: 18px;
+    min-height: 48px;
+    padding: 0 12px;
+    text-decoration: none;
+    color: #1E2B48;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 8px;
+    transition: background 0.15s ease;
+    border-bottom: 1px solid #f5f5f5;
 }
 
-/* Overlay */
-.mw-search-overlay {
-/*    position: fixed;
+    .mw-mobile-nav__link:last-child {
+        border-bottom: none;
+    }
+
+    .mw-mobile-nav__link:active {
+        background: #f5f6f8;
+    }
+
+::deep .mw-mobile-nav__link.active {
+    color: #0f172a !important;
+    font-weight: 700;
+}
+
+/* ── Very small phones (320px) ───────────── */
+@media (max-width: 400px) {
+    .mw-header__icons {
+        gap: 4px !important;
+    }
+
+    .mw-logo__text {
+        font-size: 16px;
+    }
+}
+
+/* ── Mobile nav overlay ──────────────────── */
+
+/*
+    The outer div is a full-screen dark overlay.
+    pointer-events: none when closed so it doesn't
+    block clicks on the page underneath.
+*/
+.mw-mobile-nav {
+    position: fixed; /* 🔥 ADD THIS */
     top: 0;
     left: 0;
-    right: 0;
-    background: rgba(255,255,255,0.98);
-    backdrop-filter: blur(10px);
-    z-index: 999;*/
-    background: red !important;
+    width: 100vw; /* 🔥 ADD */
+    height: 100vh; /* 🔥 ADD */
+    z-index: 2000; /* 🔥 ABOVE HEADER */
+
+    background: rgba(0, 0, 0, 0);
+    pointer-events: none;
+    visibility: hidden;
 }
 
-/* Container */
-.mw-search-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 60px 20px;
-    min-height: 40vh;
+    .mw-mobile-nav.mw-mobile-nav--open {
+        background: rgba(0, 0, 0, 0.45); /* slightly darker like figma */
+        pointer-events: all;
+        visibility: visible;
+    }
+
+.mw-mobile-nav--open .mw-mobile-nav__panel {
+    transform: translateX(0);
+    visibility: visible;
+    pointer-events: auto;
+    z-index: 999;
+    box-shadow: -6px 0 30px rgba(0, 0, 0, 0.08);
+}
+
+/*
+    The white panel slides in from the right.
+    translateX(100%) = fully off screen to the right.
+    translateX(0)    = fully visible.
+*/
+.mw-mobile-nav__panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 85%; /* slight improvement */
+    max-width: 320px;
+    height: 100%;
+    background: #ffffff;
+    transform: translateX(100%);
+    transition: transform 0.35s ease;
+    z-index: 2001; /* 🔥 above overlay */
+
+    border-top-left-radius: 16px; /* match figma */
+    border-bottom-left-radius: 16px;
+}
+/* MENU header row */
+.mw-mobile-nav__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 20px;
+    border-bottom: 1px solid #e6e8ec;
+}
+
+.mw-mobile-nav__title {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: #1E2B48;
+}
+
+.mw-mobile-nav__close {
+    width: 32px;
+    height: 32px;
+    border: 1px solid #dcdfe4;
+    border-radius: 6px;
+}
+
+/* Nav links body */
+.mw-mobile-nav__body {
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    position: relative;
+    padding: 8px 0;
+    overflow-y: auto; /* scroll if many links */
+    margin: 12px 12px 0 12px; /* small spacing from edges */
 }
 
-/* Close button */
-.mw-search-close {
-    position: absolute;
-    top: 20px;
-    right: 30px;
-    width: 40px;
-    height: 40px;
-    border: 1px solid #A9B7CC;
-    background: white;
-    cursor: pointer;
-}
-
-/* Input */
-.mw-search-input {
-    width: 100%;
-    border: none;
-    border-bottom: 2px solid #A9B7CC;
-    font-size: 28px;
-    font-weight: 300;
-    outline: none;
-    padding-bottom: 10px;
-}
-
-    .mw-search-input:focus {
-        border-color: #1E2B48;
-    }
-
-/* Tags */
-.mw-search-tags {
+/* Each link row */
+.mw-mobile-nav__link {
     display: flex;
-    gap: 10px;
-    margin-top: 20px;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 18px;
+    text-decoration: none;
+    color: #1E2B48;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-size: 13px;
+    font-weight: 500;
+    background: #ffffff;
+    border-bottom: 1px solid #e6e8ec;
+    transition: background 0.15s ease;
 }
 
-    .mw-search-tags button {
-        padding: 8px 16px;
-        border: 1px solid #A9B7CC;
-        border-radius: 999px;
-        background: white;
-        cursor: pointer;
+    .mw-mobile-nav__link:active {
+        background: #f7f8fa;
+        border-color: #dcdfe4;
     }
 
-/* Popular searches */
-.mw-search-popular {
-    margin-top: 30px;
-    text-align: right;
+::deep .mw-mobile-nav__link.active {
+    font-weight: 700;
+    color: #0f172a !important;
 }
-
-    .mw-search-popular p {
-        font-size: 11px;
-        letter-spacing: 1px;
-        text-transform: uppercase;
-        color: #4A5C7A;
-    }
-
-    .mw-search-popular button {
-        display: block;
-        width: 100%;
-        text-align: right;
-        margin-top: 6px;
-        background: none;
-        border: none;
-        cursor: pointer;
-    }
