@@ -112,8 +112,8 @@
 }
 
     .mw-slide__cta:hover {
-        background: transparent;
-        color: #fff;
+        background: #E6ECF5;
+        /*color: #fff;*/
     }
 
 .swiper-button-prev,

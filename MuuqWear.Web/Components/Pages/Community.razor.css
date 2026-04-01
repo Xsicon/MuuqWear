@@ -17,7 +17,6 @@
         align-items: center;
         justify-content: center;
         color: #1E2A47;
-        SVG uses this transition: all 0.2s ease;
     }
 
         .mw-carousel_nav button:hover {
@@ -436,7 +435,13 @@
     background: #1E2A47;
     color: white;
     font-weight: 700;
+    cursor: pointer;
+    border: none;
 }
+
+    .mw-card__primary:hover {
+        background-color: #0B1A33;
+    }
 
 .mw-card__secondary {
     width: 100%;
@@ -445,6 +450,9 @@
     margin-top: 8px;
 }
 
+    .mw-card__secondary:hover {
+        background: #E6ECF5;
+    }
 
 /* Fix Bootstrap row inside carousel */
 
@@ -496,6 +504,7 @@
     font-size: 14px;
     margin-bottom: 34px;
 }
+
 .mw-finished-card__badge {
     position: absolute;
     top: 13px;

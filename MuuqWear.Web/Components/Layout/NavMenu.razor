@@ -41,7 +41,7 @@
                             </svg>
                         </button>
 
-                        <button class="mw-icon-btn" aria-label="Cart">
+                        <button class="mw-icon-btn" aria-label="Cart" @onclick="OpenCart">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
                                  viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -59,16 +59,16 @@
                                     <circle cx="12" cy="7" r="4"></circle>
                                 </svg>
                             </button>
-                            </NavLink>
+                        </NavLink>
 
-                            <button class="mw-icon-btn" aria-label="Location">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
-                                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path>
-                                    <circle cx="12" cy="10" r="3"></circle>
-                                </svg>
-                            </button>
+                        <button class="mw-icon-btn" aria-label="Location">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                        </button>
 
                     </div>
 
@@ -199,6 +199,116 @@
         </div>
     </div>
 
+
+    <div class="mw-cart-overlay @(isCartOpen ? "open" : "")"
+         @onclick="CloseCart">
+
+        <!-- DRAWER -->
+        <div class="mw-cart-drawer" @onclick:stopPropagation="true">
+
+            <!-- HEADER -->
+            <div class="mw-cart-header d-flex justify-content-between align-items-center">
+
+                <div class="d-flex align-items-center gap-2">
+                    <span class="mw-cart-title">Your Bag</span>
+                    <span class="mw-cart-count">3</span>
+                </div>
+
+                <button class="mw-cart-close" @onclick="CloseCart">✕</button>
+            </div>
+
+            <!-- BODY -->
+            <div class="mw-cart-body">
+
+                @foreach (var item in CartItems)
+                {
+                    <div class="mw-cart-item d-flex gap-3">
+
+                        <!-- IMAGE -->
+                        <div class="mw-cart-img">
+                            <img src="@item.Image" />
+                        </div>
+
+                        <!-- INFO -->
+                        <div class="flex-grow-1">
+
+                            <div class="d-flex justify-content-between">
+                                <h6 class="mw-cart-name">@item.Name</h6>
+                                <span class="mw-cart-price">@item.Price.ToString()</span>
+                            </div>
+
+                            <p class="mw-cart-meta">Size: @item.Size</p>
+                            <p class="mw-cart-meta">Color: @item.Color</p>
+
+                            <div class="d-flex justify-content-between align-items-center mt-2">
+
+                                <!-- QTY -->
+                                <div class="mw-qty">
+                                    <button>-</button>
+                                    <span>1</span>
+                                    <button>+</button>
+                                </div>
+
+                                <button class="mw-cart-del-btn d-flex align-items-center gap-1 justify-content-center hover:text-[#C44545] transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                         class="lucide lucide-trash2 lucide-trash-2">
+                                        <path d="M3 6h18">
+
+                                        </path>
+                                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6">
+
+                                        </path>
+                                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2">
+
+                                        </path>
+                                        <line x1="10" x2="10" y1="11" y2="17">
+
+                                        </line>
+                                        <line x1="14" x2="14" y1="11" y2="17">
+
+                                        </line>
+                                    </svg>Remove
+                                </button>
+                            </div>
+
+                        </div>
+                    </div>
+                }
+
+            </div>
+
+            <!-- FOOTER -->
+            <div class="mw-cart-footer">
+
+                <div class="d-flex justify-content-between">
+                    <span>Subtotal</span>
+                    <strong>$153.00</strong>
+                </div>
+
+                <div class="d-flex justify-content-between small text-muted">
+                    <span>Shipping</span>
+                    <span>Calculated at checkout</span>
+                </div>
+
+                <div class="d-flex justify-content-between fw-bold fs-5 mt-2">
+                    <span>Total</span>
+                    <span>$153.00</span>
+                </div>
+
+                <button class="mw-checkout-btn w-100 mt-3">
+                    Checkout Securely
+                </button>
+
+                <a href="/cart" class="mw-view-cart d-block text-center mt-2">
+                    View Cart
+                </a>
+
+            </div>
+
+        </div>
+    </div>
+
 </div>
 
 
@@ -232,9 +342,47 @@
         shouldFocusInput = true;
     }
     void CloseSearch() => isSearchOpen = false;
+    private bool isCartOpen = false;
+
+    async Task OpenCart()
+    {
+        isCartOpen = true;
+        // await JS.InvokeVoidAsync("disableScroll");
+    }
+
+    async Task CloseCart()
+    {
+        isCartOpen = false;
+        // await JS.InvokeVoidAsync("enableScroll");
+    }
     protected override void OnInitialized()
     {
         Nav.LocationChanged += OnLocationChanged;
+    }
+
+    private List<CartItem> CartItems = new()
+{
+    new() { Name="Classic Tee", Price=29m, Size="Medium", Color="White", Image="https://images.unsplash.com/photo-1618840198256-abe11bda33dc?w=400&amph=530&ampfit=crop" },
+    new() { Name="Urban Hoodie", Price=59m, Size="Large", Color="Gray", Image="https://images.unsplash.com/photo-1722620197153-eb2549909098?w=400&amph=530&ampfit=crop" },
+};
+    public class CartItem
+    {
+        public int Id { get; set; }
+
+        public string Name { get; set; } = string.Empty;
+
+        public string Image { get; set; } = string.Empty;
+
+        public decimal Price { get; set; }
+
+        public int Quantity { get; set; } = 1;
+
+        public string Size { get; set; } = string.Empty;
+
+        public string Color { get; set; } = string.Empty;
+
+        // 🔥 Computed property (important for totals)
+        public decimal TotalPrice => Price * Quantity;
     }
 
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)

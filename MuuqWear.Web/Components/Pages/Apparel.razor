@@ -22,8 +22,34 @@
     </p>
 
     <!-- MOBILE FILTER BUTTON -->
-    <button class="btn btn-outline-dark d-lg-none mb-4">
-        Filters
+    <button class="d-flex align-items-center mw-filter-btn bg-transparent"
+            @onclick="OpenFilters">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+             stroke-linejoin="round" class="lucide lucide-sliders-horizontal"
+             data-fg-bygr45="1.222:34.7576:/src/app/pages/Shop.tsx:129:11:5723:31:e:SlidersHorizontal::::::EGFQ"
+             data-fgid-bygr45=":rne:">
+            <line x1="21" x2="14" y1="4" y2="4"></line>
+            <line x1="10" x2="3" y1="4" y2="4">
+
+            </line>
+            <line x1="21" x2="12" y1="12" y2="12">
+
+            </line>
+            <line x1="8" x2="3" y1="12" y2="12"></line>
+            <line x1="21" x2="16" y1="20" y2="20">
+
+            </line>
+            <line x1="12" x2="3" y1="20" y2="20"></line>
+            <line x1="14" x2="14" y1="2" y2="6">
+
+            </line>
+            <line x1="8" x2="8" y1="10" y2="14"></line>
+            <line x1="16" x2="16" y1="18" y2="22">
+
+            </line>
+        </svg>
+        <span>Filters</span>
     </button>
 
     <div class="row g-4">
@@ -41,19 +67,19 @@
                 <div class="mb-4">
                     <h6 class="mw-filter-title">Categories</h6>
 
-                    <div class="form-check">
-                        <input type="checkbox" class="form-check-input" />
-                        <label class="form-check-label">Outerwear</label>
+                    <div class="mw-check">
+                        <input type="checkbox" id="outerwear" />
+                        <label for="outerwear">Outerwear</label>
                     </div>
 
-                    <div class="form-check">
-                        <input type="checkbox" class="form-check-input" />
-                        <label class="form-check-label">Knitwear</label>
+                    <div class="mw-check">
+                        <input type="checkbox" id="knitwear" />
+                        <label for="knitwear">Knitwear</label>
                     </div>
 
-                    <div class="form-check">
-                        <input type="checkbox" class="form-check-input" />
-                        <label class="form-check-label">Accessories</label>
+                    <div class="mw-check">
+                        <input type="checkbox" id="accessories" />
+                        <label for="accessories">Accessories</label>
                     </div>
                 </div>
 
@@ -61,18 +87,28 @@
                 <div class="mb-4">
                     <h6 class="mw-filter-title">Size</h6>
 
-                    <div class="d-flex flex-wrap gap-2">
+                    <div class="mw-size-grid">
                         <button class="mw-size">XS</button>
                         <button class="mw-size active">S</button>
                         <button class="mw-size">M</button>
                         <button class="mw-size">L</button>
+                        <button class="mw-size">XL</button>
+                        <button class="mw-size">XXL</button>
                     </div>
                 </div>
 
                 <!-- PRICE -->
                 <div>
                     <h6 class="mw-filter-title">Price</h6>
-                    <input type="range" class="form-range" />
+                    <div class="mw-price">
+
+                        <div class="d-flex justify-content-between small mb-2">
+                            <span>$0</span>
+                            <span>$500+</span>
+                        </div>
+
+                        <input type="range" class="mw-range" />
+                    </div>
                 </div>
 
             </div>
@@ -135,10 +171,96 @@
 
 </section>
 
+<div class="mw-filter-overlay @(isFilterOpen ? "open" : "")"
+     @onclick="CloseFilters">
+
+    <!-- DRAWER -->
+    <div class="mw-filter-drawer" @onclick:stopPropagation="true">
+
+        <!-- HEADER -->
+        <div class="mw-filter-header d-flex justify-content-between align-items-center">
+            <h5 class="fw-bold">Filters</h5>
+            <button class="mw-filter-close" @onclick="CloseFilters">✕</button>
+        </div>
+
+        <!-- CONTENT (REUSE SAME FILTER UI) -->
+        <div class="mw-filter-body">
+
+            <!-- 🔥 COPY SAME FILTER CONTENT -->
+            <div class="mw-filter">
+
+                <div class="d-flex justify-content-between mb-3">
+                    <h6 class="fw-bold">Filters</h6>
+                    <button class="btn btn-sm text-muted">Clear All</button>
+                </div>
+
+                <!-- CATEGORY -->
+                <div class="mb-4">
+                    <h6 class="mw-filter-title">Categories</h6>
+
+                    <div class="mw-check">
+                        <input type="checkbox" id="m_outerwear" />
+                        <label for="m_outerwear">Outerwear</label>
+                    </div>
+
+                    <div class="mw-check">
+                        <input type="checkbox" id="m_knitwear" />
+                        <label for="m_knitwear">Knitwear</label>
+                    </div>
+
+                    <div class="mw-check">
+                        <input type="checkbox" id="m_accessories" />
+                        <label for="m_accessories">Accessories</label>
+                    </div>
+                </div>
+
+                <!-- SIZE -->
+                <div class="mb-4">
+                    <h6 class="mw-filter-title">Size</h6>
+
+                    <div class="mw-size-grid">
+                        <button class="mw-size">XS</button>
+                        <button class="mw-size active">S</button>
+                        <button class="mw-size">M</button>
+                        <button class="mw-size">L</button>
+                        <button class="mw-size">XL</button>
+                        <button class="mw-size">XXL</button>
+                    </div>
+                </div>
+
+                <!-- PRICE -->
+                <div>
+                    <h6 class="mw-filter-title">Price Range</h6>
+
+                    <div class="d-flex justify-content-between small mb-2">
+                        <span>$0</span>
+                        <span>$500+</span>
+                    </div>
+
+                    <input type="range" class="mw-range" />
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- FOOTER -->
+        <div class="mw-filter-footer">
+            <button class="btn btn-dark w-100">
+                Apply Filters (6 products)
+            </button>
+        </div>
+
+    </div>
+</div>
 
 
 @code {
 
+    private bool isFilterOpen = false;
+
+    void OpenFilters() => isFilterOpen = true;
+    void CloseFilters() => isFilterOpen = false;
     public class Product
     {
         public string Image { get; set; }

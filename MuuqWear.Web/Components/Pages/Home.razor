@@ -442,6 +442,7 @@
         await JS.InvokeVoidAsync("mwScrollRight", el, ".mw-categorycarousel-item");
         await JS.InvokeVoidAsync("mwScrollRight", el, ".mw-newarrivalcarousel-item");
         await JS.InvokeVoidAsync("mwScrollRight", el, ".bestsellers-slide");
+        await JS.InvokeVoidAsync("mwScrollRight", el, ".mw-featured__card");
     }
 
     private async Task ScrollLeft(ElementReference el)
@@ -449,6 +450,7 @@
         await JS.InvokeVoidAsync("mwScrollLeft", el, ".mw-categorycarousel-item");
         await JS.InvokeVoidAsync("mwScrollLeft", el, ".mw-newarrivalcarousel-item");
         await JS.InvokeVoidAsync("mwScrollLeft", el, ".bestsellers-slide");
+        await JS.InvokeVoidAsync("mwScrollLeft", el, ".mw-featured__card");
     }
     private List<CategoryModel> Categories = new()
     {
@@ -512,8 +514,10 @@
         {
 
             // await JS.InvokeVoidAsync("mwStartAutoSlide", categoryRef, ".mw-carousel-item", 3000);
+            await JS.InvokeVoidAsync("mwStartAutoSlide", categoryRef, ".mw-categorycarousel-item", 3000);
             await JS.InvokeVoidAsync("mwStartAutoSlide", newArrivalRef, ".mw-newarrivalcarousel-item", 3000);
-            await JS.InvokeVoidAsync("mwStartAutoSlide", bestSellersRef, ".bestsellers-slide", 3000);
+            await JS.InvokeVoidAsync("mwStartAutoSlide", bestSellersRef, ".bestsellers-slide", 3000); 
+            await JS.InvokeVoidAsync("mwStartAutoSlide", featuredRef, ".mw-featured__card", 3000);
         }
     }
 }
