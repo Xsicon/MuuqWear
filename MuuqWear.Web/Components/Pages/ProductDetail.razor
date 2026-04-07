@@ -1,0 +1,194 @@
+﻿@page "/productdetail"
+@rendermode InteractiveServer
+@inject IJSRuntime JS
+<PageTitle>Product Name</PageTitle>
+
+
+<section class="mw-product container py-4">
+
+    <!-- BREADCRUMB -->
+    <div class="mw-breadcrumb mb-3">
+        <a href="/">Home</a>
+        <span>›</span>
+        <a href="/shop">Apparel</a>
+        <span>›</span>
+        <span class="active">Hoodies</span>
+    </div>
+
+    <!-- MAIN -->
+    <div class="mw-product-card row g-4">
+
+        <!-- LEFT: IMAGES -->
+        <div class="col-12 col-lg-7">
+
+            <div class="mw-product-img mb-2">
+                <img src="@SelectedImage" />
+            </div>
+
+            <div class="mw-thumbs">
+                @foreach (var img in Product.Images)
+                {
+                    <button class="mw-thumb @(SelectedImage == img ? "active" : "")"
+                            @onclick="() => SelectImage(img)">
+                        <img src="@img" />
+                    </button>
+                }
+            </div>
+
+        </div>
+
+        <!-- RIGHT: DETAILS -->
+        <div class="col-12 col-lg-5">
+            <div class="mw-product-info">
+                <p class="mw-product-category">Premium Essentials</p>
+
+                <h1 class="mw-product-title">@Product.Name</h1>
+
+                <p class="mw-product-price">@Product.Price.ToString("C")</p>
+
+                <!-- DESCRIPTION -->
+                <div class="mb-3">
+                    <h6 class="mw-label">Description</h6>
+                    <p class="mw-desc">@Product.Description</p>
+                </div>
+
+                <!-- SIZE -->
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <h6 class="mw-label">Select Size</h6>
+                        <button class="mw-link">Size Guide</button>
+                    </div>
+
+                    <div class="d-flex gap-2 flex-wrap">
+                        @foreach (var size in Sizes)
+                        {
+                            <button class="mw-size @(SelectedSize == size ? "active" : "")"
+                                    @onclick="() => SelectedSize = size">
+                                @size
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- COLOR -->
+            <div class="mb-4">
+                <h6 class="mw-label">Color: @SelectedColor.Name</h6>
+
+                <div class="d-flex gap-2">
+                    @foreach (var color in Colors)
+                    {
+                        <button class="mw-color @(SelectedColor == color ? "active" : "")"
+                                style="background:@color.Hex"
+                                @onclick="() => SelectedColor = color">
+                        </button>
+                    }
+                </div>
+            </div>
+
+            <!-- ADD TO CART -->
+            <button class="mw-btn-primary w-100 mb-2">
+                Add to Bag
+            </button>
+
+            <!-- BENEFITS -->
+            <div class="mw-benefits">
+                <span>🚚 Free Shipping</span>
+                <span>↩ 30-Day Returns</span>
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<section class="mw-related container mt-5">
+
+    <div class="d-flex justify-content-between align-items-end mb-4">
+        <h2 class="mw-related-title">Complete the Look</h2>
+
+        <div class="d-flex gap-2">
+            <button class="mw-nav-btn">‹</button>
+            <button class="mw-nav-btn">›</button>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        @foreach (var item in RelatedProducts)
+        {
+            <div class="col-6 col-md-4 col-lg-3">
+                <a href="#" class="mw-related-card">
+
+                    <div class="mw-related-img">
+                        <img src="@item.Image" />
+                    </div>
+
+                    <h6>@item.Name</h6>
+                    <p>@item.Price.ToString("C")</p>
+
+                </a>
+            </div>
+        }
+    </div>
+
+</section>
+
+
+@code {
+
+    private ProductModel Product = new()
+    {
+        Name = "Relaxed Fit Hoodie",
+        Price = 89,
+        Description = "Premium heavyweight hoodie with relaxed fit.",
+        Images = new List<string>
+        {
+            "https://images.unsplash.com/photo-1722620197153-eb2549909098?w=600",
+            "https://images.unsplash.com/photo-1722620197153-eb2549909098?w=600&crop=top",
+            "https://images.unsplash.com/photo-1722620197153-eb2549909098?w=600&crop=left"
+        }
+    };
+
+    private string SelectedImage;
+    private string SelectedSize = "M";
+
+    private List<string> Sizes = new() { "S", "M", "L", "XL", "XXL" };
+
+    private List<ColorOption> Colors = new()
+    {
+        new("Midnight Navy", "#1E2A47"),
+        new("Slate Blue", "#4A5C7A"),
+        new("Olive", "#3D5A3D")
+    };
+
+    private ColorOption SelectedColor;
+
+    protected override void OnInitialized()
+    {
+        SelectedImage = Product.Images.First();
+        SelectedColor = Colors.First();
+    }
+
+    void SelectImage(string img) => SelectedImage = img;
+
+    public class ProductModel
+    {
+        public string Name { get; set; }
+        public decimal Price { get; set; }
+        public string Description { get; set; }
+        public List<string> Images { get; set; }
+        public string Image { get; set; } = "";
+    }
+
+    public record ColorOption(string Name, string Hex);
+
+    private List<ProductModel> RelatedProducts = new()
+{
+    new() { Name = "Classic Straight Denim", Price = 120, Image = "https://images.unsplash.com/photo-1555689502-c4b22d76c56f?w=300" },
+    new() { Name = "Arcane Sneakers", Price = 145, Image = "https://images.unsplash.com/photo-1718802323158-b32c0330ad4a?w=300" },
+    new() { Name = "Essential Tee", Price = 39, Image = "https://images.unsplash.com/photo-1618840198256-abe11bda33dc?w=300" },
+    new() { Name = "Utility Tote Bag", Price = 65, Image = "https://images.unsplash.com/photo-1693592401248-c9544518318a?w=300" }
+};
+}

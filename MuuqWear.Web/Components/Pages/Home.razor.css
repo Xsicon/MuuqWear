@@ -141,13 +141,18 @@
 /* Track */
 .mw-carousel__track {
     overflow-x: auto;
-    scroll-behavior: smooth;
+    cursor: grab;
+    user-select: none;
 }
 
-    /* Fix Bootstrap negative margins inside carousel */
-    .mw-carousel__track .row {
-        margin: 0;
+    .mw-carousel__track.dragging {
+        cursor: grabbing;
     }
+
+    /* Fix Bootstrap negative margins inside carousel */
+    /*.mw-carousel__track .row {
+        margin: 0;
+    }*/
 
 /* Header */
 .mw-category__header {

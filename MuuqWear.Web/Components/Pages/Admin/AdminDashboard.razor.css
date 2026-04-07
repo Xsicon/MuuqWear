@@ -1,0 +1,366 @@
+﻿.dashboard-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 2rem 1.5rem;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.charts-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.chart-card {
+    background-color: #1c252e;
+    border: 1px solid #233648;
+    border-radius: 12px;
+    padding: 1.5rem;
+    overflow: hidden;
+}
+
+    .chart-card.full-width {
+        grid-column: 1 / -1;
+        overflow: hidden;
+    }
+
+.stat-card {
+    background-color: #1c252e;
+    border: 1px solid #233648;
+    border-radius: 12px;
+    padding: 1.5rem;
+}
+
+.stat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    color: #92adc9;
+    margin: 0;
+}
+
+.stat-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.stat-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0.5rem 0;
+}
+
+.stat-change {
+    font-size: 0.875rem;
+    margin: 0;
+}
+
+    .stat-change.positive {
+        color: #10b981;
+    }
+
+    .stat-change.neutral {
+        color: #92adc9;
+    }
+
+.stat-icon.downloads {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%);
+    color: #10b981;
+}
+
+.line-chart-wrapper {
+    display: flex;
+    gap: 1rem;
+}
+
+.line-chart-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.line-chart-area {
+    height: 200px;
+    position: relative;
+}
+
+    .line-chart-area svg {
+        width: 100%;
+        height: 100%;
+    }
+
+.line-chart-x-axis {
+    display: flex;
+    justify-content: space-between;
+    color: #5a6d7f;
+    font-size: 0.75rem;
+    padding-top: 0.75rem;
+}
+
+
+.chart-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #ffffff;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+}
+
+    .chart-header svg {
+        color: #92adc9;
+    }
+
+.pie-chart-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+}
+
+.pie-chart {
+    flex: 1;
+    max-width: 300px;
+}
+
+    .pie-chart svg {
+        width: 100%;
+        height: auto;
+    }
+
+.pie-legend {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+
+/* Mobile Responsive */
+@media (max-width: 1024px) {
+    .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        z-index: 1000;
+        transform: translateX(-100%);
+    }
+
+        .sidebar.open {
+            transform: translateX(0);
+        }
+
+    .menu-toggle {
+        display: block;
+    }
+
+    .main-content {
+        width: 100%;
+    }
+
+    .charts-row {
+        grid-template-columns: 1fr;
+    }
+
+    .products-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .chat-container {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+
+    .conversations-panel {
+        max-height: 300px;
+    }
+
+    .chat-panel {
+        min-height: 400px;
+    }
+}
+
+@media (max-width: 640px) {
+    .dashboard-header {
+        padding: 1rem;
+    }
+
+        .dashboard-header h1 {
+            font-size: 1.25rem;
+        }
+
+    .dashboard-content {
+        padding: 1rem;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .products-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-access-btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.8125rem;
+    }
+
+    .pie-chart-container {
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .message {
+        max-width: 85%;
+    }
+
+    .pie-chart {
+        max-width: 220px;
+    }
+
+    .pie-legend {
+        width: 100%;
+        align-items: flex-start;
+    }
+}
+
+.legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    flex-shrink: 0;
+    display: inline-block;
+}
+
+.legend-item {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: #92adc9;
+    white-space: nowrap;
+}
+
+.bar-chart-wrapper {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.bar-y-axis {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    color: #5a6d7f;
+    font-size: 0.75rem;
+    min-width: 50px;
+    text-align: right;
+    height: 220px;
+    padding-bottom: 0;
+}
+
+    .bar-y-axis span::after {
+        content: " \2013";
+        color: #3a4d60;
+    }
+
+.bar-chart-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.bar-chart-area {
+    height: 220px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-around;
+    position: relative;
+    border-left: 1px solid #2a3441;
+    border-bottom: 1px solid #2a3441;
+    padding: 0 1rem;
+}
+
+.bar-grid-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: #2a3441;
+}
+
+.bar-item {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    flex: 1;
+    height: 100%;
+}
+
+.bar-grid-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: #2a3441;
+}
+
+.bar {
+    width: 80%;
+    max-width: 125px;
+    background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
+    border-radius: 4px 4px 0 0;
+    transition: height 0.3s ease;
+}
+
+.bar-x-axis {
+    display: flex;
+    justify-content: space-around;
+    padding: 0.75rem 1rem 0;
+    color: #92adc9;
+    font-size: 0.75rem;
+}
+
+    .bar-x-axis span {
+        flex: 1;
+        text-align: center;
+    }
+
+.line-chart-wrapper {
+    display: flex;
+    gap: 1rem;
+}
+
+.line-chart-y-axis {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    color: #5a6d7f;
+    font-size: 0.75rem;
+    padding: 0;
+    min-width: 55px;
+    text-align: right;
+    height: 200px;
+}

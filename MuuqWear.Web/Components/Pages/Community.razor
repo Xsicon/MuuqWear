@@ -208,9 +208,24 @@
         <div class="mw-finished__header d-flex justify-content-between align-items-center">
             <h2 class="mw-finished__title">Recently Finished</h2>
 
-            <div class="mw-carousel_nav d-flex gap-2">
-                <button @onclick="() => ScrollLeft(finishedRef)">‹</button>
-                <button @onclick="() => ScrollRight(finishedRef)">›</button>
+             <div class="mw-carousel_nav">
+                <button @onclick="() => ScrollLeft(finishedRef)" class="d-flex align-items-center">
+                    <!-- LEFT -->
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m15 18-6-6 6-6"></path>
+                    </svg>
+                </button>
+                <button @onclick="() => ScrollRight(finishedRef)" class="d-flex align-items-center">
+                    <!-- RIGHT -->
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m9 18 6-6-6-6"></path>
+                    </svg>
+
+                </button>
             </div>
         </div>
 

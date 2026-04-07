@@ -15,6 +15,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\MuuqWear.Model\MuuqWear.Model.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Update="wwwroot\images\muuqwearlogo.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

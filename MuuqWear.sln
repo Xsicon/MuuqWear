@@ -5,6 +5,8 @@ VisualStudioVersion = 17.14.37012.4
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MuuqWear.Web", "MuuqWear.Web\MuuqWear.Web.csproj", "{49F3BB97-6EE2-439A-A0C7-75B1BCDB7802}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MuuqWear.Model", "MuuqWear.Model\MuuqWear.Model.csproj", "{BCCC8474-2624-4AFB-94E1-8F345C1745E0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{49F3BB97-6EE2-439A-A0C7-75B1BCDB7802}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{49F3BB97-6EE2-439A-A0C7-75B1BCDB7802}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{49F3BB97-6EE2-439A-A0C7-75B1BCDB7802}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BCCC8474-2624-4AFB-94E1-8F345C1745E0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BCCC8474-2624-4AFB-94E1-8F345C1745E0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BCCC8474-2624-4AFB-94E1-8F345C1745E0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BCCC8474-2624-4AFB-94E1-8F345C1745E0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

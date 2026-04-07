@@ -11,3 +11,4 @@ window.disableScroll = () => {
 window.enableScroll = () => {
     document.body.classList.remove("no-scroll");
 };
+

@@ -1,0 +1,98 @@
+﻿@page "/register"
+@using MuuqWear.Model
+@rendermode InteractiveServer
+@inject IJSRuntime JS
+
+<PageTitle>Register</PageTitle>
+
+<section class="mw-auth">
+
+    <div class="container">
+
+        <div class="row justify-content-center">
+
+            <div class="col-12 col-md-8 col-lg-5">
+
+                <div class="mw-auth-card">
+
+                    <!-- LOGO -->
+                    <div class="text-center mb-4">
+                        <img src="/images/muuqwearlogo.png" class="mw-auth-logo" />
+                        <h2 class="mw-auth-title mt-3">Create Account</h2>
+                        <p class="mw-auth-subtitle">
+                            Join MuuqWear and explore premium essentials
+                        </p>
+                    </div>
+
+                    <!-- FORM -->
+                    <EditForm Model="@registerModel" OnValidSubmit="HandleRegister">
+
+                        <DataAnnotationsValidator />
+                        
+                        <!-- NAME -->
+                        <div class="mb-3">
+                            <label class="mw-label">Full Name</label>
+                            <InputText class="form-control mw-input"
+                                       @bind-Value="registerModel.Name" />
+                            <ValidationMessage For="@(() => registerModel.Name)" />
+                        </div>
+
+                        <!-- EMAIL -->
+                        <div class="mb-3">
+                            <label class="mw-label">Email</label>
+                            <InputText class="form-control mw-input"
+                                       @bind-Value="registerModel.Email" />
+                            <ValidationMessage For="@(() => registerModel.Email)" />
+                        </div>
+
+                        <!-- PASSWORD -->
+                        <div class="mb-3">
+                            <label class="mw-label">Password</label>
+                            <InputText type="password"
+                                       class="form-control mw-input"
+                                       @bind-Value="registerModel.Password" />
+                            <ValidationMessage For="@(() => registerModel.Password)" />
+                        </div>
+
+                        <!-- CONFIRM PASSWORD -->
+                        <div class="mb-4">
+                            <label class="mw-label">Confirm Password</label>
+                            <InputText type="password"
+                                       class="form-control mw-input"
+                                       @bind-Value="registerModel.ConfirmPassword" />
+                            <ValidationMessage For="@(() => registerModel.ConfirmPassword)" />
+                        </div>
+
+                        <!-- SUBMIT -->
+                        <button type="submit" class="mw-btn-primary w-100">
+                            Create Account
+                        </button>
+
+                    </EditForm>
+
+                    <!-- LOGIN LINK -->
+                    <p class="text-center mt-4 small">
+                        Already have an account?
+                        <a href="/login" class="mw-link">Sign in</a>
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+@code {
+
+    private RegisterModel registerModel = new();
+
+    private void HandleRegister()
+    {
+        Console.WriteLine("Register clicked");
+    }
+
+  }

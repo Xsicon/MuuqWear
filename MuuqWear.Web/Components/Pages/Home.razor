@@ -6,6 +6,7 @@
 
 <link rel="stylesheet" href="lib/swiper/swiper-bundle.min.css" />
 
+<!-- Hero Section -->
 <div class="swiper mw-hero">
     <div class="swiper-wrapper">
         <div class="swiper-slide mw-slide">
@@ -55,7 +56,7 @@
     <div class="swiper-pagination"></div>
 </div>
 
-<!-- ***Shopping Category Section*** -->
+<!-- Shopping Category Section -->
 
 <section class="mw-category mt-2">
 
@@ -120,6 +121,7 @@
 
 </section>
 
+<!-- New Arrival Section -->
 
 <section class="mw-arrivals">
 
@@ -181,6 +183,8 @@
     </div>
 
 </section>
+
+<!-- Featured Section Starts Here -->
 
 <section class="mw-featured">
 
@@ -249,6 +253,7 @@
 
 </section>
 
+<!-- Benifits Section -->
 <section class="mw-benefits">
 
     <div class="mw-container">
@@ -322,7 +327,7 @@
 
 </section>
 
-
+<!-- Best Sellers Section -->
 <section class="mw-bestsellers">
 
     <div class="mw-container">
@@ -386,6 +391,7 @@
 
 </section>
 
+
 <script src="lib/swiper/swiper-bundle.min.js"></script>
 <script>
        new Swiper('.mw-hero', {
@@ -413,29 +419,19 @@
             768: { slidesPerView: 2 },
             1024: { slidesPerView: 2 }         }
     });
-     new Swiper('.mw-bestsellers-swiper', {
-        slidesPerView: 4,
-        spaceBetween: 20,
 
-        loop: true,
-        autoplay: {
-            delay: 3000,
-            disableOnInteraction: false
-        },
-
-        navigation: {
-            nextEl: '.mw-bestsellers-next',
-            prevEl: '.mw-bestsellers-prev'
-        }
-    });
 </script>
 
 @code {
+
+    //Slider References 
     private ElementReference finishedRef;
     private ElementReference categoryRef;
     private ElementReference newArrivalRef;
     private ElementReference bestSellersRef;
     private ElementReference featuredRef;
+
+    //For Scrolling Manually By Clicking Buttons
 
     private async Task ScrollRight(ElementReference el)
     {
@@ -498,26 +494,37 @@
 
     private List<BestSellersModel> BestSellers = new()
     {
-    new("Classic Navy Tee", "$45.00", "https://images.unsplash.com/photo-1618840198256-abe11bda33dc?w=400&amph=530&ampfit=crop", "/product"),
-    new("Sapphire Hoodie", "$85.00", "https://images.unsplash.com/photo-1722620197153-eb2549909098?w=400&amph=530&ampfit=crop", "/product"),
-    new("Azure Chinos", "$70.00", "https://images.unsplash.com/photo-1768696081520-76c372aa0d00?w=400&amph=530&ampfit=crop", "/product"),
-    new("Cobalt Jacket", "$120.00", "https://images.unsplash.com/photo-1538516089546-40b08c9c9866?w=400&amph=530&ampfit=crop", "/product"),
-    new("Selvedge Denim","$120.00","https://images.unsplash.com/photo-1555689502-c4b22d76c56f?w=400&amph=530&ampfit=crop","/product"),
-    new("Court Sneakers","$175.00","https://images.unsplash.com/photo-1718802323158-b32c0330ad4a?w=400&amph=530&ampfit=crop","/product")
+    new("Classic Navy Tee", "$45.00", "https://images.unsplash.com/photo-1618840198256-abe11bda33dc?w=400&amph=530&ampfit=crop", "/productdetail"),
+    new("Sapphire Hoodie", "$85.00", "https://images.unsplash.com/photo-1722620197153-eb2549909098?w=400&amph=530&ampfit=crop", "/productdetail"),
+    new("Azure Chinos", "$70.00", "https://images.unsplash.com/photo-1768696081520-76c372aa0d00?w=400&amph=530&ampfit=crop", "/productdetail"),
+    new("Cobalt Jacket", "$120.00", "https://images.unsplash.com/photo-1538516089546-40b08c9c9866?w=400&amph=530&ampfit=crop", "/productdetail"),
+    new("Selvedge Denim","$120.00","https://images.unsplash.com/photo-1555689502-c4b22d76c56f?w=400&amph=530&ampfit=crop","/productdetail"),
+    new("Court Sneakers","$175.00","https://images.unsplash.com/photo-1718802323158-b32c0330ad4a?w=400&amph=530&ampfit=crop","/productdetail")
 
     };
 
     private record BestSellersModel(string Name, string Price, string Image, string Link);
+
+    // For scrolling by dragging and autosliding images in the Carousel
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
 
-            // await JS.InvokeVoidAsync("mwStartAutoSlide", categoryRef, ".mw-carousel-item", 3000);
+            // For AutoSliding Images in carousel
             await JS.InvokeVoidAsync("mwStartAutoSlide", categoryRef, ".mw-categorycarousel-item", 3000);
             await JS.InvokeVoidAsync("mwStartAutoSlide", newArrivalRef, ".mw-newarrivalcarousel-item", 3000);
-            await JS.InvokeVoidAsync("mwStartAutoSlide", bestSellersRef, ".bestsellers-slide", 3000); 
+            await JS.InvokeVoidAsync("mwStartAutoSlide", bestSellersRef, ".bestsellers-slide", 3000);
             await JS.InvokeVoidAsync("mwStartAutoSlide", featuredRef, ".mw-featured__card", 3000);
+
+            //For Sliding Images by dragging and scrolling
+            await JS.InvokeVoidAsync("enableDragScroll", categoryRef);
+            await JS.InvokeVoidAsync("enableDragScroll", newArrivalRef);
+            await JS.InvokeVoidAsync("enableDragScroll", bestSellersRef);
+            await JS.InvokeVoidAsync("enableDragScroll", featuredRef);
+
         }
     }
+
 }

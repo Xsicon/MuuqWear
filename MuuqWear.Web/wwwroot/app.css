@@ -1,4 +1,4 @@
-/*html, body {
+﻿/*html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }*/
 
@@ -37,4 +37,34 @@ html, body {
 a {
     text-decoration: none;
     color: inherit;
+}
+
+
+/* Validation message */
+.validation-message {
+    display: block;
+    margin-top: 6px;
+    font-size: 13px;
+    color: #d14343; /* soft premium red */
+    font-weight: 500;
+}
+
+/* Invalid input */
+input.invalid,
+input:invalid,
+.mw-input.input-validation-error {
+    border-color: #d14343;
+    background: #fff5f5;
+}
+
+/* Focus state */
+.mw-input:focus {
+    border-color: #1E2A47;
+    box-shadow: 0 0 0 2px rgba(30,42,71,0.1);
+}
+
+/* Error focus override */
+.mw-input.input-validation-error:focus {
+    border-color: #d14343;
+    box-shadow: 0 0 0 2px rgba(209,67,67,0.1);
 }
