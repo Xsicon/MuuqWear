@@ -1,10 +1,10 @@
-﻿/* Page background */
+﻿/* Page */
 .mw-auth {
     background: #F5F6F8;
     min-height: 100vh;
     display: flex;
     align-items: center;
-    padding: 40px 0;
+    padding: 24px 0;
 }
 
 /* Card */
@@ -12,9 +12,10 @@
     background: white;
     padding: 24px;
     border-radius: 8px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+    border: 1px solid rgba(169,183,204,0.3);
 }
 
+/* Logo */
 
 /* Title */
 .mw-auth-title {
@@ -24,27 +25,21 @@
 
 /* Subtitle */
 .mw-auth-subtitle {
+    font-size: 14px;
     color: #6c7a92;
-    font-size: 14px;
 }
 
-/* Labels */
-.mw-label {
-    font-size: 13px;
-    font-weight: 600;
-    color: #1E2A47;
-    margin-bottom: 6px;
-}
-
-/* Inputs */
-.mw-input {
-    border-radius: 4px;
+/* OTP input */
+.mw-otp-input {
+    text-align: center;
+    font-size: 24px;
+    letter-spacing: 8px;
+    padding: 12px;
     border: 1px solid #d6dde8;
-    padding: 10px;
-    font-size: 14px;
 }
 
-    .mw-input:focus {
+    /* Focus */
+    .mw-otp-input:focus {
         border-color: #1E2A47;
         box-shadow: 0 0 0 2px rgba(30,42,71,0.1);
     }
@@ -56,25 +51,18 @@
     border: none;
     padding: 12px;
     font-weight: 600;
-    transition: 0.2s;
 }
 
-    .mw-btn-primary:hover {
-        background: #162033;
-    }
-
-/* Link */
-.mw-link {
+/* Resend */
+.mw-link-btn {
+    background: none;
+    border: none;
     color: #1E2A47;
     font-weight: 600;
-    text-decoration: none;
+    cursor: pointer;
 }
 
-    .mw-link:hover {
-        text-decoration: underline;
-    }
-
-/* Desktop enhancements */
+/* Desktop */
 @media (min-width: 768px) {
 
     .mw-auth-card {
@@ -85,4 +73,3 @@
         font-size: 28px;
     }
 }
-

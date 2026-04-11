@@ -50,16 +50,16 @@
                                 <path d="M16 10a4 4 0 0 1-8 0"></path>
                             </svg>
                         </button>
-                        @* <NavLink href="/profile" aria-label="Profile"> *@
-                        <button class="mw-icon-btn" aria-label="Profile" @onclick="ShowProfile">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
-                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="12" cy="7" r="4"></circle>
-                            </svg>
-                        </button>
-                        @* </NavLink> *@
+                        <NavLink href="/profile" aria-label="Profile">
+                            <button class="mw-icon-btn" aria-label="Profile">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                            </button>
+                        </NavLink>
 
                         <button class="mw-icon-btn" aria-label="Location">
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
@@ -347,13 +347,13 @@
     void CloseSearch() => isSearchOpen = false;
     private bool isCartOpen = false;
 
-    async Task OpenCart()
+    void OpenCart()
     {
         isCartOpen = true;
         // await JS.InvokeVoidAsync("disableScroll");
     }
 
-    async Task CloseCart()
+    void CloseCart()
     {
         isCartOpen = false;
         // await JS.InvokeVoidAsync("enableScroll");
@@ -415,19 +415,6 @@
             {
                 // prevents crash if component unmounted
             }
-        }
-    }
-
-
-    public void ShowProfile()
-    {
-        if (isAuthenticated)
-        {
-            Nav.NavigateTo("/profile");
-        }
-        else
-        {
-            Nav.NavigateTo("/register");
         }
     }
 }

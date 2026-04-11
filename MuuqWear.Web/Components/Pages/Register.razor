@@ -1,7 +1,13 @@
 ﻿@page "/register"
+@layout Components.Layout.AuthLayout.AuthLayout
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @using MuuqWear.Model
+@using MuuqWear.Application.Services.AuthService;
 @rendermode InteractiveServer
 @inject IJSRuntime JS
+@inject IAuthService IAuthService;
+@inject NavigationManager NavigationManager;
+@inject ProtectedSessionStorage sessionStorage
 
 <PageTitle>Register</PageTitle>
 
@@ -28,13 +34,13 @@
                     <EditForm Model="@registerModel" OnValidSubmit="HandleRegister">
 
                         <DataAnnotationsValidator />
-                        
+
                         <!-- NAME -->
                         <div class="mb-3">
                             <label class="mw-label">Full Name</label>
                             <InputText class="form-control mw-input"
-                                       @bind-Value="registerModel.Name" />
-                            <ValidationMessage For="@(() => registerModel.Name)" />
+                                       @bind-Value="registerModel.FullName" />
+                            <ValidationMessage For="@(() => registerModel.FullName)" />
                         </div>
 
                         <!-- EMAIL -->
@@ -67,6 +73,9 @@
                         <button type="submit" class="mw-btn-primary w-100">
                             Create Account
                         </button>
+                        <div class="@messageCssClass">
+                            <span>@message</span>
+                        </div>
 
                     </EditForm>
 
@@ -86,13 +95,3 @@
 
 </section>
 
-@code {
-
-    private RegisterModel registerModel = new();
-
-    private void HandleRegister()
-    {
-        Console.WriteLine("Register clicked");
-    }
-
-  }

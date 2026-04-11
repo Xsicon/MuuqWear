@@ -287,7 +287,7 @@
         await JS.InvokeVoidAsync("mwScrollLeft", el,".mw-card");
     }
 
-    public List<Item> Items = new()
+    public List<Item>? Items = new()
     {
         new Item {
             Title = "Asymmetric Hoodie",
@@ -327,12 +327,12 @@
 
     public class Item
     {
-        public string Title { get; set; }
-        public string Subtitle { get; set; }
+        public string? Title { get; set; }
+        public string? Subtitle { get; set; }
         public int Votes { get; set; }
-        public string Image { get; set; }
-        public string Tag { get; set; }
-        public List<string> Colors { get; set; }
+        public string? Image { get; set; }
+        public string? Tag { get; set; }
+        public List<string>? Colors { get; set; }
     }
     public List<FinishedItem> FinishedItems = new()
 {

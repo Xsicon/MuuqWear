@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MuuqWear.Web", "MuuqWear.We
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MuuqWear.Model", "MuuqWear.Model\MuuqWear.Model.csproj", "{BCCC8474-2624-4AFB-94E1-8F345C1745E0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MuuqWear.Application", "MuuqWear.Application\MuuqWear.Application.csproj", "{4FD3FA77-DD91-4E0B-A143-A2D022CDC273}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{BCCC8474-2624-4AFB-94E1-8F345C1745E0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BCCC8474-2624-4AFB-94E1-8F345C1745E0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BCCC8474-2624-4AFB-94E1-8F345C1745E0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4FD3FA77-DD91-4E0B-A143-A2D022CDC273}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4FD3FA77-DD91-4E0B-A143-A2D022CDC273}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4FD3FA77-DD91-4E0B-A143-A2D022CDC273}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4FD3FA77-DD91-4E0B-A143-A2D022CDC273}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

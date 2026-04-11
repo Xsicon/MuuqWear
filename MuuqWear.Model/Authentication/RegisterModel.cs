@@ -1,10 +1,10 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace MuuqWear.Model;
+namespace MuuqWear.Model.Authentication;
 public class RegisterModel
 {
     [Required(ErrorMessage = "Full name is required")]
-    public string? Name { get; set; }
+    public string? FullName { get; set; }
 
     [Required(ErrorMessage = "Email is required")]
     [EmailAddress(ErrorMessage = "Invalid email format")]
