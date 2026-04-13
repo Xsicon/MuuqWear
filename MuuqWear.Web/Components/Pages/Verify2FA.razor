@@ -6,7 +6,11 @@
 @inject IAuthService IAuthService;
 @inject ProtectedSessionStorage sessionStorage
 @inject NavigationManager NavigationManager;
+@inject ProtectedLocalStorage localStorage;
+@inject AuthStateService AuthStateService
 
+
+@using MuuqWear.Application.Shared
 @using MuuqWear.Model.Authentication
 
 <section class="mw-auth">
@@ -95,8 +99,13 @@
         {
             var authData = result.Data;
 
-            await sessionStorage.SetAsync("accessToken", authData.AccessToken);
-            await sessionStorage.SetAsync("email", authData.Email);
+            var storageItem = new StorageItem<AuthResponseModel>
+            {
+                Value = authData,
+                Expiry = DateTime.UtcNow.AddHours(1)
+            };
+            await localStorage.SetAsync("authData", storageItem);
+            await AuthStateService.ClearPendingEmailAsync();
 
             NavigationManager.NavigateTo("/");
         }
@@ -110,15 +119,14 @@
     {
         if (firstRender)
         {
-            var result = await sessionStorage.GetAsync<string>("pendingEmail");
+            Email = await AuthStateService.GetPendingEmailAsync();
 
-            if (!result.Success || string.IsNullOrEmpty(result.Value))
+            if (string.IsNullOrEmpty(Email))
             {
                 NavigationManager.NavigateTo("/register");
                 return;
             }
 
-            Email = result.Value;
 
             _isLoaded = true;
             StateHasChanged();

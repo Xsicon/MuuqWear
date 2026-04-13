@@ -1,15 +1,18 @@
 ﻿using MuuqWear.Application.Shared;
 using MuuqWear.Model.Authentication;
 using System.Net.Http.Json;
+using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 
 namespace MuuqWear.Application.Services.AuthService;
 public class AuthService : IAuthService
 {
     private readonly HttpClient _http;
+    private readonly ProtectedSessionStorage _sessionStorage;
 
-    public AuthService(HttpClient http)
+    public AuthService(HttpClient http, ProtectedSessionStorage sessionStorage)
     {
-        _http = http;
+        this._http = http;
+        this._sessionStorage = sessionStorage;
     }
     public async Task<Response<int>> Register(RegisterModel request)
     {
@@ -44,4 +47,35 @@ public class AuthService : IAuthService
             Message = "Empty response from server"
         };
     }
+
+    public async Task<bool> IsUserLoggedIn()
+    {
+        bool flag = false;
+        var result = await _sessionStorage.GetAsync<string>("userKey");
+        if (result.Success)
+        {
+            flag = true;
+        }
+        return flag;
+    }
+
+    public async Task<Response<AuthResponseModel>> Login(LoginModel request)
+    {
+        var result = await _http.PostAsJsonAsync("api/Auth/login", request);
+        if (!result.IsSuccessStatusCode)
+        {
+            return new Response<AuthResponseModel>
+            {
+                Success = false,
+                Message = $"Server error: {result.StatusCode}"
+            };
+        }
+        var response = await result.Content.ReadFromJsonAsync<Response<AuthResponseModel>>();
+        return response ?? new Response<AuthResponseModel>
+        {
+            Success = false,
+            Message = "Empty response from server"
+        };
+    }
+
 }

@@ -1,0 +1,35 @@
+﻿@inject AuthStateService AuthStateService
+@inject NavigationManager NavigationManager
+@rendermode InteractiveServer
+@using MuuqWear.Application.Services.AuthService
+
+@if (_isLoaded)
+{
+    @ChildContent
+}
+
+@code {
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    private bool _isLoaded = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await AuthStateService.InitializeAsync();
+
+            if (!AuthStateService.IsLoggedIn || AuthStateService.Role != "user")
+            {
+                NavigationManager.NavigateTo("/register", replace: true);
+                return;
+            }
+
+            _isLoaded = true;
+            StateHasChanged();
+        }
+    }
+}
+}

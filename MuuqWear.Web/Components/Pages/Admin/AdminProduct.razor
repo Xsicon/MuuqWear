@@ -1,0 +1,253 @@
+﻿@page "/admin/products"
+@layout Layout.AdminLayout.AdminDashboardLayout
+@rendermode InteractiveServer
+@using MuuqWear.Application.Services.ProductService
+@using MuuqWear.Model.Products
+@inject IProductService ProductService
+
+<section class="mw-admin-products">
+
+    <!-- PAGE HEADER -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3 gap-2">
+        <h3 class="mw-admin-heading">Products</h3>
+        <button class="mw-btn-primary" @onclick="OpenModal">+ Add Product</button>
+    </div>
+
+    <!-- SEARCH -->
+    <div class="mw-admin-card mb-3">
+        <input class="mw-admin-input w-100"
+               placeholder="Search products..."
+               @bind="searchQuery"
+               @bind:event="oninput" />
+    </div>
+
+    <!-- TABLE -->
+    <div class="mw-admin-card">
+        <div class="table-responsive">
+            <table class="table mw-admin-table align-middle">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Category</th>
+                        <th>Price</th>
+                        <th>Stock</th>
+                        <th>Badge</th>
+                        <th>Status</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (isLoading)
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center">Loading...</td>
+                        </tr>
+                    }
+                    else if (!FilteredProducts.Any())
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center">No products found.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in FilteredProducts)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        @if (!string.IsNullOrEmpty(item.ImageUrl))
+                                        {
+                                            <img src="@item.ImageUrl" class="mw-product-thumb" />
+                                        }
+                                        <span>@item.Name</span>
+                                    </div>
+                                </td>
+                                <td>@item.Category</td>
+                                <td>@item.Price.ToString("C")</td>
+                                <td>
+                                    <span class="mw-stock @(item.Stock > 0 ? "in" : "out")">
+                                        @(item.Stock > 0 ? "In Stock" : "Out")
+                                    </span>
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(item.Badge))
+                                    {
+                                        <span class="mw-badge">@item.Badge</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="mw-stock @(item.IsActive ? "in" : "out")">
+                                        @(item.IsActive ? "Active" : "Inactive")
+                                    </span>
+                                </td>
+                                <td class="text-end">
+                                    <button class="mw-action-btn" @onclick="() => OpenEditModal(item)">Edit</button>
+                                    <button class="mw-action-btn text-danger"
+                                            @onclick="() => OpenDeleteModal(item)">
+                                        Delete
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ADD PRODUCT MODAL -->
+    @if (isModalOpen)
+    {
+        <div class="mw-modal-overlay" @onclick="CloseModal">
+            <div class="mw-modal" @onclick:stopPropagation="true">
+
+                <!-- HEADER -->
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5>@(isEditMode ? "Edit Product" : "Add Product")</h5>
+                    <button class="mw-close-btn" @onclick="CloseModal">✕</button>
+                </div>
+
+                <!-- FORM -->
+                <div class="mb-3">
+                    <label>Product Name</label>
+                    <input class="mw-admin-input w-100" @bind="newProduct.Name" />
+                </div>
+
+                <div class="mb-3">
+                    <label>Price</label>
+                    <input type="number" class="mw-admin-input w-100" @bind="newProduct.Price" />
+                </div>
+
+                <div class="mb-3">
+                    <label>Stock</label>
+                    <input type="number" class="mw-admin-input w-100" @bind="newProduct.Stock" />
+                </div>
+
+                <div class="mb-3">
+                    <label>Category</label>
+                    <input class="mw-admin-input w-100" @bind="newProduct.Category" />
+                </div>
+
+                <div class="mb-3">
+                    <label>Badge</label>
+                    <select class="mw-admin-input w-100" @bind="newProduct.Badge">
+                        <option value="">None</option>
+                        <option value="NEW">NEW</option>
+                        <option value="SALE">SALE</option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <label>Sections</label>
+                    <div class="d-flex flex-column gap-2 mt-1">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input"
+                                   id="isNewArrival"
+                                   @bind="newProduct.IsNewArrival" />
+                            <label class="form-check-label" for="isNewArrival">New Arrival</label>
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input"
+                                   id="isFeatured"
+                                   @bind="newProduct.IsFeatured" />
+                            <label class="form-check-label" for="isFeatured">Featured</label>
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input"
+                                   id="isBestSeller"
+                                   @bind="newProduct.IsBestSeller" />
+                            <label class="form-check-label" for="isBestSeller">Best Seller</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- IMAGE SOURCE TOGGLE -->
+                <div class="mb-3">
+                    <label>Image Source</label>
+                    <select class="mw-admin-input w-100" @bind="imageSource">
+                        <option value="url">Paste URL</option>
+                        <option value="upload">Upload File</option>
+                    </select>
+                </div>
+
+                @if (imageSource == "url")
+                {
+                    <div class="mb-3">
+                        <label>Image URL</label>
+                        <input class="mw-admin-input w-100"
+                               placeholder="https://images.unsplash.com/..."
+                               @bind="newProduct.ImageUrl" />
+                    </div>
+                }
+                else
+                {
+                    <div class="mb-3">
+                        <label>Upload Image</label>
+                        <InputFile OnChange="HandleImageUpload" />
+                        @if (isUploading)
+                        {
+                            <p class="text-muted mt-1">Uploading...</p>
+                        }
+                    </div>
+                }
+
+                <!-- IMAGE PREVIEW -->
+                @if (!string.IsNullOrEmpty(newProduct.ImageUrl))
+                {
+                    <div class="mb-3">
+                        <img src="@newProduct.ImageUrl" style="max-height:120px;" />
+                    </div>
+                }
+
+                <!-- ERROR -->
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <p class="text-danger">@errorMessage</p>
+                }
+
+                <!-- ACTION -->
+                <button class="mw-btn-primary w-100"
+                        @onclick="SaveProduct"
+                        disabled="@isSaving">
+                    @(isSaving ? "Saving..." : (isEditMode ? "Update Product" : "Save Product"))
+                </button>
+
+            </div>
+        </div>
+    }
+
+    <!-- DELETE PRODUCT MODAL-->
+    @if (isDeleteModalOpen)
+    {
+        <div class="mw-modal-overlay" @onclick="CloseDeleteModal">
+            <div class="mw-modal" style="max-width:400px;" @onclick:stopPropagation="true">
+
+                <!-- HEADER -->
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5>Delete Product</h5>
+                    <button class="mw-close-btn" @onclick="CloseDeleteModal">✕</button>
+                </div>
+
+                <!-- MESSAGE -->
+                <p>Are you sure you want to delete <strong>@deletingProductName</strong>?</p>
+                <p class="text-danger small">This action cannot be undone.</p>
+
+                <!-- ACTIONS -->
+                <div class="d-flex gap-2 mt-3">
+                    <button class="mw-btn-secondary w-100"
+                            @onclick="CloseDeleteModal">
+                        Cancel
+                    </button>
+                    <button class="mw-btn-danger w-100"
+                            @onclick="ConfirmDelete"
+                            disabled="@isDeleting">
+                        @(isDeleting ? "Deleting..." : "Delete")
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    }
+
+</section>
+

@@ -1,124 +1,143 @@
 ﻿@page "/profile"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@using MuuqWear.Application.Services.AuthService
+@using MuuqWear.Application.Shared
+@using MuuqWear.Model.Authentication
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthStateProvider
 @rendermode InteractiveServer
 @inject IJSRuntime JS
+@inject IAuthService IAuthService;
+@inject ProtectedSessionStorage sessionStorage;
+@inject NavigationManager NavigationManager;
+@inject AuthStateService AuthStateService
+@inject ProtectedLocalStorage localStorage;
 
 <PageTitle>Profile</PageTitle>
-<section class="mw-profile container py-4 py-md-5">
+<MuuqWear.Web.Components.Shared.AuthGuard>
+    <section class="mw-profile container py-4 py-md-5">
 
-    <!-- MOBILE HEADER -->
-    <div class="d-md-none mb-3">
-        <button class="mw-profile-mobile-toggle">
-            <span>Overview</span>
-            <span>›</span>
-        </button>
-    </div>
+        <!-- MOBILE HEADER -->
+        <div class="d-md-none mb-3">
+            <button class="mw-profile-mobile-toggle">
+                <span>Overview</span>
+                <span>›</span>
+            </button>
+        </div>
 
-    <div class="row g-4">
+        <div class="row g-4">
 
-        <!-- SIDEBAR -->
-        <aside class="col-md-4 col-lg-3 d-none d-md-block">
+            <!-- SIDEBAR -->
+            <aside class="col-md-4 col-lg-3 d-none d-md-block">
 
-            <!-- USER INFO -->
-            <div class="mw-profile-user text-md-end">
-                <div class="mw-avatar">SA</div>
-                <h6 class="mw-user-name">Sarah Al-Rashid</h6>
-                <p class="mw-user-meta">Member since October 2024</p>
-            </div>
-
-            <!-- NAV -->
-            <nav class="mw-profile-nav">
-                <button class="mw-nav-item active">Overview</button>
-                <button class="mw-nav-item">Orders</button>
-                <button class="mw-nav-item">Wishlist</button>
-                <button class="mw-nav-item">Addresses</button>
-                <button class="mw-nav-item">Affiliate Hub</button>
-                <button class="mw-nav-item">Settings</button>
-            </nav>
-
-            <!-- AFFILIATE -->
-            <div class="mw-affiliate">
-                <p class="mw-affiliate-label">Affiliate Status</p>
-                <p class="mw-affiliate-value">⭐ Silver</p>
-            </div>
-
-            <!-- SIGN OUT -->
-            <button class="mw-signout">Sign Out</button>
-
-        </aside>
-
-        <!-- MAIN CONTENT -->
-        <div class="col-12 col-md-8 col-lg-9">
-
-            <!-- WELCOME -->
-            <div class="mb-4">
-                <h2 class="mw-welcome">Welcome back, Sarah</h2>
-                <p class="mw-subtext">Here's your Muuqwear at a glance.</p>
-            </div>
-
-            <!-- STATS -->
-            <div class="row g-3 mb-4">
-
-                <div class="col-6 col-md-3">
-                    <div class="mw-stat-card">
-                        <p class="mw-stat-value">5</p>
-                        <p class="mw-stat-label">Orders</p>
-                    </div>
+                <!-- USER INFO -->
+                <div class="mw-profile-user text-md-end">
+                    <div class="mw-avatar">SA</div>
+                    <h6 class="mw-user-name">@LoggedInUserName</h6>
+                    <p class="mw-user-meta">Member since October 2024</p>
                 </div>
 
-                <div class="col-6 col-md-3">
-                    <div class="mw-stat-card">
-                        <p class="mw-stat-value">4</p>
-                        <p class="mw-stat-label">Wishlist</p>
-                    </div>
+                <!-- NAV -->
+                <nav class="mw-profile-nav">
+                    <button class="mw-nav-item active">Overview</button>
+                    <button class="mw-nav-item">Orders</button>
+                    <button class="mw-nav-item">Wishlist</button>
+                    <button class="mw-nav-item">Addresses</button>
+                    <button class="mw-nav-item">Affiliate Hub</button>
+                    <button class="mw-nav-item">Settings</button>
+                </nav>
+
+                <!-- AFFILIATE -->
+                <div class="mw-affiliate">
+                    <p class="mw-affiliate-label">Affiliate Status</p>
+                    <p class="mw-affiliate-value">⭐ Silver</p>
                 </div>
 
-                <div class="col-6 col-md-3">
-                    <div class="mw-stat-card">
-                        <p class="mw-stat-value">Silver</p>
-                        <p class="mw-stat-label">Affiliate Tier</p>
-                    </div>
+                <!-- SIGN OUT -->
+                <button class="mw-signout">Sign Out</button>
+
+            </aside>
+
+            <!-- MAIN CONTENT -->
+            <div class="col-12 col-md-8 col-lg-9">
+
+                <!-- WELCOME -->
+                <div class="mb-4">
+                    <h2 class="mw-welcome">Welcome back, @LoggedInUserName</h2>
+                    <p class="mw-subtext">Here's your Muuqwear at a glance.</p>
                 </div>
 
-                <div class="col-6 col-md-3">
-                    <div class="mw-stat-card">
-                        <p class="mw-stat-value">$1251</p>
-                        <p class="mw-stat-label">Total Spent</p>
-                    </div>
-                </div>
+                <!-- STATS -->
+                <div class="row g-3 mb-4">
 
-            </div>
-
-            <!-- RECENT ORDERS -->
-            <div class="mw-orders">
-
-                <p class="mw-section-title">Recent Orders</p>
-
-                @foreach (var order in Orders)
-                {
-                    <div class="mw-order-item">
-
-                        <div>
-                            <p class="mw-order-id">@order.Id</p>
-                            <p class="mw-order-meta">@order.Date · @order.Items items</p>
+                    <div class="col-6 col-md-3">
+                        <div class="mw-stat-card">
+                            <p class="mw-stat-value">5</p>
+                            <p class="mw-stat-label">Orders</p>
                         </div>
-
-                        <div class="text-end">
-                            <p class="mw-order-price">$@order.Total</p>
-                            <p class="mw-order-status @order.StatusClass">@order.Status</p>
-                        </div>
-
                     </div>
-                }
+
+                    <div class="col-6 col-md-3">
+                        <div class="mw-stat-card">
+                            <p class="mw-stat-value">4</p>
+                            <p class="mw-stat-label">Wishlist</p>
+                        </div>
+                    </div>
+
+                    <div class="col-6 col-md-3">
+                        <div class="mw-stat-card">
+                            <p class="mw-stat-value">Silver</p>
+                            <p class="mw-stat-label">Affiliate Tier</p>
+                        </div>
+                    </div>
+
+                    <div class="col-6 col-md-3">
+                        <div class="mw-stat-card">
+                            <p class="mw-stat-value">$1251</p>
+                            <p class="mw-stat-label">Total Spent</p>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- RECENT ORDERS -->
+                <div class="mw-orders">
+
+                    <p class="mw-section-title">Recent Orders</p>
+
+                    @foreach (var order in Orders)
+                    {
+                        <div class="mw-order-item">
+
+                            <div>
+                                <p class="mw-order-id">@order.Id</p>
+                                <p class="mw-order-meta">@order.Date · @order.Items items</p>
+                            </div>
+
+                            <div class="text-end">
+                                <p class="mw-order-price">$@order.Total</p>
+                                <p class="mw-order-status @order.StatusClass">@order.Status</p>
+                            </div>
+
+                        </div>
+                    }
+
+                </div>
 
             </div>
 
         </div>
 
-    </div>
-
-</section>
+    </section>
+</MuuqWear.Web.Components.Shared.AuthGuard>
 
 @code {
+
+    public bool IsUserLoggedIn = false;
+    public string LoggedInUserName => AuthStateService.UserName;
+
+    private bool _isLoaded = false;
 
     public class Order
     {
@@ -136,5 +155,46 @@
         new Order { Id = "MW-20260305", Date = "Mar 5, 2026", Items = 2, Total = 189, Status = "In Transit", StatusClass = "transit" },
         new Order { Id = "MW-20260220", Date = "Feb 20, 2026", Items = 4, Total = 420, Status = "Delivered", StatusClass = "delivered" }
     };
+    // protected override async Task OnAfterRenderAsync(bool firstRender)
+    // {
+    //     if (firstRender)
+    //     {
+    //         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+    //         var user = authState.User;
+    //         if (user.Identity != null && user.Identity.IsAuthenticated)
+    //         {
+    //             LoggedInUserName = user.Identity.Name!;
+    //         }
+    //         var loginResult = await localStorage
+    //             .GetAsync<StorageItem<AuthResponseModel>>("authData");
 
+    //         if (loginResult.Success && loginResult.Value?.Value != null)
+    //         {
+    //             var storageItem = loginResult.Value;
+
+    //             if (storageItem.Expiry > DateTime.UtcNow)
+    //             {
+    //                 IsUserLoggedIn = true;
+
+    //                 var authData = storageItem.Value;
+
+    //                 LoggedInUserName = authData?.UserName!;
+    //             }
+    //             else
+    //             {
+    //                 await localStorage.DeleteAsync("authData");
+    //                 NavigationManager.NavigateTo("/register", replace: true);
+    //                 return;
+    //             }
+    //         }
+    //         else
+    //         {
+    //             NavigationManager.NavigateTo("/register", replace: true);
+    //             return;
+    //         }
+
+    //         _isLoaded = true;
+    //         StateHasChanged();
+    //     }
+    // }
 }

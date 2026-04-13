@@ -20,7 +20,7 @@ namespace MuuqWear.Web.Components.Pages
                 if (result.Success)
                 {
                     messageCssClass = "text-success";
-                    await sessionStorage.SetAsync("pendingEmail", registerModel.Email!);
+                    await AuthStateService.SetPendingEmailAsync(registerModel.Email!);
                     NavigationManager.NavigateTo("/verify-2fa");
                 }
                 else
@@ -29,6 +29,18 @@ namespace MuuqWear.Web.Components.Pages
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message.ToString());
+            }
+        }
+
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (firstRender)
+            {
+                var loginSesson = await IAuthService.IsUserLoggedIn();
+                if (loginSesson)
+                {
+                    NavigationManager.NavigateTo("/");
+                }
             }
         }
     }

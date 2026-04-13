@@ -1,0 +1,91 @@
+﻿@page "/admin/f8e2a947-3c1b-4d9e-b562-7a0f1e8d3c92/login"
+@rendermode InteractiveServer
+@using MuuqWear.Application.Services.AuthService
+@using MuuqWear.Application.Shared
+@using MuuqWear.Model.Authentication
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@inject IAuthService IAuthService
+@inject AuthStateService AuthStateService
+@inject NavigationManager NavigationManager
+@inject ProtectedLocalStorage localStorage
+
+<section class="mw-auth">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-12 col-sm-10 col-md-6 col-lg-4">
+                <div class="mw-auth-card text-center">
+
+                    <img src="/images/muuqwearlogo.png" class="mw-auth-logo mb-3" />
+                    <h2 class="mw-auth-title">Admin Login</h2>
+                    <p class="mw-auth-subtitle mb-4">Enter your credentials</p>
+
+                    <EditForm Model="@loginModel" OnValidSubmit="HandleLogin">
+                        <DataAnnotationsValidator />
+
+                        <div class="mb-3">
+                            <InputText class="form-control"
+                                       placeholder="Email"
+                                       @bind-Value="loginModel.Email" />
+                            <ValidationMessage For="@(() => loginModel.Email)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <InputText class="form-control"
+                                       placeholder="Password"
+                                       type="password"
+                                       @bind-Value="loginModel.Password" />
+                            <ValidationMessage For="@(() => loginModel.Password)" />
+                        </div>
+
+                        <button type="submit" class="mw-btn-primary w-100">
+                            Login
+                        </button>
+
+                        <div class="@messageCssClass mt-2">
+                            <span>@message</span>
+                        </div>
+
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@code {
+    private LoginModel loginModel = new();
+    private string message = string.Empty;
+    private string messageCssClass = string.Empty;
+
+    private async Task HandleLogin()
+    {
+        var result = await IAuthService.Login(loginModel);
+
+        if (result.Success && result.Data != null)
+        {
+            var authData = result.Data;
+
+            // check role before storing
+            if (authData.Role != "admin")
+            {
+                message = "Access denied.";
+                messageCssClass = "text-danger";
+                return;
+            }
+
+            var storageItem = new StorageItem<AuthResponseModel>
+            {
+                Value = authData,
+                Expiry = DateTime.UtcNow.AddHours(1)
+            };
+
+            await localStorage.SetAsync("authData", storageItem);
+            NavigationManager.NavigateTo("/admin");
+        }
+        else
+        {
+            message = result.Message;
+            messageCssClass = "text-danger";
+        }
+    }
+}

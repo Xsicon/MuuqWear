@@ -6,4 +6,7 @@ public interface IAuthService
 {
     Task<Response<int>> Register(RegisterModel request);
     Task<Response<AuthResponseModel>> VerifyOTP(VerifyOTPModel request);
+    Task<bool> IsUserLoggedIn();
+    Task<Response<AuthResponseModel>> Login(LoginModel request);
+
 }
