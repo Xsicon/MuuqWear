@@ -78,4 +78,34 @@ public class AuthService : IAuthService
         };
     }
 
+    public async Task<Response<int>> Logout()
+    {
+        try
+        {
+            var result = await _http.PostAsync("api/Auth/logout", null);
+            if (!result.IsSuccessStatusCode)
+            {
+                return new Response<int>
+                {
+                    Success = false,
+                    Message = $"Server error: {result.StatusCode}"
+                };
+            }
+            var response = await result.Content.ReadFromJsonAsync<Response<int>>();
+            return response ?? new Response<int>
+            {
+                Success = false,
+                Message = "Empty response from server"
+            };
+        }
+        catch (Exception ex)
+        {
+            return new Response<int>
+            {
+                Success = false,
+                Message = ex.Message
+            };
+        }
+    }
+
 }

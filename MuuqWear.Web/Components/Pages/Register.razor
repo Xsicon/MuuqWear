@@ -57,8 +57,29 @@
                             <label class="mw-label">Password</label>
                             <InputText type="password"
                                        class="form-control mw-input"
-                                       @bind-Value="registerModel.Password" />
+                                       Value="@registerModel.Password"
+                                       ValueChanged="HandlePasswordInput"
+                                       ValueExpression="@(() => registerModel.Password)" />
                             <ValidationMessage For="@(() => registerModel.Password)" />
+
+                            @* show meter only when user starts typing *@
+                            @if (!string.IsNullOrEmpty(registerModel.Password))
+                            {
+                                <div class="mw-strength-bar">
+                                    <div class="mw-strength-segment @(StrengthLevel >= 1 ? "active" : "")"
+                                         style="@(StrengthLevel >= 1 ? $"background:{StrengthColor}" : "")">
+                                    </div>
+                                    <div class="mw-strength-segment @(StrengthLevel >= 2 ? "active" : "")"
+                                         style="@(StrengthLevel >= 2 ? $"background:{StrengthColor}" : "")">
+                                    </div>
+                                    <div class="mw-strength-segment @(StrengthLevel >= 3 ? "active" : "")"
+                                         style="@(StrengthLevel >= 3 ? $"background:{StrengthColor}" : "")">
+                                    </div>
+                                    <div class="mw-strength-segment @(StrengthLevel >= 4 ? "active" : "")"
+                                         style="@(StrengthLevel >= 4 ? $"background:{StrengthColor}" : "")">
+                                    </div>
+                                </div>
+                            }
                         </div>
 
                         <!-- CONFIRM PASSWORD -->

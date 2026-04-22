@@ -86,3 +86,36 @@
     }
 }
 
+/* STRENGTH METER */
+.mw-strength-meter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.mw-strength-bar {
+    display: flex;
+    gap: 4px;
+    flex: 1;
+}
+
+/* each segment always visible as gray ✅ */
+.mw-strength-segment {
+    height: 5px;
+    flex: 1;
+    border-radius: 2px;
+    background: #e5e7eb; /* gray default — always visible ✅ */
+    transition: background 0.3s ease;
+}
+
+    /* active segment gets color from inline style ✅ */
+    .mw-strength-segment.active {
+        background: var(--strength-color, #e5e7eb);
+    }
+
+.mw-strength-label {
+    font-size: 12px;
+    font-weight: 600;
+    min-width: 45px;
+    transition: color 0.3s ease;
+}

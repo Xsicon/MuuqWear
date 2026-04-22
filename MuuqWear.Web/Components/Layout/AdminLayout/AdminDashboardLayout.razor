@@ -1,10 +1,7 @@
-﻿@implements IDisposable
-@inject AuthStateService AuthStateService
+﻿@* @inject AuthStateService AuthStateService
 @using MuuqWear.Application.Services.AuthService
 @using MuuqWear.Web.Components.Shared
 @inherits LayoutComponentBase
-
-<div id="admin-auth-overlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:white;z-index:9999;"></div>
 
 <div class="mw-admin">
     <aside class="mw-admin-sidebar d-none d-md-flex">
@@ -20,13 +17,86 @@
     </div>
 </div>
 
-<AdminAuthCheck />
 
 @code {
     private bool isMenuOpen = false;
     void ToggleMenu() { isMenuOpen = !isMenuOpen; StateHasChanged(); }
     void CloseMenu() { isMenuOpen = false; StateHasChanged(); }
     void HandleOverlayClick() { isMenuOpen = false; StateHasChanged(); }
+} *@
 
-    public void Dispose() { }
+
+
+
+@inherits LayoutComponentBase
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Authorization
+@inject AuthenticationStateProvider AuthStateProvider
+
+<div class="mw-admin">
+    <!-- DESKTOP SIDEBAR -->
+    <aside class="mw-admin-sidebar d-none d-md-flex">
+        <AdminNavMenu />
+    </aside>
+    <!-- MOBILE OVERLAY + PANEL -->
+    <div class="mw-admin-overlay d-md-none @(isMenuOpen ? "mw-admin-overlay--open" : "")"
+         @onclick="HandleOverlayClick">
+        <div class="mw-admin-panel" @onclick:stopPropagation="true">
+            <div class="mw-admin-panel__header">
+                <span>Admin Menu</span>
+                <button class="mw-admin-panel__close" @onclick="CloseMenu">
+                    <svg width="18" height="18" viewBox="0 0 22 22" fill="none">
+                        <path d="M5 5L17 17" stroke="white" stroke-width="2" stroke-linecap="round" />
+                        <path d="M17 5L5 17" stroke="white" stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                </button>
+            </div>
+            <div class="mw-admin-panel__body">
+                <AdminNavMenu />
+            </div>
+        </div>
+    </div>
+    <!-- MAIN -->
+    <div class="mw-admin-main">
+        <div class="mw-admin-topbar">
+            <button class="mw-admin-hamburger d-flex d-md-none" @onclick="ToggleMenu">
+                @if (isMenuOpen)
+                {
+                    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                        <path d="M5 5L17 17" stroke="#1E2A47" stroke-width="2" stroke-linecap="round" />
+                        <path d="M17 5L5 17" stroke="#1E2A47" stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                }
+                else
+                {
+                    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                        <path d="M3 6H19" stroke="#1E2A47" stroke-width="2" stroke-linecap="round" />
+                        <path d="M3 11H19" stroke="#1E2A47" stroke-width="2" stroke-linecap="round" />
+                        <path d="M3 16H19" stroke="#1E2A47" stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                }
+            </button>
+            <div class="mw-admin-title">Admin Dashboard</div>
+            <!-- ADMIN USERNAME -->
+            <div class="mw-admin-user">Welcome, @adminUserName</div>
+        </div>
+        <div class="mw-admin-content container-fluid">
+            @Body
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool isMenuOpen = false;
+    private string adminUserName = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        adminUserName = authState.User.Identity?.Name ?? "";
+    }
+
+    void ToggleMenu() { isMenuOpen = !isMenuOpen; StateHasChanged(); }
+    void CloseMenu() { isMenuOpen = false; StateHasChanged(); }
+    void HandleOverlayClick() { isMenuOpen = false; StateHasChanged(); }
 }

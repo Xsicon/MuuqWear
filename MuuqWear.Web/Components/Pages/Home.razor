@@ -165,14 +165,19 @@
                 @foreach (var item in NewArrivals)
                 {
                     <div class="col-12 col-sm-6 col-md-4 col-lg-3 mw-newarrivalcarousel-item">
-                        <div class="mw-arrivals__card">
-                            <div class="mw-arrivals__image">
-                                <img src="@item.ImageUrl" />
-                                <div class="mw-arrivals__badge">NEW</div>
+
+                        @* wrap card in link → navigates to product detail ✅ *@
+                        <a href="/productdetail/@item.Id" class="mw-arrivals__card-link">
+                            <div class="mw-arrivals__card">
+                                <div class="mw-arrivals__image">
+                                    <img src="@item.ImageUrl" alt="@item.Name" />
+                                    <div class="mw-arrivals__badge">NEW</div>
+                                </div>
+                                <h3>@item.Name</h3>
+                                <p>$@item.Price</p>
                             </div>
-                            <h3>@item.Name</h3>
-                            <p>$@item.Price</p>
-                        </div>
+                        </a>
+
                     </div>
                 }
 
@@ -226,19 +231,23 @@
                 @foreach (var item in FeaturedProducts)
                 {
                     <div class="col-12 col-md-6">
-                        <div class="mw-featured__card">
-                            <div class="mw-featured__img-wrap">
-                                <img src="@item.ImageUrl" alt="@item.Name" />
+
+                        @* wrap in link ✅ *@
+                        <a href="/productdetail/@item.Id" class="mw-featured__card-link">
+                            <div class="mw-featured__card">
+                                <div class="mw-featured__img-wrap">
+                                    <img src="@item.ImageUrl" alt="@item.Name" />
+                                </div>
+                                <div class="mw-featured__content">
+                                    <h3>@item.Name</h3>
+                                    <p>$@item.Price</p>
+                                    <span>Shop Collection →</span>
+                                </div>
                             </div>
-                            <div class="mw-featured__content">
-                                <h3>@item.Name</h3>
-                                <p>$@item.Price</p>
-                                <a href="/shop">Shop Collection</a>
-                            </div>
-                        </div>
+                        </a>
+
                     </div>
                 }
-
             </div>
         </div>
 
@@ -360,9 +369,11 @@
                 @foreach (var item in BestSellerProducts)
                 {
                     <div class="bestsellers-slide">
-                        <a href="/shop" class="mw-bestsellers__card">
+
+                        @* already has anchor tag — update href ✅ *@
+                        <a href="/productdetail/@item.Id" class="mw-bestsellers__card">
                             <div class="mw-bestsellers__image">
-                                <img src="@item.ImageUrl" />
+                                <img src="@item.ImageUrl" alt="@item.Name" />
                                 @if (!string.IsNullOrEmpty(item.Badge))
                                 {
                                     <div class="mw-bestsellers__badge">@item.Badge</div>
@@ -371,9 +382,9 @@
                             <h3>@item.Name</h3>
                             <p>$@item.Price</p>
                         </a>
+
                     </div>
                 }
-
             </div>
 
         </div>

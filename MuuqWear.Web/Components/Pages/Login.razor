@@ -1,24 +1,23 @@
-﻿@page "/admin/f8e2a947-3c1b-4d9e-b562-7a0f1e8d3c92/login"
-@rendermode InteractiveServer
+﻿@page "/login"
+@layout Layout.AuthLayout.AuthLayout
+@using Microsoft.AspNetCore.Components.Authorization
 @using MuuqWear.Application.Services.AuthService
 @using MuuqWear.Application.Shared
+@rendermode InteractiveServer
 @using MuuqWear.Model.Authentication
-@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @inject IAuthService IAuthService
 @inject AuthStateService AuthStateService
 @inject NavigationManager NavigationManager
 @inject CustomAuthenticationStateProvider AuthStateProvider
-@inject IJSRuntime JS
-
 
 <section class="mw-auth">
     <div class="container">
         <div class="row justify-content-center">
-            <div class="col-12 col-sm-10 col-md-6 col-lg-4">
+            <div class="col-12 col-sm-10 col-md-6 col-lg-4 mt-5">
                 <div class="mw-auth-card text-center">
 
                     <img src="/images/muuqwearlogo.png" class="mw-auth-logo mb-3" />
-                    <h2 class="mw-auth-title">Admin Login</h2>
+                    <h2 class="mw-auth-title">Login</h2>
                     <p class="mw-auth-subtitle mb-4">Enter your credentials</p>
 
                     <EditForm Model="@loginModel" OnValidSubmit="HandleLogin">
@@ -38,7 +37,18 @@
                                        @bind-Value="loginModel.Password" />
                             <ValidationMessage For="@(() => loginModel.Password)" />
                         </div>
-
+                        <!-- REMEMBER ME -->
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <div class="form-check text-start">
+                                <input type="checkbox"
+                                       class="form-check-input"
+                                       id="rememberMe"
+                                       @bind="rememberMe" />
+                                <label class="form-check-label small" for="rememberMe">
+                                    Remember Me
+                                </label>
+                            </div>
+                        </div>
                         <button type="submit" class="mw-btn-primary w-100">
                             Login
                         </button>
@@ -54,10 +64,16 @@
     </div>
 </section>
 
+
 @code {
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
+
     private LoginModel loginModel = new();
-    private string message = string.Empty;
-    private string messageCssClass = string.Empty;
+    private string message = "";
+    private string messageCssClass = "";
+    private bool rememberMe = false;
+
 
     private async Task HandleLogin()
     {
@@ -66,8 +82,7 @@
         if (result.Success && result.Data != null)
         {
             var authData = result.Data;
-
-            if (authData.Role != "admin")
+            if (authData.Role != "user")
             {
                 message = "Access denied.";
                 messageCssClass = "text-danger";
@@ -76,12 +91,24 @@
             await AuthNavigationHelper.PrepareAndNavigateAsync(
                     result.Data,
                     NavigationManager,
-                    "/admin");
+                    "/login",
+            rememberMe);
         }
         else
         {
             message = result.Message;
             messageCssClass = "text-danger";
+        }
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthenticationStateTask is null) return;
+
+        var authState = await AuthenticationStateTask;
+
+        if (authState.User.Identity?.IsAuthenticated == true)
+        {
+            NavigationManager.NavigateTo("/profile", replace: true); // ✅ Always /profile
         }
     }
 }

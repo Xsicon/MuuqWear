@@ -1,4 +1,6 @@
-﻿@inherits LayoutComponentBase
+﻿@using MuuqWear.Web.Components.Shared
+@inherits LayoutComponentBase
+@inject NavigationManager NavigationManager;
 
 <div class="page">
     <NavMenu />
@@ -11,9 +13,36 @@
         <FooterMenu />
     </main>
 </div>
+<ToastComponent />
 
 @* <div id="blazor-error-ui">
     An unhandled error has occurred.
     <a href="" class="reload">Reload</a>
     <a class="dismiss">🗙</a>
 </div> *@
+
+@code {
+    private bool _isNavigating = false;
+
+    protected override void OnInitialized()
+    {
+        NavigationManager.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        InvokeAsync(async () =>
+        {
+            _isNavigating = true;
+            StateHasChanged();
+            await Task.Delay(600);
+            _isNavigating = false;
+            StateHasChanged();
+        });
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+}

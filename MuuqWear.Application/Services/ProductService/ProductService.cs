@@ -1,5 +1,6 @@
 ﻿using MuuqWear.Application.Shared;
 using MuuqWear.Model.Products;
+using MuuqWear.Model.Shared;
 using System.Net.Http.Json;
 
 namespace MuuqWear.Application.Services.ProductService;
@@ -12,14 +13,54 @@ public class ProductService : IProductService
         _http = http;
     }
 
-    public async Task<Response<List<ProductModel>>> GetAll()
+    public async Task<Response<PaginatedResponse<ProductModel>>> GetAll(int page = 1, int pageSize = 10, string? search = null)
     {
-        var result = await _http.GetFromJsonAsync<Response<List<ProductModel>>>("api/Product/all");
-        return result ?? new Response<List<ProductModel>>
+        try
         {
-            Success = false,
-            Message = "Empty response from server"
-        };
+            // build URL with query params
+            // e.g. api/Product/all?page=1&pageSize=10
+            var url = $"api/Product/all?page={page}&pageSize={pageSize}&search={search}";
+
+            var result = await _http
+                .GetFromJsonAsync<Response<PaginatedResponse<ProductModel>>>(url);
+
+            return result ?? new Response<PaginatedResponse<ProductModel>>
+            {
+                Success = false,
+                Message = "Empty response from server"
+            };
+        }
+        catch (Exception ex)
+        {
+            return new Response<PaginatedResponse<ProductModel>>
+            {
+                Success = false,
+                Message = ex.Message
+            };
+        }
+    }
+
+    public async Task<Response<HomeProductsModel>> GetHomeProducts()
+    {
+        try
+        {
+            var result = await _http
+                .GetFromJsonAsync<Response<HomeProductsModel>>("api/Product/home");
+
+            return result ?? new Response<HomeProductsModel>
+            {
+                Success = false,
+                Message = "Empty response from server"
+            };
+        }
+        catch (Exception ex)
+        {
+            return new Response<HomeProductsModel>
+            {
+                Success = false,
+                Message = ex.Message
+            };
+        }
     }
 
     public async Task<Response<ProductModel>> Add(AddProductModel request)
@@ -100,6 +141,93 @@ public class ProductService : IProductService
     public async Task<Response<bool>> Delete(Guid id)
     {
         var result = await _http.DeleteAsync($"api/Product/delete/{id}");
+        if (!result.IsSuccessStatusCode)
+        {
+            return new Response<bool>
+            {
+                Success = false,
+                Message = $"Server error: {result.StatusCode}"
+            };
+        }
+        var response = await result.Content.ReadFromJsonAsync<Response<bool>>();
+        return response ?? new Response<bool>
+        {
+            Success = false,
+            Message = "Empty response from server"
+        };
+    }
+
+    public async Task<Response<ProductModel>> GetById(Guid id)
+    {
+        try
+        {
+            // call backend GET api/Product/{id}
+            // id inserted directly in URL ✅
+            var result = await _http
+                .GetFromJsonAsync<Response<ProductModel>>($"api/Product/{id}");
+
+            return result ?? new Response<ProductModel>
+            {
+                Success = false,
+                Message = "Empty response from server"
+            };
+        }
+        catch (Exception ex)
+        {
+            return new Response<ProductModel>
+            {
+                Success = false,
+                Message = ex.Message
+            };
+        }
+    }
+
+    public async Task<Response<List<ProductModel>>> GetRelated(Guid id)
+    {
+        try
+        {
+            // call backend GET api/Product/{id}/related
+            var result = await _http
+                .GetFromJsonAsync<Response<List<ProductModel>>>($"api/Product/{id}/related");
+
+            return result ?? new Response<List<ProductModel>>
+            {
+                Success = false,
+                Message = "Empty response from server"
+            };
+        }
+        catch (Exception ex)
+        {
+            return new Response<List<ProductModel>>
+            {
+                Success = false,
+                Message = ex.Message
+            };
+        }
+    }
+
+    public async Task<Response<ProductImageModel>> AddProductImage(AddProductImageModel request)
+    {
+        var result = await _http.PostAsJsonAsync("api/Product/images/add", request);
+        if (!result.IsSuccessStatusCode)
+        {
+            return new Response<ProductImageModel>
+            {
+                Success = false,
+                Message = $"Server error: {result.StatusCode}"
+            };
+        }
+        var response = await result.Content.ReadFromJsonAsync<Response<ProductImageModel>>();
+        return response ?? new Response<ProductImageModel>
+        {
+            Success = false,
+            Message = "Empty response from server"
+        };
+    }
+
+    public async Task<Response<bool>> DeleteProductImage(Guid imageId)
+    {
+        var result = await _http.DeleteAsync($"api/Product/images/{imageId}");
         if (!result.IsSuccessStatusCode)
         {
             return new Response<bool>

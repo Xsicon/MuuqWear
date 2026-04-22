@@ -1,6 +1,8 @@
 ﻿@page "/admin"
+@using Microsoft.AspNetCore.Authorization
 @layout Components.Layout.AdminLayout.AdminDashboardLayout
 @rendermode InteractiveServer
+@attribute [Authorize(Roles = "admin")]
 
 
 <PageTitle>Admin Dashboard</PageTitle>

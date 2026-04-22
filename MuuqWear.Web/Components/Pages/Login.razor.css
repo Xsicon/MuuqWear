@@ -1,0 +1,8 @@
+﻿.mw-btn-primary {
+    background: #1E2A47;
+    color: white;
+    border: none;
+    padding: 12px;
+    font-weight: 600;
+    transition: 0.2s;
+}
