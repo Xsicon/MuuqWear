@@ -108,4 +108,209 @@ public class AuthService : IAuthService
         }
     }
 
+    public async Task<Response<int>> SendMagicLink(MagicLinkModel request)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(request.Email))
+                return new Response<int>
+                {
+                    Success = false,
+                    Message = "Email is required"
+                };
+
+            var result = await _http.PostAsJsonAsync(
+         "api/Auth/magic-link", request);
+
+            if (!result.IsSuccessStatusCode)
+            {
+                // try read error message from response body
+                var errorResponse = await result.Content
+                    .ReadFromJsonAsync<Response<int>>();
+
+                return errorResponse ?? new Response<int>
+                {
+                    Success = false,
+                    Message = $"Server error: {result.StatusCode}"
+                };
+            }
+
+            var response = await result.Content
+                .ReadFromJsonAsync<Response<int>>();
+
+            return response ?? new Response<int>
+            {
+                Success = false,
+                Message = "Empty response from server"
+            };
+        }
+        catch (Exception ex)
+        {
+            return new Response<int>
+            {
+                Success = false,
+                Message = ex.Message
+            };
+        }
+    }
+
+    public async Task<Response<AuthResponseModel>> VerifyMagicLink(
+    MagicLinkVerifyModel request)
+    {
+        try
+        {
+            var result = await _http.PostAsJsonAsync(
+                "api/Auth/verify-magic-link", request);
+
+            if (!result.IsSuccessStatusCode)
+            {
+                var errorResponse = await result.Content
+                    .ReadFromJsonAsync<Response<AuthResponseModel>>();
+                return errorResponse ?? new Response<AuthResponseModel>
+                {
+                    Success = false,
+                    Message = $"Server error: {result.StatusCode}"
+                };
+            }
+
+            var response = await result.Content
+                .ReadFromJsonAsync<Response<AuthResponseModel>>();
+
+            return response ?? new Response<AuthResponseModel>
+            {
+                Success = false,
+                Message = "Empty response from server"
+            };
+        }
+        catch (Exception ex)
+        {
+            return new Response<AuthResponseModel>
+            {
+                Success = false,
+                Message = ex.Message
+            };
+        }
+    }
+
+    public async Task<Response<string>> GetGoogleSignInUrl()
+    {
+        try
+        {
+            // GET api/Auth/google-signin-url
+            // no body needed — just GET request ✅
+            var result = await _http
+                .GetFromJsonAsync<Response<string>>("api/Auth/google-signin-url");
+
+            return result ?? new Response<string>
+            {
+                Success = false,
+                Message = "Empty response from server"
+            };
+        }
+        catch (Exception ex)
+        {
+            return new Response<string>
+            {
+                Success = false,
+                Message = ex.Message
+            };
+        }
+    }
+
+    public async Task<Response<int>> SendPasswordReset(ForgotPasswordModel request)
+    {
+        try
+        {
+            // validate before API call ✅
+            if (string.IsNullOrWhiteSpace(request.Email))
+                return new Response<int>
+                {
+                    Success = false,
+                    Message = "Email is required"
+                };
+
+            var result = await _http.PostAsJsonAsync(
+                "api/Auth/forgot-password", request);
+
+            if (!result.IsSuccessStatusCode)
+            {
+                var errorResponse = await result.Content
+                    .ReadFromJsonAsync<Response<int>>();
+                return errorResponse ?? new Response<int>
+                {
+                    Success = false,
+                    Message = $"Server error: {result.StatusCode}"
+                };
+            }
+
+            var response = await result.Content
+                .ReadFromJsonAsync<Response<int>>();
+
+            return response ?? new Response<int>
+            {
+                Success = false,
+                Message = "Empty response from server"
+            };
+        }
+        catch (Exception ex)
+        {
+            return new Response<int>
+            {
+                Success = false,
+                Message = ex.Message
+            };
+        }
+    }
+
+    public async Task<Response<int>> UpdatePassword(ResetPasswordModel request)
+    {
+        try
+        {
+            // validate before API call ✅
+            if (string.IsNullOrWhiteSpace(request.NewPassword))
+                return new Response<int>
+                {
+                    Success = false,
+                    Message = "Password is required"
+                };
+
+            if (request.NewPassword != request.ConfirmPassword)
+                return new Response<int>
+                {
+                    Success = false,
+                    Message = "Passwords do not match"
+                };
+
+            var result = await _http.PostAsJsonAsync(
+                "api/Auth/reset-password", request);
+
+            if (!result.IsSuccessStatusCode)
+            {
+                var errorResponse = await result.Content
+                    .ReadFromJsonAsync<Response<int>>();
+                return errorResponse ?? new Response<int>
+                {
+                    Success = false,
+                    Message = $"Server error: {result.StatusCode}"
+                };
+            }
+
+            var response = await result.Content
+                .ReadFromJsonAsync<Response<int>>();
+
+            return response ?? new Response<int>
+            {
+                Success = false,
+                Message = "Empty response from server"
+            };
+        }
+        catch (Exception ex)
+        {
+            return new Response<int>
+            {
+                Success = false,
+                Message = ex.Message
+            };
+        }
+    }
 }

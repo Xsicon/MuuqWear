@@ -70,8 +70,14 @@ namespace MuuqWear.Web.Components.Pages.Admin
         {
             isLoading = true;
 
-            var result = await ProductService.GetAll(page, pageSize,
-                string.IsNullOrEmpty(search) ? null : search);
+            var filter = new ProductFilterModel
+            {
+                Page = page,
+                PageSize = pageSize,
+                Search = string.IsNullOrEmpty(search) ? null : search
+            };
+
+            var result = await ProductService.GetAll(filter);
 
             if (result.Success && result.Data != null)
             {

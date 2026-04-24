@@ -247,3 +247,47 @@
     .mw-filter-btn:active {
         transform: scale(0.98);
     }
+
+/* PRODUCT SKELETON LOADING */
+.mw-product-skeleton {
+    height: 320px;
+    border-radius: 8px;
+    background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+    background-size: 200% 100%;
+    animation: mw-skeleton 1.5s infinite;
+}
+
+@keyframes mw-skeleton {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* PRODUCT LINK */
+.mw-product-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+    .mw-product-link:hover {
+        text-decoration: none;
+        color: inherit;
+    }
+
+/* PRODUCT BADGE */
+.mw-product-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: #1E2A47;
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 4px;
+}

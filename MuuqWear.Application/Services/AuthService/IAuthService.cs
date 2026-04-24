@@ -9,6 +9,9 @@ public interface IAuthService
     Task<bool> IsUserLoggedIn();
     Task<Response<AuthResponseModel>> Login(LoginModel request);
     Task<Response<int>> Logout();
-
-
+    Task<Response<int>> SendMagicLink(MagicLinkModel request);
+    Task<Response<AuthResponseModel>> VerifyMagicLink(MagicLinkVerifyModel request);
+    Task<Response<string>> GetGoogleSignInUrl();
+    Task<Response<int>> SendPasswordReset(ForgotPasswordModel request);
+    Task<Response<int>> UpdatePassword(ResetPasswordModel request);
 }

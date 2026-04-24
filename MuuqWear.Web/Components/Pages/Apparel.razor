@@ -1,8 +1,16 @@
 ﻿@page "/shop/apparel"
 @rendermode InteractiveServer
 @inject IJSRuntime JS
+@inject IProductService ProductService
+@inject ICategoryService CategoryService
+@inject NavigationManager NavigationManager
+@using MuuqWear.Application.Services.ProductService
+@using MuuqWear.Application.Services.CategoryService
+@using MuuqWear.Model.Products
+@using MuuqWear.Web.Components.Shared
 
 <PageTitle>Apparel</PageTitle>
+
 <section class="mw-shop container py-4 py-md-5">
 
     <!-- BREADCRUMB -->
@@ -14,101 +22,99 @@
 
     <!-- TITLE -->
     <h1 class="mw-title">Shop All</h1>
-
-    <!-- DESCRIPTION -->
     <p class="mw-desc">
         Discover our curated collection of technical outerwear, premium knitwear,
         and essential accessories designed for the modern explorer.
     </p>
 
     <!-- MOBILE FILTER BUTTON -->
-    <button class="d-flex align-items-center mw-filter-btn bg-transparent"
+    <button class="d-flex align-items-center mw-filter-btn bg-transparent mb-3"
             @onclick="OpenFilters">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-             stroke-linejoin="round" class="lucide lucide-sliders-horizontal"
-             data-fg-bygr45="1.222:34.7576:/src/app/pages/Shop.tsx:129:11:5723:31:e:SlidersHorizontal::::::EGFQ"
-             data-fgid-bygr45=":rne:">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+             viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="21" x2="14" y1="4" y2="4"></line>
-            <line x1="10" x2="3" y1="4" y2="4">
-
-            </line>
-            <line x1="21" x2="12" y1="12" y2="12">
-
-            </line>
+            <line x1="10" x2="3" y1="4" y2="4"></line>
+            <line x1="21" x2="12" y1="12" y2="12"></line>
             <line x1="8" x2="3" y1="12" y2="12"></line>
-            <line x1="21" x2="16" y1="20" y2="20">
-
-            </line>
+            <line x1="21" x2="16" y1="20" y2="20"></line>
             <line x1="12" x2="3" y1="20" y2="20"></line>
-            <line x1="14" x2="14" y1="2" y2="6">
-
-            </line>
+            <line x1="14" x2="14" y1="2" y2="6"></line>
             <line x1="8" x2="8" y1="10" y2="14"></line>
-            <line x1="16" x2="16" y1="18" y2="22">
-
-            </line>
+            <line x1="16" x2="16" y1="18" y2="22"></line>
         </svg>
-        <span>Filters</span>
+        <span class="ms-1">Filters</span>
     </button>
 
     <div class="row g-4">
 
-        <!-- SIDEBAR (DESKTOP ONLY) -->
+        <!-- SIDEBAR FILTERS (DESKTOP) -->
         <aside class="col-lg-3 d-none d-lg-block">
             <div class="mw-filter">
 
                 <div class="d-flex justify-content-between mb-3">
                     <h5 class="fw-bold">Filters</h5>
-                    <button class="btn btn-sm text-muted">Clear All</button>
+                    <button class="btn btn-sm text-muted"
+                            @onclick="ClearFilters">
+                        Clear All
+                    </button>
                 </div>
 
-                <!-- CATEGORY -->
+                <!-- CATEGORIES -->
                 <div class="mb-4">
                     <h6 class="mw-filter-title">Categories</h6>
-
-                    <div class="mw-check">
-                        <input type="checkbox" id="outerwear" />
-                        <label for="outerwear">Outerwear</label>
-                    </div>
-
-                    <div class="mw-check">
-                        <input type="checkbox" id="knitwear" />
-                        <label for="knitwear">Knitwear</label>
-                    </div>
-
-                    <div class="mw-check">
-                        <input type="checkbox" id="accessories" />
-                        <label for="accessories">Accessories</label>
-                    </div>
+                    @if (isLoadingCategories)
+                    {
+                        <p class="text-muted small">Loading...</p>
+                    }
+                    else
+                    {
+                        @foreach (var category in Categories)
+                        {
+                            <div class="mw-check">
+                                <input type="checkbox"
+                                       id="cat_@category.Id"
+                                       checked="@(filter.CategoryId == category.Id)"
+                                       @onchange="() => ToggleCategory(category.Id)" />
+                                <label for="cat_@category.Id">@category.Name</label>
+                            </div>
+                        }
+                    }
                 </div>
 
-                <!-- SIZE -->
+                <!-- SIZES -->
                 <div class="mb-4">
                     <h6 class="mw-filter-title">Size</h6>
-
                     <div class="mw-size-grid">
-                        <button class="mw-size">XS</button>
-                        <button class="mw-size active">S</button>
-                        <button class="mw-size">M</button>
-                        <button class="mw-size">L</button>
-                        <button class="mw-size">XL</button>
-                        <button class="mw-size">XXL</button>
+                        @foreach (var size in AvailableSizes)
+                        {
+                            <button class="mw-size @(filter.SelectedSizes.Contains(size) ? "active" : "")"
+                                    @onclick="() => ToggleSize(size)">
+                                @size
+                            </button>
+                        }
                     </div>
                 </div>
 
                 <!-- PRICE -->
                 <div>
-                    <h6 class="mw-filter-title">Price</h6>
-                    <div class="mw-price">
-
-                        <div class="d-flex justify-content-between small mb-2">
-                            <span>$0</span>
-                            <span>$500+</span>
-                        </div>
-
-                        <input type="range" class="mw-range" />
+                    <h6 class="mw-filter-title">Price Range</h6>
+                    <div class="d-flex gap-2 mb-2">
+                        <input type="number"
+                               class="form-control form-control-sm"
+                               placeholder="Min"
+                               value="@filter.MinPrice"
+                               @onchange="e => SetMinPrice(e)" />
+                        <input type="number"
+                               class="form-control form-control-sm"
+                               placeholder="Max"
+                               value="@filter.MaxPrice"
+                               @onchange="e => SetMaxPrice(e)" />
                     </div>
+                    <button class="btn btn-sm btn-dark w-100"
+                            @onclick="ApplyFilters">
+                        Apply
+                    </button>
                 </div>
 
             </div>
@@ -120,50 +126,78 @@
             <!-- TOP BAR -->
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
                 <p class="text-muted small mb-0">
-                    Showing <span class="fw-bold text-dark">6</span> products
+                    Showing <span class="fw-bold text-dark">@totalCount</span> products
                 </p>
 
-                <select class="form-select w-auto">
-                    <option>Featured</option>
-                    <option>Price: Low to High</option>
+                <select class="form-select w-auto"
+                        value="@filter.SortBy"
+                        @onchange="HandleSortChange">
+                    <option value="featured">Featured</option>
+                    <option value="newest">Newest First</option>
+                    <option value="price_asc">Price: Low to High</option>
+                    <option value="price_desc">Price: High to Low</option>
                 </select>
             </div>
 
             <!-- GRID -->
-            <div class="row g-3 g-md-4">
-
-                @foreach (var item in Products)
-                {
-                    <div class="col-6 col-lg-4">
-
-                        <div class="mw-product">
-
-                            <div class="mw-product-img">
-                                <img src="@item.Image" />
-                            </div>
-
-                            <p class="mw-product-category">@item.Category</p>
-
-                            <h6 class="mw-product-title">@item.Title</h6>
-
-                            <p class="mw-product-price">$@item.Price</p>
-
+            @if (isLoading)
+            {
+                <div class="row g-3 g-md-4">
+                    @for (int i = 0; i < filter.PageSize; i++)
+                    {
+                        <div class="col-6 col-lg-4">
+                            <div class="mw-product-skeleton"></div>
                         </div>
+                    }
+                </div>
+            }
+            else if (!Products.Any())
+            {
+                <div class="text-center py-5">
+                    <p class="text-muted">No products found.</p>
+                    <button class="mw-btn-primary mt-2"
+                            @onclick="ClearFilters">
+                        Clear Filters
+                    </button>
+                </div>
+            }
+            else
+            {
+                <div class="row g-3 g-md-4">
+                    @foreach (var item in Products)
+                    {
+                        <div class="col-6 col-lg-4">
+                            <a href="/productdetail/@item.Id"
+                               class="mw-product-link">
+                                <div class="mw-product">
+                                    <div class="mw-product-img">
+                                        <img src="@item.ImageUrl"
+                                             alt="@item.Name" />
+                                        @if (!string.IsNullOrEmpty(item.Badge))
+                                        {
+                                            <span class="mw-product-badge">
+                                                @item.Badge
+                                            </span>
+                                        }
+                                    </div>
+                                    <p class="mw-product-category">
+                                        @(Categories.FirstOrDefault(c => c.Id == item.CategoryId)?.Name ?? "")
+                                    </p>
+                                    <h6 class="mw-product-title">@item.Name</h6>
+                                    <p class="mw-product-price">$@item.Price.ToString("F2")</p>
+                                </div>
+                            </a>
+                        </div>
+                    }
+                </div>
 
-                    </div>
-                }
-
-            </div>
-
-            <!-- PAGINATION -->
-            <div class="d-flex justify-content-center mt-5 gap-2">
-
-                <button class="mw-page-btn">‹</button>
-                <button class="mw-page-btn active">1</button>
-                <button class="mw-page-btn">2</button>
-                <button class="mw-page-btn">›</button>
-
-            </div>
+                <!-- PAGINATION -->
+                <PaginationComponent TItem="ProductModel"
+                                     TotalCount="@totalCount"
+                                     CurrentPage="@filter.Page"
+                                     PageSize="@filter.PageSize"
+                                     OnPageChanged="HandlePageChanged" />
+            }
 
         </div>
 
@@ -171,148 +205,250 @@
 
 </section>
 
+<!-- MOBILE FILTER DRAWER -->
 <div class="mw-filter-overlay @(isFilterOpen ? "open" : "")"
      @onclick="CloseFilters">
-
-    <!-- DRAWER -->
     <div class="mw-filter-drawer" @onclick:stopPropagation="true">
 
-        <!-- HEADER -->
         <div class="mw-filter-header d-flex justify-content-between align-items-center">
             <h5 class="fw-bold">Filters</h5>
             <button class="mw-filter-close" @onclick="CloseFilters">✕</button>
         </div>
 
-        <!-- CONTENT (REUSE SAME FILTER UI) -->
         <div class="mw-filter-body">
-
-            <!--COPY SAME FILTER CONTENT -->
             <div class="mw-filter">
 
                 <div class="d-flex justify-content-between mb-3">
                     <h6 class="fw-bold">Filters</h6>
-                    <button class="btn btn-sm text-muted">Clear All</button>
+                    <button class="btn btn-sm text-muted"
+                            @onclick="ClearFilters">
+                        Clear All
+                    </button>
                 </div>
 
-                <!-- CATEGORY -->
+                <!-- CATEGORIES -->
                 <div class="mb-4">
                     <h6 class="mw-filter-title">Categories</h6>
-
-                    <div class="mw-check">
-                        <input type="checkbox" id="m_outerwear" />
-                        <label for="m_outerwear">Outerwear</label>
-                    </div>
-
-                    <div class="mw-check">
-                        <input type="checkbox" id="m_knitwear" />
-                        <label for="m_knitwear">Knitwear</label>
-                    </div>
-
-                    <div class="mw-check">
-                        <input type="checkbox" id="m_accessories" />
-                        <label for="m_accessories">Accessories</label>
-                    </div>
+                    @foreach (var category in Categories)
+                    {
+                        <div class="mw-check">
+                            <input type="checkbox"
+                                   id="m_cat_@category.Id"
+                                   checked="@(filter.CategoryId == category.Id)"
+                                   @onchange="() => ToggleCategory(category.Id)" />
+                            <label for="m_cat_@category.Id">@category.Name</label>
+                        </div>
+                    }
                 </div>
 
-                <!-- SIZE -->
+                <!-- SIZES -->
                 <div class="mb-4">
                     <h6 class="mw-filter-title">Size</h6>
-
                     <div class="mw-size-grid">
-                        <button class="mw-size">XS</button>
-                        <button class="mw-size active">S</button>
-                        <button class="mw-size">M</button>
-                        <button class="mw-size">L</button>
-                        <button class="mw-size">XL</button>
-                        <button class="mw-size">XXL</button>
+                        @foreach (var size in AvailableSizes)
+                        {
+                            <button class="mw-size @(filter.SelectedSizes.Contains(size) ? "active" : "")"
+                                    @onclick="() => ToggleSize(size)">
+                                @size
+                            </button>
+                        }
                     </div>
                 </div>
 
                 <!-- PRICE -->
                 <div>
                     <h6 class="mw-filter-title">Price Range</h6>
-
-                    <div class="d-flex justify-content-between small mb-2">
-                        <span>$0</span>
-                        <span>$500+</span>
+                    <div class="d-flex gap-2 mb-2">
+                        <input type="number"
+                               class="form-control form-control-sm"
+                               placeholder="Min"
+                               value="@filter.MinPrice"
+                               @onchange="e => SetMinPrice(e)" />
+                        <input type="number"
+                               class="form-control form-control-sm"
+                               placeholder="Max"
+                               value="@filter.MaxPrice"
+                               @onchange="e => SetMaxPrice(e)" />
                     </div>
-
-                    <input type="range" class="mw-range" />
                 </div>
 
             </div>
-
         </div>
 
-        <!-- FOOTER -->
         <div class="mw-filter-footer">
-            <button class="btn btn-dark w-100">
-                Apply Filters (6 products)
+            <button class="btn btn-dark w-100" @onclick="ApplyFilters">
+                Apply Filters (@totalCount products)
             </button>
         </div>
 
     </div>
 </div>
 
-
 @code {
 
+    // state
+    private ShopFilterModel filter = new();
+    private List<ProductModel> Products = new();
+    private List<CategoryModel> Categories = new();
+    private int totalCount = 0;
+    private bool isLoading = true;
+    private bool isLoadingCategories = true;
     private bool isFilterOpen = false;
+
+    // available sizes
+    private List<string> AvailableSizes = new()
+    {
+        "XS", "S", "M", "L", "XL", "XXL"
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        // read search from URL if navigated from search panel
+        var uri = new Uri(NavigationManager.Uri);
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        var searchFromUrl = query["search"];
+
+        if (!string.IsNullOrEmpty(searchFromUrl))
+            filter.Search = searchFromUrl;
+
+        await Task.WhenAll(LoadCategories(), LoadProducts());
+    }
+
+    private async Task LoadCategories()
+    {
+        isLoadingCategories = true;
+        var result = await CategoryService.GetAll();
+        if (result.Success && result.Data != null)
+            Categories = result.Data;
+        isLoadingCategories = false;
+    }
+
+    private async Task LoadProducts()
+    {
+        isLoading = true;
+
+        var result = await ProductService.GetAll(filter.ToFilterModel());
+
+        if (result.Success && result.Data != null)
+        {
+            Products = result.Data.Data;
+            totalCount = result.Data.TotalCount;
+            filter.Page = result.Data.Page;
+        }
+
+        isLoading = false;
+    }
+
+    // toggle category filter
+    private async Task ToggleCategory(Guid categoryId)
+    {
+        // if same category clicked → deselect ✅
+        filter.CategoryId = filter.CategoryId == categoryId
+            ? null
+            : categoryId;
+
+        filter.Page = 1; // reset to page 1 ✅
+        await LoadProducts();
+        UpdateUrl();
+    }
+
+    // toggle size filter
+    private async Task ToggleSize(string size)
+    {
+        if (filter.SelectedSizes.Contains(size))
+            filter.SelectedSizes.Remove(size);
+        else
+            filter.SelectedSizes.Add(size);
+
+        filter.Page = 1; // reset to page 1 ✅
+        await LoadProducts();
+        UpdateUrl();
+    }
+
+    // set min price
+    private void SetMinPrice(ChangeEventArgs e)
+    {
+        if (decimal.TryParse(e.Value?.ToString(), out var val))
+            filter.MinPrice = val;
+        else
+            filter.MinPrice = null;
+    }
+
+    // set max price
+    private void SetMaxPrice(ChangeEventArgs e)
+    {
+        if (decimal.TryParse(e.Value?.ToString(), out var val))
+            filter.MaxPrice = val;
+        else
+            filter.MaxPrice = null;
+    }
+
+    // apply price filters
+    private async Task ApplyFilters()
+    {
+        filter.Page = 1;
+        await LoadProducts();
+        UpdateUrl();
+        CloseFilters();
+    }
+
+    // handle sort change
+    private async Task HandleSortChange(ChangeEventArgs e)
+    {
+        filter.SortBy = e.Value?.ToString() ?? "featured";
+        filter.Page = 1;
+        await LoadProducts();
+        UpdateUrl();
+    }
+
+    // handle pagination
+    private async Task HandlePageChanged((int Page, int PageSize) args)
+    {
+        filter.Page = args.Page;
+        filter.PageSize = args.PageSize;
+        await LoadProducts();
+        UpdateUrl();
+    }
+
+    // clear all filters
+    private async Task ClearFilters()
+    {
+        filter = new ShopFilterModel();
+        await LoadProducts();
+        UpdateUrl();
+    }
+
+    // update URL with current filters ✅
+    // shareable links ✅
+    private void UpdateUrl()
+    {
+        var queryParams = new List<string>();
+
+        if (filter.Page > 1)
+            queryParams.Add($"page={filter.Page}");
+
+        if (filter.CategoryId.HasValue)
+            queryParams.Add($"categoryId={filter.CategoryId.Value}");
+
+        if (filter.SelectedSizes.Any())
+            queryParams.Add($"sizes={string.Join(",", filter.SelectedSizes)}");
+
+        if (filter.MinPrice.HasValue)
+            queryParams.Add($"minPrice={filter.MinPrice.Value}");
+
+        if (filter.MaxPrice.HasValue)
+            queryParams.Add($"maxPrice={filter.MaxPrice.Value}");
+
+        if (filter.SortBy != "featured")
+            queryParams.Add($"sortBy={filter.SortBy}");
+
+        var url = queryParams.Any()
+            ? $"/shop/apparel?{string.Join("&", queryParams)}"
+            : "/shop/apparel";
+
+        NavigationManager.NavigateTo(url, replace: true);
+    }
 
     void OpenFilters() => isFilterOpen = true;
     void CloseFilters() => isFilterOpen = false;
-    public class Product
-    {
-        public string? Image { get; set; }
-        public string? Category { get; set; }
-        public string? Title { get; set; }
-        public decimal Price { get; set; }
-    }
-
-    private List<Product> Products = new()
-    {
-        new Product
-        {
-            Image = "https://images.unsplash.com/photo-1704716720991-cf3197cfb190?w=400&h=500&fit=crop",
-            Category = "Outerwear",
-            Title = "Elements Waterproof Parka",
-            Price = 185
-        },
-        new Product
-        {
-            Image = "https://images.unsplash.com/photo-1642853474532-9aca78f70629?w=400&h=500&fit=crop",
-            Category = "Knitwear",
-            Title = "Merino Essential Crew",
-            Price = 72
-        },
-        new Product
-        {
-            Image = "https://images.unsplash.com/photo-1555689502-c4b22d76c56f?w=400&h=500&fit=crop",
-            Category = "Trousers",
-            Title = "Raw Selvedge Denim",
-            Price = 120
-        },
-        new Product
-        {
-            Image = "https://images.unsplash.com/photo-1620231151282-957594b30e94?w=400&h=500&fit=crop",
-            Category = "Outerwear",
-            Title = "Utility Field Jacket",
-            Price = 145
-        },
-        new Product
-        {
-            Image = "https://images.unsplash.com/photo-1770385436782-e47efd8d1e80?w=400&h=500&fit=crop",
-            Category = "Accessories",
-            Title = "City Commuter 20L",
-            Price = 95
-        },
-        new Product
-        {
-            Image = "https://images.unsplash.com/photo-1718802323158-b32c0330ad4a?w=400&h=500&fit=crop",
-            Category = "Accessories",
-            Title = "M-01 Court Sneaker",
-            Price = 110
-        }
-    };
-
 }

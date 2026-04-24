@@ -13,13 +13,35 @@ public class ProductService : IProductService
         _http = http;
     }
 
-    public async Task<Response<PaginatedResponse<ProductModel>>> GetAll(int page = 1, int pageSize = 10, string? search = null)
+    public async Task<Response<PaginatedResponse<ProductModel>>> GetAll(ProductFilterModel filter)
     {
         try
         {
-            // build URL with query params
-            // e.g. api/Product/all?page=1&pageSize=10
-            var url = $"api/Product/all?page={page}&pageSize={pageSize}&search={search}";
+            // build query string from filter object ✅
+            var queryParams = new List<string>();
+
+            queryParams.Add($"page={filter.Page}");
+            queryParams.Add($"pageSize={filter.PageSize}");
+
+            if (!string.IsNullOrEmpty(filter.Search))
+                queryParams.Add($"search={Uri.EscapeDataString(filter.Search)}");
+
+            if (filter.CategoryId.HasValue)
+                queryParams.Add($"categoryId={filter.CategoryId.Value}");
+
+            if (!string.IsNullOrEmpty(filter.Sizes))
+                queryParams.Add($"sizes={Uri.EscapeDataString(filter.Sizes)}");
+
+            if (filter.MinPrice.HasValue)
+                queryParams.Add($"minPrice={filter.MinPrice.Value}");
+
+            if (filter.MaxPrice.HasValue)
+                queryParams.Add($"maxPrice={filter.MaxPrice.Value}");
+
+            if (!string.IsNullOrEmpty(filter.SortBy))
+                queryParams.Add($"sortBy={filter.SortBy}");
+
+            var url = $"api/Product/all?{string.Join("&", queryParams)}";
 
             var result = await _http
                 .GetFromJsonAsync<Response<PaginatedResponse<ProductModel>>>(url);

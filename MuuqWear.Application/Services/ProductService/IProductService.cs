@@ -5,7 +5,7 @@ using MuuqWear.Model.Shared;
 namespace MuuqWear.Application.Services.ProductService;
 public interface IProductService
 {
-    Task<Response<PaginatedResponse<ProductModel>>> GetAll(int page = 1, int pageSize = 10, string? search = null);
+    Task<Response<PaginatedResponse<ProductModel>>> GetAll(ProductFilterModel filter);
     Task<Response<HomeProductsModel>> GetHomeProducts();
     Task<Response<ProductModel>> Add(AddProductModel request);
     Task<Response<string>> UploadImage(Stream fileStream, string fileName, string contentType);

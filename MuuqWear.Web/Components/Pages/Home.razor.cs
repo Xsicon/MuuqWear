@@ -61,6 +61,19 @@ namespace MuuqWear.Web.Components.Pages
             if (firstRender)
             {
 
+                // check if recovery token in URL fragment
+                var fragment = await JS.InvokeAsync<string>(
+                    "eval", "window.location.hash");
+
+                if (!string.IsNullOrEmpty(fragment) &&
+                    fragment.Contains("type=recovery"))
+                {
+                    // redirect to reset password page with fragment
+                    await JS.InvokeVoidAsync("eval",
+                        $"window.location.href = '/auth/reset-password' + window.location.hash");
+                    return;
+                }
+
                 // For AutoSliding Images in carousel
                 await JS.InvokeVoidAsync("mwStartAutoSlide", categoryRef, ".mw-categorycarousel-item", 3000);
                 await JS.InvokeVoidAsync("mwStartAutoSlide", newArrivalRef, ".mw-newarrivalcarousel-item", 3000);

@@ -1,7 +1,11 @@
-﻿@rendermode InteractiveServer
+﻿@using MuuqWear.Model.Products
+@using MuuqWear.Application.Services.ProductService
+@rendermode InteractiveServer
 @inject NavigationManager Nav
 @inject IJSRuntime JS
 @implements IDisposable
+@inject IProductService ProductService
+
 
 <div>
 
@@ -100,7 +104,7 @@
     </header>
 
     <!-- Search Panel-->
-
+    <!-- Search Panel-->
     <div class="mw-search-overlay @(isSearchOpen ? "open" : "")"
          @onclick="CloseSearch">
 
@@ -115,41 +119,157 @@
             <!-- CONTENT -->
             <div class="mw-search-content container">
 
-                <!-- INPUT -->
+                <!-- INPUT ROW -->
                 <div class="row">
-                    <div class="col-12">
-                        <input class="mw-search-input" @ref="searchInputRef"
-                               placeholder="Search for 'Hoodie', 'Sapphire'..." />
+                    <div class="col-12 position-relative">
+                        <input class="mw-search-input"
+                               @ref="searchInputRef"
+                               placeholder="Search for 'Hoodie', 'Sapphire'..."
+                               value="@searchQuery"
+                               @oninput="HandleSearchInput"
+                               @onkeydown="HandleSearchKeyDown" />
+
+                        @* clear button shows when typing ✅ *@
+                        @if (!string.IsNullOrEmpty(searchQuery))
+                        {
+                            <button class="mw-search-clear" @onclick="ClearSearch">
+                                ✕
+                            </button>
+                        }
                     </div>
                 </div>
 
                 <!-- BODY -->
-                <div class="row mt-4 justify-content-center text-center">
+                @if (!hasSearched || string.IsNullOrEmpty(searchQuery))
+                {
+                    <!-- EMPTY STATE → show tags + popular -->
+                    <div class="row mt-4 justify-content-center text-center">
 
-                    <!-- LEFT: TAGS -->
-                    <div class="col-12 col-md-6">
-                        <div class="mw-search-tags justify-content-center">
-                            <span>New Arrivals</span>
-                            <span>Hoodies</span>
-                            <span>Accessories</span>
-                            <span>Sale</span>
+                        <!-- TAGS -->
+                        <div class="col-12 col-md-6">
+                            <div class="mw-search-tags justify-content-center">
+                                <span @onclick='() => SearchByTag("New Arrivals")'>
+                                    New Arrivals
+                                </span>
+                                <span @onclick='() => SearchByTag("Hoodies")'>
+                                    Hoodies
+                                </span>
+                                <span @onclick='() => SearchByTag("Accessories")'>
+                                    Accessories
+                                </span>
+                                <span @onclick='() => SearchByTag("Sale")'>
+                                    Sale
+                                </span>
+                            </div>
                         </div>
-                    </div>
 
-                    <!-- RIGHT: POPULAR -->
-                    <div class="row mt-5">
-                        <div class="col-12 col-md-4 ms-md-auto text-md-end text-start">
-                            <p class="mw-search-label">POPULAR SEARCHES</p>
-
-                            <ul class="mw-search-list">
-                                <li>Sapphire Hoodie</li>
-                                <li>Cargo Pants</li>
-                                <li>Veil Crossbody</li>
-                                <li>Tech Jacket</li>
-                            </ul>
+                        <!-- POPULAR SEARCHES -->
+                        <div class="row mt-5">
+                            <div class="col-12 col-md-4 ms-md-auto text-md-end text-start">
+                                <p class="mw-search-label">POPULAR SEARCHES</p>
+                                <ul class="mw-search-list">
+                                    <li @onclick='() => SearchByTag("Sapphire Hoodie")'>
+                                        Sapphire Hoodie
+                                    </li>
+                                    <li @onclick='() => SearchByTag("Cargo Pants")'>
+                                        Cargo Pants
+                                    </li>
+                                    <li @onclick='() => SearchByTag("Veil Crossbody")'>
+                                        Veil Crossbody
+                                    </li>
+                                    <li @onclick='() => SearchByTag("Tech Jacket")'>
+                                        Tech Jacket
+                                    </li>
+                                </ul>
+                            </div>
                         </div>
+
                     </div>
-                </div>
+                }
+                else
+                {
+                    <!-- RESULTS STATE → show products -->
+                    <div class="row mt-4">
+
+                        <div class="col-12">
+                            <p class="mw-search-label mb-3">
+                                @if (isSearching)
+                                {
+                                    <span>SEARCHING...</span>
+                                }
+                                else
+                                {
+                                    <span>RESULTS (@searchResults.Count)</span>
+                                }
+                            </p>
+                        </div>
+
+                        @if (isSearching)
+                        {
+                            <!-- LOADING SKELETONS -->
+                            <div class="mw-search-results">
+                                @for (int i = 0; i < 4; i++)
+                                {
+                                    <div class="mw-search-result-skeleton"></div>
+                                }
+                            </div>
+                        }
+                        else if (!searchResults.Any())
+                        {
+                            <!-- NO RESULTS -->
+                            <div class="col-12 text-center py-4">
+                                <p class="text-muted">
+                                    No products found for
+                                    <strong>"@searchQuery"</strong>
+                                </p>
+                                <button class="mw-link-btn"
+                                        @onclick="ClearSearch">
+                                    Clear search
+                                </button>
+                            </div>
+                        }
+                        else
+                        {
+                            <!-- PRODUCT RESULTS -->
+                            <div class="mw-search-results">
+                                @foreach (var product in searchResults)
+                                {
+                                    <a href="/productdetail/@product.Id"
+                                       class="mw-search-result"
+                                       @onclick="CloseSearch">
+
+                                        <!-- IMAGE -->
+                                        <div class="mw-search-result__img">
+                                            <img src="@product.ImageUrl"
+                                                 alt="@product.Name" />
+                                        </div>
+
+                                        <!-- INFO -->
+                                        <div class="mw-search-result__info">
+                                            <p class="mw-search-result__name">
+                                                @product.Name
+                                            </p>
+                                            <p class="mw-search-result__price">
+                                                $@product.Price.ToString("F2")
+                                            </p>
+                                        </div>
+
+                                    </a>
+                                }
+                            </div>
+
+                            <!-- VIEW ALL LINK -->
+                            <div class="col-12 text-center mt-3">
+                                <a href="/shop/apparel?search=@Uri.EscapeDataString(searchQuery)"
+                                   class="mw-search-viewall"
+                                   @onclick="CloseSearch">
+                                    View all results for "@searchQuery" →
+                                </a>
+                            </div>
+                        }
+
+                    </div>
+                }
 
             </div>
 
@@ -319,6 +439,19 @@
     //Boolean
     private bool isMenuOpen = false;
     private bool shouldFocusInput = false;
+    private bool isSearching = false;
+    private bool hasSearched = false;
+
+    //String
+    private string searchQuery = string.Empty;
+
+
+    //List
+    private List<ProductModel> searchResults = new();
+
+    //Object
+    private CancellationTokenSource? _searchCts;
+
 
     async Task ToggleMenu()
     {
@@ -343,8 +476,12 @@
         isSearchOpen = true;
         shouldFocusInput = true;
     }
-    void CloseSearch() => isSearchOpen = false;
     private bool isCartOpen = false;
+    void CloseSearch()
+    {
+        isSearchOpen = false;
+        ClearSearch(); // reset search when panel closes
+    }
 
     void OpenCart()
     {
@@ -415,5 +552,131 @@
                 // prevents crash if component unmounted
             }
         }
+    }
+
+    private async Task HandleSearchInput(ChangeEventArgs e)
+    {
+        // update search query as user types
+        searchQuery = e.Value?.ToString() ?? string.Empty;
+
+        // if cleared → reset state ✅
+        if (string.IsNullOrEmpty(searchQuery))
+        {
+            ClearSearch();
+            return;
+        }
+
+        // cancel previous debounce timer ✅
+        // user is still typing
+        _searchCts?.Cancel();
+        _searchCts = new CancellationTokenSource();
+
+        try
+        {
+            // wait 300ms before searching
+            // if user types again → Task.Delay cancelled ✅
+            await Task.Delay(300, _searchCts.Token);
+
+            // 300ms passed → user stopped typing
+            // → search now ✅
+            await PerformSearch();
+        }
+        catch (TaskCanceledException)
+        {
+            // user typed again → debounce cancelled ✅
+            // do nothing → new timer started
+        }
+    }
+
+    private async Task HandleSearchKeyDown(KeyboardEventArgs e)
+    {
+        // only react to Enter key
+        if (e.Key == "Enter" && !string.IsNullOrEmpty(searchQuery))
+        {
+            // cancel debounce → search immediately ✅
+            _searchCts?.Cancel();
+            await PerformSearch();
+        }
+
+        // close on Escape key ✅
+        if (e.Key == "Escape")
+        {
+            CloseSearch();
+        }
+    }
+
+    private void ClearSearch()
+    {
+        // reset all search state ✅
+        searchQuery = string.Empty;
+        searchResults = new();
+        hasSearched = false;
+        isSearching = false;
+        _searchCts?.Cancel();
+        StateHasChanged();
+    }
+
+    private async Task PerformSearch()
+    {
+        // validate — don't search empty or whitespace ✅
+        if (string.IsNullOrWhiteSpace(searchQuery))
+            return;
+
+        try
+        {
+            // show loading state
+            isSearching = true;
+            hasSearched = true;
+            StateHasChanged();
+
+            // build filter — search only
+            // 4 results max
+            // no category/size/price filter needed
+            // just text search
+            var filter = new ProductFilterModel
+            {
+                Page = 1,
+                PageSize = 4,
+                Search = searchQuery.Trim()
+            };
+
+            var result = await ProductService.GetAll(filter);
+
+            if (result.Success && result.Data != null)
+            {
+                searchResults = result.Data.Data;
+            }
+            else
+            {
+                // API failed → empty results
+                searchResults = new();
+            }
+        }
+        catch (Exception ex)
+        {
+            // network error etc → empty results
+            searchResults = new();
+            Console.WriteLine($"Search error: {ex.Message}");
+        }
+        finally
+        {
+            // always hide loading
+            // even if error occurs
+            isSearching = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task SearchByTag(string tag)
+    {
+        // set search query to tag ✅
+        searchQuery = tag;
+        hasSearched = true;
+
+        // cancel any pending debounce ✅
+        _searchCts?.Cancel();
+
+        // search immediately ✅
+        await PerformSearch();
     }
 }
