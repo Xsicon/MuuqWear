@@ -1,0 +1,222 @@
+﻿@page "/size-guide"
+@rendermode InteractiveServer
+@using MuuqWear.Model.Products
+
+<PageTitle>Size Guide — MuuqWear</PageTitle>
+
+<!-- ================================
+     HERO SECTION
+     ================================ -->
+<section class="mw-sg-hero">
+    <div class="container">
+        <div class="row align-items-center g-4">
+
+            <!-- LEFT: TEXT -->
+            <div class="col-12 col-md-6 order-2 order-md-1">
+                <p class="mw-sg-label">Fit Guide</p>
+                <h1 class="mw-sg-title">Find Your Fit</h1>
+                <p class="mw-sg-desc">
+                    Every body is different. Use this guide alongside
+                    a soft measuring tape to find the perfect size.
+                    When in doubt, size up for a relaxed fit.
+                </p>
+                <button class="mw-sg-measure-btn"
+                        @onclick="OpenMeasurePanel">
+                    Need help measuring?
+                </button>
+            </div>
+
+            <!-- RIGHT: IMAGE -->
+            <div class="col-12 col-md-6 order-1 order-md-2">
+                <div class="mw-sg-hero-img">
+                    <img src="https://images.unsplash.com/photo-1585828950421-a40556a08c7f?w=400&h=530&fit=crop"
+                         alt="Measuring guide" />
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<!-- ================================
+     UNIT TOGGLE
+     ================================ -->
+<section class="mw-sg-toggle-section">
+    <div class="container">
+        <div class="mw-sg-toggle">
+
+            <!-- INCHES label -->
+            <span class="mw-sg-toggle-label @(!useCm ? "active" : "")">
+                Inches
+            </span>
+
+            <!-- TOGGLE SWITCH -->
+            <button class="mw-sg-toggle-switch @(useCm ? "on" : "")"
+                    @onclick="ToggleUnit"
+                    role="switch"
+                    aria-checked="@useCm">
+                <span class="mw-sg-toggle-thumb"></span>
+            </button>
+
+            <!-- CM label -->
+            <span class="mw-sg-toggle-label @(useCm ? "active" : "")">
+                Centimeters
+            </span>
+
+        </div>
+    </div>
+</section>
+
+<!-- ================================
+     SIZE TABLES
+     ================================ -->
+<section class="mw-sg-tables">
+    <div class="container">
+        <div class="row g-4">
+
+            <!-- TABLE 1: TOPS -->
+            <div class="col-12 col-md-4">
+                <div class="mw-sg-table-card">
+                    <h6 class="mw-sg-table-title">Tops, Hoodies & Jackets</h6>
+                    <table class="mw-sg-table">
+                        <thead>
+                            <tr>
+                                <th>Size</th>
+                                <th>Chest (@unitLabel)</th>
+                                <th>Length (@unitLabel)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var row in CurrentTops)
+                            {
+                                <tr>
+                                    <td class="mw-sg-size-cell">@row.Size</td>
+                                    <td>@row.Chest</td>
+                                    <td>@row.Length</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TABLE 2: BOTTOMS -->
+            <div class="col-12 col-md-4">
+                <div class="mw-sg-table-card">
+                    <h6 class="mw-sg-table-title">Bottoms</h6>
+                    <table class="mw-sg-table">
+                        <thead>
+                            <tr>
+                                <th>Size</th>
+                                <th>Waist (@unitLabel)</th>
+                                <th>Hip (@unitLabel)</th>
+                                <th>Inseam (@unitLabel)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var row in CurrentBottoms)
+                            {
+                                <tr>
+                                    <td class="mw-sg-size-cell">@row.Size</td>
+                                    <td>@row.Waist</td>
+                                    <td>@row.Hip</td>
+                                    <td>@row.Inseam</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TABLE 3: ACCESSORIES -->
+            <div class="col-12 col-md-4">
+                <div class="mw-sg-table-card">
+                    <h6 class="mw-sg-table-title">Accessories</h6>
+                    <table class="mw-sg-table">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Size</th>
+                                <th>Dimensions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var row in CurrentAccessories)
+                            {
+                                <tr>
+                                    <td class="fw-semibold">@row.Item</td>
+                                    <td>@row.Size</td>
+                                    <td>@row.Dimensions</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<!-- ================================
+     MEASUREMENT PANEL (RIGHT SIDE)
+     ================================ -->
+<div class="mw-sg-panel-overlay @(isPanelOpen ? "open" : "")"
+     @onclick="CloseMeasurePanel">
+
+    <div class="mw-sg-panel" @onclick:stopPropagation="true">
+
+        <!-- PANEL HEADER -->
+        <div class="mw-sg-panel-header">
+            <h4 class="mw-sg-panel-title">How to Measure</h4>
+            <button class="mw-sg-panel-close"
+                    @onclick="CloseMeasurePanel">
+                ✕
+            </button>
+        </div>
+
+        <!-- PANEL BODY -->
+        <div class="mw-sg-panel-body">
+            @foreach (var guide in SizeGuideData.MeasurementGuides)
+            {
+                <div class="mw-sg-measure-item">
+                    <h6 class="mw-sg-measure-title">@guide.Title</h6>
+                    <p class="mw-sg-measure-desc">@guide.Description</p>
+                </div>
+            }
+        </div>
+
+    </div>
+</div>
+
+@code {
+
+    // unit toggle state
+    private bool useCm = false;
+
+    // panel state
+    private bool isPanelOpen = false;
+
+    // unit label for table headers ✅
+    // changes based on toggle
+    private string unitLabel => useCm ? "cm" : "in";
+
+    // computed properties → switch data based on unit ✅
+    // no runtime calculation needed
+    // just switch between two pre-defined lists ✅
+    private List<TopSizeRow> CurrentTops =>
+        useCm ? SizeGuideData.TopsCm : SizeGuideData.TopsInches;
+
+    private List<BottomSizeRow> CurrentBottoms =>
+        useCm ? SizeGuideData.BottomsCm : SizeGuideData.BottomsInches;
+
+    private List<AccessorySizeRow> CurrentAccessories =>
+        useCm ? SizeGuideData.AccessoriesCm : SizeGuideData.AccessoriesInches;
+
+    // toggle unit
+    private void ToggleUnit() => useCm = !useCm;
+
+    // open/close panel
+    private void OpenMeasurePanel() => isPanelOpen = true;
+    private void CloseMeasurePanel() => isPanelOpen = false;
+}
