@@ -494,6 +494,11 @@ body {
 
 /* Cart Section */
 
+/* EMPTY CART STATE */
+.mw-cart-empty {
+    padding: 40px 20px;
+}
+
 .mw-cart-overlay {
     position: fixed;
     inset: 0;

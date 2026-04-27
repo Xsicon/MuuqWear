@@ -3,7 +3,10 @@
 @inject IJSRuntime JS
 @inject IProductService ProductService
 @inject NavigationManager NavigationManager
+@inject CartStateService CartStateService
+@using MuuqWear.Application.Services.CartService
 @using MuuqWear.Application.Services.ProductService
+@using MuuqWear.Model.Cart
 @using MuuqWear.Model.Products
 
 <PageTitle>@(product?.Name ?? "Product")</PageTitle>
@@ -130,9 +133,26 @@ else
 
                     <!-- ADD TO CART -->
                     <button class="mw-btn-primary w-100 mb-2"
-                            disabled="@(product.Stock == 0)">
-                        @(product.Stock > 0 ? "Add to Bag" : "Out of Stock")
+                            disabled="@(product.Stock == 0 || isAddingToCart)"
+                            @onclick="HandleAddToCart">
+                        @if (isAddingToCart)
+                        {
+                            <span class="mw-btn-spinner"></span>
+                            <span>Adding...</span>
+                        }
+                        else
+                        {
+                            <span>@(product.Stock > 0 ? "Add to Bag" : "Out of Stock")</span>
+                        }
                     </button>
+
+                    @* message shown when no size selected ✅ *@
+                    @if (!string.IsNullOrEmpty(addToCartMessage))
+                    {
+                        <div class="mt-2 @addToCartMessageCss small">
+                            @addToCartMessage
+                        </div>
+                    }
 
                     <!-- BENEFITS -->
                     <div class="mw-benefits">
@@ -186,6 +206,10 @@ else
     private List<ProductModel> RelatedProducts = new();
     private bool isLoading = true;
 
+
+    private bool isAddingToCart = false;
+    private string addToCartMessage = string.Empty;
+    private string addToCartMessageCss = string.Empty;
     protected override async Task OnInitializedAsync()
     {
         if (string.IsNullOrEmpty(Id) || !Guid.TryParse(Id, out Guid productId))
@@ -242,5 +266,49 @@ else
         var result = await ProductService.GetRelated(productId);
         if (result.Success && result.Data != null)
             RelatedProducts = result.Data;
+    }
+
+    private async Task HandleAddToCart()
+    {
+        // validate size selected ✅
+        if (string.IsNullOrEmpty(SelectedSize))
+        {
+            addToCartMessage = "Please select a size";
+            addToCartMessageCss = "text-danger";
+            return;
+        }
+
+        isAddingToCart = true;
+        addToCartMessage = string.Empty;
+        StateHasChanged();
+
+        var success = await CartStateService.AddItem(new AddCartItemModel
+        {
+            ProductId = product!.Id,
+            Size = SelectedSize,
+            Quantity = 1,
+            ProductName = product.Name,
+            ProductImageUrl = product.AllImageUrls.FirstOrDefault() ?? product.ImageUrl,
+            ProductPrice = product.Price
+        });
+
+        if (success)
+        {
+            addToCartMessage = "Added to bag! ✓";
+            addToCartMessageCss = "text-success";
+        }
+        else
+        {
+            addToCartMessage = "Failed to add. Please try again.";
+            addToCartMessageCss = "text-danger";
+        }
+
+        isAddingToCart = false;
+        StateHasChanged();
+
+        // clear message after
+        await Task.Delay(3000);
+        addToCartMessage = string.Empty;
+        StateHasChanged();
     }
 }

@@ -4,7 +4,9 @@
 @inject NavigationManager NavigationManager
 @inject IAuthService IAuthService
 @inject AuthStateService AuthStateService
+@inject CartStateService CartStateService
 @using MuuqWear.Application.Services.AuthService
+@using MuuqWear.Application.Services.CartService
 @using MuuqWear.Application.Shared
 @using MuuqWear.Model.Authentication
 
@@ -97,6 +99,7 @@
                 // store pending email for auth flow
                 await AuthStateService.SetPendingEmailAsync(
                     result.Data.Email ?? "");
+
 
                 // navigate to set cookie
                 await AuthNavigationHelper.PrepareAndNavigateAsync(

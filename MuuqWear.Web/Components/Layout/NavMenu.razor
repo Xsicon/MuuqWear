@@ -1,10 +1,15 @@
-﻿@using MuuqWear.Model.Products
-@using MuuqWear.Application.Services.ProductService
-@rendermode InteractiveServer
+﻿@rendermode InteractiveServer
 @inject NavigationManager Nav
 @inject IJSRuntime JS
-@implements IDisposable
+@using Microsoft.AspNetCore.Components.Authorization
+@using MuuqWear.Application.Services.CartService
+@using MuuqWear.Application.Services.ProductService
+@using MuuqWear.Model.Cart
+@using MuuqWear.Model.Products
+@inject CartStateService CartStateService
 @inject IProductService ProductService
+@inject AuthenticationStateProvider AuthStateProvider
+@implements IDisposable
 
 
 <div>
@@ -45,7 +50,9 @@
                             </svg>
                         </button>
 
-                        <button class="mw-icon-btn" aria-label="Cart" @onclick="OpenCart">
+                        <button class="mw-icon-btn position-relative"
+                                aria-label="Cart"
+                                @onclick="OpenCart">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
                                  viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -53,6 +60,13 @@
                                 <path d="M3 6h18"></path>
                                 <path d="M16 10a4 4 0 0 1-8 0"></path>
                             </svg>
+                            @* badge ✅ *@
+                            @if (CartStateService.Cart.TotalItems > 0)
+                            {
+                                <span class="mw-cart-badge">
+                                    @CartStateService.Cart.TotalItems
+                                </span>
+                            }
                         </button>
                         <NavLink href="/profile" aria-label="Profile">
                             <button class="mw-icon-btn" aria-label="Profile">
@@ -331,96 +345,127 @@
 
                 <div class="d-flex align-items-center gap-2">
                     <span class="mw-cart-title">Your Bag</span>
-                    <span class="mw-cart-count">3</span>
+                    @if (CartStateService.Cart.TotalItems > 0)
+                    {
+                        <span class="mw-cart-count">
+                            @CartStateService.Cart.TotalItems
+                        </span>
+                    }
                 </div>
-
                 <button class="mw-cart-close" @onclick="CloseCart">✕</button>
             </div>
 
             <!-- BODY -->
             <div class="mw-cart-body">
-
-                @foreach (var item in CartItems)
+                @if (CartStateService.Cart.IsEmpty)
                 {
-                    <div class="mw-cart-item d-flex gap-3">
-
-                        <!-- IMAGE -->
-                        <div class="mw-cart-img">
-                            <img src="@item.Image" />
-                        </div>
-
-                        <!-- INFO -->
-                        <div class="flex-grow-1">
-
-                            <div class="d-flex justify-content-between">
-                                <h6 class="mw-cart-name">@item.Name</h6>
-                                <span class="mw-cart-price">@item.Price.ToString()</span>
-                            </div>
-
-                            <p class="mw-cart-meta">Size: @item.Size</p>
-                            <p class="mw-cart-meta">Color: @item.Color</p>
-
-                            <div class="d-flex justify-content-between align-items-center mt-2">
-
-                                <!-- QTY -->
-                                <div class="mw-qty">
-                                    <button>-</button>
-                                    <span>1</span>
-                                    <button>+</button>
-                                </div>
-
-                                <button class="mw-cart-del-btn d-flex align-items-center gap-1 justify-content-center hover:text-[#C44545] transition-colors">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
-                                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                                         class="lucide lucide-trash2 lucide-trash-2">
-                                        <path d="M3 6h18">
-
-                                        </path>
-                                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6">
-
-                                        </path>
-                                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2">
-
-                                        </path>
-                                        <line x1="10" x2="10" y1="11" y2="17">
-
-                                        </line>
-                                        <line x1="14" x2="14" y1="11" y2="17">
-
-                                        </line>
-                                    </svg>Remove
-                                </button>
-                            </div>
-
-                        </div>
+                    <!-- EMPTY STATE -->
+                    <div class="mw-cart-empty text-center py-5">
+                        <p class="text-muted mb-3">Your bag is empty</p>
+                        <a href="/shop/apparel"
+                           class="mw-btn-primary"
+                           @onclick="CloseCart">
+                            Shop Now
+                        </a>
                     </div>
                 }
+                else
+                {
+                    @foreach (var item in CartStateService.Cart.Items)
+                    {
+                        <div class="mw-cart-item d-flex gap-3">
 
+                            <!-- IMAGE -->
+                            <div class="mw-cart-img">
+                                <img src="@item.ProductImageUrl"
+                                     alt="@item.ProductName" />
+                            </div>
+
+                            <!-- INFO -->
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between">
+                                    <h6 class="mw-cart-name">@item.ProductName</h6>
+                                    <span class="mw-cart-price">
+                                        $@item.ItemTotal.ToString("F2")
+                                    </span>
+                                </div>
+
+                                <p class="mw-cart-meta">Size: @item.Size</p>
+                                <p class="mw-cart-meta">
+                                    $@item.ProductPrice.ToString("F2") each
+                                </p>
+
+                                <div class="d-flex justify-content-between align-items-center mt-2">
+
+                                    <!-- QTY +/- ✅ -->
+                                    <div class="mw-qty">
+                                        <button @onclick="() => DecreaseQty(item)"
+                                                disabled="@(item.Quantity <= 1)">
+                                            -
+                                        </button>
+                                        <span>@item.Quantity</span>
+                                        <button @onclick="() => IncreaseQty(item)">
+                                            +
+                                        </button>
+                                    </div>
+
+                                    <!-- REMOVE-->
+                                    <button class="mw-cart-del-btn d-flex align-items-center gap-1"
+                                            @onclick="() => RemoveItem(item.Id)">
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             width="12" height="12" viewBox="0 0 24 24"
+                                             fill="none" stroke="currentColor"
+                                             stroke-width="2" stroke-linecap="round"
+                                             stroke-linejoin="round">
+                                            <path d="M3 6h18"></path>
+                                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                                            <line x1="10" x2="10" y1="11" y2="17"></line>
+                                            <line x1="14" x2="14" y1="11" y2="17"></line>
+                                        </svg>
+                                        Remove
+                                    </button>
+
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
             </div>
 
             <!-- FOOTER -->
+            <!-- FOOTER -->
             <div class="mw-cart-footer">
 
-                <div class="d-flex justify-content-between">
+                <div class="d-flex justify-content-between mb-2">
                     <span>Subtotal</span>
-                    <strong>$153.00</strong>
+                    <strong>$@CartStateService.Cart.Subtotal.ToString("F2")</strong>
                 </div>
 
-                <div class="d-flex justify-content-between small text-muted">
+                <div class="d-flex justify-content-between small text-muted mb-2">
                     <span>Shipping</span>
-                    <span>Calculated at checkout</span>
+                    <span>Free</span>
+                </div>
+
+                <div class="d-flex justify-content-between small text-muted mb-2">
+                    <span>Tax (10%)</span>
+                    <span>$@CartStateService.Cart.Tax.ToString("F2")</span>
                 </div>
 
                 <div class="d-flex justify-content-between fw-bold fs-5 mt-2">
                     <span>Total</span>
-                    <span>$153.00</span>
+                    <span>$@CartStateService.Cart.Total.ToString("F2")</span>
                 </div>
 
-                <button class="mw-checkout-btn w-100 mt-3">
+                <a href="/checkout"
+                   class="mw-checkout-btn w-100 mt-3 d-block text-center text-decoration-none"
+                   @onclick="CloseCart">
                     Checkout Securely
-                </button>
+                </a>
 
-                <a href="/cart" class="mw-view-cart d-block text-center mt-2">
+                <a href="/cart"
+                   class="mw-view-cart d-block text-center mt-2"
+                   @onclick="CloseCart">
                     View Cart
                 </a>
 
@@ -441,6 +486,8 @@
     private bool shouldFocusInput = false;
     private bool isSearching = false;
     private bool hasSearched = false;
+    private bool _cartInitialized = false;
+
 
     //String
     private string searchQuery = string.Empty;
@@ -494,63 +541,103 @@
         isCartOpen = false;
         // await JS.InvokeVoidAsync("enableScroll");
     }
-    protected override void OnInitialized()
-    {
-        Nav.LocationChanged += OnLocationChanged;
-    }
-
-    private List<CartItem> CartItems = new()
-{
-    new() { Name="Classic Tee", Price=29m, Size="Medium", Color="White", Image="https://images.unsplash.com/photo-1618840198256-abe11bda33dc?w=400&amph=530&ampfit=crop" },
-    new() { Name="Urban Hoodie", Price=59m, Size="Large", Color="Gray", Image="https://images.unsplash.com/photo-1722620197153-eb2549909098?w=400&amph=530&ampfit=crop" },
-};
-    public class CartItem
-    {
-        public int Id { get; set; }
-
-        public string Name { get; set; } = string.Empty;
-
-        public string Image { get; set; } = string.Empty;
-
-        public decimal Price { get; set; }
-
-        public int Quantity { get; set; } = 1;
-
-        public string Size { get; set; } = string.Empty;
-
-        public string Color { get; set; } = string.Empty;
-
-        // 🔥 Computed property (important for totals)
-        public decimal TotalPrice => Price * Quantity;
-    }
 
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {
-        InvokeAsync(() =>
+        InvokeAsync(async () =>
         {
             isMenuOpen = false;
+
+            // re-check auth state on every navigation
+            var authState = await AuthStateProvider
+                .GetAuthenticationStateAsync();
+
+            var isAuthenticated = authState.User.Identity?.IsAuthenticated == true;
+
+            // detect login → was guest now authenticated
+            if (isAuthenticated && !CartStateService.IsAuthenticated)
+            {
+                // check if had guest items in cookie
+                var cookieJson = await JS.InvokeAsync<string?>("getCartCookie");
+                var hadGuestCart = !string.IsNullOrEmpty(cookieJson);
+
+                // load guest cart items first
+                if (hadGuestCart)
+                {
+                    await CartStateService.LoadGuestCartFromCookie();
+                }
+
+                // initialize with DB cart
+                await CartStateService.InitializeAsync(isAuthenticated,
+                    authState.User.FindFirst("UserId")?.Value);
+
+                // merge guest items if any
+                if (hadGuestCart)
+                {
+                    await CartStateService.MergeGuestCartAsync();
+                }
+            }
+
+            // detect logout → was authenticated now guest
+            if (!isAuthenticated && CartStateService.IsAuthenticated)
+            {
+                await CartStateService.ClearCartState();
+                await CartStateService.InitializeAsync(false, null);
+            }
+
             StateHasChanged();
         });
     }
-
-    public void Dispose()
-    {
-        Nav.LocationChanged -= OnLocationChanged;
-    }
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (firstRender && !_cartInitialized)
+        {
+            _cartInitialized = true;
+
+            var authState = await AuthStateProvider
+                .GetAuthenticationStateAsync();
+
+            var isAuthenticated = authState.User.Identity?.IsAuthenticated == true;
+            var userId = authState.User.FindFirst("UserId")?.Value;
+
+            if (isAuthenticated)
+            {
+                // check cookie first ✅
+                var cookieJson = await JS.InvokeAsync<string?>("getCartCookie");
+                var hadGuestCart = !string.IsNullOrEmpty(cookieJson);
+
+                if (hadGuestCart)
+                {
+                    // load guest items into Cart ✅
+                    await CartStateService.LoadGuestCartFromCookie();
+
+                    // merge into DB ✅
+                    // MergeGuestCartAsync internally loads DB cart after merge
+                    await CartStateService.MergeGuestCartAsync();
+                }
+                else
+                {
+                    // no guest items → just load DB cart ✅
+                    await CartStateService.InitializeAsync(isAuthenticated, userId);
+                }
+            }
+            else
+            {
+                // guest → load from cookie 
+                await CartStateService.InitializeAsync(isAuthenticated, userId);
+            }
+
+            StateHasChanged();
+        }
+
         if (shouldFocusInput)
         {
             shouldFocusInput = false;
-
             try
             {
                 await JS.InvokeVoidAsync("focusElement", searchInputRef);
             }
-            catch
-            {
-                // prevents crash if component unmounted
-            }
+            catch { }
         }
     }
 
@@ -669,14 +756,54 @@
 
     private async Task SearchByTag(string tag)
     {
-        // set search query to tag ✅
+        // set search query to tag
         searchQuery = tag;
         hasSearched = true;
 
-        // cancel any pending debounce ✅
+        // cancel any pending debounce
         _searchCts?.Cancel();
 
-        // search immediately ✅
+        // search immediately
         await PerformSearch();
+    }
+    // subscribe to cart changes ✅
+    protected override void OnInitialized()
+    {
+        Nav.LocationChanged += OnLocationChanged;
+        CartStateService.OnCartChanged += OnCartChanged;
+    }
+
+    // fires when cart changes → re-render
+    private void OnCartChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    // qty decrease
+    private async Task DecreaseQty(CartItemModel item)
+    {
+        if (item.Quantity <= 1) return;
+        await CartStateService.UpdateQuantity(
+            item.Id, item.Quantity - 1);
+    }
+
+    // qty increase ✅
+    private async Task IncreaseQty(CartItemModel item)
+    {
+        await CartStateService.UpdateQuantity(
+            item.Id, item.Quantity + 1);
+    }
+
+    // remove item ✅
+    private async Task RemoveItem(Guid cartItemId)
+    {
+        await CartStateService.RemoveItem(cartItemId);
+    }
+
+    // unsubscribe on dispose
+    public void Dispose()
+    {
+        Nav.LocationChanged -= OnLocationChanged;
+        CartStateService.OnCartChanged -= OnCartChanged;
     }
 }

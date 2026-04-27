@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Caching.Memory;
 using MuuqWear.Application.Services.AuthService;
+using MuuqWear.Application.Services.CartService;
 using MuuqWear.Application.Services.CategoryService;
 using MuuqWear.Application.Services.ProductService;
 using MuuqWear.Application.Shared;
@@ -37,11 +38,16 @@ builder.Services.AddHttpClient<ICategoryService, CategoryService>(client =>
 }).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
 {
 });
-
+builder.Services.AddHttpClient<ICartService, CartService>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+}).AddHttpMessageHandler<AuthenticatedHttpHandler>();
 builder.Services.AddScoped<AuthStateService>();
+builder.Services.AddScoped<CartStateService>();
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<CustomAuthenticationStateProvider>();
+builder.Services.AddScoped<AuthenticatedHttpHandler>();
 builder.Services.AddScoped<AuthenticationStateProvider>(sp =>
     sp.GetRequiredService<CustomAuthenticationStateProvider>());
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

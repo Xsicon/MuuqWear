@@ -1,0 +1,104 @@
+﻿/* ADMIN LOGIN PAGE */
+.mw-admin-login {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 16px;
+    background: white;
+}
+
+.mw-admin-login__card {
+    width: 100%;
+    max-width: 520px;
+}
+
+/* SHIELD ICON - circle ✅ */
+.mw-admin-login__icon {
+    width: 64px;
+    height: 64px;
+    min-width: 64px;
+    min-height: 64px;
+    background: #1E2A47;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+}
+
+.mw-admin-login__title {
+    font-size: 36px;
+    font-weight: 700;
+    color: #1E2A47;
+    margin-bottom: 8px;
+}
+
+.mw-admin-login__subtitle {
+    color: #1E2A47;
+    opacity: 0.7;
+    font-size: 14px;
+    margin-bottom: 0;
+}
+
+/* LABELS */
+.mw-admin-login__label {
+    display: block;
+    color: #1E2A47;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+/* INPUTS */
+
+/* BUTTON - also more rounded ✅ */
+.mw-admin-login__btn {
+    background: #1E2A47;
+    color: white;
+    border: none;
+    padding: 14px;
+    border-radius: 10px; /* ✅ match input radius */
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+    .mw-admin-login__btn:hover {
+        opacity: 0.9;
+    }
+
+    .mw-admin-login__btn:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+
+/* BACK LINK */
+.mw-admin-login__back {
+    font-size: 13px;
+    color: #1E2A47;
+    opacity: 0.5;
+    text-decoration: none;
+    transition: opacity 0.2s;
+}
+
+    .mw-admin-login__back:hover {
+        opacity: 0.8;
+        text-decoration: none;
+        color: #1E2A47;
+    }
+
+/* MOBILE */
+@media (max-width: 480px) {
+    .mw-admin-login__title {
+        font-size: 28px;
+    }
+
+    .mw-admin-login__card {
+        padding: 0 8px;
+    }
+}

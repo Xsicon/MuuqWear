@@ -3,12 +3,14 @@
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @using MuuqWear.Application.Services.AuthService
+@using MuuqWear.Application.Services.CartService
 @using MuuqWear.Application.Shared
 @using MuuqWear.Model.Authentication
 @using Microsoft.AspNetCore.Components.Authorization
 @inject CustomAuthenticationStateProvider AuthStateProvider
 @inject IAuthService IAuthService
 @inject NavigationManager NavigationManager
+@inject CartStateService CartStateService
 @attribute [Authorize(Roles = "user")]
 
 
@@ -136,17 +138,21 @@
     private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
     public string LoggedInUserName = "";
 
-
     protected override async Task OnInitializedAsync()
     {
         if (AuthenticationStateTask is null) return;
         var authState = await AuthenticationStateTask;
+        var isAuthenticated = authState.User.Identity?.IsAuthenticated == true;
+        var userId = authState.User.FindFirst("UserId")?.Value;
         LoggedInUserName = authState.User.Identity?.Name ?? "";
         AuthStateProvider.SyncFromPrincipal(authState.User);
+        await CartStateService.InitializeAsync(isAuthenticated, userId);
+
     }
 
-    private void HandleSignOut()
+    private async Task HandleSignOut()
     {
+        await CartStateService.ClearCartState();
         NavigationManager.NavigateTo("/auth/clear", forceLoad: true);
     }
 

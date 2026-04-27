@@ -2,6 +2,7 @@
 @layout Layout.AuthLayout.AuthLayout
 @using Microsoft.AspNetCore.Components.Authorization
 @using MuuqWear.Application.Services.AuthService
+@using MuuqWear.Application.Services.CartService
 @using MuuqWear.Application.Shared
 @rendermode InteractiveServer
 @using MuuqWear.Model.Authentication
@@ -185,6 +186,9 @@
     [CascadingParameter]
     private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
 
+    [Inject]
+    public CartStateService CartStateService { get; set; } = default!;
+
     private string activeTab = "password"; // default tab ✅
 
     private LoginModel loginModel = new();
@@ -221,6 +225,7 @@
                 messageCssClass = "text-danger";
                 return;
             }
+
             await AuthNavigationHelper.PrepareAndNavigateAsync(
                 result.Data,
                 NavigationManager,
