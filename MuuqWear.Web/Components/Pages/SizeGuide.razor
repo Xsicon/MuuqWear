@@ -197,13 +197,13 @@
     // panel state
     private bool isPanelOpen = false;
 
-    // unit label for table headers ✅
+    // unit label for table headers 
     // changes based on toggle
     private string unitLabel => useCm ? "cm" : "in";
 
-    // computed properties → switch data based on unit ✅
+    // computed properties → switch data based on unit 
     // no runtime calculation needed
-    // just switch between two pre-defined lists ✅
+    // just switch between two pre-defined lists 
     private List<TopSizeRow> CurrentTops =>
         useCm ? SizeGuideData.TopsCm : SizeGuideData.TopsInches;
 

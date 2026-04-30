@@ -6,6 +6,7 @@ using Microsoft.Extensions.Caching.Memory;
 using MuuqWear.Application.Services.AuthService;
 using MuuqWear.Application.Services.CartService;
 using MuuqWear.Application.Services.CategoryService;
+using MuuqWear.Application.Services.OrderService;
 using MuuqWear.Application.Services.ProductService;
 using MuuqWear.Application.Shared;
 using MuuqWear.Web.Components;
@@ -42,6 +43,10 @@ builder.Services.AddHttpClient<ICartService, CartService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
 }).AddHttpMessageHandler<AuthenticatedHttpHandler>();
+builder.Services.AddHttpClient<IOrderService, OrderService>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+}).AddHttpMessageHandler<AuthenticatedHttpHandler>();
 builder.Services.AddScoped<AuthStateService>();
 builder.Services.AddScoped<CartStateService>();
 builder.Services.AddCascadingAuthenticationState();
@@ -60,7 +65,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         {
             OnRedirectToLogin = context =>
             {
-                // ✅ Already handles both cases
+                //  Already handles both cases
                 if (context.Request.Path.StartsWithSegments("/admin"))
                     context.Response.Redirect("/not-found");
                 else
@@ -124,6 +129,7 @@ app.MapGet("/auth/set-cookie", async (
         new Claim(ClaimTypes.Email, session.Email!),
         new Claim(ClaimTypes.Role, session.Role!),
         new Claim("AccessToken", session.Token!),
+        new Claim("RefreshToken", session.RefreshToken!),
         new Claim("UserId", session.UserId!)
     };
 
@@ -145,7 +151,7 @@ app.MapGet("/auth/set-cookie", async (
         });
 
     ctx.Response.Redirect(session.ReturnUrl!);
-}).DisableAntiforgery(); // ✅ add this
+}).DisableAntiforgery(); //  add this
 
 app.MapGet("/auth/clear", async (HttpContext ctx) =>
 {

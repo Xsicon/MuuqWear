@@ -13,6 +13,6 @@ public class CartModel
     // total items for badge
     public int TotalItems => Items.Sum(i => i.Quantity);
 
-    // helper — is cart empty ✅
+    // helper — is cart empty 
     public bool IsEmpty => !Items.Any();
 }

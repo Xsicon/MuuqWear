@@ -19,7 +19,7 @@ public class ProductDetailModel
 
     // sizes stored as comma separated string
     // e.g. "S,M,L,XL,XXL"
-    // we split this into list in the page ✅
+    // we split this into list in the page 
     public string? Sizes { get; set; }
 
     // gender — "Men", "Women", "Unisex"
@@ -30,12 +30,12 @@ public class ProductDetailModel
     public string? CategoryName { get; set; }
 
     // multiple images for thumbnails
-    // ordered by sort_order ascending ✅
+    // ordered by sort_order ascending 
     public List<ProductImageModel> Images { get; set; } = new();
 
     // helper property — splits Sizes string into list
     // e.g. "S,M,L,XL" → ["S", "M", "L", "XL"]
-    // used directly in razor page foreach loop ✅
+    // used directly in razor page foreach loop 
     public List<string> SizeList =>
         string.IsNullOrEmpty(Sizes)
             ? new List<string>()
@@ -46,7 +46,7 @@ public class ProductDetailModel
 
     // helper property — gets all image URLs in order
     // if no images in Images list → use main ImageUrl
-    // ensures product detail always has at least one image ✅
+    // ensures product detail always has at least one image 
     public List<string> AllImageUrls
     {
         get

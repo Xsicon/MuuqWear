@@ -4,9 +4,12 @@
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @using MuuqWear.Application.Services.AuthService
 @using MuuqWear.Application.Services.CartService
+@using MuuqWear.Application.Services.OrderService
 @using MuuqWear.Application.Shared
 @using MuuqWear.Model.Authentication
 @using Microsoft.AspNetCore.Components.Authorization
+@using MuuqWear.Model.Orders
+@inject IOrderService OrderService
 @inject CustomAuthenticationStateProvider AuthStateProvider
 @inject IAuthService IAuthService
 @inject NavigationManager NavigationManager
@@ -136,6 +139,10 @@
 
     [CascadingParameter]
     private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
+
+    private List<OrderModel> userOrders = new();
+    private bool isLoadingOrders = true;
+
     public string LoggedInUserName = "";
 
     protected override async Task OnInitializedAsync()
@@ -147,6 +154,15 @@
         LoggedInUserName = authState.User.Identity?.Name ?? "";
         AuthStateProvider.SyncFromPrincipal(authState.User);
         await CartStateService.InitializeAsync(isAuthenticated, userId);
+
+        // fetch orders
+        var ordersResult = await OrderService.GetUserOrders();
+        if (ordersResult.Success && ordersResult.Data != null)
+            userOrders = ordersResult.Data;
+        System.Diagnostics.Debug.WriteLine($"Orders success: {ordersResult.Success}");
+        System.Diagnostics.Debug.WriteLine($"Orders count: {ordersResult.Data?.Count}");
+        System.Diagnostics.Debug.WriteLine($"Orders success: {ordersResult.Message}");
+        isLoadingOrders = false;
 
     }
 

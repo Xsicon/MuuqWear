@@ -172,6 +172,7 @@
                                 <div class="mw-product">
                                     <div class="mw-product-img">
                                         <img src="@item.ImageUrl"
+                                             loading="lazy"
                                              alt="@item.Name" />
                                         @if (!string.IsNullOrEmpty(item.Badge))
                                         {
@@ -342,12 +343,12 @@
     // toggle category filter
     private async Task ToggleCategory(Guid categoryId)
     {
-        // if same category clicked → deselect ✅
+        // if same category clicked → deselect
         filter.CategoryId = filter.CategoryId == categoryId
             ? null
             : categoryId;
 
-        filter.Page = 1; // reset to page 1 ✅
+        filter.Page = 1; // reset to page 1
         await LoadProducts();
         UpdateUrl();
     }
@@ -360,7 +361,7 @@
         else
             filter.SelectedSizes.Add(size);
 
-        filter.Page = 1; // reset to page 1 ✅
+        filter.Page = 1; // reset to page 1
         await LoadProducts();
         UpdateUrl();
     }
@@ -418,8 +419,8 @@
         UpdateUrl();
     }
 
-    // update URL with current filters ✅
-    // shareable links ✅
+    // update URL with current filters
+    // shareable links
     private void UpdateUrl()
     {
         var queryParams = new List<string>();

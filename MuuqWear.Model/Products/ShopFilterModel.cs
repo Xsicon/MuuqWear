@@ -20,7 +20,7 @@ public class ShopFilterModel
 
     // helper → converts SelectedSizes list to comma string
     // e.g. ["S", "M"] → "S,M"
-    // passed to API as query param ✅
+    // passed to API as query param 
     public string? SizesAsString =>
         SelectedSizes.Any()
             ? string.Join(",", SelectedSizes)

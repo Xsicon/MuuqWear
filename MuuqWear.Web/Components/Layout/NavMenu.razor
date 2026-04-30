@@ -1,5 +1,5 @@
 ﻿@rendermode InteractiveServer
-@inject NavigationManager Nav
+@inject NavigationManager NavigationManager
 @inject IJSRuntime JS
 @using Microsoft.AspNetCore.Components.Authorization
 @using MuuqWear.Application.Services.CartService
@@ -19,7 +19,7 @@
             <div class="d-flex align-items-center justify-content-between py-3">
 
                 <!-- LOGO -->
-                <a href="/" class="mw-logo d-flex align-items-center text-decoration-none">
+                <a href="/" class="d-flex align-items-center text-decoration-none">
                     <img src="/images/muuqwearlogo.png"
                          alt="MuuqWear logo"
                          class="mw-logo__img img-fluid" />
@@ -60,7 +60,7 @@
                                 <path d="M3 6h18"></path>
                                 <path d="M16 10a4 4 0 0 1-8 0"></path>
                             </svg>
-                            @* badge ✅ *@
+                            @* badge  *@
                             @if (CartStateService.Cart.TotalItems > 0)
                             {
                                 <span class="mw-cart-badge">
@@ -68,16 +68,89 @@
                                 </span>
                             }
                         </button>
-                        <NavLink href="/profile" aria-label="Profile">
-                            <button class="mw-icon-btn" aria-label="Profile">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
-                                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
-                                    <circle cx="12" cy="7" r="4"></circle>
-                                </svg>
-                            </button>
-                        </NavLink>
+                        <div class="mw-profile-dropdown">
+
+                            @if (isUserAuthenticated)
+                            {
+                                <button class="mw-icon-btn"
+                                        aria-label="Profile"
+                                        @onclick="ToggleProfile">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="12" cy="7" r="4"></circle>
+                                    </svg>
+                                </button>
+
+                                @if (isProfileOpen)
+                                {
+                                    <div class="mw-profile-overlay" @onclick="CloseProfile"></div>
+
+                                    <div class="mw-profile-menu">
+
+                                        <!-- USER INFO -->
+                                        <div class="mw-profile-menu__header">
+                                            <p class="mw-profile-menu__name">@userName</p>
+                                            <p class="mw-profile-menu__email">@userEmail</p>
+                                        </div>
+
+                                        <div class="mw-profile-menu__divider"></div>
+
+                                        <!-- MY ORDERS -->
+                                        <a href="/profile"
+                                           class="mw-profile-menu__item"
+                                           @onclick="CloseProfile">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path>
+                                                <path d="M3 6h18"></path>
+                                                <path d="M16 10a4 4 0 0 1-8 0"></path>
+                                            </svg>
+                                            <span>My Orders</span>
+                                        </a>
+
+                                        <!-- SETTINGS -->
+                                        <a href="/settings"
+                                           class="mw-profile-menu__item"
+                                           @onclick="CloseProfile">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
+                                                <circle cx="12" cy="12" r="3"></circle>
+                                            </svg>
+                                            <span>Settings</span>
+                                        </a>
+
+                                        <div class="mw-profile-menu__divider"></div>
+
+                                        <!-- SIGN OUT -->
+                                        <button class="mw-profile-menu__item mw-profile-menu__signout"
+                                                @onclick="HandleSignOut">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                                <polyline points="16 17 21 12 16 7"></polyline>
+                                                <line x1="21" x2="9" y1="12" y2="12"></line>
+                                            </svg>
+                                            <span>Sign Out</span>
+                                        </button>
+
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <!-- NOT LOGGED IN → sign in button  -->
+                                <a href="/login" class="mw-signin-btn">
+                                    Sign In
+                                </a>
+                            }
+
+                        </div>
 
                         <button class="mw-icon-btn" aria-label="Location">
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
@@ -143,7 +216,7 @@
                                @oninput="HandleSearchInput"
                                @onkeydown="HandleSearchKeyDown" />
 
-                        @* clear button shows when typing ✅ *@
+                        @* clear button shows when typing  *@
                         @if (!string.IsNullOrEmpty(searchQuery))
                         {
                             <button class="mw-search-clear" @onclick="ClearSearch">
@@ -255,6 +328,7 @@
                                         <!-- IMAGE -->
                                         <div class="mw-search-result__img">
                                             <img src="@product.ImageUrl"
+                                                 loading="lazy"
                                                  alt="@product.Name" />
                                         </div>
 
@@ -378,6 +452,7 @@
                             <!-- IMAGE -->
                             <div class="mw-cart-img">
                                 <img src="@item.ProductImageUrl"
+                                     loading="lazy"
                                      alt="@item.ProductName" />
                             </div>
 
@@ -397,7 +472,7 @@
 
                                 <div class="d-flex justify-content-between align-items-center mt-2">
 
-                                    <!-- QTY +/- ✅ -->
+                                    <!-- QTY +/-  -->
                                     <div class="mw-qty">
                                         <button @onclick="() => DecreaseQty(item)"
                                                 disabled="@(item.Quantity <= 1)">
@@ -487,6 +562,10 @@
     private bool isSearching = false;
     private bool hasSearched = false;
     private bool _cartInitialized = false;
+    private string? userName;
+    private string? userEmail;
+    private bool isUserAuthenticated;
+    private bool isProfileOpen = false;
 
 
     //String
@@ -547,13 +626,18 @@
         InvokeAsync(async () =>
         {
             isMenuOpen = false;
+            isProfileOpen = false;
 
             // re-check auth state on every navigation
             var authState = await AuthStateProvider
                 .GetAuthenticationStateAsync();
 
             var isAuthenticated = authState.User.Identity?.IsAuthenticated == true;
-
+            isUserAuthenticated = isAuthenticated;
+            userName = authState.User
+                .FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value;
+            userEmail = authState.User
+                .FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
             // detect login → was guest now authenticated
             if (isAuthenticated && !CartStateService.IsAuthenticated)
             {
@@ -599,31 +683,33 @@
 
             var isAuthenticated = authState.User.Identity?.IsAuthenticated == true;
             var userId = authState.User.FindFirst("UserId")?.Value;
-
+            isUserAuthenticated = isAuthenticated;
+            userName = authState.User
+        .FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value;
+            userEmail = authState.User
+                .FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
             if (isAuthenticated)
             {
-                // check cookie first ✅
                 var cookieJson = await JS.InvokeAsync<string?>("getCartCookie");
                 var hadGuestCart = !string.IsNullOrEmpty(cookieJson);
 
                 if (hadGuestCart)
                 {
-                    // load guest items into Cart ✅
                     await CartStateService.LoadGuestCartFromCookie();
 
-                    // merge into DB ✅
+                    // merge into DB
                     // MergeGuestCartAsync internally loads DB cart after merge
                     await CartStateService.MergeGuestCartAsync();
                 }
                 else
                 {
-                    // no guest items → just load DB cart ✅
+                    // no guest items → just load DB cart
                     await CartStateService.InitializeAsync(isAuthenticated, userId);
                 }
             }
             else
             {
-                // guest → load from cookie 
+                // guest → load from cookie
                 await CartStateService.InitializeAsync(isAuthenticated, userId);
             }
 
@@ -646,14 +732,14 @@
         // update search query as user types
         searchQuery = e.Value?.ToString() ?? string.Empty;
 
-        // if cleared → reset state ✅
+        // if cleared → reset state
         if (string.IsNullOrEmpty(searchQuery))
         {
             ClearSearch();
             return;
         }
 
-        // cancel previous debounce timer ✅
+        // cancel previous debounce timer
         // user is still typing
         _searchCts?.Cancel();
         _searchCts = new CancellationTokenSource();
@@ -661,16 +747,16 @@
         try
         {
             // wait 300ms before searching
-            // if user types again → Task.Delay cancelled ✅
+            // if user types again → Task.Delay cancelled
             await Task.Delay(300, _searchCts.Token);
 
             // 300ms passed → user stopped typing
-            // → search now ✅
+            // → search now
             await PerformSearch();
         }
         catch (TaskCanceledException)
         {
-            // user typed again → debounce cancelled ✅
+            // user typed again → debounce cancelled
             // do nothing → new timer started
         }
     }
@@ -680,12 +766,12 @@
         // only react to Enter key
         if (e.Key == "Enter" && !string.IsNullOrEmpty(searchQuery))
         {
-            // cancel debounce → search immediately ✅
+            // cancel debounce → search immediately
             _searchCts?.Cancel();
             await PerformSearch();
         }
 
-        // close on Escape key ✅
+        // close on Escape key
         if (e.Key == "Escape")
         {
             CloseSearch();
@@ -694,7 +780,7 @@
 
     private void ClearSearch()
     {
-        // reset all search state ✅
+        // reset all search state
         searchQuery = string.Empty;
         searchResults = new();
         hasSearched = false;
@@ -705,7 +791,7 @@
 
     private async Task PerformSearch()
     {
-        // validate — don't search empty or whitespace ✅
+        // validate — don't search empty or whitespace
         if (string.IsNullOrWhiteSpace(searchQuery))
             return;
 
@@ -766,10 +852,10 @@
         // search immediately
         await PerformSearch();
     }
-    // subscribe to cart changes ✅
+    // subscribe to cart changes
     protected override void OnInitialized()
     {
-        Nav.LocationChanged += OnLocationChanged;
+        NavigationManager.LocationChanged += OnLocationChanged;
         CartStateService.OnCartChanged += OnCartChanged;
     }
 
@@ -787,14 +873,14 @@
             item.Id, item.Quantity - 1);
     }
 
-    // qty increase ✅
+    // qty increase
     private async Task IncreaseQty(CartItemModel item)
     {
         await CartStateService.UpdateQuantity(
             item.Id, item.Quantity + 1);
     }
 
-    // remove item ✅
+    // remove item
     private async Task RemoveItem(Guid cartItemId)
     {
         await CartStateService.RemoveItem(cartItemId);
@@ -803,7 +889,27 @@
     // unsubscribe on dispose
     public void Dispose()
     {
-        Nav.LocationChanged -= OnLocationChanged;
+        NavigationManager.LocationChanged -= OnLocationChanged;
         CartStateService.OnCartChanged -= OnCartChanged;
+    }
+
+    // toggle profile dropdown
+    private void ToggleProfile()
+    {
+        isProfileOpen = !isProfileOpen;
+    }
+
+    // close profile dropdown
+    private void CloseProfile()
+    {
+        isProfileOpen = false;
+    }
+
+    // sign out
+    private async Task HandleSignOut()
+    {
+        isProfileOpen = false;
+        await CartStateService.ClearCartState();
+        NavigationManager.NavigateTo("/auth/clear", forceLoad: true);
     }
 }

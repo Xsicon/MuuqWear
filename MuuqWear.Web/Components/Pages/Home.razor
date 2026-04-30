@@ -103,7 +103,7 @@
                     <div class="col-12 col-sm-6 col-md-6 col-lg-4 mw-categorycarousel-item">
 
                         <a href="@item.Link" class="mw-category__card">
-                            <img src="@item.Image" />
+                            <img src="@item.Image" loading="lazy" />
 
                             <div class="mw-category__overlay"></div>
 
@@ -166,11 +166,11 @@
                 {
                     <div class="col-12 col-sm-6 col-md-4 col-lg-3 mw-newarrivalcarousel-item">
 
-                        @* wrap card in link → navigates to product detail ✅ *@
+                        @* wrap card in link → navigates to product detail  *@
                         <a href="/productdetail/@item.Id" class="mw-arrivals__card-link">
                             <div class="mw-arrivals__card">
                                 <div class="mw-arrivals__image">
-                                    <img src="@item.ImageUrl" alt="@item.Name" />
+                                    <img src="@item.ImageUrl" alt="@item.Name" loading="lazy" />
                                     <div class="mw-arrivals__badge">NEW</div>
                                 </div>
                                 <h3>@item.Name</h3>
@@ -232,11 +232,11 @@
                 {
                     <div class="col-12 col-md-6">
 
-                        @* wrap in link ✅ *@
+                        @* wrap in link  *@
                         <a href="/productdetail/@item.Id" class="mw-featured__card-link">
                             <div class="mw-featured__card">
                                 <div class="mw-featured__img-wrap">
-                                    <img src="@item.ImageUrl" alt="@item.Name" />
+                                    <img src="@item.ImageUrl" alt="@item.Name" loading="lazy" />
                                 </div>
                                 <div class="mw-featured__content">
                                     <h3>@item.Name</h3>
@@ -370,10 +370,10 @@
                 {
                     <div class="bestsellers-slide">
 
-                        @* already has anchor tag — update href ✅ *@
+                        @* already has anchor tag — update href  *@
                         <a href="/productdetail/@item.Id" class="mw-bestsellers__card">
                             <div class="mw-bestsellers__image">
-                                <img src="@item.ImageUrl" alt="@item.Name" />
+                                <img src="@item.ImageUrl" alt="@item.Name" loading="lazy" />
                                 @if (!string.IsNullOrEmpty(item.Badge))
                                 {
                                     <div class="mw-bestsellers__badge">@item.Badge</div>

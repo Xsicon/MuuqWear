@@ -137,7 +137,7 @@ input:invalid,
     min-width: 260px;
 }
 
-/* slide in ✅ */
+/* slide in  */
 .mw-toast--visible {
     transform: translateX(0);
 }
@@ -373,8 +373,8 @@ input:invalid,
 .mw-admin-login__input {
     width: 100%;
     padding: 12px 16px;
-    border-radius: 10px; /* ✅ more rounded */
-    border: 1.5px solid #e5e7eb; /* ✅ lighter gray border */
+    border-radius: 10px; /*  more rounded */
+    border: 1.5px solid #e5e7eb; /*  lighter gray border */
     color: #1E2A47;
     font-size: 14px;
     transition: border-color 0.2s;

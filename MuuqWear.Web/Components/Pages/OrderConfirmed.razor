@@ -1,0 +1,199 @@
+﻿@page "/order-confirmed/{OrderId:guid}"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Components.Authorization
+@using MuuqWear.Application.Services.OrderService
+@using MuuqWear.Model.Orders
+@inject IOrderService OrderService
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Order Confirmed — MuuqWear</PageTitle>
+
+@if (isLoading)
+{
+    <!-- LOADING STATE -->
+    <div class="mw-oc-loading">
+        <div class="mw-spinner"></div>
+    </div>
+}
+else if (order == null)
+{
+    <!-- ERROR STATE -->
+    <div class="mw-oc text-center">
+        <p class="text-muted">Order not found.</p>
+        <a href="/" class="mw-btn-primary mt-3">
+            Back to Home
+        </a>
+    </div>
+}
+else
+{
+    <div class="mw-oc">
+
+        <!-- HERO -->
+        <div class="mw-oc__hero">
+            <div class="mw-oc__icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
+                    <path d="m9 11 3 3L22 4"></path>
+                </svg>
+            </div>
+            <h1 class="mw-oc__title">Order Confirmed</h1>
+            <p class="mw-oc__subtitle">
+                Thank you for shopping with Muuqwear. Your order
+                has been placed successfully.
+            </p>
+        </div>
+
+        <!-- ORDER NUMBER BOX -->
+        <div class="mw-oc__number-box">
+            <p class="mw-oc__number-label">Order Number</p>
+            <p class="mw-oc__number">@order.OrderNumber</p>
+            <p class="mw-oc__number-hint">
+                Save this number for your records
+            </p>
+        </div>
+
+        <!-- WHAT HAPPENS NEXT -->
+        <div class="mw-oc__steps">
+            <h2 class="mw-oc__steps-title">What Happens Next</h2>
+
+            <div class="mw-oc__step">
+                <div class="mw-oc__step-left">
+                    <div class="mw-oc__step-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                             viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect width="20" height="16" x="2" y="4" rx="2"></rect>
+                            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+                        </svg>
+                    </div>
+                    <div class="mw-oc__step-line"></div>
+                </div>
+                <div class="mw-oc__step-content">
+                    <h3 class="mw-oc__step-title">Confirmation Email Sent</h3>
+                    <p class="mw-oc__step-desc">
+                        We've sent a receipt and order details to @order.Email
+                    </p>
+                </div>
+            </div>
+
+            <div class="mw-oc__step">
+                <div class="mw-oc__step-left">
+                    <div class="mw-oc__step-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                             viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"></path>
+                            <path d="M12 22V12"></path>
+                            <polyline points="3.29 7 12 12 20.71 7"></polyline>
+                            <path d="m7.5 4.27 9 5.15"></path>
+                        </svg>
+                    </div>
+                    <div class="mw-oc__step-line"></div>
+                </div>
+                <div class="mw-oc__step-content">
+                    <h3 class="mw-oc__step-title">Order Processing</h3>
+                    <p class="mw-oc__step-desc">
+                        Your order is being prepared and will ship
+                        within 1–2 business days.
+                    </p>
+                </div>
+            </div>
+
+            <div class="mw-oc__step">
+                <div class="mw-oc__step-left">
+                    <div class="mw-oc__step-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                             viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"></path>
+                            <path d="M15 18H9"></path>
+                            <path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"></path>
+                            <circle cx="17" cy="18" r="2"></circle>
+                            <circle cx="7" cy="18" r="2"></circle>
+                        </svg>
+                    </div>
+                    <div class="mw-oc__step-line"></div>
+                </div>
+                <div class="mw-oc__step-content">
+                    <h3 class="mw-oc__step-title">Tracking Number</h3>
+                    <p class="mw-oc__step-desc">
+                        You'll receive a tracking number via email
+                        once your package ships.
+                    </p>
+                </div>
+            </div>
+
+            <div class="mw-oc__step">
+                <div class="mw-oc__step-left">
+                    <div class="mw-oc__step-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                             viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path>
+                            <circle cx="12" cy="10" r="3"></circle>
+                        </svg>
+                    </div>
+                    <!-- no line after last step  -->
+                </div>
+                <div class="mw-oc__step-content">
+                    <h3 class="mw-oc__step-title">Delivery</h3>
+                    <p class="mw-oc__step-desc">
+                        Estimated delivery within 3–7 business days
+                        depending on your location.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- BUTTONS -->
+        <div class="mw-oc__actions">
+            <a href="/shop/apparel"
+               class="mw-oc__btn-primary">
+                Continue Shopping
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 12h14"></path>
+                    <path d="m12 5 7 7-7 7"></path>
+                </svg>
+            </a>
+            <a href="/" class="mw-oc__btn-secondary">
+                Back to Home
+            </a>
+        </div>
+
+        <!-- HELP TEXT -->
+        <p class="mw-oc__help">
+            Need help? Visit our
+            <a href="/help">Help Center</a>
+            or check our
+            <a href="/shipping">Shipping &amp; Returns</a>
+            policy.
+        </p>
+
+    </div>
+}
+
+@code {
+    [Parameter]
+    public Guid OrderId { get; set; }
+
+    private OrderModel? order;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // fetch order from API 
+        var result = await OrderService.GetOrder(OrderId);
+
+        if (result.Success && result.Data != null)
+            order = result.Data;
+
+        isLoading = false;
+    }
+}

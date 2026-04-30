@@ -99,16 +99,16 @@
     flex: 1;
 }
 
-/* each segment always visible as gray ✅ */
+/* each segment always visible as gray  */
 .mw-strength-segment {
     height: 5px;
     flex: 1;
     border-radius: 2px;
-    background: #e5e7eb; /* gray default — always visible ✅ */
+    background: #e5e7eb; /* gray default — always visible  */
     transition: background 0.3s ease;
 }
 
-    /* active segment gets color from inline style ✅ */
+    /* active segment gets color from inline style  */
     .mw-strength-segment.active {
         background: var(--strength-color, #e5e7eb);
     }

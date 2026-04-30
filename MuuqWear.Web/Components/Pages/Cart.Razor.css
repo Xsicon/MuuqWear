@@ -59,7 +59,7 @@
     border-radius: 12px;
     padding: 24px;
     position: sticky;
-    top: 100px; /* stays visible while scrolling ✅ */
+    top: 100px; /* stays visible while scrolling  */
 }
 
 .mw-cart-page__summary-title {

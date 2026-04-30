@@ -10,7 +10,6 @@
 @inject IJSRuntime JS
 @inject AuthStateService AuthStateService
 @inject NavigationManager NavigationManager
-@inject CustomAuthenticationStateProvider AuthStateProvider
 
 <section class="mw-auth">
     <div class="container">
@@ -189,7 +188,7 @@
     [Inject]
     public CartStateService CartStateService { get; set; } = default!;
 
-    private string activeTab = "password"; // default tab ✅
+    private string activeTab = "password"; // default tab
 
     private LoginModel loginModel = new();
     private string message = "";
@@ -205,7 +204,7 @@
     {
         activeTab = tab;
 
-        // reset messages when switching tabs ✅
+        // reset messages when switching tabs
         message = string.Empty;
         messageCssClass = string.Empty;
         magicLinkMessage = string.Empty;

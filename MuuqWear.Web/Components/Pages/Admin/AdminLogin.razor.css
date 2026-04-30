@@ -13,7 +13,7 @@
     max-width: 520px;
 }
 
-/* SHIELD ICON - circle ✅ */
+/* SHIELD ICON - circle  */
 .mw-admin-login__icon {
     width: 64px;
     height: 64px;
@@ -52,13 +52,13 @@
 
 /* INPUTS */
 
-/* BUTTON - also more rounded ✅ */
+/* BUTTON - also more rounded  */
 .mw-admin-login__btn {
     background: #1E2A47;
     color: white;
     border: none;
     padding: 14px;
-    border-radius: 10px; /* ✅ match input radius */
+    border-radius: 10px; /*  match input radius */
     font-size: 15px;
     font-weight: 600;
     cursor: pointer;

@@ -321,23 +321,23 @@ namespace MuuqWear.Web.Components.Pages.Admin
             searchQuery = e.Value?.ToString() ?? string.Empty;
 
             // cancel previous debounce timer if exists
-            // user is still typing ✅
+            // user is still typing 
             _searchCts?.Cancel();
             _searchCts = new CancellationTokenSource();
 
             try
             {
                 // wait 500ms before searching
-                // if user types again → this gets cancelled ✅
+                // if user types again → this gets cancelled 
                 await Task.Delay(500, _searchCts.Token);
 
                 // 500ms passed without new keystroke
-                // → user stopped typing → search now ✅
+                // → user stopped typing → search now 
                 await SearchProducts();
             }
             catch (TaskCanceledException)
             {
-                // user typed again → debounce cancelled ✅
+                // user typed again → debounce cancelled 
                 // do nothing
             }
         }
@@ -350,7 +350,7 @@ namespace MuuqWear.Web.Components.Pages.Admin
                 // cancel debounce timer immediately
                 _searchCts?.Cancel();
 
-                // search right away ✅
+                // search right away 
                 await SearchProducts();
             }
         }
@@ -410,10 +410,10 @@ namespace MuuqWear.Web.Components.Pages.Admin
 
             if (result.Success && result.Data != null)
             {
-                // add to local list immediately ✅
+                // add to local list immediately 
                 // no need to reload from API
                 editingProductImages.Add(result.Data);
-                newImageUrl = string.Empty; // clear input ✅
+                newImageUrl = string.Empty; // clear input 
             }
             else
             {
@@ -474,7 +474,7 @@ namespace MuuqWear.Web.Components.Pages.Admin
 
             if (result.Success)
             {
-                // remove from local list immediately ✅
+                // remove from local list immediately 
                 editingProductImages.RemoveAll(i => i.Id == imageId);
             }
             else
@@ -488,7 +488,7 @@ namespace MuuqWear.Web.Components.Pages.Admin
             if (int.TryParse(e.Value?.ToString(), out int newOrder))
             {
                 img.SortOrder = newOrder;
-                // reorder local list ✅
+                // reorder local list 
                 editingProductImages = editingProductImages
                     .OrderBy(i => i.SortOrder)
                     .ToList();

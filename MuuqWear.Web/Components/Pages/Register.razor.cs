@@ -50,7 +50,7 @@ namespace MuuqWear.Web.Components.Pages
 
             if (authState.User.Identity?.IsAuthenticated == true)
             {
-                NavigationManager.NavigateTo("/profile", replace: true); // ✅ Always /profile
+                NavigationManager.NavigateTo("/profile", replace: true); //  Always /profile
             }
         }
 

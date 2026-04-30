@@ -324,7 +324,7 @@
 .mw-carousel-inner {
     display: flex;
     gap: 12px;
-    padding: 0 12px; /* ✅ safe padding */
+    padding: 0 12px; /*  safe padding */
     box-sizing: border-box;
 }
 

@@ -1,0 +1,299 @@
+﻿/* ================================
+   ORDER CONFIRMED PAGE
+   ================================ */
+
+.mw-oc {
+    max-width: 620px;
+    margin: 0 auto;
+    padding: 34px 16px 55px;
+}
+
+@media (min-width: 768px) {
+    .mw-oc {
+        padding: 55px 34px 89px;
+    }
+}
+
+/* LOADING */
+.mw-oc-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+}
+
+/* HERO */
+.mw-oc__hero {
+    text-align: center;
+    margin-bottom: 34px;
+}
+
+@media (min-width: 768px) {
+    .mw-oc__hero {
+        margin-bottom: 55px;
+    }
+}
+
+/* CHECK ICON */
+.mw-oc__icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: #E6ECF5;
+    color: #1E2A47;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 21px;
+}
+
+@media (min-width: 768px) {
+    .mw-oc__icon {
+        width: 80px;
+        height: 80px;
+    }
+}
+
+.mw-oc__title {
+    font-size: 28px;
+    font-weight: 800;
+    color: #1E2A47;
+    letter-spacing: -0.5px;
+    margin-bottom: 8px;
+}
+
+@media (min-width: 768px) {
+    .mw-oc__title {
+        font-size: 36px;
+    }
+}
+
+.mw-oc__subtitle {
+    font-size: 15px;
+    line-height: 24px;
+    color: #4A5C7A;
+    max-width: 440px;
+    margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+    .mw-oc__subtitle {
+        font-size: 16px;
+    }
+}
+
+/* ORDER NUMBER BOX */
+.mw-oc__number-box {
+    background: #F5F7FA;
+    border: 1px solid rgba(169, 183, 204, 0.3);
+    padding: 21px;
+    text-align: center;
+    margin-bottom: 34px;
+}
+
+@media (min-width: 768px) {
+    .mw-oc__number-box {
+        padding: 34px;
+        margin-bottom: 55px;
+    }
+}
+
+.mw-oc__number-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #4A5C7A;
+    margin-bottom: 8px;
+}
+
+.mw-oc__number {
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    color: #1E2A47;
+    font-family: monospace;
+    margin-bottom: 8px;
+}
+
+@media (min-width: 768px) {
+    .mw-oc__number {
+        font-size: 28px;
+    }
+}
+
+.mw-oc__number-hint {
+    font-size: 12px;
+    color: #4A5C7A;
+    margin: 0;
+}
+
+/* STEPS SECTION */
+.mw-oc__steps-title {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: #1E2A47;
+    margin-bottom: 21px;
+}
+
+/* SINGLE STEP */
+.mw-oc__step {
+    display: flex;
+    gap: 16px;
+}
+
+@media (min-width: 768px) {
+    .mw-oc__step {
+        gap: 21px;
+    }
+}
+
+/* LEFT SIDE — icon + line */
+.mw-oc__step-left {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+/* ICON CIRCLE */
+.mw-oc__step-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #1E2A47;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+@media (min-width: 768px) {
+    .mw-oc__step-icon {
+        width: 44px;
+        height: 44px;
+    }
+}
+
+/* VERTICAL LINE CONNECTOR */
+.mw-oc__step-line {
+    width: 2px;
+    flex: 1;
+    background: rgba(169, 183, 204, 0.3);
+    margin: 4px 0;
+}
+
+/* STEP CONTENT */
+.mw-oc__step-content {
+    padding-bottom: 21px;
+}
+
+@media (min-width: 768px) {
+    .mw-oc__step-content {
+        padding-bottom: 28px;
+    }
+}
+
+.mw-oc__step-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1E2A47;
+    margin-bottom: 4px;
+}
+
+@media (min-width: 768px) {
+    .mw-oc__step-title {
+        font-size: 16px;
+    }
+}
+
+.mw-oc__step-desc {
+    font-size: 13px;
+    line-height: 20px;
+    color: #4A5C7A;
+    margin: 0;
+}
+
+@media (min-width: 768px) {
+    .mw-oc__step-desc {
+        font-size: 14px;
+    }
+}
+
+/* BUTTONS */
+.mw-oc__actions {
+    margin-top: 34px;
+    display: flex;
+    flex-direction: column;
+    gap: 13px;
+}
+
+@media (min-width: 768px) {
+    .mw-oc__actions {
+        margin-top: 55px;
+    }
+}
+
+.mw-oc__btn-primary {
+    width: 100%;
+    background: #1E2A47;
+    color: white;
+    padding: 14px;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-decoration: none;
+    transition: background 0.2s;
+}
+
+    .mw-oc__btn-primary:hover {
+        background: #0B1A33;
+        color: white;
+        text-decoration: none;
+    }
+
+.mw-oc__btn-secondary {
+    width: 100%;
+    border: 1px solid #A9B7CC;
+    color: #1E2A47;
+    padding: 14px;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    transition: background 0.2s;
+}
+
+    .mw-oc__btn-secondary:hover {
+        background: #F5F7FA;
+        text-decoration: none;
+        color: #1E2A47;
+    }
+
+/* HELP TEXT */
+.mw-oc__help {
+    text-align: center;
+    font-size: 12px;
+    color: #A9B7CC;
+    margin-top: 34px;
+    line-height: 18px;
+}
+
+    .mw-oc__help a {
+        color: #4A5C7A;
+        text-decoration: underline;
+    }
+
+        .mw-oc__help a:hover {
+            color: #1E2A47;
+        }

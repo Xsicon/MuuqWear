@@ -96,7 +96,7 @@
 }
 
     .mw-sg-toggle-label.active {
-        color: #1E2A47; /* active unit highlighted ✅ */
+        color: #1E2A47; /* active unit highlighted  */
     }
 
 /* toggle switch button */
@@ -113,7 +113,7 @@
 }
 
     .mw-sg-toggle-switch.on {
-        background: #1E2A47; /* navy when cm selected ✅ */
+        background: #1E2A47; /* navy when cm selected  */
     }
 
 /* thumb (circle inside toggle) */
@@ -130,7 +130,7 @@
 }
 
 .mw-sg-toggle-switch.on .mw-sg-toggle-thumb {
-    transform: translateX(20px); /* slides right when on ✅ */
+    transform: translateX(20px); /* slides right when on  */
 }
 
 /* ================================
@@ -183,11 +183,11 @@
     }
 
     .mw-sg-table tr:last-child td {
-        border-bottom: none; /* no border on last row ✅ */
+        border-bottom: none; /* no border on last row  */
     }
 
     .mw-sg-table tr:hover td {
-        background: #f9fafb; /* subtle hover ✅ */
+        background: #f9fafb; /* subtle hover  */
     }
 
 .mw-sg-size-cell {
@@ -235,7 +235,7 @@
     width: 100%;
     max-width: 420px;
     background: white;
-    transform: translateX(100%); /* starts off screen right ✅ */
+    transform: translateX(100%); /* starts off screen right  */
     transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     flex-direction: column;
@@ -243,7 +243,7 @@
 }
 
 .mw-sg-panel-overlay.open .mw-sg-panel {
-    transform: translateX(0); /* slides in ✅ */
+    transform: translateX(0); /* slides in  */
 }
 
 /* panel header */
@@ -283,7 +283,7 @@
         color: #1E2A47;
     }
 
-/* panel body — scrollable ✅ */
+/* panel body — scrollable  */
 .mw-sg-panel-body {
     flex: 1;
     overflow-y: auto;
@@ -297,7 +297,7 @@
 }
 
     .mw-sg-measure-item:last-child {
-        border-bottom: none; /* no border on last item ✅ */
+        border-bottom: none; /* no border on last item  */
     }
 
 .mw-sg-measure-title {
@@ -317,6 +317,6 @@
 /* mobile panel full width */
 @media (max-width: 480px) {
     .mw-sg-panel {
-        max-width: 100%; /* full width on small mobile ✅ */
+        max-width: 100%; /* full width on small mobile  */
     }
 }

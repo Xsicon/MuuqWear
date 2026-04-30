@@ -97,7 +97,7 @@ window.destroyMagnifier = function (imgSelector) {
 // CART COOKIE FUNCTIONS
 // =============================================
 
-// get cart cookie ✅
+// get cart cookie 
 // returns JSON string of cart items or null
 window.getCartCookie = function () {
     try {
@@ -108,18 +108,18 @@ window.getCartCookie = function () {
         for (var i = 0; i < cookies.length; i++) {
             var cookie = cookies[i].trim();
 
-            // find cart cookie by name ✅
+            // find cart cookie by name 
             if (cookie.startsWith('muuqwear_cart=')) {
                 // extract value after "muuqwear_cart="
                 var value = cookie.substring('muuqwear_cart='.length);
 
-                // decode URI component ✅
+                // decode URI component 
                 // cookie values are URL encoded
                 return decodeURIComponent(value);
             }
         }
 
-        // cart cookie not found → return null ✅
+        // cart cookie not found → return null 
         return null;
     }
     catch (e) {
@@ -128,24 +128,24 @@ window.getCartCookie = function () {
     }
 };
 
-// set cart cookie ✅
+// set cart cookie 
 // json = JSON string of cart items
 // days = cookie expiry in days (default 7)
 window.setCartCookie = function (json, days) {
     try {
-        // calculate expiry date ✅
+        // calculate expiry date 
         var expires = new Date();
         expires.setDate(expires.getDate() + (days || 7));
 
-        // encode JSON to be safe in cookie ✅
+        // encode JSON to be safe in cookie 
         // handles special characters like []{}",
         var encoded = encodeURIComponent(json);
 
         // set cookie with:
         // name=value → muuqwear_cart=[...]
-        // expires → 7 days ✅
-        // path=/ → available on all pages ✅
-        // SameSite=Lax → security ✅
+        // expires → 7 days 
+        // path=/ → available on all pages 
+        // SameSite=Lax → security 
         document.cookie =
             'muuqwear_cart=' + encoded +
             '; expires=' + expires.toUTCString() +
@@ -157,11 +157,11 @@ window.setCartCookie = function (json, days) {
     }
 };
 
-// clear cart cookie ✅
+// clear cart cookie 
 // called after merging guest cart on login
 window.clearCartCookie = function () {
     try {
-        // set expiry to past date → browser deletes cookie ✅
+        // set expiry to past date → browser deletes cookie 
         document.cookie =
             'muuqwear_cart=' +
             '; expires=Thu, 01 Jan 1970 00:00:00 UTC' +

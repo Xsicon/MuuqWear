@@ -2,8 +2,8 @@
 
 /// <summary>
 /// Static size guide data
-/// Hardcoded for performance — no runtime calculation ✅
-/// Single source of truth for all size tables ✅
+/// Hardcoded for performance — no runtime calculation 
+/// Single source of truth for all size tables 
 /// </summary>
 public static class SizeGuideData
 {
@@ -103,7 +103,7 @@ public static class SizeGuideData
 }
 
 // =============================================
-// RECORD TYPES — immutable data containers ✅
+// RECORD TYPES — immutable data containers 
 // =============================================
 
 /// <summary>Tops size row — Size, Chest, Length</summary>
