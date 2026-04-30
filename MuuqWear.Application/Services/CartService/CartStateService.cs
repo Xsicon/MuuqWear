@@ -13,10 +13,10 @@ public class CartStateService
     // current cart state
     public CartModel Cart { get; private set; } = new();
 
-    // true when user is logged in ✅
+    // true when user is logged in 
     public bool IsAuthenticated { get; private set; } = false;
 
-    // fired when cart changes → UI re-renders ✅
+    // fired when cart changes → UI re-renders 
     public event Action? OnCartChanged;
 
     public CartStateService(ICartService cartService, IJSRuntime js)
@@ -27,7 +27,7 @@ public class CartStateService
     }
 
     // =============================================
-    // INITIALIZE — called on app start ✅
+    // INITIALIZE — called on app start
     // loads cart based on auth state
     // =============================================
     public async Task InitializeAsync(bool isAuthenticated, string? userId)
@@ -36,12 +36,12 @@ public class CartStateService
 
         if (isAuthenticated)
         {
-            // logged in → load from DB ✅
+            // logged in → load from DB
             await LoadCartFromDb();
         }
         else
         {
-            // guest → load from cookie ✅
+            // guest → load from cookie
             await LoadCartFromCookie();
         }
     }
@@ -53,7 +53,7 @@ public class CartStateService
     {
         if (IsAuthenticated)
         {
-            // logged in → save to DB ✅
+            // logged in → save to DB
             var result = await _cartService.AddItem(request);
             if (result.Success && result.Data != null)
             {
@@ -121,7 +121,7 @@ public class CartStateService
         }
         else
         {
-            // guest → update in memory + cookie ✅
+            // guest → update in memory + cookie 
             var item = Cart.Items.FirstOrDefault(i => i.Id == cartItemId);
             if (item != null)
             {
@@ -148,7 +148,7 @@ public class CartStateService
         }
         else
         {
-            // guest → remove from memory + cookie ✅
+            // guest → remove from memory + cookie 
             Cart.Items.RemoveAll(i => i.Id == cartItemId);
             await SaveCartToCookie();
             NotifyCartChanged();
@@ -178,12 +178,12 @@ public class CartStateService
     }
 
     // =============================================
-    // MERGE — called after login ✅
+    // MERGE — called after login
     // merges guest cookie cart into DB cart
     // =============================================
     public async Task MergeGuestCartAsync()
     {
-        // get guest items currently in Cart ✅
+        // get guest items currently in Cart
         var guestItems = Cart.Items.Select(i => new AddCartItemModel
         {
             ProductId = i.ProductId,
@@ -194,12 +194,12 @@ public class CartStateService
             ProductPrice = i.ProductPrice
         }).ToList();
 
-        // set authenticated before API call ✅
+        // set authenticated before API call 
         IsAuthenticated = true;
 
         if (guestItems.Any())
         {
-            // merge into DB ✅
+            // merge into DB 
             var result = await _cartService.MergeCart(guestItems);
             if (result.Success && result.Data != null)
             {
@@ -231,7 +231,7 @@ public class CartStateService
     // PRIVATE HELPERS
     // =============================================
 
-    // load cart from DB ✅
+    // load cart from DB 
     private async Task LoadCartFromDb()
     {
         var result = await _cartService.GetCart();
@@ -241,7 +241,7 @@ public class CartStateService
             Cart = new CartModel();
     }
 
-    // load cart from cookie ✅
+    // load cart from cookie 
     private async Task LoadCartFromCookie()
     {
         try
@@ -267,7 +267,7 @@ public class CartStateService
         }
         catch
         {
-            // cookie corrupt → start fresh ✅
+            // cookie corrupt → start fresh 
             Cart = new CartModel();
         }
     }
@@ -299,7 +299,7 @@ public class CartStateService
         await ClearCartCookie();
         NotifyCartChanged();
     }
-    // save cart to cookie ✅
+    // save cart to cookie 
     private async Task SaveCartToCookie()
     {
         try
@@ -311,11 +311,11 @@ public class CartStateService
         }
         catch
         {
-            // ignore cookie errors ✅
+            // ignore cookie errors 
         }
     }
 
-    // clear cart cookie ✅
+    // clear cart cookie 
     private async Task ClearCartCookie()
     {
         try
@@ -325,7 +325,7 @@ public class CartStateService
         catch { }
     }
 
-    // notify all subscribers → UI re-renders ✅
+    // notify all subscribers → UI re-renders 
     private void NotifyCartChanged()
     {
         OnCartChanged?.Invoke();

@@ -17,7 +17,7 @@ public class ProductService : IProductService
     {
         try
         {
-            // build query string from filter object ✅
+            // build query string from filter object 
             var queryParams = new List<string>();
 
             queryParams.Add($"page={filter.Page}");
@@ -184,7 +184,7 @@ public class ProductService : IProductService
         try
         {
             // call backend GET api/Product/{id}
-            // id inserted directly in URL ✅
+            // id inserted directly in URL 
             var result = await _http
                 .GetFromJsonAsync<Response<ProductModel>>($"api/Product/{id}");
 
