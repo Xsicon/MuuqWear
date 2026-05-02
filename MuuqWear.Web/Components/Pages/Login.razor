@@ -82,6 +82,12 @@
                                     <span>@message</span>
                                 </div>
                             }
+                            @if (!string.IsNullOrEmpty(expiredMessage))
+                            {
+                                <div class="mw-alert mw-alert--warning">
+                                    @expiredMessage
+                                </div>
+                            }
 
                         </EditForm>
                     }
@@ -181,6 +187,7 @@
 
 @code {
     private bool isGoogleLoading = false;
+    private string? expiredMessage;
 
     [CascadingParameter]
     private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
@@ -240,6 +247,11 @@
 
     protected override async Task OnInitializedAsync()
     {
+        var uri = new Uri(NavigationManager.Uri);
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        if (query["expired"] == "true")
+            expiredMessage = "Your session has expired. Please sign in again.";
+
         if (AuthenticationStateTask is null) return;
         var authState = await AuthenticationStateTask;
         if (authState.User.Identity?.IsAuthenticated == true)

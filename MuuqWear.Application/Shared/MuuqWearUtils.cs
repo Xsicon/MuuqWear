@@ -6,7 +6,7 @@ public static class MuuqWearUtils
 {
     /// <summary>
     /// Validates email format
-    /// e.g. user@example.com ✅
+    /// e.g. user@example.com 
     /// </summary>
     public static bool IsValidEmail(string email)
     {
@@ -50,14 +50,14 @@ public static class MuuqWearUtils
 
     /// <summary>
     /// Checks if string is null or whitespace
-    /// Shorthand for string.IsNullOrWhiteSpace ✅
+    /// Shorthand for string.IsNullOrWhiteSpace 
     /// </summary>
     public static bool IsEmpty(string? value)
         => string.IsNullOrWhiteSpace(value);
 
     /// <summary>
     /// Sanitizes search input
-    /// Escapes SQL LIKE special characters ✅
+    /// Escapes SQL LIKE special characters 
     /// </summary>
     public static string SanitizeSearch(string? search)
     {

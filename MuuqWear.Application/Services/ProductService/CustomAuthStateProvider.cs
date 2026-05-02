@@ -9,6 +9,7 @@ public class CustomAuthenticationStateProvider : AuthenticationStateProvider
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
     private AuthenticationState? _cachedState;
+    private bool _sessionExpired = false; // ← add this
 
     public LoggedInUserModel CurrentUser { get; private set; } = new();
 
@@ -17,10 +18,37 @@ public class CustomAuthenticationStateProvider : AuthenticationStateProvider
         _httpContextAccessor = httpContextAccessor;
     }
 
+    //public void NotifySessionExpired()
+    //{
+    //    _sessionExpired = true;
+    //    _cachedState = null; // ← clear so it doesn't return old state
+    //    var anonymous = new ClaimsPrincipal(new ClaimsIdentity());
+    //    NotifyAuthenticationStateChanged(
+    //        Task.FromResult(new AuthenticationState(anonymous)));
+    //}
+
+    // ✅ call this on fresh login to reset the flag
+    public void NotifyLoggedIn(ClaimsPrincipal principal)
+    {
+        _sessionExpired = false;
+        _cachedState = new AuthenticationState(principal);
+        CurrentUser = LoggedInUserModel.FromClaimsPrincipal(principal);
+        NotifyAuthenticationStateChanged(Task.FromResult(_cachedState));
+    }
+
     public override Task<AuthenticationState> GetAuthenticationStateAsync()
     {
-        var httpContext = _httpContextAccessor.HttpContext;
+        // ✅ session expired → always anonymous
+        if (_sessionExpired)
+            return Task.FromResult(
+                new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity())));
 
+        // ✅ return cache FIRST — covers all SignalR calls where HttpContext = null
+        if (_cachedState != null)
+            return Task.FromResult(_cachedState);
+
+        // only runs on real HTTP request (first page load)
+        var httpContext = _httpContextAccessor.HttpContext;
         if (httpContext?.User?.Identity?.IsAuthenticated == true)
         {
             CurrentUser = LoggedInUserModel.FromClaimsPrincipal(httpContext.User);
@@ -28,13 +56,9 @@ public class CustomAuthenticationStateProvider : AuthenticationStateProvider
             return Task.FromResult(_cachedState);
         }
 
-        if (_cachedState != null)
-            return Task.FromResult(_cachedState);
-
         return Task.FromResult(
             new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity())));
     }
-
     public void SyncFromPrincipal(ClaimsPrincipal principal)
     {
         CurrentUser = LoggedInUserModel.FromClaimsPrincipal(principal);

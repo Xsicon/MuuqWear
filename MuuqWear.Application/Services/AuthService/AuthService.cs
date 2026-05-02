@@ -197,7 +197,7 @@ public class AuthService : IAuthService
         try
         {
             // GET api/Auth/google-signin-url
-            // no body needed — just GET request ✅
+            // no body needed — just GET request 
             var result = await _http
                 .GetFromJsonAsync<Response<string>>("api/Auth/google-signin-url");
 
@@ -221,7 +221,7 @@ public class AuthService : IAuthService
     {
         try
         {
-            // validate before API call ✅
+            // validate before API call 
             if (string.IsNullOrWhiteSpace(request.Email))
                 return new Response<int>
                 {
@@ -266,7 +266,7 @@ public class AuthService : IAuthService
     {
         try
         {
-            // validate before API call ✅
+            // validate before API call 
             if (string.IsNullOrWhiteSpace(request.NewPassword))
                 return new Response<int>
                 {

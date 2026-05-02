@@ -4,11 +4,15 @@
 @using Microsoft.AspNetCore.Components.Authorization
 @using MuuqWear.Application.Services.CartService
 @using MuuqWear.Application.Services.ProductService
+@using MuuqWear.Application.Shared
 @using MuuqWear.Model.Cart
 @using MuuqWear.Model.Products
+@using MuuqWear.Application.Services.AuthService
 @inject CartStateService CartStateService
 @inject IProductService ProductService
+@inject AuthSessionService AuthSession
 @inject AuthenticationStateProvider AuthStateProvider
+@inject CustomAuthenticationStateProvider CustomAuthStateProvider
 @implements IDisposable
 
 
@@ -70,86 +74,45 @@
                         </button>
                         <div class="mw-profile-dropdown">
 
-                            @if (isUserAuthenticated)
-                            {
-                                <button class="mw-icon-btn"
-                                        aria-label="Profile"
-                                        @onclick="ToggleProfile">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
-                                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
-                                        <circle cx="12" cy="7" r="4"></circle>
-                                    </svg>
-                                </button>
-
-                                @if (isProfileOpen)
-                                {
-                                    <div class="mw-profile-overlay" @onclick="CloseProfile"></div>
-
-                                    <div class="mw-profile-menu">
-
-                                        <!-- USER INFO -->
-                                        <div class="mw-profile-menu__header">
-                                            <p class="mw-profile-menu__name">@userName</p>
-                                            <p class="mw-profile-menu__email">@userEmail</p>
+                            <AuthorizeView>
+                                <Authorized>
+                                    <button class="mw-icon-btn"
+                                            aria-label="Profile"
+                                            @onclick="ToggleProfile">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                                             viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                                            <circle cx="12" cy="7" r="4"></circle>
+                                        </svg>
+                                    </button>
+                                    @if (isProfileOpen)
+                                    {
+                                        <div class="mw-profile-overlay" @onclick="CloseProfile"></div>
+                                        <div class="mw-profile-menu">
+                                            <div class="mw-profile-menu__header">
+                                                <p class="mw-profile-menu__name">@userName</p>
+                                                <p class="mw-profile-menu__email">@userEmail</p>
+                                            </div>
+                                            <div class="mw-profile-menu__divider"></div>
+                                            <a href="/profile" class="mw-profile-menu__item" @onclick="CloseProfile">
+                                                <span>My Orders</span>
+                                            </a>
+                                            <a href="/settings" class="mw-profile-menu__item" @onclick="CloseProfile">
+                                                <span>Settings</span>
+                                            </a>
+                                            <div class="mw-profile-menu__divider"></div>
+                                            <button class="mw-profile-menu__item mw-profile-menu__signout"
+                                                    @onclick="HandleSignOut">
+                                                <span>Sign Out</span>
+                                            </button>
                                         </div>
-
-                                        <div class="mw-profile-menu__divider"></div>
-
-                                        <!-- MY ORDERS -->
-                                        <a href="/profile"
-                                           class="mw-profile-menu__item"
-                                           @onclick="CloseProfile">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path>
-                                                <path d="M3 6h18"></path>
-                                                <path d="M16 10a4 4 0 0 1-8 0"></path>
-                                            </svg>
-                                            <span>My Orders</span>
-                                        </a>
-
-                                        <!-- SETTINGS -->
-                                        <a href="/settings"
-                                           class="mw-profile-menu__item"
-                                           @onclick="CloseProfile">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
-                                                <circle cx="12" cy="12" r="3"></circle>
-                                            </svg>
-                                            <span>Settings</span>
-                                        </a>
-
-                                        <div class="mw-profile-menu__divider"></div>
-
-                                        <!-- SIGN OUT -->
-                                        <button class="mw-profile-menu__item mw-profile-menu__signout"
-                                                @onclick="HandleSignOut">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                                                <polyline points="16 17 21 12 16 7"></polyline>
-                                                <line x1="21" x2="9" y1="12" y2="12"></line>
-                                            </svg>
-                                            <span>Sign Out</span>
-                                        </button>
-
-                                    </div>
-                                }
-                            }
-                            else
-                            {
-                                <!-- NOT LOGGED IN → sign in button  -->
-                                <a href="/login" class="mw-signin-btn">
-                                    Sign In
-                                </a>
-                            }
-
+                                    }
+                                </Authorized>
+                                <NotAuthorized>
+                                    <a href="/login" class="mw-signin-btn">Sign In</a>
+                                </NotAuthorized>
+                            </AuthorizeView>
                         </div>
 
                         <button class="mw-icon-btn" aria-label="Location">
@@ -562,6 +525,9 @@
     private bool isSearching = false;
     private bool hasSearched = false;
     private bool _cartInitialized = false;
+    private bool _redirecting = false;
+
+
     private string? userName;
     private string? userEmail;
     private bool isUserAuthenticated;
@@ -621,59 +587,49 @@
         // await JS.InvokeVoidAsync("enableScroll");
     }
 
-    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
-    {
-        InvokeAsync(async () =>
-        {
-            isMenuOpen = false;
-            isProfileOpen = false;
+    // private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    // {
+    //     InvokeAsync(async () =>
+    //     {
+    //         isMenuOpen = false;
+    //         isProfileOpen = false;
 
-            // re-check auth state on every navigation
-            var authState = await AuthStateProvider
-                .GetAuthenticationStateAsync();
+    //         // ✅ use CustomAuthStateProvider directly
+    //         // it checks _sessionExpired flag first → reliable in SignalR
+    //         var authState = await CustomAuthStateProvider.GetAuthenticationStateAsync();
+    //         var isAuthenticated = authState.User.Identity?.IsAuthenticated == true;
 
-            var isAuthenticated = authState.User.Identity?.IsAuthenticated == true;
-            isUserAuthenticated = isAuthenticated;
-            userName = authState.User
-                .FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value;
-            userEmail = authState.User
-                .FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
-            // detect login → was guest now authenticated
-            if (isAuthenticated && !CartStateService.IsAuthenticated)
-            {
-                // check if had guest items in cookie
-                var cookieJson = await JS.InvokeAsync<string?>("getCartCookie");
-                var hadGuestCart = !string.IsNullOrEmpty(cookieJson);
+    //         isUserAuthenticated = isAuthenticated;
+    //         userName = isAuthenticated
+    //             ? authState.User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value
+    //             : null;
+    //         userEmail = isAuthenticated
+    //             ? authState.User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+    //             : null;
 
-                // load guest cart items first
-                if (hadGuestCart)
-                {
-                    await CartStateService.LoadGuestCartFromCookie();
-                }
+    //         if (!isAuthenticated && CartStateService.IsAuthenticated)
+    //         {
+    //             await CartStateService.ClearCartState();
+    //             await CartStateService.InitializeAsync(false, null);
+    //         }
 
-                // initialize with DB cart
-                await CartStateService.InitializeAsync(isAuthenticated,
-                    authState.User.FindFirst("UserId")?.Value);
-
-                // merge guest items if any
-                if (hadGuestCart)
-                {
-                    await CartStateService.MergeGuestCartAsync();
-                }
-            }
-
-            // detect logout → was authenticated now guest
-            if (!isAuthenticated && CartStateService.IsAuthenticated)
-            {
-                await CartStateService.ClearCartState();
-                await CartStateService.InitializeAsync(false, null);
-            }
-
-            StateHasChanged();
-        });
-    }
+    //         StateHasChanged();
+    //     });
+    // }
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        System.Diagnostics.Debug.WriteLine($"OnAfterRenderAsync — IsSessionExpired: {AuthSession.IsSessionExpired}");
+
+        // ✅ check on every render if session expired
+        if (AuthSession.IsSessionExpired)
+        {
+            System.Diagnostics.Debug.WriteLine("Redirecting to auth/clear...");
+
+            AuthSession.Reset(); // ← reset BEFORE redirect to prevent loop
+            await JS.InvokeVoidAsync("eval",
+                "window.location.href='/auth/clear?expired=true'");
+            return;
+        }
         if (firstRender && !_cartInitialized)
         {
             _cartInitialized = true;
@@ -855,11 +811,23 @@
     // subscribe to cart changes
     protected override void OnInitialized()
     {
-        NavigationManager.LocationChanged += OnLocationChanged;
         CartStateService.OnCartChanged += OnCartChanged;
     }
 
-    // fires when cart changes → re-render
+    // private void HandleSessionExpired()
+    // {
+    //     InvokeAsync(async () =>
+    //     {
+    //         CustomAuthStateProvider.NotifySessionExpired();
+    //         isUserAuthenticated = false;
+    //         userName = null;
+    //         userEmail = null;
+    //         await CartStateService.ClearCartState();
+    //         await CartStateService.InitializeAsync(false, null);
+    //         StateHasChanged(); // ✅ profile icon updates immediately
+    //     });
+    // }
+    // // fires when cart changes → re-render
     private void OnCartChanged()
     {
         InvokeAsync(StateHasChanged);
@@ -889,8 +857,9 @@
     // unsubscribe on dispose
     public void Dispose()
     {
-        NavigationManager.LocationChanged -= OnLocationChanged;
+        // NavigationManager.LocationChanged -= OnLocationChanged;
         CartStateService.OnCartChanged -= OnCartChanged;
+        // AuthSession.OnSessionExpired -= HandleSessionExpired; // ← unsubscribe
     }
 
     // toggle profile dropdown

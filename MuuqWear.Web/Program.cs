@@ -53,8 +53,10 @@ builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<CustomAuthenticationStateProvider>();
 builder.Services.AddScoped<AuthenticatedHttpHandler>();
+builder.Services.AddSingleton<AuthSessionService>();
 builder.Services.AddScoped<AuthenticationStateProvider>(sp =>
     sp.GetRequiredService<CustomAuthenticationStateProvider>());
+
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
     {
@@ -69,7 +71,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
                 if (context.Request.Path.StartsWithSegments("/admin"))
                     context.Response.Redirect("/not-found");
                 else
-                    context.Response.Redirect("/register");
+                    context.Response.Redirect("/");
                 return Task.CompletedTask;
             },
             OnRedirectToAccessDenied = context =>
@@ -93,6 +95,7 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseMiddleware<TokenRefreshMiddleware>(); // ← add this line
 app.UseAntiforgery();
 
 //Set Cookie
@@ -109,11 +112,16 @@ app.MapPost("/auth/prepare-cookie", (
     return Results.Ok(key);
 });
 
+app.MapGet("/logout", async (HttpContext ctx) =>
+{
+    await ctx.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+    ctx.Response.Redirect("/login");
+});
 
 app.MapGet("/auth/set-cookie", async (
     HttpContext ctx,
     string key,
-    IMemoryCache cache) =>
+    IMemoryCache cache, AuthSessionService authSession) =>
 {
     if (!cache.TryGetValue(key, out CookieAuthSession? session) || session is null)
     {
@@ -122,6 +130,8 @@ app.MapGet("/auth/set-cookie", async (
     }
 
     cache.Remove(key);
+    authSession.Reset();
+    System.Diagnostics.Debug.WriteLine("AuthSession reset on fresh login ✅");
 
     var claims = new List<Claim>
     {
@@ -153,10 +163,10 @@ app.MapGet("/auth/set-cookie", async (
     ctx.Response.Redirect(session.ReturnUrl!);
 }).DisableAntiforgery(); //  add this
 
-app.MapGet("/auth/clear", async (HttpContext ctx) =>
+app.MapGet("/auth/clear", async (HttpContext ctx, bool expired = false) =>
 {
     await ctx.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-    ctx.Response.Redirect("/");
+    ctx.Response.Redirect(expired ? "/login?expired=true" : "/");
 });
 
 app.MapRazorComponents<App>()

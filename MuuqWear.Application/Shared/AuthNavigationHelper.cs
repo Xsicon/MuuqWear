@@ -21,6 +21,7 @@ public static class AuthNavigationHelper
         var session = new CookieAuthSession
         {
             Token = data.AccessToken ?? "",
+            RefreshToken = data.RefreshToken ?? "",
             Username = data.UserName ?? "",
             Email = data.Email ?? "",
             Role = data.Role ?? "user",
