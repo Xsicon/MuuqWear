@@ -2,6 +2,7 @@
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JS
 @using Microsoft.AspNetCore.Components.Authorization
+@using MuuqWear.Application.Interfaces
 @using MuuqWear.Application.Services.CartService
 @using MuuqWear.Application.Services.ProductService
 @using MuuqWear.Application.Shared
@@ -14,6 +15,8 @@
 @inject AuthenticationStateProvider AuthStateProvider
 @inject CustomAuthenticationStateProvider CustomAuthStateProvider
 @implements IDisposable
+@using MuuqWear.Application.Services.ProfileService
+@inject IProfileService ProfileService
 
 
 <div>
@@ -76,37 +79,40 @@
 
                             <AuthorizeView>
                                 <Authorized>
-                                    <button class="mw-icon-btn"
-                                            aria-label="Profile"
-                                            @onclick="ToggleProfile">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
-                                             viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
-                                            <circle cx="12" cy="7" r="4"></circle>
-                                        </svg>
-                                    </button>
-                                    @if (isProfileOpen)
+                                    @if (!isAdmin)
                                     {
-                                        <div class="mw-profile-overlay" @onclick="CloseProfile"></div>
-                                        <div class="mw-profile-menu">
-                                            <div class="mw-profile-menu__header">
-                                                <p class="mw-profile-menu__name">@userName</p>
-                                                <p class="mw-profile-menu__email">@userEmail</p>
+                                        <button class="mw-icon-btn"
+                                                aria-label="Profile"
+                                                @onclick="ToggleProfile">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                                                <circle cx="12" cy="7" r="4"></circle>
+                                            </svg>
+                                        </button>
+                                        @if (isProfileOpen)
+                                        {
+                                            <div class="mw-profile-overlay" @onclick="CloseProfile"></div>
+                                            <div class="mw-profile-menu">
+                                                <div class="mw-profile-menu__header">
+                                                    <p class="mw-profile-menu__name">@userName</p>
+                                                    <p class="mw-profile-menu__email">@userEmail</p>
+                                                </div>
+                                                <div class="mw-profile-menu__divider"></div>
+                                                <a href="/profile" class="mw-profile-menu__item" @onclick="CloseProfile">
+                                                    <span>My Orders</span>
+                                                </a>
+                                                <a href="/settings" class="mw-profile-menu__item" @onclick="CloseProfile">
+                                                    <span>Settings</span>
+                                                </a>
+                                                <div class="mw-profile-menu__divider"></div>
+                                                <button class="mw-profile-menu__item mw-profile-menu__signout"
+                                                        @onclick="HandleSignOut">
+                                                    <span>Sign Out</span>
+                                                </button>
                                             </div>
-                                            <div class="mw-profile-menu__divider"></div>
-                                            <a href="/profile" class="mw-profile-menu__item" @onclick="CloseProfile">
-                                                <span>My Orders</span>
-                                            </a>
-                                            <a href="/settings" class="mw-profile-menu__item" @onclick="CloseProfile">
-                                                <span>Settings</span>
-                                            </a>
-                                            <div class="mw-profile-menu__divider"></div>
-                                            <button class="mw-profile-menu__item mw-profile-menu__signout"
-                                                    @onclick="HandleSignOut">
-                                                <span>Sign Out</span>
-                                            </button>
-                                        </div>
+                                        }
                                     }
                                 </Authorized>
                                 <NotAuthorized>
@@ -526,6 +532,7 @@
     private bool hasSearched = false;
     private bool _cartInitialized = false;
     private bool _redirecting = false;
+    private bool isAdmin = false;
 
 
     private string? userName;
@@ -640,12 +647,20 @@
             var isAuthenticated = authState.User.Identity?.IsAuthenticated == true;
             var userId = authState.User.FindFirst("UserId")?.Value;
             isUserAuthenticated = isAuthenticated;
-            userName = authState.User
-        .FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value;
-            userEmail = authState.User
-                .FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
             if (isAuthenticated)
             {
+                var role = authState.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+                isAdmin = role?.ToLower() == "admin";
+                if (!isAdmin)
+                {
+                    var profile = await ProfileService.GetProfile();
+                    if (profile.Success && profile.Data != null)
+                    {
+                        userName = profile.Data.FullName;
+                        userEmail = profile.Data.Email;
+                        AuthSession.UpdateDisplay(profile.Data.FullName, profile.Data.Email); // ← add
+                    }
+                }
                 var cookieJson = await JS.InvokeAsync<string?>("getCartCookie");
                 var hadGuestCart = !string.IsNullOrEmpty(cookieJson);
 
@@ -808,25 +823,41 @@
         // search immediately
         await PerformSearch();
     }
+    private System.Threading.Timer? _activeCheckTimer;
+
     // subscribe to cart changes
     protected override void OnInitialized()
     {
         CartStateService.OnCartChanged += OnCartChanged;
+        AuthSession.OnSessionExpired += HandleSessionExpired;
+        AuthSession.OnProfileUpdated += OnProfileUpdated;
+        System.Diagnostics.Debug.WriteLine("NavMenu subscribed to OnSessionExpired ✅");
+
     }
 
-    // private void HandleSessionExpired()
-    // {
-    //     InvokeAsync(async () =>
-    //     {
-    //         CustomAuthStateProvider.NotifySessionExpired();
-    //         isUserAuthenticated = false;
-    //         userName = null;
-    //         userEmail = null;
-    //         await CartStateService.ClearCartState();
-    //         await CartStateService.InitializeAsync(false, null);
-    //         StateHasChanged(); // ✅ profile icon updates immediately
-    //     });
-    // }
+    private void OnProfileUpdated()
+    {
+        userName = AuthSession.DisplayName;
+        userEmail = AuthSession.DisplayEmail;
+        InvokeAsync(StateHasChanged);
+    }
+    private void HandleSessionExpired()
+    {
+        InvokeAsync(async () =>
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("Executing JS redirect...");
+
+                await JS.InvokeVoidAsync("eval",
+                    "window.location.href='/auth/clear?expired=true'");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"JS redirect failed: {ex.Message}");
+            }
+        });
+    }
     // // fires when cart changes → re-render
     private void OnCartChanged()
     {
@@ -859,7 +890,9 @@
     {
         // NavigationManager.LocationChanged -= OnLocationChanged;
         CartStateService.OnCartChanged -= OnCartChanged;
-        // AuthSession.OnSessionExpired -= HandleSessionExpired; // ← unsubscribe
+        AuthSession.OnProfileUpdated -= OnProfileUpdated; // ← add
+
+        AuthSession.OnSessionExpired -= HandleSessionExpired;  // ← add
     }
 
     // toggle profile dropdown

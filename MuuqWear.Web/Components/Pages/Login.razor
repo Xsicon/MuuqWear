@@ -224,6 +224,8 @@
 
         if (result.Success && result.Data != null)
         {
+            System.Diagnostics.Debug.WriteLine($"Role from login: {result.Data.Role}"); // ← add
+
             var authData = result.Data;
             if (authData.Role != "user")
             {

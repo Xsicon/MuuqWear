@@ -94,6 +94,14 @@ public class TokenRefreshMiddleware
         var accessToken = context.User.FindFirst("AccessToken")?.Value;
         var refreshToken = context.User.FindFirst("RefreshToken")?.Value;
         var userId = context.User.FindFirst("UserId")?.Value;
+        var isActive = await CheckIsActive(accessToken);
+        if (!isActive)
+        {
+            await context.SignOutAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme);
+            context.Response.Redirect("/");
+            return;
+        }
 
         if (!string.IsNullOrEmpty(accessToken) && IsTokenExpired(accessToken))
         {
@@ -230,5 +238,32 @@ public class TokenRefreshMiddleware
         var existing = identity.FindFirst(type);
         if (existing != null) identity.RemoveClaim(existing);
         identity.AddClaim(new Claim(type, value));
+    }
+
+    private async Task<bool> CheckIsActive(string? accessToken)
+    {
+        if (string.IsNullOrEmpty(accessToken)) return true; // not logged in → skip
+
+        try
+        {
+            var apiBaseUrl = _configuration["ApiBaseUrl"];
+            using var http = new HttpClient();
+            http.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue(
+                    "Bearer", accessToken);
+
+            var result = await http.GetAsync($"{apiBaseUrl}api/Profile/is-active");
+
+            if (!result.IsSuccessStatusCode) return true; // if check fails → don't block
+
+            var response = await result.Content
+                .ReadFromJsonAsync<Response<bool>>();
+
+            return response?.Data != false; // false = deleted → block
+        }
+        catch
+        {
+            return true;
+        }
     }
 }

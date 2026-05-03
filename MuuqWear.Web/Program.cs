@@ -47,6 +47,14 @@ builder.Services.AddHttpClient<IOrderService, OrderService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
 }).AddHttpMessageHandler<AuthenticatedHttpHandler>();
+builder.Services.AddHttpClient<IAddressService, AddressService>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+}).AddHttpMessageHandler<AuthenticatedHttpHandler>();
+builder.Services.AddHttpClient<IProfileService, ProfileService>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+}).AddHttpMessageHandler<AuthenticatedHttpHandler>();
 builder.Services.AddScoped<AuthStateService>();
 builder.Services.AddScoped<CartStateService>();
 builder.Services.AddCascadingAuthenticationState();
@@ -168,6 +176,8 @@ app.MapGet("/auth/clear", async (HttpContext ctx, bool expired = false) =>
     await ctx.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
     ctx.Response.Redirect(expired ? "/login?expired=true" : "/");
 });
+
+
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();

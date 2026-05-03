@@ -1,0 +1,14 @@
+﻿/* Orders List — mobile */
+@media (max-width: 576px) {
+    .mw-orders-list-item {
+        padding: 12px !important;
+    }
+
+        .mw-orders-list-item .order-number {
+            font-size: 12px !important;
+        }
+
+        .mw-orders-list-item .order-price {
+            font-size: 12px !important;
+        }
+}
