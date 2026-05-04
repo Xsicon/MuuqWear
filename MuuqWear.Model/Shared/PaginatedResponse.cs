@@ -5,7 +5,8 @@ public class PaginatedResponse<T>
     public int TotalCount { get; set; }
     public int Page { get; set; }
     public int PageSize { get; set; }
-    public int TotalPages => (int)Math.Ceiling((double)TotalCount / PageSize);
-    public bool HasPreviousPage => Page > 1;
-    public bool HasNextPage => Page < TotalPages;
+    public int TotalPages { get; set; }      // ← add setter
+    public bool HasMore { get; set; }        // ← add setter
+    public bool HasPreviousPage { get; set; } // ← add setter
+    public bool HasNextPage { get; set; }     // ← add setter
 }
