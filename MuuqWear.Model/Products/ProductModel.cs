@@ -16,11 +16,13 @@ public class ProductModel
     public bool IsFeatured { get; set; }
     public bool IsBestSeller { get; set; }
     public string? Description { get; set; }
-    public string? Sizes { get; set; }
     public string? Gender { get; set; }
     public Guid? CategoryId { get; set; }
     public string? CategoryName { get; set; }
+    public string? Sku { get; set; }
+    public List<SizeStockModel> SizeStock { get; set; } = new();
     public List<ProductImageModel> Images { get; set; } = new();
+
 
 }
 
@@ -45,10 +47,21 @@ public class AddProductModel
     public bool IsFeatured { get; set; }
     public bool IsBestSeller { get; set; }
     public string? Description { get; set; }
-    public string? Sizes { get; set; }
     public string? Gender { get; set; }
     public Guid? CategoryId { get; set; }
     public List<ProductImageModel> Images { get; set; } = new();
+    public List<string> Sizes { get; set; } = new();
 
 
+}
+
+public class UpdateSizeStockModel
+{
+    public int Quantity { get; set; }
+}
+public class SizeStockModel
+{
+    public Guid Id { get; set; }
+    public string Size { get; set; } = string.Empty;
+    public int Quantity { get; set; }
 }

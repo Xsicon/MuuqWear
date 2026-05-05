@@ -8,6 +8,36 @@ namespace MuuqWear.Web.Components.Pages.Admin
     public partial class AdminProduct
     {
 
+        private bool isStockModalOpen = false;
+        private ProductModel? stockProduct = null;
+        private List<SizeStockModel> editingSizeStock = new();
+        private bool isUpdatingStock = false;
+        private string stockError = string.Empty;
+        private bool showDeleteConfirm = false;
+
+        private const int LowStockThreshold = 5;
+        private string activeFilter = "All";
+
+        // ✅ computed — low stock count for warning banner
+        private int LowStockCount => FilteredProducts
+            .Count(p => p.Stock > 0 && p.Stock < LowStockThreshold);
+
+        // ✅ update FilteredProducts to handle new filters
+        private IEnumerable<ProductModel> FilteredProducts => activeFilter switch
+        {
+            "All" => ApplySearch(Products),
+            "LowStock" => ApplySearch(Products.Where(p => p.Stock > 0 && p.Stock < LowStockThreshold)),
+            "OutOfStock" => ApplySearch(Products.Where(p => p.Stock == 0)),
+            _ => ApplySearch(Products.Where(p => p.CategoryId.ToString() == activeFilter))
+        };
+
+        private async Task SetFilter(string filter)
+        {
+            activeFilter = filter;
+            _currentPage = 1; // ← reset to page 1 on filter change
+            await LoadProducts(_currentPage, _pageSize, searchQuery);
+        }
+
         // LIST STATE
         private List<ProductModel> Products = new();
         private List<CategoryModel> Categories = new();
@@ -54,13 +84,13 @@ namespace MuuqWear.Web.Components.Pages.Admin
         private bool isUploadingAdditional = false;
         private string imageError = "";
 
-        private IEnumerable<ProductModel> FilteredProducts =>
-            string.IsNullOrEmpty(searchQuery)
-                ? Products
-                : Products.Where(p =>
-                    (p.Name?.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                    (p.Description?.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ?? false));
-
+        private IEnumerable<ProductModel> ApplySearch(IEnumerable<ProductModel> source)
+        {
+            if (string.IsNullOrEmpty(searchQuery)) return source;
+            return source.Where(p =>
+                (p.Name?.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (p.Description?.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ?? false));
+        }
         protected override async Task OnInitializedAsync()
         {
             await Task.WhenAll(LoadProducts(_currentPage, _pageSize), LoadCategories());
@@ -70,24 +100,51 @@ namespace MuuqWear.Web.Components.Pages.Admin
         {
             isLoading = true;
 
-            var filter = new ProductFilterModel
+            Guid? categoryId = null;
+            if (activeFilter != "All" &&
+                activeFilter != "LowStock" &&
+                activeFilter != "OutOfStock" &&
+                Guid.TryParse(activeFilter, out var parsedId))
+            {
+                categoryId = parsedId;
+            }
+
+            // ✅ for stock filters → load all products at once
+            var isStockFilter = activeFilter == "LowStock" ||
+                                activeFilter == "OutOfStock";
+
+            var filterModel = new ProductFilterModel
             {
                 Page = page,
-                PageSize = pageSize,
-                Search = string.IsNullOrEmpty(search) ? null : search
+                PageSize = isStockFilter ? 1000 : pageSize, // ← load all for stock filters
+                Search = string.IsNullOrEmpty(search) ? null : search,
+                CategoryId = categoryId
             };
 
-            var result = await ProductService.GetAll(filter);
+            var result = await ProductService.GetAll(filterModel);
 
             if (result.Success && result.Data != null)
             {
-                Products = result.Data.Data;
-                _totalCount = result.Data.TotalCount;
-                _currentPage = result.Data.Page;
-                _pageSize = result.Data.PageSize;
+                var allProducts = result.Data.Data;
+
+                Products = activeFilter switch
+                {
+                    "LowStock" => allProducts
+                        .Where(p => p.Stock > 0 && p.Stock < LowStockThreshold)
+                        .ToList(),
+                    "OutOfStock" => allProducts
+                        .Where(p => p.Stock == 0)
+                        .ToList(),
+                    _ => allProducts
+                };
+
+                _totalCount = isStockFilter ? Products.Count : result.Data.TotalCount;
+                _currentPage = isStockFilter ? 1 : result.Data.Page;
+                _pageSize = isStockFilter ? Products.Count : result.Data.PageSize;
             }
 
             isLoading = false;
+            StateHasChanged();
         }
 
         private async Task LoadCategories()
@@ -99,6 +156,8 @@ namespace MuuqWear.Web.Components.Pages.Admin
 
         private void OpenAddForm()
         {
+            showDeleteConfirm = false; // ← add
+
             isEditMode = false;
             editingProductId = Guid.Empty;
             newProduct = new AddProductModel();
@@ -110,6 +169,7 @@ namespace MuuqWear.Web.Components.Pages.Admin
 
         private async Task OpenEditForm(ProductModel product)
         {
+            showDeleteConfirm = false;
             isEditMode = true;
             editingProductId = product.Id;
             newProduct = new AddProductModel
@@ -126,13 +186,14 @@ namespace MuuqWear.Web.Components.Pages.Admin
                 IsFeatured = product.IsFeatured,
                 IsBestSeller = product.IsBestSeller,
                 Gender = product.Gender,
-                Sizes = product.Sizes
+                // ✅ restore sizes from SizeStock — not from Sizes string
+                Sizes = product.SizeStock.Select(s => s.Size).ToList()
             };
 
-            // restore selected sizes
-            SelectedSizes = string.IsNullOrEmpty(product.Sizes)
-                ? new HashSet<string>()
-                : product.Sizes.Split(',').ToHashSet();
+            // ✅ restore selected sizes from SizeStock
+            SelectedSizes = product.SizeStock
+                .Select(s => s.Size)
+                .ToHashSet();
 
             await LoadProductImages(product.Id);
 
@@ -140,20 +201,91 @@ namespace MuuqWear.Web.Components.Pages.Admin
             errorMessage = string.Empty;
             isFormOpen = true;
         }
-
         private void CloseForm()
         {
             isFormOpen = false;
         }
 
-        private void ToggleSize(string size)
+        private async Task ToggleSize(string size)
         {
-            if (SelectedSizes.Contains(size))
-                SelectedSizes.Remove(size);
-            else
-                SelectedSizes.Add(size);
+            if (isEditMode)
+            {
+                if (SelectedSizes.Contains(size))
+                {
+                    // ✅ remove size → delete from product_size_stock
+                    var sizeStock = Products
+                        .FirstOrDefault(p => p.Id == editingProductId)?
+                        .SizeStock
+                        .FirstOrDefault(s => s.Size == size);
 
-            newProduct.Sizes = string.Join(",", SelectedSizes);
+                    if (sizeStock != null)
+                    {
+                        var result = await ProductService.DeleteSizeStock(sizeStock.Id);
+                        if (result.Success)
+                        {
+                            SelectedSizes.Remove(size);
+                            newProduct.Sizes.Remove(size);
+
+                            // update local product
+                            var product = Products.FirstOrDefault(p => p.Id == editingProductId);
+                            if (product != null)
+                                product.SizeStock.RemoveAll(s => s.Size == size);
+                        }
+                        else
+                        {
+                            errorMessage = result.Message ?? "Failed to remove size";
+                        }
+                    }
+                    else
+                    {
+                        // not in DB yet — just remove from selection
+                        SelectedSizes.Remove(size);
+                        newProduct.Sizes.Remove(size);
+                    }
+                }
+                else
+                {
+                    // ✅ add size → insert into product_size_stock with quantity 0
+                    var result = await ProductService.AddSizeStock(
+                        editingProductId, size, 0);
+
+                    if (result.Success && result.Data != null)
+                    {
+                        SelectedSizes.Add(size);
+                        newProduct.Sizes.Add(size);
+
+                        // update local product
+                        var product = Products.FirstOrDefault(p => p.Id == editingProductId);
+                        if (product != null)
+                            product.SizeStock.Add(new SizeStockModel
+                            {
+                                Id = result.Data.Id,
+                                Size = result.Data.Size,
+                                Quantity = result.Data.Quantity
+                            });
+                    }
+                    else
+                    {
+                        errorMessage = result.Message ?? "Failed to add size";
+                    }
+                }
+            }
+            else
+            {
+                // ✅ add mode — just toggle selection, no DB calls
+                if (SelectedSizes.Contains(size))
+                {
+                    SelectedSizes.Remove(size);
+                    newProduct.Sizes.Remove(size);
+                }
+                else
+                {
+                    SelectedSizes.Add(size);
+                    newProduct.Sizes.Add(size);
+                }
+            }
+
+            StateHasChanged();
         }
 
         private async Task HandleImageUpload(InputFileChangeEventArgs e)
@@ -204,20 +336,14 @@ namespace MuuqWear.Web.Components.Pages.Admin
             errorMessage = string.Empty;
 
             if (string.IsNullOrEmpty(newProduct.Name))
-            {
-                errorMessage = "Product name is required";
-                return;
-            }
+            { errorMessage = "Product name is required"; return; }
+
             if (newProduct.Price <= 0)
-            {
-                errorMessage = "Price must be greater than 0";
-                return;
-            }
-            if (newProduct.Stock < 0)
-            {
-                errorMessage = "Stock cannot be negative";
-                return;
-            }
+            { errorMessage = "Price must be greater than 0"; return; }
+
+            // ✅ stock validation only for add mode
+            if (!isEditMode && newProduct.Stock < 0)
+            { errorMessage = "Stock cannot be negative"; return; }
 
             isSaving = true;
 
@@ -230,14 +356,14 @@ namespace MuuqWear.Web.Components.Pages.Admin
                     Price = newProduct.Price,
                     Badge = newProduct.Badge,
                     ImageUrl = newProduct.ImageUrl,
-                    Stock = newProduct.Stock,
                     CategoryId = newProduct.CategoryId,
                     IsActive = newProduct.IsActive,
                     IsNewArrival = newProduct.IsNewArrival,
                     IsFeatured = newProduct.IsFeatured,
                     IsBestSeller = newProduct.IsBestSeller,
-                    Gender = newProduct.Gender,
-                    Sizes = newProduct.Sizes
+                    Gender = newProduct.Gender
+                    // ❌ no Sizes — managed via product_size_stock ✅
+                    // ❌ no Stock — managed via Update Stock modal ✅
                 };
 
                 var result = await ProductService.Update(editingProductId, updateModel);
@@ -271,7 +397,6 @@ namespace MuuqWear.Web.Components.Pages.Admin
 
             isSaving = false;
         }
-
         void OpenDeleteModal(ProductModel product)
         {
             deletingProductId = product.Id;
@@ -295,6 +420,7 @@ namespace MuuqWear.Web.Components.Pages.Admin
             {
                 Products.RemoveAll(p => p.Id == deletingProductId);
                 CloseDeleteModal();
+                CloseForm();
             }
             else
             {
@@ -494,6 +620,113 @@ namespace MuuqWear.Web.Components.Pages.Admin
                     .ToList();
                 StateHasChanged();
             }
+        }
+
+        private async Task SaveSizeStock()
+        {
+            isUpdatingStock = true;
+            stockError = string.Empty;
+            StateHasChanged();
+
+            try
+            {
+                // ✅ update each size one by one
+                foreach (var size in editingSizeStock)
+                {
+                    var result = await ProductService.UpdateSizeStock(
+                        size.Id, size.Quantity);
+
+                    if (!result.Success)
+                    {
+                        stockError = result.Message ?? "Failed to update stock";
+                        return;
+                    }
+                }
+
+                // ✅ recalculate total stock
+                var totalStock = editingSizeStock.Sum(s => s.Quantity);
+                await ProductService.UpdateStock(stockProduct!.Id, totalStock);
+
+                // ✅ update local product list
+                var product = Products.FirstOrDefault(p => p.Id == stockProduct!.Id);
+                if (product != null)
+                {
+                    product.Stock = totalStock;
+                    product.SizeStock = editingSizeStock
+                        .Select(s => new SizeStockModel
+                        {
+                            Id = s.Id,
+                            Size = s.Size,
+                            Quantity = s.Quantity
+                        }).ToList();
+                }
+
+                CloseStockModal();
+            }
+            finally
+            {
+                isUpdatingStock = false;
+                StateHasChanged();
+            }
+        }
+        //private async Task RecalculateTotalStock(Guid productId)
+        //{
+        //    var sizeStockResult = await ProductService.GetSizeStock(productId);
+        //    if (!sizeStockResult.Success || sizeStockResult.Data == null) return;
+
+        //    // sum all size quantities
+        //    var totalStock = sizeStockResult.Data.Sum(s => s.Quantity);
+
+        //    // update total stock column
+        //    var updateModel = new UpdateProductModel
+        //    {
+        //        Stock = totalStock
+        //    };
+
+        //    await ProductService.UpdateStock(productId, totalStock);
+        //}
+        private async Task OpenStockModal(ProductModel item)
+        {
+            stockProduct = item;
+            stockError = string.Empty;
+            isUpdatingStock = false;
+
+            // ✅ fetch latest size stock
+            var result = await ProductService.GetSizeStock(item.Id);
+            if (result.Success && result.Data != null)
+                editingSizeStock = result.Data;
+
+            isStockModalOpen = true;
+            StateHasChanged();
+        }
+
+        private void CloseStockModal()
+        {
+            isStockModalOpen = false;
+            stockProduct = null;
+            editingSizeStock = new();
+        }
+
+        private async Task HandleDeleteFromForm()
+        {
+            isDeleting = true;
+            StateHasChanged();
+
+            var result = await ProductService.Delete(editingProductId);
+
+            if (result.Success)
+            {
+                Products.RemoveAll(p => p.Id == editingProductId);
+                showDeleteConfirm = false;
+                CloseForm();
+            }
+            else
+            {
+                errorMessage = result.Message ?? "Failed to delete product";
+            }
+
+            isDeleting = false;
+            StateHasChanged();
         }
     }
 }

@@ -33,9 +33,10 @@ public class ShopFilterModel
         PageSize = PageSize,
         Search = Search,
         CategoryId = CategoryId,
-        Sizes = SizesAsString,
         MinPrice = MinPrice,
         MaxPrice = MaxPrice,
+        Sizes = SizesAsString, // ← add ✅
+
         SortBy = SortBy
     };
 }

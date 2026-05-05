@@ -1,0 +1,359 @@
+﻿@page "/shipping-return"
+@rendermode InteractiveServer
+
+<PageTitle>Shipping & Returns — Muuqwear</PageTitle>
+
+<div class="sr-page">
+
+    <!-- BREADCRUMB -->
+    <div class="sr-breadcrumb">
+        <span class="sr-breadcrumb__label">
+            Shipping to: <span class="sr-breadcrumb__value">United States</span>
+        </span>
+    </div>
+
+    <!-- HERO -->
+    <h1 class="sr-hero__title">Shipping &amp; Returns</h1>
+    <p class="sr-hero__subtitle">
+        We want every Muuqwear experience to be seamless — from the moment
+        you order to the moment you wear.
+    </p>
+
+    <!-- MAIN LAYOUT -->
+    <div class="sr-layout">
+
+        <!-- RIGHT: STICKY SUMMARY -->
+        <aside class="sr-summary">
+            <div class="sr-summary__card">
+                <h3 class="sr-summary__title">Quick Summary</h3>
+
+                <div class="sr-summary__items">
+
+                    <div class="sr-summary__item">
+                        <div class="sr-summary__icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"></path>
+                                <path d="M15 18H9"></path>
+                                <path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"></path>
+                                <circle cx="17" cy="18" r="2"></circle>
+                                <circle cx="7" cy="18" r="2"></circle>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="sr-summary__item-title">Free Shipping</p>
+                            <p class="sr-summary__item-desc">On orders over $150</p>
+                        </div>
+                    </div>
+
+                    <div class="sr-summary__item">
+                        <div class="sr-summary__icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                                <path d="M3 3v5h5"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="sr-summary__item-title">Return Window</p>
+                            <p class="sr-summary__item-desc">30 days from delivery</p>
+                        </div>
+                    </div>
+
+                    <div class="sr-summary__item">
+                        <div class="sr-summary__icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="sr-summary__item-title">Processing Time</p>
+                            <p class="sr-summary__item-desc">Orders ship within 24hrs</p>
+                        </div>
+                    </div>
+
+                    <div class="sr-summary__item">
+                        <div class="sr-summary__icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"></path>
+                                <path d="M12 22V12"></path>
+                                <polyline points="3.29 7 12 12 20.71 7"></polyline>
+                                <path d="m7.5 4.27 9 5.15"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="sr-summary__item-title">Free Shipping Threshold</p>
+                            <p class="sr-summary__item-desc">You're $62 away from free shipping</p>
+                        </div>
+                    </div>
+
+                </div>
+
+                <button @onclick="OpenReturnPanel" class="sr-summary__cta">
+                    Start a Return
+                </button>
+            </div>
+        </aside>
+
+        <!-- LEFT: CONTENT -->
+        <div class="sr-content">
+
+            <!-- SHIPPING SECTION -->
+            <section class="sr-section">
+                <h2 class="sr-section__title">Shipping</h2>
+
+                <div class="sr-table">
+                    <div class="sr-table__head">
+                        <div>Method</div>
+                        <div>Delivery</div>
+                        <div>Cost</div>
+                    </div>
+                    <div class="sr-table__row">
+                        <div class="sr-table__cell--bold">Standard</div>
+                        <div class="sr-table__cell">5-7 business days</div>
+                        <div class="sr-table__cell">Free over $150 / $6.99</div>
+                    </div>
+                    <div class="sr-table__row sr-table__row--last">
+                        <div class="sr-table__cell--bold">Express</div>
+                        <div class="sr-table__cell">2-3 business days</div>
+                        <div class="sr-table__cell">$19.99</div>
+                    </div>
+                </div>
+
+                <p class="sr-body-text">
+                    International shipping is available to select countries. Duties and taxes
+                    may apply and are the responsibility of the recipient. Delivery estimates
+                    are from the date of shipment, not the date of order.
+                </p>
+            </section>
+
+            <!-- RETURNS SECTION -->
+            <section class="sr-section">
+                <h2 class="sr-section__title">Returns</h2>
+
+                <p class="sr-body-text sr-body-text--lg">
+                    We accept returns within 30 days of delivery. Items must be unworn,
+                    unwashed, with all original tags attached, and in their original packaging.
+                </p>
+
+                <div class="sr-steps">
+                    <div class="sr-step">
+                        <div class="sr-step__number">1</div>
+                        <p class="sr-step__text">
+                            Initiate your return through your account dashboard or contact
+                            our support team.
+                        </p>
+                    </div>
+                    <div class="sr-step">
+                        <div class="sr-step__number">2</div>
+                        <p class="sr-step__text">
+                            Print the prepaid return shipping label provided via email.
+                        </p>
+                    </div>
+                    <div class="sr-step">
+                        <div class="sr-step__number">3</div>
+                        <p class="sr-step__text">
+                            Package your item securely and drop it off at the nearest
+                            carrier location.
+                        </p>
+                    </div>
+                </div>
+
+                <p class="sr-body-text">
+                    Refunds are processed within 5-7 business days of receiving your return.
+                    The refund will be issued to your original payment method. Sale items are
+                    final sale and cannot be returned.
+                </p>
+            </section>
+
+            <!-- IMAGE -->
+            <div class="sr-image">
+                <img src="https://images.unsplash.com/photo-1758523670564-d1d6a734dc0b?w=800&h=350&fit=crop"
+                     alt="Shipping" />
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ─── RETURN PANEL ───────────────────────────────────── -->
+    @if (isReturnPanelOpen)
+    {
+        <div class="sr-panel-overlay" @onclick="CloseReturnPanel"></div>
+
+        <div class="sr-panel">
+
+            <!-- CLOSE BUTTON -->
+            <button class="sr-panel__close" @onclick="CloseReturnPanel">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 6 6 18"></path>
+                    <path d="m6 6 12 12"></path>
+                </svg>
+            </button>
+
+            @if (isSubmitted)
+            {
+                <!-- ─── SUCCESS STATE ──────────────────────── -->
+                <div class="sr-panel__success">
+                    <div class="sr-panel__success-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28"
+                             viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 6 9 17l-5-5"></path>
+                        </svg>
+                    </div>
+                    <h2 class="sr-panel__title">Return Initiated</h2>
+                    <p class="sr-panel__subtitle">
+                        We've sent a prepaid return label to your email.
+                        Please ship within 14 days.
+                    </p>
+                    <button class="sr-form__submit sr-form__done"
+                            @onclick="CloseReturnPanel">
+                        Done
+                    </button>
+                </div>
+            }
+            else
+            {
+                <!-- ─── FORM ───────────────────────────────── -->
+                <p class="sr-panel__eyebrow">Return Request</p>
+                <h2 class="sr-panel__title">Start a Return</h2>
+                <p class="sr-panel__subtitle">
+                    Fill out the details below. Your progress is saved automatically —
+                    if you close this panel, your information will be here when you return.
+                </p>
+
+                <div class="sr-form">
+
+                    <div class="sr-form__field">
+                        <label class="sr-form__label">Order Number *</label>
+                        <input @bind="orderNumber"
+                               placeholder="e.g. MQW-20260215-4829"
+                               class="sr-form__input" />
+                    </div>
+
+                    <div class="sr-form__field">
+                        <label class="sr-form__label">Full Name *</label>
+                        <input @bind="fullName"
+                               placeholder="Enter your full name"
+                               class="sr-form__input" />
+                    </div>
+
+                    <div class="sr-form__field">
+                        <label class="sr-form__label">Email Address *</label>
+                        <input @bind="email"
+                               type="email"
+                               placeholder="you@example.com"
+                               class="sr-form__input" />
+                    </div>
+
+                    <div class="sr-form__field">
+                        <label class="sr-form__label">Items to Return *</label>
+                        <input @bind="itemsToReturn"
+                               placeholder="e.g. Sapphire Hoodie (M), Apex Runners (10)"
+                               class="sr-form__input" />
+                    </div>
+
+                    <div class="sr-form__field">
+                        <label class="sr-form__label">Reason for Return *</label>
+                        <div class="sr-form__select-wrap">
+                            <select @bind="reason" class="sr-form__select">
+                                <option value="">Select a reason</option>
+                                <option value="Doesn't fit">Doesn't fit</option>
+                                <option value="Changed my mind">Changed my mind</option>
+                                <option value="Received wrong item">Received wrong item</option>
+                                <option value="Item damaged / defective">Item damaged / defective</option>
+                                <option value="Quality not as expected">Quality not as expected</option>
+                                <option value="Other">Other</option>
+                            </select>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                 class="sr-form__select-icon">
+                                <path d="m6 9 6 6 6-6"></path>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div class="sr-form__field">
+                        <label class="sr-form__label">Additional Comments</label>
+                        <textarea @bind="comments"
+                                  rows="3"
+                                  placeholder="Anything else we should know? (optional)"
+                                  class="sr-form__textarea"></textarea>
+                    </div>
+
+                    <div class="sr-form__notice">
+                        Items must be unworn, unwashed, with original tags attached.
+                        Sale items are final sale. Refunds are processed within 5-7 business days.
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(formError))
+                    {
+                        <p class="sr-form__error">@formError</p>
+                    }
+
+                    <div class="sr-form__actions">
+                        <button class="sr-form__save" @onclick="CloseReturnPanel">
+                            Save &amp; Close
+                        </button>
+                        <button class="sr-form__submit" @onclick="HandleSubmit">
+                            Submit Return
+                        </button>
+                    </div>
+
+                </div>
+            }
+
+        </div>
+    }
+
+</div>
+
+@code {
+    private bool isReturnPanelOpen = false;
+    private bool isSubmitted = false;
+    private string formError = string.Empty;
+
+    private string orderNumber = string.Empty;
+    private string fullName = string.Empty;
+    private string email = string.Empty;
+    private string itemsToReturn = string.Empty;
+    private string reason = string.Empty;
+    private string comments = string.Empty;
+
+    private void OpenReturnPanel() => isReturnPanelOpen = true;
+
+    private void CloseReturnPanel()
+    {
+        isReturnPanelOpen = false;
+        isSubmitted = false;
+        formError = string.Empty;
+    }
+
+    private void HandleSubmit()
+    {
+        formError = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(orderNumber) ||
+            string.IsNullOrWhiteSpace(fullName) ||
+            string.IsNullOrWhiteSpace(email) ||
+            string.IsNullOrWhiteSpace(itemsToReturn) ||
+            string.IsNullOrWhiteSpace(reason))
+        {
+            formError = "Please fill in all required fields.";
+            return;
+        }
+
+        isSubmitted = true;
+    }
+}

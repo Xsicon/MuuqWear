@@ -265,4 +265,187 @@ public class ProductService : IProductService
             Message = "Empty response from server"
         };
     }
+
+    // =============================================
+    // GET SIZE STOCK
+    // =============================================
+    public async Task<Response<List<SizeStockModel>>> GetSizeStock(Guid productId)
+    {
+        try
+        {
+            var result = await _http.GetAsync(
+                $"api/Product/{productId}/size-stock");
+
+            if (!result.IsSuccessStatusCode)
+                return new Response<List<SizeStockModel>>
+                {
+                    Success = false,
+                    Message = $"Server error: {result.StatusCode}"
+                };
+
+            var response = await result.Content
+                .ReadFromJsonAsync<Response<List<SizeStockModel>>>();
+
+            return response ?? new Response<List<SizeStockModel>>
+            {
+                Success = false,
+                Message = "Empty response"
+            };
+        }
+        catch (Exception ex)
+        {
+            return new Response<List<SizeStockModel>>
+            {
+                Success = false,
+                Message = ex.Message
+            };
+        }
+    }
+
+    // =============================================
+    // UPDATE SIZE STOCK
+    // =============================================
+    public async Task<Response<SizeStockModel>> UpdateSizeStock(
+        Guid sizeStockId, int quantity)
+    {
+        try
+        {
+            var result = await _http.PatchAsJsonAsync(
+                $"api/Product/size-stock/{sizeStockId}",
+                new UpdateSizeStockModel { Quantity = quantity });
+
+            if (!result.IsSuccessStatusCode)
+                return new Response<SizeStockModel>
+                {
+                    Success = false,
+                    Message = $"Server error: {result.StatusCode}"
+                };
+
+            var response = await result.Content
+                .ReadFromJsonAsync<Response<SizeStockModel>>();
+
+            return response ?? new Response<SizeStockModel>
+            {
+                Success = false,
+                Message = "Empty response"
+            };
+        }
+        catch (Exception ex)
+        {
+            return new Response<SizeStockModel>
+            {
+                Success = false,
+                Message = ex.Message
+            };
+        }
+    }
+
+    public async Task<Response<ProductModel>> UpdateStock(Guid productId, int totalStock)
+    {
+        try
+        {
+            var result = await _http.PatchAsJsonAsync(
+                $"api/Product/{productId}/stock",
+                new { Stock = totalStock });
+
+            if (!result.IsSuccessStatusCode)
+                return new Response<ProductModel>
+                {
+                    Success = false,
+                    Message = $"Server error: {result.StatusCode}"
+                };
+
+            var response = await result.Content
+                .ReadFromJsonAsync<Response<ProductModel>>();
+
+            return response ?? new Response<ProductModel>
+            {
+                Success = false,
+                Message = "Empty response"
+            };
+        }
+        catch (Exception ex)
+        {
+            return new Response<ProductModel>
+            {
+                Success = false,
+                Message = ex.Message
+            };
+        }
+    }
+
+    // =============================================
+    // DELETE SIZE STOCK
+    // =============================================
+    public async Task<Response<bool>> DeleteSizeStock(Guid sizeStockId)
+    {
+        try
+        {
+            var result = await _http.DeleteAsync(
+                $"api/Product/size-stock/{sizeStockId}");
+
+            if (!result.IsSuccessStatusCode)
+                return new Response<bool>
+                {
+                    Success = false,
+                    Message = $"Server error: {result.StatusCode}"
+                };
+
+            var response = await result.Content
+                .ReadFromJsonAsync<Response<bool>>();
+
+            return response ?? new Response<bool>
+            {
+                Success = false,
+                Message = "Empty response"
+            };
+        }
+        catch (Exception ex)
+        {
+            return new Response<bool>
+            {
+                Success = false,
+                Message = ex.Message
+            };
+        }
+    }
+
+    // =============================================
+    // ADD SIZE STOCK
+    // =============================================
+    public async Task<Response<SizeStockModel>> AddSizeStock(
+        Guid productId, string size, int quantity)
+    {
+        try
+        {
+            var result = await _http.PostAsJsonAsync(
+                $"api/Product/{productId}/size-stock",
+                new { Size = size, Quantity = quantity });
+
+            if (!result.IsSuccessStatusCode)
+                return new Response<SizeStockModel>
+                {
+                    Success = false,
+                    Message = $"Server error: {result.StatusCode}"
+                };
+
+            var response = await result.Content
+                .ReadFromJsonAsync<Response<SizeStockModel>>();
+
+            return response ?? new Response<SizeStockModel>
+            {
+                Success = false,
+                Message = "Empty response"
+            };
+        }
+        catch (Exception ex)
+        {
+            return new Response<SizeStockModel>
+            {
+                Success = false,
+                Message = ex.Message
+            };
+        }
+    }
+
 }

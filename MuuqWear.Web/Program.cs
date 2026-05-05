@@ -9,6 +9,7 @@ using MuuqWear.Application.Services.AuthService;
 using MuuqWear.Application.Services.CartService;
 using MuuqWear.Application.Services.CategoryService;
 using MuuqWear.Application.Services.ContentService;
+using MuuqWear.Application.Services.CustomerService;
 using MuuqWear.Application.Services.JournalService;
 using MuuqWear.Application.Services.OrderService;
 using MuuqWear.Application.Services.ProductService;
@@ -61,6 +62,10 @@ builder.Services.AddHttpClient<IJournalService, JournalService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
 });
+builder.Services.AddHttpClient<ICustomerService, CustomerService>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+}).AddHttpMessageHandler<AuthenticatedHttpHandler>();
 builder.Services.AddHttpClient<IProfileService, ProfileService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);

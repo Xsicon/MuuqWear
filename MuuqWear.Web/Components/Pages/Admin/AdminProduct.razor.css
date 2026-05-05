@@ -1,6 +1,6 @@
 ﻿/* Section */
 .mw-admin-products {
-    padding: 10px;
+    padding: 16px;
 }
 
 /* Heading */
@@ -306,4 +306,217 @@
     object-fit: cover;
     border-radius: 8px;
     border: 1.5px solid #e5e7eb;
+}
+
+
+
+/* ─── HEADER ────────────────────────────────────────────────── */
+.products-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.products-header__title {
+    color: #1E2A47;
+    font-size: 21px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    margin: 0;
+}
+
+.products-header__actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* ─── FILTER TABS ───────────────────────────────────────────── */
+.products-filters {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.products-filter-tab {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 5px 12px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: #F4F6F9;
+    color: #4A5C7A;
+}
+
+    .products-filter-tab:hover {
+        background: #E6ECF5;
+    }
+
+    .products-filter-tab.active {
+        background: #1E2A47;
+        color: white;
+    }
+
+/* ─── PRODUCT CARDS ─────────────────────────────────────────── */
+.products-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.product-card {
+    background: white;
+    border: 1px solid rgba(169, 183, 204, 0.3);
+    padding: 16px;
+}
+
+.product-card__top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    gap: 8px;
+}
+
+.product-card__name-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.product-card__name {
+    color: #1E2A47;
+    font-size: 14px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.product-card__actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.product-card__meta {
+    color: #4A5C7A;
+    font-size: 12px;
+    margin-bottom: 8px;
+}
+
+/* ─── STOCK BADGES ──────────────────────────────────────────── */
+.stock-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    padding: 3px 8px;
+}
+
+.stock-badge--low {
+    background: #FFF3CD;
+    color: #856404;
+}
+
+.stock-badge--out {
+    background: #F8D7DA;
+    color: #721C24;
+}
+
+/* ─── SIZE PILLS ────────────────────────────────────────────── */
+.product-card__sizes {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 5px;
+}
+
+.size-pill {
+    font-size: 11px;
+    padding: 2px 6px;
+}
+
+.size-pill--normal {
+    background: #F4F6F9;
+    color: #4A5C7A;
+}
+
+.size-pill--low {
+    background: #FFF3CD;
+    color: #856404;
+}
+
+.size-pill--out {
+    background: #F8D7DA;
+    color: #721C24;
+}
+
+/* ─── WARNING BANNER ────────────────────────────────────────── */
+.low-stock-banner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 16px;
+    background: #FFF3CD;
+    border: 1px solid rgba(133, 100, 4, 0.2);
+    padding: 13px;
+    color: #856404;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* ─── BUTTONS ───────────────────────────────────────────────── */
+.btn-primary {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    padding: 7px 12px;
+    border: none;
+    cursor: pointer;
+    background: #1E2A47;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+    .btn-primary:hover {
+        background: #0B1A33;
+    }
+
+.btn-secondary {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    padding: 7px 12px;
+    cursor: pointer;
+    background: white;
+    border: 1px solid rgba(169, 183, 204, 0.6);
+    color: #1E2A47;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+    .btn-secondary:hover {
+        background: #F4F6F9;
+    }
+
+/* ─── DESKTOP ───────────────────────────────────────────────── */
+@media (min-width: 768px) {
+    .mw-admin-products {
+        padding: 21px;
+    }
+
+    .products-header__title {
+        font-size: 28px;
+    }
 }

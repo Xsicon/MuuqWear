@@ -12,15 +12,69 @@
 
 @if (!isFormOpen)
 {
-    <!-- PRODUCTS LIST VIEW -->
     <section class="mw-admin-products">
 
-        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3 gap-2">
-            <h3 class="mw-admin-heading">Products</h3>
-            <button class="mw-btn-primary" @onclick="OpenAddForm">+ Add Product</button>
+        <!-- HEADER -->
+        <div class="products-header">
+            <h1 class="products-header__title">Products & Inventory</h1>
+            <div class="products-header__actions">
+                <button class="btn-primary" @onclick="OpenAddForm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 12h14"></path>
+                        <path d="M12 5v14"></path>
+                    </svg>
+                    Add New Product
+                </button>
+                <button class="btn-secondary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" x2="12" y1="3" y2="15"></line>
+                    </svg>
+                    Import CSV
+                </button>
+                <button class="btn-secondary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" x2="12" y1="15" y2="3"></line>
+                    </svg>
+                    Export
+                </button>
+            </div>
         </div>
 
-        <div class="mw-admin-card mb-3">
+        <!-- FILTER TABS -->
+        <div class="products-filters">
+            <button class="products-filter-tab @(activeFilter == "All" ? "active" : "")"
+                    @onclick='() => SetFilter("All")'>
+                All
+            </button>
+            @foreach (var cat in Categories)
+            {
+                <button class="products-filter-tab @(activeFilter == cat.Id.ToString() ? "active" : "")"
+                        @onclick="() => SetFilter(cat.Id.ToString())">
+                    @cat.Name
+                </button>
+            }
+            <button class="products-filter-tab @(activeFilter == "LowStock" ? "active" : "")"
+                    @onclick='() => SetFilter("LowStock")'>
+                Low Stock
+            </button>
+            <button class="products-filter-tab @(activeFilter == "OutOfStock" ? "active" : "")"
+                    @onclick='() => SetFilter("OutOfStock")'>
+                Out of Stock
+            </button>
+        </div>
+
+
+        <div style="margin-bottom:16px">
             <input class="mw-admin-input w-100"
                    placeholder="Search products..."
                    value="@searchQuery"
@@ -28,102 +82,113 @@
                    @onkeydown="HandleSearchKeyDown" />
         </div>
 
-        <div class="mw-admin-card">
-            <div class="table-responsive">
-                <table class="table mw-admin-table align-middle">
-                    <thead>
-                        <tr>
-                            <th>Product</th>
-                            <th>Category</th>
-                            <th>Price</th>
-                            <th>Stock</th>
-                            <th>Badge</th>
-                            <th>Status</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if (isLoading)
-                        {
-                            <tr>
-                                <td colspan="7" class="text-center">Loading...</td>
-                            </tr>
-                        }
-                        else if (!FilteredProducts.Any())
-                        {
-                            <tr>
-                                <td colspan="7" class="text-center">No products found.</td>
-                            </tr>
-                        }
-                        else
-                        {
-                            @foreach (var item in FilteredProducts)
+        <!-- PRODUCT CARDS -->
+        <div class="products-list">
+            @if (isLoading)
+            {
+                <p style="color:#4A5C7A;font-size:14px">Loading...</p>
+            }
+            else if (!FilteredProducts.Any())
+            {
+                <p style="color:#4A5C7A;font-size:14px">No products found.</p>
+            }
+            else
+            {
+                @foreach (var item in FilteredProducts)
+                {
+                    <div class="product-card">
+
+                        <!-- TOP ROW: name + badge + buttons -->
+                        <div class="product-card__top">
+                            <div class="product-card__name-row">
+                                <p class="product-card__name">@item.Name</p>
+                                @if (item.Stock == 0)
+                                {
+                                    <span class="stock-badge stock-badge--out">
+                                        Out of Stock
+                                    </span>
+                                }
+                                else if (item.Stock < LowStockThreshold)
+                                {
+                                    <span class="stock-badge stock-badge--low">
+                                        Low Stock
+                                    </span>
+                                }
+                            </div>
+
+                            <div class="product-card__actions">
+                                <button class="btn-secondary"
+                                        @onclick="() => OpenEditForm(item)">
+                                    Edit
+                                </button>
+                                <button class="@(item.Stock == 0 ? "btn-primary" : "btn-secondary")"
+                                        @onclick="() => OpenStockModal(item)">
+                                    @(item.Stock == 0 ? "Restock" : "Update Stock")
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- SECOND ROW: SKU · Price · Category -->
+                        <p class="product-card__meta">
+                            @if (!string.IsNullOrEmpty(item.Sku))
                             {
-                                <tr>
-                                    <td>
-                                        <div class="d-flex align-items-center gap-2">
-                                            @if (!string.IsNullOrEmpty(item.ImageUrl))
-                                            {
-                                                <img src="@item.ImageUrl" class="mw-product-thumb" />
-                                            }
-                                            <span>@item.Name</span>
-                                        </div>
-                                    </td>
-                                    <td>@(Categories.FirstOrDefault(c => c.Id == item.CategoryId)?.Name ?? "-")</td>
-                                    <td>@item.Price.ToString("C")</td>
-                                    <td>
-                                        <span class="mw-stock @(item.Stock > 0 ? "in" : "out")">
-                                            @(item.Stock > 0 ? "In Stock" : "Out")
-                                        </span>
-                                    </td>
-                                    <td>
-                                        @if (!string.IsNullOrEmpty(item.Badge))
-                                        {
-                                            <span class="mw-badge">@item.Badge</span>
-                                        }
-                                    </td>
-                                    <td>
-                                        <span class="mw-stock @(item.IsActive ? "in" : "out")">
-                                            @(item.IsActive ? "Active" : "Inactive")
-                                        </span>
-                                    </td>
-                                    <td class="text-end">
-                                        <button class="mw-action-btn" @onclick="() => OpenEditForm(item)">Edit</button>
-                                        <button class="mw-action-btn text-danger" @onclick="() => OpenDeleteModal(item)">Delete</button>
-                                    </td>
-                                </tr>
+                                <span>SKU: @item.Sku · </span>
                             }
+                        <span>Price: @item.Price.ToString("C") · </span>
+                        <span>
+                            @(Categories.FirstOrDefault(c => c.Id == item.CategoryId)?.Name
+                                                ?? "Uncategorised")
+                </span>
+            </p>
+
+                        <!-- THIRD ROW: size pills with counts -->
+            @if (item.SizeStock.Any())
+                        {
+                            <div class="product-card__sizes">
+                                @foreach (var s in item.SizeStock)
+                                {
+                                    var pillClass = s.Quantity == 0
+                                    ? "size-pill size-pill--out"
+                                    : s.Quantity < LowStockThreshold
+                                    ? "size-pill size-pill--low"
+                                    : "size-pill size-pill--normal";
+
+                                    <span class="@pillClass">
+                                        @($"{s.Size}({s.Quantity})")
+                                    </span>
+                                }
+                            </div>
                         }
-                    </tbody>
-                </table>
-            </div>
+
+                    </div>
+                }
+            }
         </div>
-        @*  add pagination below table *@
+
+        <!-- PAGINATION -->
         <PaginationComponent TItem="ProductModel"
                              TotalCount="_totalCount"
                              CurrentPage="_currentPage"
                              PageSize="_pageSize"
                              OnPageChanged="HandlePageChanged" />
-        <!-- DELETE MODAL -->
-        @if (isDeleteModalOpen)
+
+        <!-- LOW STOCK WARNING BANNER -->
+        @if (LowStockCount > 0)
         {
-            <div class="mw-modal-overlay" @onclick="CloseDeleteModal">
-                <div class="mw-modal" style="max-width:400px;" @onclick:stopPropagation="true">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5>Delete Product</h5>
-                        <button class="mw-close-btn" @onclick="CloseDeleteModal">✕</button>
-                    </div>
-                    <p>Are you sure you want to delete <strong>@deletingProductName</strong>?</p>
-                    <p class="text-danger small">This action cannot be undone.</p>
-                    <div class="d-flex gap-2 mt-3">
-                        <button class="mw-btn-secondary w-100" @onclick="CloseDeleteModal">Cancel</button>
-                        <button class="mw-btn-danger w-100" @onclick="ConfirmDelete" disabled="@isDeleting">
-                            @(isDeleting ? "Deleting..." : "Delete")
-                        </button>
-                    </div>
-                </div>
+            <div class="low-stock-banner">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3">
+                    </path>
+                    <path d="M12 9v4"></path>
+                    <path d="M12 17h.01"></path>
+                </svg>
+                @LowStockCount product@(LowStockCount == 1 ? "" : "s") below threshold
             </div>
         }
+
+
 
     </section>
 }
@@ -143,6 +208,15 @@ else
                 </h3>
             </div>
             <div class="d-flex gap-2">
+
+                @if (isEditMode)
+                {
+                    <button class="mw-btn-danger"
+                            @onclick="() => OpenDeleteModal(new ProductModel
+                            { Id = editingProductId,Name = newProduct.Name})">
+                Delete
+            </button>
+                        }
                 <button class="mw-btn-secondary" @onclick="CloseForm">Cancel</button>
                 <button class="mw-btn-primary" @onclick="SaveProduct" disabled="@isSaving">
                     @(isSaving ? "Saving..." : (isEditMode ? "Update Product" : "Add Product"))
@@ -227,13 +301,26 @@ else
                                        @bind="newProduct.Price" />
                             </div>
                         </div>
-                        <div class="col-6">
-                            <label class="mw-form-label">Stock</label>
-                            <input type="number"
-                                   class="mw-admin-input w-100"
-                                   placeholder="0"
-                                   @bind="newProduct.Stock" />
-                        </div>
+                        @if (isEditMode)
+                        {
+                            <div class="col-6">
+                                <label class="mw-form-label">Stock</label>
+                                <p class="mw-form-hint" style="margin-top:8px">
+                                    Managed per size via Update Stock
+                                </p>
+                            </div>
+                        }
+                        else
+                        {
+                            <!-- show stock field only when adding new product -->
+                            <div class="col-6">
+                                <label class="mw-form-label">Stock</label>
+                                <input type="number"
+                                       class="mw-admin-input w-100"
+                                       placeholder="0"
+                                       @bind="newProduct.Stock" />
+                            </div>
+                        }
                         <div class="col-6">
                             <label class="mw-form-label">Badge</label>
                             <select class="mw-admin-input w-100" @bind="newProduct.Badge">
@@ -436,6 +523,112 @@ else
             </div>
         </div>
     </section>
+}
+
+<!-- DELETE MODAL — unchanged -->
+@if (isDeleteModalOpen)
+{
+    <div class="mw-modal-overlay" @onclick="CloseDeleteModal">
+        <div class="mw-modal" style="max-width:400px;"
+             @onclick:stopPropagation="true">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5>Delete Product</h5>
+                <button class="mw-close-btn" @onclick="CloseDeleteModal">✕</button>
+            </div>
+            <p>
+                Are you sure you want to delete
+                <strong>@deletingProductName</strong>?
+            </p>
+            <p class="text-danger small">This action cannot be undone.</p>
+            <div class="d-flex gap-2 mt-3">
+                <button class="mw-btn-secondary w-100"
+                        @onclick="CloseDeleteModal">
+                    Cancel
+                </button>
+                <button class="mw-btn-danger w-100"
+                        @onclick="ConfirmDelete"
+                        disabled="@isDeleting">
+                    @(isDeleting ? "Deleting..." : "Delete")
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (isStockModalOpen && stockProduct != null)
+{
+    <div class="mw-modal-overlay" @onclick="CloseStockModal">
+        <div class="mw-modal" style="max-width:420px"
+             @onclick:stopPropagation="true">
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 style="margin:0;color:#1E2A47;font-weight:700">
+                    Update Stock — @stockProduct.Name
+                </h5>
+                <button class="mw-close-btn" @onclick="CloseStockModal">✕</button>
+            </div>
+
+            @if (!string.IsNullOrEmpty(stockError))
+            {
+                <p style="color:#C44545;font-size:13px;margin-bottom:12px">
+                    @stockError
+                </p>
+            }
+
+            <!-- SIZE STOCK INPUTS -->
+            <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:21px">
+                @foreach (var size in editingSizeStock)
+                {
+                    <div style="display:flex;align-items:center;
+                                                                                                                                                                    justify-content:space-between;gap:12px">
+                        <span style="color:#1E2A47;font-size:13px;
+                                                                                                                                                                         font-weight:700;min-width:40px">
+                            @size.Size
+                        </span>
+                        <input type="number"
+                               class="mw-admin-input"
+                               style="width:100px;text-align:center"
+                               min="0"
+                               value="@size.Quantity"
+                               @onchange="e => size.Quantity =
+                               int.TryParse(e.Value?.ToString(), out var q)
+                               ? Math.Max(0, q) : 0" />
+                                             <span style="color:#4A5C7A;font-size:12px;min-width:60px">
+                    @(size.Quantity == 0
+                    ? "Out of stock"
+                    : size.Quantity < LowStockThreshold
+                    ? "Low stock"
+                    : "In stock")
+                </span>
+            </div>
+                        }
+            </div>
+
+            <!-- TOTAL -->
+            <div style="display:flex;justify-content:space-between;
+                                                                                                            padding:12px 0;border-top:1px solid rgba(169,183,204,0.3);
+                                                                                                            margin-bottom:21px">
+                <span style="color:#4A5C7A;font-size:13px">Total Stock</span>
+                <span style="color:#1E2A47;font-size:13px;font-weight:700">
+                    @editingSizeStock.Sum(s => s.Quantity)
+                </span>
+            </div>
+
+            <!-- BUTTONS -->
+            <div class="d-flex gap-2">
+                <button class="mw-btn-secondary w-100"
+                        @onclick="CloseStockModal">
+                    Cancel
+                </button>
+                <button class="mw-btn-primary w-100"
+                        @onclick="SaveSizeStock"
+                        disabled="@isUpdatingStock">
+                    @(isUpdatingStock ? "Saving..." : "Save Stock")
+                </button>
+            </div>
+
+        </div>
+    </div>
 }
 
 

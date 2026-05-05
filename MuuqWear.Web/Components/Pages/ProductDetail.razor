@@ -242,17 +242,23 @@ else
             ImageUrl = result.Data.ImageUrl,
             Stock = result.Data.Stock,
             IsActive = result.Data.IsActive,
-            Sizes = result.Data.Sizes,
             Gender = result.Data.Gender,
             CategoryId = result.Data.CategoryId,
+            SizeStock = result.Data.SizeStock // ← add ✅
+          .Select(s => new SizeStockModel
+          {
+              Id = s.Id,
+              Size = s.Size,
+              Quantity = s.Quantity
+          }).ToList(),
             Images = result.Data.Images
-                .Select(i => new ProductImageModel
-                {
-                    Id = i.Id,
-                    ProductId = i.ProductId,
-                    ImageUrl = i.ImageUrl,
-                    SortOrder = i.SortOrder
-                }).ToList()
+          .Select(i => new ProductImageModel
+          {
+              Id = i.Id,
+              ProductId = i.ProductId,
+              ImageUrl = i.ImageUrl,
+              SortOrder = i.SortOrder
+          }).ToList()
         };
 
         SelectedImage = product.AllImageUrls.FirstOrDefault() ?? "";
@@ -270,7 +276,7 @@ else
 
     private async Task HandleAddToCart()
     {
-        // validate size selected 
+        // validate size selected
         if (string.IsNullOrEmpty(SelectedSize))
         {
             addToCartMessage = "Please select a size";

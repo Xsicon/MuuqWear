@@ -20,7 +20,7 @@ public class ProductDetailModel
     // sizes stored as comma separated string
     // e.g. "S,M,L,XL,XXL"
     // we split this into list in the page 
-    public string? Sizes { get; set; }
+    public List<SizeStockModel> SizeStock { get; set; } = new();
 
     // gender — "Men", "Women", "Unisex"
     public string? Gender { get; set; }
@@ -37,12 +37,10 @@ public class ProductDetailModel
     // e.g. "S,M,L,XL" → ["S", "M", "L", "XL"]
     // used directly in razor page foreach loop 
     public List<string> SizeList =>
-        string.IsNullOrEmpty(Sizes)
-            ? new List<string>()
-            : Sizes.Split(',')
-                   .Select(s => s.Trim())
-                   .Where(s => !string.IsNullOrEmpty(s))
-                   .ToList();
+     SizeStock
+         .Where(s => s.Quantity > 0)
+         .Select(s => s.Size)
+         .ToList();
 
     // helper property — gets all image URLs in order
     // if no images in Images list → use main ImageUrl
