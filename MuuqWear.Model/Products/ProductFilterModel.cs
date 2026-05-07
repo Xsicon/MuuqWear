@@ -7,7 +7,7 @@ public class ProductFilterModel
     public Guid? CategoryId { get; set; }
     public decimal? MinPrice { get; set; }
     public decimal? MaxPrice { get; set; }
-    public string? Sizes { get; set; }  // ← add back ✅
+    public string? Sizes { get; set; }  // ← add back 
 
     public string? SortBy { get; set; } = "featured";
 }

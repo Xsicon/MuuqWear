@@ -18,11 +18,11 @@ namespace MuuqWear.Web.Components.Pages.Admin
         private const int LowStockThreshold = 5;
         private string activeFilter = "All";
 
-        // ✅ computed — low stock count for warning banner
+        //  computed — low stock count for warning banner
         private int LowStockCount => FilteredProducts
             .Count(p => p.Stock > 0 && p.Stock < LowStockThreshold);
 
-        // ✅ update FilteredProducts to handle new filters
+        //  update FilteredProducts to handle new filters
         private IEnumerable<ProductModel> FilteredProducts => activeFilter switch
         {
             "All" => ApplySearch(Products),
@@ -109,7 +109,7 @@ namespace MuuqWear.Web.Components.Pages.Admin
                 categoryId = parsedId;
             }
 
-            // ✅ for stock filters → load all products at once
+            //  for stock filters → load all products at once
             var isStockFilter = activeFilter == "LowStock" ||
                                 activeFilter == "OutOfStock";
 
@@ -186,11 +186,11 @@ namespace MuuqWear.Web.Components.Pages.Admin
                 IsFeatured = product.IsFeatured,
                 IsBestSeller = product.IsBestSeller,
                 Gender = product.Gender,
-                // ✅ restore sizes from SizeStock — not from Sizes string
+                //  restore sizes from SizeStock — not from Sizes string
                 Sizes = product.SizeStock.Select(s => s.Size).ToList()
             };
 
-            // ✅ restore selected sizes from SizeStock
+            //  restore selected sizes from SizeStock
             SelectedSizes = product.SizeStock
                 .Select(s => s.Size)
                 .ToHashSet();
@@ -212,7 +212,7 @@ namespace MuuqWear.Web.Components.Pages.Admin
             {
                 if (SelectedSizes.Contains(size))
                 {
-                    // ✅ remove size → delete from product_size_stock
+                    //  remove size → delete from product_size_stock
                     var sizeStock = Products
                         .FirstOrDefault(p => p.Id == editingProductId)?
                         .SizeStock
@@ -245,7 +245,7 @@ namespace MuuqWear.Web.Components.Pages.Admin
                 }
                 else
                 {
-                    // ✅ add size → insert into product_size_stock with quantity 0
+                    //  add size → insert into product_size_stock with quantity 0
                     var result = await ProductService.AddSizeStock(
                         editingProductId, size, 0);
 
@@ -272,7 +272,7 @@ namespace MuuqWear.Web.Components.Pages.Admin
             }
             else
             {
-                // ✅ add mode — just toggle selection, no DB calls
+                //  add mode — just toggle selection, no DB calls
                 if (SelectedSizes.Contains(size))
                 {
                     SelectedSizes.Remove(size);
@@ -341,7 +341,7 @@ namespace MuuqWear.Web.Components.Pages.Admin
             if (newProduct.Price <= 0)
             { errorMessage = "Price must be greater than 0"; return; }
 
-            // ✅ stock validation only for add mode
+            //  stock validation only for add mode
             if (!isEditMode && newProduct.Stock < 0)
             { errorMessage = "Stock cannot be negative"; return; }
 
@@ -362,8 +362,8 @@ namespace MuuqWear.Web.Components.Pages.Admin
                     IsFeatured = newProduct.IsFeatured,
                     IsBestSeller = newProduct.IsBestSeller,
                     Gender = newProduct.Gender
-                    // ❌ no Sizes — managed via product_size_stock ✅
-                    // ❌ no Stock — managed via Update Stock modal ✅
+                    // ❌ no Sizes — managed via product_size_stock 
+                    // ❌ no Stock — managed via Update Stock modal 
                 };
 
                 var result = await ProductService.Update(editingProductId, updateModel);
@@ -630,7 +630,7 @@ namespace MuuqWear.Web.Components.Pages.Admin
 
             try
             {
-                // ✅ update each size one by one
+                //  update each size one by one
                 foreach (var size in editingSizeStock)
                 {
                     var result = await ProductService.UpdateSizeStock(
@@ -643,11 +643,11 @@ namespace MuuqWear.Web.Components.Pages.Admin
                     }
                 }
 
-                // ✅ recalculate total stock
+                //  recalculate total stock
                 var totalStock = editingSizeStock.Sum(s => s.Quantity);
                 await ProductService.UpdateStock(stockProduct!.Id, totalStock);
 
-                // ✅ update local product list
+                //  update local product list
                 var product = Products.FirstOrDefault(p => p.Id == stockProduct!.Id);
                 if (product != null)
                 {
@@ -691,7 +691,7 @@ namespace MuuqWear.Web.Components.Pages.Admin
             stockError = string.Empty;
             isUpdatingStock = false;
 
-            // ✅ fetch latest size stock
+            //  fetch latest size stock
             var result = await ProductService.GetSizeStock(item.Id);
             if (result.Success && result.Data != null)
                 editingSizeStock = result.Data;

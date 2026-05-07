@@ -1,5 +1,11 @@
 ﻿@page "/shipping-return"
+@using MuuqWear.Application.Services.OrderReturnService
+@using MuuqWear.Model.OrderReturn
 @rendermode InteractiveServer
+@inject IOrderReturnService ReturnService
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager NavigationManager
 
 <PageTitle>Shipping & Returns — Muuqwear</PageTitle>
 
@@ -96,9 +102,18 @@
 
                 </div>
 
-                <button @onclick="OpenReturnPanel" class="sr-summary__cta">
-                    Start a Return
-                </button>
+                @if (isAuthenticated && !isAdmin)
+                {
+                    <button @onclick="OpenReturnPanel" class="sr-summary__cta">
+                        Start a Return
+                    </button>
+                }
+                else if (!isAuthenticated)
+                {
+                    <button @onclick="OpenReturnPanel" class="sr-summary__cta">
+                        Sign In to Start a Return
+                    </button>
+                }
             </div>
         </aside>
 
@@ -236,21 +251,21 @@
 
                     <div class="sr-form__field">
                         <label class="sr-form__label">Order Number *</label>
-                        <input @bind="orderNumber"
+                        <input @bind="form.OrderNumber"
                                placeholder="e.g. MQW-20260215-4829"
                                class="sr-form__input" />
                     </div>
 
                     <div class="sr-form__field">
                         <label class="sr-form__label">Full Name *</label>
-                        <input @bind="fullName"
+                        <input @bind="form.FullName"
                                placeholder="Enter your full name"
                                class="sr-form__input" />
                     </div>
 
                     <div class="sr-form__field">
                         <label class="sr-form__label">Email Address *</label>
-                        <input @bind="email"
+                        <input @bind="form.Email"
                                type="email"
                                placeholder="you@example.com"
                                class="sr-form__input" />
@@ -258,7 +273,7 @@
 
                     <div class="sr-form__field">
                         <label class="sr-form__label">Items to Return *</label>
-                        <input @bind="itemsToReturn"
+                        <input @bind="form.ItemsToReturn"
                                placeholder="e.g. Sapphire Hoodie (M), Apex Runners (10)"
                                class="sr-form__input" />
                     </div>
@@ -266,7 +281,7 @@
                     <div class="sr-form__field">
                         <label class="sr-form__label">Reason for Return *</label>
                         <div class="sr-form__select-wrap">
-                            <select @bind="reason" class="sr-form__select">
+                            <select @bind="form.Reason" class="sr-form__select">
                                 <option value="">Select a reason</option>
                                 <option value="Doesn't fit">Doesn't fit</option>
                                 <option value="Changed my mind">Changed my mind</option>
@@ -286,7 +301,7 @@
 
                     <div class="sr-form__field">
                         <label class="sr-form__label">Additional Comments</label>
-                        <textarea @bind="comments"
+                        <textarea @bind="form.Comments"
                                   rows="3"
                                   placeholder="Anything else we should know? (optional)"
                                   class="sr-form__textarea"></textarea>
@@ -306,8 +321,10 @@
                         <button class="sr-form__save" @onclick="CloseReturnPanel">
                             Save &amp; Close
                         </button>
-                        <button class="sr-form__submit" @onclick="HandleSubmit">
-                            Submit Return
+                        <button class="sr-form__submit"
+                                @onclick="HandleSubmit"
+                                disabled="@isSubmitting">
+                            @(isSubmitting ? "Submitting..." : "Submit Return")
                         </button>
                     </div>
 
@@ -322,6 +339,10 @@
 @code {
     private bool isReturnPanelOpen = false;
     private bool isSubmitted = false;
+    private bool isSubmitting = false;
+    private bool isAuthenticated = false;
+    private bool isAdmin = false;
+
     private string formError = string.Empty;
 
     private string orderNumber = string.Empty;
@@ -331,8 +352,38 @@
     private string reason = string.Empty;
     private string comments = string.Empty;
 
-    private void OpenReturnPanel() => isReturnPanelOpen = true;
+    private SubmitReturnModel form = new();
 
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider
+            .GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        isAuthenticated = user.Identity?.IsAuthenticated ?? false;
+        isAdmin = user.IsInRole("admin");
+    }
+
+    private async Task OpenReturnPanel()
+    {
+        var authState = await AuthStateProvider
+            .GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        //  not logged in → redirect to login
+        if (!user.Identity?.IsAuthenticated ?? true)
+        {
+            NavigationManager.NavigateTo(
+                "/login?returnUrl=/shipping-returns", forceLoad: false);
+            return;
+        }
+
+        if (user.IsInRole("admin"))
+            return;
+
+        isReturnPanelOpen = true;
+    }
     private void CloseReturnPanel()
     {
         isReturnPanelOpen = false;
@@ -340,20 +391,33 @@
         formError = string.Empty;
     }
 
-    private void HandleSubmit()
+    private async Task HandleSubmit()
     {
         formError = string.Empty;
 
-        if (string.IsNullOrWhiteSpace(orderNumber) ||
-            string.IsNullOrWhiteSpace(fullName) ||
-            string.IsNullOrWhiteSpace(email) ||
-            string.IsNullOrWhiteSpace(itemsToReturn) ||
-            string.IsNullOrWhiteSpace(reason))
+        if (string.IsNullOrWhiteSpace(form.OrderNumber) ||
+            string.IsNullOrWhiteSpace(form.FullName) ||
+            string.IsNullOrWhiteSpace(form.Email) ||
+            string.IsNullOrWhiteSpace(form.ItemsToReturn) ||
+            string.IsNullOrWhiteSpace(form.Reason))
         {
             formError = "Please fill in all required fields.";
             return;
         }
 
-        isSubmitted = true;
+        isSubmitting = true;
+        StateHasChanged();
+
+        var result = await ReturnService.SubmitReturn(form);
+
+        if (result.Success)
+            isSubmitted = true;
+        else
+            formError = result.Message ?? "Failed to submit return.";
+
+        isSubmitting = false;
+        StateHasChanged();
     }
+}
+
 }

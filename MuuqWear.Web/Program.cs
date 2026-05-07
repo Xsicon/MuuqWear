@@ -11,6 +11,7 @@ using MuuqWear.Application.Services.CategoryService;
 using MuuqWear.Application.Services.ContentService;
 using MuuqWear.Application.Services.CustomerService;
 using MuuqWear.Application.Services.JournalService;
+using MuuqWear.Application.Services.OrderReturnService;
 using MuuqWear.Application.Services.OrderService;
 using MuuqWear.Application.Services.ProductService;
 using MuuqWear.Application.Services.ProfileService;
@@ -50,6 +51,10 @@ builder.Services.AddHttpClient<ICartService, CartService>(client =>
     client.BaseAddress = new Uri(apiBaseUrl);
 }).AddHttpMessageHandler<AuthenticatedHttpHandler>();
 builder.Services.AddHttpClient<IOrderService, OrderService>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+}).AddHttpMessageHandler<AuthenticatedHttpHandler>();
+builder.Services.AddHttpClient<IOrderReturnService, OrderReturnService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
 }).AddHttpMessageHandler<AuthenticatedHttpHandler>();
@@ -108,6 +113,25 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
             }
         };
     });
+
+builder.Services.AddServerSideBlazor(options =>
+{
+    //  how long to keep disconnected circuit
+    options.DisconnectedCircuitRetentionPeriod =
+        TimeSpan.FromMinutes(5);
+
+    //  max disconnected circuits in memory
+    options.DisconnectedCircuitMaxRetained = 100;
+
+    //  JS interop timeout
+    options.JSInteropDefaultCallTimeout =
+        TimeSpan.FromSeconds(30);
+
+    //  detailed errors in development only
+    options.DetailedErrors =
+        builder.Environment.IsDevelopment();
+});
+
 builder.Services.AddMemoryCache();
 builder.Services.AddAuthorization();
 

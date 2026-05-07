@@ -12,6 +12,12 @@ public class OrderModel
     public string Status { get; set; } = "pending";
     public DateTime? CreatedAt { get; set; }
     public List<OrderItemModel> Items { get; set; } = new();
+    public string? ItemsSummary { get; set; }  // for list card
+    public string? FirstName { get; set; }     // for detail panel
+    public string? LastName { get; set; }      // for detail panel
+    public string? Address { get; set; }       // for detail panel
+    public string? City { get; set; }          // for detail panel
+    public string? PostalCode { get; set; }
 }
 
 public class OrderItemModel
@@ -35,4 +41,9 @@ public class PlaceOrderModel
     public string? Address { get; set; }
     public string? City { get; set; }
     public string? PostalCode { get; set; }
+}
+
+public class UpdateOrderStatusModel
+{
+    public string Status { get; set; } = string.Empty;
 }

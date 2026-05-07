@@ -96,7 +96,7 @@
             {
                 @foreach (var item in FilteredProducts)
                 {
-                    <div class="product-card">
+                    <div class="product-card" @key="item.Id">
 
                         <!-- TOP ROW: name + badge + buttons -->
                         <div class="product-card__top">
@@ -461,7 +461,7 @@ else
                             <div class="mw-product-images-grid mb-3">
                                 @foreach (var img in editingProductImages.OrderBy(i => i.SortOrder))
                                 {
-                                    <div class="mw-product-image-item">
+                                    <div class="mw-product-image-item" @key="img.Id">
 
                                         <!-- IMAGE PREVIEW -->
                                         <img src="@img.ImageUrl" class="mw-product-image-thumb" />
@@ -580,9 +580,9 @@ else
                 @foreach (var size in editingSizeStock)
                 {
                     <div style="display:flex;align-items:center;
-                                                                                                                                                                    justify-content:space-between;gap:12px">
+                                                                                                                                                                                    justify-content:space-between;gap:12px">
                         <span style="color:#1E2A47;font-size:13px;
-                                                                                                                                                                         font-weight:700;min-width:40px">
+                                                                                                                                                                                         font-weight:700;min-width:40px">
                             @size.Size
                         </span>
                         <input type="number"
@@ -606,8 +606,8 @@ else
 
             <!-- TOTAL -->
             <div style="display:flex;justify-content:space-between;
-                                                                                                            padding:12px 0;border-top:1px solid rgba(169,183,204,0.3);
-                                                                                                            margin-bottom:21px">
+                                                                                                                    padding:12px 0;border-top:1px solid rgba(169,183,204,0.3);
+                                                                                                                    margin-bottom:21px">
                 <span style="color:#4A5C7A;font-size:13px">Total Stock</span>
                 <span style="color:#1E2A47;font-size:13px;font-weight:700">
                     @editingSizeStock.Sum(s => s.Quantity)

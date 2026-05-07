@@ -35,7 +35,7 @@ public class ShopFilterModel
         CategoryId = CategoryId,
         MinPrice = MinPrice,
         MaxPrice = MaxPrice,
-        Sizes = SizesAsString, // ← add ✅
+        Sizes = SizesAsString, // ← add 
 
         SortBy = SortBy
     };
