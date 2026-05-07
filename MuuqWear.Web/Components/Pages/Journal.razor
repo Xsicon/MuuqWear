@@ -123,7 +123,7 @@
                     }
                 </div>
             </div>
-            <!-- ✅ only one, in the right place, with conditions -->
+            <!--  only one, in the right place, with conditions -->
             @if (hasMore)
             {
                 <div class="text-center mt-4">
@@ -248,12 +248,12 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // ✅ fetch hero — always latest article (page 1, size 1, no filter)
+        //  fetch hero — always latest article (page 1, size 1, no filter)
         var heroResult = await JournalService.GetPublished(1, 1);
         if (heroResult.Success && heroResult.Data?.Data.Any() == true)
             heroArticle = heroResult.Data.Data.First();
 
-        // ✅ fetch categories — get all to build filter tabs
+        //  fetch categories — get all to build filter tabs
         var allResult = await JournalService.GetPublished(1, 100);
         if (allResult.Success && allResult.Data != null)
             categories = allResult.Data.Data
@@ -262,7 +262,7 @@
                 .Distinct()
                 .ToList();
 
-        // ✅ fetch first page of articles
+        //  fetch first page of articles
         await LoadArticles(reset: true);
     }
 
@@ -305,7 +305,7 @@
         await LoadArticles(reset: true); // ← reset to page 1 on filter change
     }
 
-    // ✅ single responsibility — only loads next page
+    //  single responsibility — only loads next page
     private async Task LoadMore()
     {
         if (!hasMore || isLoadingMore) return;

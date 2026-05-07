@@ -27,7 +27,7 @@ public class CustomAuthenticationStateProvider : AuthenticationStateProvider
     //        Task.FromResult(new AuthenticationState(anonymous)));
     //}
 
-    // ✅ call this on fresh login to reset the flag
+    //  call this on fresh login to reset the flag
     public void NotifyLoggedIn(ClaimsPrincipal principal)
     {
         _sessionExpired = false;
@@ -38,12 +38,12 @@ public class CustomAuthenticationStateProvider : AuthenticationStateProvider
 
     public override Task<AuthenticationState> GetAuthenticationStateAsync()
     {
-        // ✅ session expired → always anonymous
+        //  session expired → always anonymous
         if (_sessionExpired)
             return Task.FromResult(
                 new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity())));
 
-        // ✅ return cache FIRST — covers all SignalR calls where HttpContext = null
+        //  return cache FIRST — covers all SignalR calls where HttpContext = null
         if (_cachedState != null)
             return Task.FromResult(_cachedState);
 

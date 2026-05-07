@@ -16,7 +16,7 @@ namespace MuuqWear.Web.Components.Pages
         private bool showDeleteConfirm = false;
         private bool isDeletingAccount = false;
         private string deleteError = string.Empty;
-        // ✅ form state
+        //  form state
         private bool isAddressFormOpen = false;
         private bool isEditMode = false;
         private AddressModel? editingAddress = null;
@@ -125,7 +125,7 @@ namespace MuuqWear.Web.Components.Pages
 
             if (isEditMode && editingAddress != null)
             {
-                // ✅ cast directly — same fields
+                //  cast directly — same fields
                 var request = new UpdateAddressModel
                 {
                     Label = addressForm.Label,
@@ -162,7 +162,7 @@ namespace MuuqWear.Web.Components.Pages
             }
             else
             {
-                var result = await AddressService.Create(addressForm); // ← pass directly ✅
+                var result = await AddressService.Create(addressForm); // ← pass directly 
 
                 if (result.Success && result.Data != null)
                 {

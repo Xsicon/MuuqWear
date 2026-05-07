@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Caching.Memory;
 using MuuqWear.Application.Interfaces;
 using MuuqWear.Application.Services.AddressService;
+using MuuqWear.Application.Services.AdminUserService;
 using MuuqWear.Application.Services.AuthService;
 using MuuqWear.Application.Services.CartService;
 using MuuqWear.Application.Services.CategoryService;
@@ -15,6 +16,7 @@ using MuuqWear.Application.Services.OrderReturnService;
 using MuuqWear.Application.Services.OrderService;
 using MuuqWear.Application.Services.ProductService;
 using MuuqWear.Application.Services.ProfileService;
+using MuuqWear.Application.Services.VoteService;
 using MuuqWear.Application.Shared;
 using MuuqWear.Web.Components;
 using System.Security.Claims;
@@ -67,11 +69,19 @@ builder.Services.AddHttpClient<IJournalService, JournalService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
 });
+builder.Services.AddHttpClient<IAdminSettingService, AdminSettingService>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+}).AddHttpMessageHandler<AuthenticatedHttpHandler>();
 builder.Services.AddHttpClient<ICustomerService, CustomerService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
 }).AddHttpMessageHandler<AuthenticatedHttpHandler>();
 builder.Services.AddHttpClient<IProfileService, ProfileService>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+}).AddHttpMessageHandler<AuthenticatedHttpHandler>();
+builder.Services.AddHttpClient<IVoteService, VoteService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
 }).AddHttpMessageHandler<AuthenticatedHttpHandler>();
@@ -82,6 +92,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<CustomAuthenticationStateProvider>();
 builder.Services.AddScoped<AuthenticatedHttpHandler>();
 builder.Services.AddSingleton<AuthSessionService>();
+
 builder.Services.AddScoped<AuthenticationStateProvider>(sp =>
     sp.GetRequiredService<CustomAuthenticationStateProvider>());
 builder.Services.AddHttpClient<IContentService, ContentService>(client =>
@@ -182,7 +193,7 @@ app.MapGet("/auth/set-cookie", async (
 
     cache.Remove(key);
     authSession.Reset();
-    System.Diagnostics.Debug.WriteLine("AuthSession reset on fresh login ✅");
+    System.Diagnostics.Debug.WriteLine("AuthSession reset on fresh login ");
 
     var claims = new List<Claim>
     {

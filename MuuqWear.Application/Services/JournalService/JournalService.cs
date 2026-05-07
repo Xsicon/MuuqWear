@@ -74,7 +74,7 @@ public class JournalService : IJournalService
 
             var result = await _http.GetAsync(url);
 
-            // ✅ debug — see raw response
+            //  debug — see raw response
             var json = await result.Content.ReadAsStringAsync();
            System.Diagnostics.Debug.WriteLine($"Journal raw response: {json}");
 

@@ -1,0 +1,317 @@
+﻿@page "/community"
+@rendermode InteractiveServer
+@inject IJSRuntime JS
+@inject IVoteService VoteService
+@inject NavigationManager NavigationManager
+@using Microsoft.AspNetCore.Components.Authorization
+@using MuuqWear.Application.Interfaces
+@using MuuqWear.Application.Services.VoteService
+@using MuuqWear.Model.Vote
+@inject IConfiguration Configuration
+@inject AuthenticationStateProvider AuthStateProvider
+@implements IAsyncDisposable
+
+<PageTitle>Community Vote</PageTitle>
+
+<!-- ─── VOTE HERO ────────────────────────────────────────── -->
+<section class="mw-vote">
+    <div class="mw-vote__container">
+        <div class="mw-vote__content">
+            <h1 class="mw-vote__title">You Vote. We Make.</h1>
+            <p class="mw-vote__description">
+                Browse upcoming designs, vote for your favorites, pick the
+                winning colors, and be the first to secure your pre-order.
+            </p>
+        </div>
+        <div class="mw-vote__image-wrapper">
+            <img src="https://images.unsplash.com/photo-1762232975039-7b36432bcac6?w=500&h=400&fit=crop"
+                 alt="Vote hero"
+                 class="mw-vote__image"
+                 loading="lazy" />
+        </div>
+    </div>
+</section>
+
+<section class="mw-how">
+    <div class="mw-how__container">
+        <h2 class="mw-how__title">How it Works</h2>
+        <div class="mw-how__steps">
+            <div class="mw-how__step">
+                <div class="mw-how__step-number">1</div>
+                <h3 class="mw-how__step-title">Vote for Designs</h3>
+                <p class="mw-how__step-desc">
+                    Browse our latest concepts and vote for the styles
+                    and colors you want to see in production.
+                </p>
+            </div>
+            <div class="mw-how__step">
+                <div class="mw-how__step-number">2</div>
+                <h3 class="mw-how__step-title">We Make the Winners</h3>
+                <p class="mw-how__step-desc">
+                    The most popular designs move into production using
+                    our sustainable manufacturing process.
+                </p>
+            </div>
+            <div class="mw-how__step">
+                <div class="mw-how__step-number">3</div>
+                <h3 class="mw-how__step-title">Secure Your Pre-Order</h3>
+                <p class="mw-how__step-desc">
+                    Be the first to own the winning looks by securing
+                    your pre-order at a special community price.
+                </p>
+            </div>
+        </div>
+
+        <div class="mw-how__stats">
+            <div class="mw-how__stat">
+                <svg class="mw-how__icon" viewBox="0 0 24 24">
+                    <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <span class="mw-how__stat-strong">
+                    @(stats?.TotalVotesThisWeek.ToString("N0") ?? "—")
+                </span>
+                <span class="mw-how__stat-text">votes cast this week</span>
+            </div>
+            <div class="mw-how__stat">
+                <svg class="mw-how__icon" viewBox="0 0 24 24">
+                    <path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"></path>
+                    <circle cx="12" cy="8" r="6"></circle>
+                </svg>
+                <span class="mw-how__stat-text">
+                    Most wanted color: @(stats?.MostWantedColor ?? "—")
+                </span>
+            </div>
+            <div class="mw-how__stat">
+                <svg class="mw-how__icon" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                <span class="mw-how__stat-text">
+                    @(stats?.NextDeadline ?? "No active votes")
+                </span>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+@if (!isAuthenticated)
+{
+    <div class="mw-vote-guest-banner">
+        <p class="mw-vote-guest-banner__text">
+            Sign in to vote for your favorite designs
+        </p>
+        <a href="/login?returnUrl=/community"
+           class="mw-vote-guest-banner__btn">
+            Sign In to Vote
+        </a>
+    </div>
+}
+
+<section class="mw-carousel">
+    <div class="container">
+
+        <div class="mw-carousel__header">
+            <div class="mw-carousel__tabs">
+                <button class="mw-carousel__tab mw-carousel__tab--active">
+                    Upcoming Designs
+                </button>
+            </div>
+            <div class="mw-carousel_nav">
+                <button @onclick="() => ScrollLeft(trendingRef)"
+                        class="d-flex align-items-center">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m15 18-6-6 6-6"></path>
+                    </svg>
+                </button>
+                <button @onclick="() => ScrollRight(trendingRef)"
+                        class="d-flex align-items-center">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m9 18 6-6-6-6"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- LOADING -->
+        @if (isLoadingActive)
+        {
+            <p style="color:#4A5C7A;font-size:14px;padding:34px 0">
+                Loading designs...
+            </p>
+        }
+        else if (!activeItems.Any())
+        {
+            <p style="color:#4A5C7A;font-size:14px;padding:34px 0">
+                No active designs at the moment.
+            </p>
+        }
+        else
+        {
+            <div class="mw-carousel__track" @ref="trendingRef">
+                <div class="row flex-nowrap gx-3 overflow-hidden">
+                    @foreach (var item in activeItems)
+                    {
+                        <div class="col-12 col-sm-6 col-md-6 col-lg-4 mw-carousel-item"
+                             @key="item.Id">
+                            <div class="mw-card">
+
+                                <div class="mw-card__image-wrapper">
+                                    <img src="@item.ImageUrl"
+                                         class="mw-card__image"
+                                         loading="lazy"
+                                         alt="@item.StyleName" />
+                                    @if (!string.IsNullOrEmpty(item.Tag))
+                                    {
+                                        <span class="mw-card__badge">@item.Tag</span>
+                                    }
+                                </div>
+
+                                <div class="mw-card__content">
+                                    <h3 class="mw-card__title">@item.StyleName</h3>
+                                    <p class="mw-card__subtitle">@item.Subtitle</p>
+
+                                    <!-- VOTE COUNT -->
+                                    <div class="mw-card__votes">
+                                        👍 <strong>@item.VoteCount</strong> votes
+                                    </div>
+
+                                    <!-- COLOR SELECTOR -->
+                                    @if (item.ColorOptions.Any())
+                                    {
+                                        <div class="mw-card__colors">
+                                            @foreach (var color in item.ColorOptions)
+                                            {
+                                                <button class="mw-card__color @(GetSelectedColor(item.Id) == color ? "mw-card__color--selected" : "")"
+                                                        style="background:@color"
+                                                        title="@color"
+                                                        @onclick="() => SelectColor(item.Id, color)">
+                                                </button>
+                                            }
+                                        </div>
+                                    }
+
+                                    <!-- VOTE BUTTON -->
+                                    <button class="mw-card__primary @(item.HasVoted ? "mw-card__primary--voted" : "")"
+                                            @onclick="() => HandleVote(item)"
+                                            disabled="@(item.HasVoted || votingIds.Contains(item.Id))">
+                                        @if (votingIds.Contains(item.Id))
+                                        {
+                                            <span>Voting...</span>
+                                        }
+                                        else if (item.HasVoted)
+                                        {
+                                            <span>Voted </span>
+                                        }
+                                        else
+                                        {
+                                            <span>Vote Now</span>
+                                        }
+                                    </button>
+
+                                    <!-- PRE-ORDER BUTTON -->
+                                    <button class="mw-card__secondary @(item.HasPreOrdered ? "mw-card__secondary--ordered" : "")"
+                                            @onclick="() => HandlePreOrder(item)"
+                                            disabled="@(item.HasPreOrdered || preOrderingIds.Contains(item.Id))">
+                                        @if (preOrderingIds.Contains(item.Id))
+                                        {
+                                            <span>Registering...</span>
+                                        }
+                                        else if (item.HasPreOrdered)
+                                        {
+                                            <span>Interest Registered </span>
+                                        }
+                                        else
+                                        {
+                                            <span>Pre-Order this Look</span>
+                                        }
+                                    </button>
+
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+    </div>
+</section>
+
+<!-- ─── RECENTLY FINISHED ─────────────────────────────────── -->
+<section class="mw-finished">
+    <div class="container">
+
+        <div class="mw-finished__header d-flex justify-content-between align-items-center">
+            <h2 class="mw-finished__title">Recently Finished</h2>
+            <div class="mw-carousel_nav">
+                <button @onclick="() => ScrollLeft(finishedRef)"
+                        class="d-flex align-items-center">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m15 18-6-6 6-6"></path>
+                    </svg>
+                </button>
+                <button @onclick="() => ScrollRight(finishedRef)"
+                        class="d-flex align-items-center">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m9 18 6-6-6-6"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <p class="mw-finished__desc">
+            These community-favorites reached their vote goals and are
+            now in production.
+        </p>
+
+        @if (!isLoadingFinished && finishedItems.Any())
+        {
+            <div class="mw-carousel__track" @ref="finishedRef">
+                <div class="row flex-nowrap gx-3">
+                    @foreach (var item in finishedItems)
+                    {
+                        <div class="col-12 col-sm-6 col-md-6 col-lg-4 mw-carousel-item"
+                             @key="item.Id">
+                            <div class="mw-finished-card">
+                                <div class="mw-finished-card__image-wrapper">
+                                    <img src="@item.ImageUrl"
+                                         class="mw-finished-card__image"
+                                         loading="lazy"
+                                         alt="@item.StyleName" />
+                                    <span class="mw-finished-card__badge @GetFinishedBadgeClass(item.Status)">
+                                        @item.Tag
+                                    </span>
+                                </div>
+                                <div class="mw-finished-card__content">
+                                    <h3 class="mw-finished-card__title">@item.StyleName</h3>
+                                    <p class="mw-finished-card__subtitle">@item.Subtitle</p>
+                                    <button class="mw-card__primary">Shop Now</button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+    </div>
+</section>
+
+<!-- ─── TOAST ──────────────────────────────────────────────── -->
+@if (showToast)
+{
+    <div class="mw-toast @(toastSuccess ? "mw-toast--success" : "mw-toast--error")">
+        @toastMessage
+    </div>
+}
+

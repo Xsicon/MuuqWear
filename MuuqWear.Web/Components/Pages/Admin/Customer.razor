@@ -70,7 +70,7 @@
                     <tbody>
                         @foreach (var c in customers)
                         {
-                            <tr>
+                            <tr @key="c.Id">
                                 <td class="td-name">
                                     @(string.IsNullOrEmpty(c.FullName)
                                                                 ? "—"
@@ -139,7 +139,7 @@
         StateHasChanged();
     }
 
-    // ✅ debounced search — waits 500ms after typing stops
+    //  debounced search — waits 500ms after typing stops
     private async Task HandleSearchInput(ChangeEventArgs e)
     {
         searchQuery = e.Value?.ToString() ?? string.Empty;
@@ -156,7 +156,7 @@
         catch (TaskCanceledException) { }
     }
 
-    // ✅ search immediately on Enter
+    //  search immediately on Enter
     private async Task HandleSearchKeyDown(KeyboardEventArgs e)
     {
         if (e.Key == "Enter")

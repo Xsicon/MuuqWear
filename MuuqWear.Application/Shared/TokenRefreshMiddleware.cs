@@ -27,42 +27,6 @@ public class TokenRefreshMiddleware
         _authSession = authSession;
     }
 
-    //public async Task InvokeAsync(HttpContext context)
-    //{
-    //    System.Diagnostics.Debug.WriteLine($"Middleware running — path: {context.Request.Path}");
-    //    System.Diagnostics.Debug.WriteLine($"IsAuthenticated: {context.User.Identity?.IsAuthenticated}");
-    //    // only run for logged in users
-    //    if (context.User.Identity?.IsAuthenticated == true)
-    //    {
-    //        var accessToken = context.User.FindFirst("AccessToken")?.Value;
-    //        var refreshToken = context.User.FindFirst("RefreshToken")?.Value;
-
-    //        System.Diagnostics.Debug.WriteLine($"AccessToken found: {!string.IsNullOrEmpty(accessToken)}");
-    //        System.Diagnostics.Debug.WriteLine($"RefreshToken found: {!string.IsNullOrEmpty(refreshToken)}");
-    //        System.Diagnostics.Debug.WriteLine($"Token expired: {(!string.IsNullOrEmpty(accessToken) && IsTokenExpired(accessToken))}");
-    //        System.Diagnostics.Debug.WriteLine($"Token expired: {(!string.IsNullOrEmpty(accessToken) && IsTokenExpired(accessToken))}");
-    //        // only refresh if token is expired or about to expire
-    //        if (!string.IsNullOrEmpty(accessToken) && IsTokenExpired(accessToken))
-    //        {
-    //            await _lock.WaitAsync();
-    //            System.Diagnostics.Debug.WriteLine("Token expired — attempting refresh...");
-    //            var refreshed = await TryRefreshAsync(context, refreshToken);
-    //            System.Diagnostics.Debug.WriteLine(refreshed ? "Refresh success " : "Refresh failed ❌");
-
-
-    //            // refresh failed → sign out → redirect to login
-    //            if (!refreshed)
-    //            {
-    //                await context.SignOutAsync(
-    //                    CookieAuthenticationDefaults.AuthenticationScheme);
-    //                context.Response.Redirect("/login");
-    //                return;
-    //            }
-    //        }
-    //    }
-
-    //    await _next(context);
-    //}
     public async Task InvokeAsync(HttpContext context)
     {
         var path = context.Request.Path.Value ?? "";
@@ -76,7 +40,7 @@ public class TokenRefreshMiddleware
             return;
         }
 
-        // ✅ cookie gone/expired → notify Blazor circuit
+        //  cookie gone/expired → notify Blazor circuit
         if (context.User.Identity?.IsAuthenticated == false)
         {
             // check if they HAD a cookie — if cookie exists but invalid = session expired
@@ -135,6 +99,7 @@ public class TokenRefreshMiddleware
                 _lock.Release();
             }
         }
+        _ = UpdateLastActive(userId);
 
         await _next(context);
     }
@@ -264,6 +229,22 @@ public class TokenRefreshMiddleware
         catch
         {
             return true;
+        }
+    }
+
+    private async Task UpdateLastActive(string? userId)
+    {
+        if (string.IsNullOrEmpty(userId)) return;
+
+        try
+        {
+            var apiBaseUrl = _configuration["ApiBaseUrl"];
+            using var http = new HttpClient();
+            await http.PostAsync(
+                $"{apiBaseUrl}api/Profile/last-active/{userId}", null);
+        }
+        catch
+        {
         }
     }
 }

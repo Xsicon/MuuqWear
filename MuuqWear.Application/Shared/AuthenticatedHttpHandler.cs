@@ -48,7 +48,7 @@ public class AuthenticatedHttpHandler : DelegatingHandler
 
         var response = await base.SendAsync(request, cancellationToken);
 
-        // ✅ everything inside this block
+        //  everything inside this block
         if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
         {
             var newToken = await TryRefreshAsync(context);
@@ -60,7 +60,7 @@ public class AuthenticatedHttpHandler : DelegatingHandler
                 return await base.SendAsync(retryRequest, cancellationToken);
             }
 
-            // ✅ only runs when 401 AND refresh failed
+            //  only runs when 401 AND refresh failed
             if (context != null && !context.Response.HasStarted)
             {
                 await context.SignOutAsync(

@@ -1,0 +1,320 @@
+﻿@page "/admin/settings"
+@layout Layout.AdminLayout.AdminDashboardLayout
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using MuuqWear.Application.Interfaces
+@using MuuqWear.Application.Services.AdminUserService
+@using MuuqWear.Model.AdminSettingsUser
+@inject IAdminSettingService AdminSettingService
+@attribute [Authorize(Roles = "admin")]
+
+<PageTitle>Settings & Users</PageTitle>
+
+<div class="settings-page">
+
+    <h1 class="settings-title">Settings &amp; Users</h1>
+
+    <!-- ─── MAIN TABS ──────────────────────────────────────── -->
+    <div class="settings-main-tabs">
+        <button class="settings-main-tab @(activeTab == "users" ? "active" : "inactive")"
+                @onclick='() => SetTab("users")'>
+            Users &amp; Roles
+        </button>
+        <button class="settings-main-tab @(activeTab == "integrations" ? "active" : "inactive")"
+                @onclick='() => SetTab("integrations")'>
+            Integrations
+        </button>
+        <button class="settings-main-tab @(activeTab == "system" ? "active" : "inactive")"
+                @onclick='() => SetTab("system")'>
+            System
+        </button>
+    </div>
+
+    @if (activeTab == "users")
+    {
+        <div class="users-card">
+
+            <div class="users-card__header">
+                <h3 class="users-card__title">
+                    Users (@users.Count active)
+                </h3>
+                <button class="btn-invite" @onclick="OpenInviteModal">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 12h14"></path>
+                        <path d="M12 5v14"></path>
+                    </svg>
+                    Add User
+                </button>
+            </div>
+
+            <div class="users-card__body">
+                @if (isLoading)
+                {
+                    <p class="settings-empty">Loading...</p>
+                }
+                else if (!users.Any())
+                {
+                    <p class="settings-empty">No users found.</p>
+                }
+                else
+                {
+                    @foreach (var user in users)
+                    {
+                        <div class="user-row" @key="user.Id">
+                            <div class="user-row__left">
+                                <div class="user-row__avatar">@user.Initials</div>
+                                <div>
+                                    <p class="user-row__name">@user.FullName</p>
+                                    <p class="user-row__meta">
+                                        @user.Email
+                                        · @GetRoleDisplay(user.Role)
+                                        · Last active: @user.LastActiveDisplay
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="user-row__actions">
+                                <button class="btn-edit"
+                                        @onclick="() => OpenEditModal(user)">
+                                    Edit
+                                </button>
+                                <button class="btn-deactivate"
+                                        @onclick="() => OpenDeactivateModal(user)">
+                                    Deactivate
+                                </button>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    }
+
+    else if (activeTab == "integrations")
+    {
+        <div class="users-card">
+
+            <div class="users-card__header">
+                <h3 class="users-card__title">Integrations</h3>
+            </div>
+
+            <div class="users-card__body">
+                @foreach (var integration in integrations)
+                {
+                    <div class="user-row" @key="integration.Name">
+
+                        <div class="user-row__left">
+                            @if (integration.IsLoading)
+                            {
+                                <div class="integration-spinner"></div>
+                            }
+                            else if (integration.IsHealthy)
+                            {
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     width="14" height="14"
+                                     viewBox="0 0 24 24" fill="none"
+                                     stroke="#2D9C5A" stroke-width="2"
+                                     stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
+                                    <path d="m9 11 3 3L22 4"></path>
+                                </svg>
+                            }
+                            else
+                            {
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     width="14" height="14"
+                                     viewBox="0 0 24 24" fill="none"
+                                     stroke="#C44545" stroke-width="2"
+                                     stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <path d="m15 9-6 6"></path>
+                                    <path d="m9 9 6 6"></path>
+                                </svg>
+                            }
+
+                            <div>
+                                <p class="user-row__name">@integration.Name</p>
+                                <p class="user-row__meta">@integration.Subtitle</p>
+                            </div>
+                        </div>
+
+                        <div class="user-row__actions">
+                            <button class="btn-edit">Reconnect</button>
+                            <button class="btn-deactivate"
+                                    @onclick="() => HandleTest(integration)"
+                                    disabled="@integration.IsLoading">
+                                @(integration.IsLoading ? "Testing..." : "Test")
+                            </button>
+                        </div>
+
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    else
+    {
+        <div class="settings-placeholder">
+            System settings coming soon.
+        </div>
+    }
+
+</div>
+
+@if (isInviteModalOpen)
+{
+    <div class="settings-modal-overlay" @onclick="CloseInviteModal">
+        <div class="settings-modal" @onclick:stopPropagation="true">
+
+            <button class="settings-modal__close" @onclick="CloseInviteModal">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 6 6 18"></path>
+                    <path d="m6 6 12 12"></path>
+                </svg>
+            </button>
+
+            <h3 class="settings-modal__title">Invite New User</h3>
+
+            <div class="settings-form">
+
+                <div class="settings-form__field">
+                    <label class="settings-form__label">Full Name *</label>
+                    <input @bind="inviteForm.FullName"
+                           placeholder="e.g. Jordan Doe"
+                           class="settings-form__input" />
+                </div>
+
+                <div class="settings-form__field">
+                    <label class="settings-form__label">Email *</label>
+                    <input @bind="inviteForm.Email"
+                           type="email"
+                           placeholder="jordan@muuqwear.com"
+                           class="settings-form__input" />
+                </div>
+
+                <div class="settings-form__field">
+                    <label class="settings-form__label">Role *</label>
+                    <select @bind="inviteForm.Role" class="settings-form__select">
+                        <option value="">Select a role</option>
+                        @foreach (var role in AvailableRoles)
+                        {
+                            <option value="@role.Value">@role.Label</option>
+                        }
+                    </select>
+                </div>
+
+                @if (!string.IsNullOrEmpty(modalError))
+                {
+                    <p class="settings-form__error">@modalError</p>
+                }
+
+                <div class="settings-form__actions">
+                    <button class="btn-cancel" @onclick="CloseInviteModal">Cancel</button>
+                    <button class="btn-save" @onclick="ConfirmInvite"
+                            disabled="@isSaving">
+                        @(isSaving ? "Inviting..." : "Send Invite")
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+}
+
+@if (isEditModalOpen && editingUser != null)
+{
+    <div class="settings-modal-overlay" @onclick="CloseEditModal">
+        <div class="settings-modal" @onclick:stopPropagation="true">
+
+            <button class="settings-modal__close" @onclick="CloseEditModal">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 6 6 18"></path>
+                    <path d="m6 6 12 12"></path>
+                </svg>
+            </button>
+
+            <h3 class="settings-modal__title">Edit User</h3>
+
+            <div class="settings-form">
+
+                <div class="settings-form__field">
+                    <label class="settings-form__label">Full Name *</label>
+                    <input @bind="editForm.FullName"
+                           placeholder="e.g. Jordan Doe"
+                           class="settings-form__input" />
+                </div>
+
+                <div class="settings-form__field">
+                    <label class="settings-form__label">Role *</label>
+                    <select @bind="editForm.Role" class="settings-form__select">
+                        @foreach (var role in AvailableRoles)
+                        {
+                            <option value="@role.Value">@role.Label</option>
+                        }
+                    </select>
+                </div>
+
+                @if (!string.IsNullOrEmpty(modalError))
+                {
+                    <p class="settings-form__error">@modalError</p>
+                }
+
+                <div class="settings-form__actions">
+                    <button class="btn-cancel" @onclick="CloseEditModal">Cancel</button>
+                    <button class="btn-save" @onclick="ConfirmEdit"
+                            disabled="@isSaving">
+                        @(isSaving ? "Saving..." : "Save Changes")
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+}
+
+@if (isDeactivateModalOpen && deactivatingUser != null)
+{
+    <div class="settings-modal-overlay" @onclick="CloseDeactivateModal">
+        <div class="settings-modal" @onclick:stopPropagation="true">
+
+            <button class="settings-modal__close" @onclick="CloseDeactivateModal">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 6 6 18"></path>
+                    <path d="m6 6 12 12"></path>
+                </svg>
+            </button>
+
+            <h3 class="settings-modal__title">Deactivate User</h3>
+
+            <p style="color:#4A5C7A;font-size:14px;margin-bottom:21px">
+                Are you sure you want to deactivate
+                <strong style="color:#1E2A47">@deactivatingUser.FullName</strong>?
+                They will lose access immediately.
+            </p>
+
+            @if (!string.IsNullOrEmpty(modalError))
+            {
+                <p class="settings-form__error" style="margin-bottom:13px">
+                    @modalError
+                </p>
+            }
+
+            <div class="settings-form__actions">
+                <button class="btn-cancel" @onclick="CloseDeactivateModal">Cancel</button>
+                <button class="btn-danger" @onclick="ConfirmDeactivate"
+                        disabled="@isSaving">
+                    @(isSaving ? "Deactivating..." : "Deactivate")
+                </button>
+            </div>
+
+        </div>
+    </div>
+}

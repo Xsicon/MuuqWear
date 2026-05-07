@@ -1,7 +1,8 @@
-﻿using MuuqWear.Application.Shared;
+﻿using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
+using MuuqWear.Application.Shared;
 using MuuqWear.Model.Authentication;
+using MuuqWear.Model.OrderReturn;
 using System.Net.Http.Json;
-using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 
 namespace MuuqWear.Application.Services.AuthService;
 public class AuthService : IAuthService
@@ -30,14 +31,6 @@ public class AuthService : IAuthService
     {
         var result = await _http.PostAsJsonAsync("api/Auth/verifyotp", request);
 
-        if (!result.IsSuccessStatusCode)
-        {
-            return new Response<AuthResponseModel>
-            {
-                Success = false,
-                Message = $"Server error: {result.StatusCode}"
-            };
-        }
 
         var response = await result.Content.ReadFromJsonAsync<Response<AuthResponseModel>>();
 
@@ -61,41 +54,44 @@ public class AuthService : IAuthService
 
     public async Task<Response<AuthResponseModel>> Login(LoginModel request)
     {
-        var result = await _http.PostAsJsonAsync("api/Auth/login", request);
-        if (!result.IsSuccessStatusCode)
+        try
+        {
+            var result = await _http.PostAsJsonAsync("api/Auth/login", request);
+            var response = await result.Content.ReadFromJsonAsync<Response<AuthResponseModel>>();
+            if (response != null)
+                return response;
+            return new Response<AuthResponseModel>
+            {
+                Success = false,
+                Message = result.IsSuccessStatusCode
+                        ? "Unexpected response from server"
+                        : $"Server error: {result.StatusCode}"
+            };
+        }
+        catch (Exception ex)
         {
             return new Response<AuthResponseModel>
             {
                 Success = false,
-                Message = $"Server error: {result.StatusCode}"
+                Message = "Unable to connect to server. Please try again."
             };
         }
-        var response = await result.Content.ReadFromJsonAsync<Response<AuthResponseModel>>();
-        return response ?? new Response<AuthResponseModel>
-        {
-            Success = false,
-            Message = "Empty response from server"
-        };
     }
-
     public async Task<Response<int>> Logout()
     {
         try
         {
             var result = await _http.PostAsync("api/Auth/logout", null);
-            if (!result.IsSuccessStatusCode)
-            {
-                return new Response<int>
-                {
-                    Success = false,
-                    Message = $"Server error: {result.StatusCode}"
-                };
-            }
             var response = await result.Content.ReadFromJsonAsync<Response<int>>();
-            return response ?? new Response<int>
+            if (response != null)
+                return response;
+
+            return new Response<int>
             {
                 Success = false,
-                Message = "Empty response from server"
+                Message = result.IsSuccessStatusCode
+                    ? "Unexpected response from server"
+                    : $"Server error: {result.StatusCode}"
             };
         }
         catch (Exception ex)
@@ -103,7 +99,7 @@ public class AuthService : IAuthService
             return new Response<int>
             {
                 Success = false,
-                Message = ex.Message
+                Message = "Unable to connect to server. Please try again."
             };
         }
     }
@@ -122,34 +118,28 @@ public class AuthService : IAuthService
             var result = await _http.PostAsJsonAsync(
          "api/Auth/magic-link", request);
 
-            if (!result.IsSuccessStatusCode)
-            {
-                // try read error message from response body
-                var errorResponse = await result.Content
-                    .ReadFromJsonAsync<Response<int>>();
-
-                return errorResponse ?? new Response<int>
-                {
-                    Success = false,
-                    Message = $"Server error: {result.StatusCode}"
-                };
-            }
 
             var response = await result.Content
                 .ReadFromJsonAsync<Response<int>>();
 
-            return response ?? new Response<int>
+            if (response != null)
+                return response;
+
+            return new Response<int>
             {
                 Success = false,
-                Message = "Empty response from server"
+                Message = result.IsSuccessStatusCode
+                    ? "Unexpected response from server"
+                    : $"Server error: {result.StatusCode}"
             };
         }
         catch (Exception ex)
         {
+            //  network errors, timeouts, JSON parse failures
             return new Response<int>
             {
                 Success = false,
-                Message = ex.Message
+                Message = "Unable to connect to server. Please try again."
             };
         }
     }
@@ -162,24 +152,19 @@ public class AuthService : IAuthService
             var result = await _http.PostAsJsonAsync(
                 "api/Auth/verify-magic-link", request);
 
-            if (!result.IsSuccessStatusCode)
-            {
-                var errorResponse = await result.Content
-                    .ReadFromJsonAsync<Response<AuthResponseModel>>();
-                return errorResponse ?? new Response<AuthResponseModel>
-                {
-                    Success = false,
-                    Message = $"Server error: {result.StatusCode}"
-                };
-            }
 
             var response = await result.Content
                 .ReadFromJsonAsync<Response<AuthResponseModel>>();
 
-            return response ?? new Response<AuthResponseModel>
+            if (response != null)
+                return response;
+
+            return new Response<AuthResponseModel>
             {
                 Success = false,
-                Message = "Empty response from server"
+                Message = result.IsSuccessStatusCode
+                    ? "Unexpected response from server"
+                    : $"Server error: {result.StatusCode}"
             };
         }
         catch (Exception ex)
@@ -187,7 +172,7 @@ public class AuthService : IAuthService
             return new Response<AuthResponseModel>
             {
                 Success = false,
-                Message = ex.Message
+                Message = "Unable to connect to server. Please try again."
             };
         }
     }
@@ -196,15 +181,13 @@ public class AuthService : IAuthService
     {
         try
         {
-            // GET api/Auth/google-signin-url
-            // no body needed — just GET request 
-            var result = await _http
+            var response = await _http
                 .GetFromJsonAsync<Response<string>>("api/Auth/google-signin-url");
 
-            return result ?? new Response<string>
+            return response ?? new Response<string>
             {
                 Success = false,
-                Message = "Empty response from server"
+                Message = "Unexpected response from server"
             };
         }
         catch (Exception ex)
@@ -212,36 +195,25 @@ public class AuthService : IAuthService
             return new Response<string>
             {
                 Success = false,
-                Message = ex.Message
+                Message = "Unable to connect to server. Please try again."
             };
         }
     }
 
     public async Task<Response<int>> SendPasswordReset(ForgotPasswordModel request)
     {
+        //  validate before hitting API — no need to waste a network call
+        if (string.IsNullOrWhiteSpace(request.Email))
+            return new Response<int>
+            {
+                Success = false,
+                Message = "Email is required"
+            };
+
         try
         {
-            // validate before API call 
-            if (string.IsNullOrWhiteSpace(request.Email))
-                return new Response<int>
-                {
-                    Success = false,
-                    Message = "Email is required"
-                };
-
             var result = await _http.PostAsJsonAsync(
                 "api/Auth/forgot-password", request);
-
-            if (!result.IsSuccessStatusCode)
-            {
-                var errorResponse = await result.Content
-                    .ReadFromJsonAsync<Response<int>>();
-                return errorResponse ?? new Response<int>
-                {
-                    Success = false,
-                    Message = $"Server error: {result.StatusCode}"
-                };
-            }
 
             var response = await result.Content
                 .ReadFromJsonAsync<Response<int>>();
@@ -249,51 +221,42 @@ public class AuthService : IAuthService
             return response ?? new Response<int>
             {
                 Success = false,
-                Message = "Empty response from server"
+                Message = result.IsSuccessStatusCode
+                    ? "Unexpected response from server"
+                    : $"Server error: {result.StatusCode}"
             };
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return new Response<int>
             {
                 Success = false,
-                Message = ex.Message
+                Message = "Unable to connect to server. Please try again."
             };
         }
     }
 
     public async Task<Response<int>> UpdatePassword(ResetPasswordModel request)
     {
+        //  validate before hitting API
+        if (string.IsNullOrWhiteSpace(request.NewPassword))
+            return new Response<int>
+            {
+                Success = false,
+                Message = "Password is required"
+            };
+
+        if (request.NewPassword != request.ConfirmPassword)
+            return new Response<int>
+            {
+                Success = false,
+                Message = "Passwords do not match"
+            };
+
         try
         {
-            // validate before API call 
-            if (string.IsNullOrWhiteSpace(request.NewPassword))
-                return new Response<int>
-                {
-                    Success = false,
-                    Message = "Password is required"
-                };
-
-            if (request.NewPassword != request.ConfirmPassword)
-                return new Response<int>
-                {
-                    Success = false,
-                    Message = "Passwords do not match"
-                };
-
             var result = await _http.PostAsJsonAsync(
                 "api/Auth/reset-password", request);
-
-            if (!result.IsSuccessStatusCode)
-            {
-                var errorResponse = await result.Content
-                    .ReadFromJsonAsync<Response<int>>();
-                return errorResponse ?? new Response<int>
-                {
-                    Success = false,
-                    Message = $"Server error: {result.StatusCode}"
-                };
-            }
 
             var response = await result.Content
                 .ReadFromJsonAsync<Response<int>>();
@@ -301,15 +264,17 @@ public class AuthService : IAuthService
             return response ?? new Response<int>
             {
                 Success = false,
-                Message = "Empty response from server"
+                Message = result.IsSuccessStatusCode
+                    ? "Unexpected response from server"
+                    : $"Server error: {result.StatusCode}"
             };
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return new Response<int>
             {
                 Success = false,
-                Message = ex.Message
+                Message = "Unable to connect to server. Please try again."
             };
         }
     }
