@@ -1,33 +1,147 @@
-﻿.mw-admin-logo {
-    font-weight: 800;
-    font-size: 18px;
-    margin-bottom: 30px;
+﻿/* ─── BRAND ─────────────────────────────────────────────────── */
+.an-brand {
+    padding: 21px;
+    border-bottom: 1px solid rgba(169, 183, 204, 0.3);
 }
 
-/* Nav */
-.mw-admin-nav {
+.an-brand__name {
+    color: #1E2A47;
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    text-transform: uppercase;
+    margin: 0 0 2px;
+}
+
+.an-brand__sub {
+    color: #4A5C7A;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-weight: 600;
+    margin: 0;
+}
+
+/* ─── USER ──────────────────────────────────────────────────── */
+.an-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 13px 21px;
+    border-bottom: 1px solid rgba(169, 183, 204, 0.3);
+}
+
+.an-user__avatar {
+    width: 36px;
+    height: 36px;
+    background: #1E2A47;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.an-user__name {
+    color: #1E2A47;
+    font-size: 13px;
+    font-weight: 700;
+    margin: 0 0 1px;
+}
+
+.an-user__role {
+    color: #4A5C7A;
+    font-size: 11px;
+    margin: 0;
+}
+
+/* ─── NAV ───────────────────────────────────────────────────── */
+.an-nav {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
 }
 
-/* Links */
-::deep .mw-admin-link {
-    display: block;
-    padding: 10px 12px;
-    color: #d7dbe5;
+/* ─── NAV ITEM ──────────────────────────────────────────────── */
+.an-nav__item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 13px;
+    margin-bottom: 2px;
+    border: none;
+    cursor: pointer;
+    text-align: left;
     text-decoration: none;
-    border-radius: 6px;
-    font-size: 14px;
+    color: #4A5C7A;
+    background: transparent;
+    transition: background 0.15s, color 0.15s;
 }
 
-    /* Active */
-    ::deep .mw-admin-link.active {
-        background: rgba(255,255,255,0.15);
-        color: white;
+    .an-nav__item:hover {
+        background: #F4F6F9;
+        color: #1E2A47;
     }
 
-    /* Hover */
-    ::deep .mw-admin-link:hover {
-        background: rgba(255,255,255,0.1);
+/* ─── NAV LABEL ─────────────────────────────────────────────── */
+.an-nav__label {
+    font-size: 13px;
+    font-weight: 600;
+    flex: 1;
+}
+
+/* ─── BADGES ────────────────────────────────────────────────── */
+.an-nav__badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    flex-shrink: 0;
+}
+
+.an-nav__badge--dark {
+    background: rgba(30, 42, 71, 0.1);
+    color: #1E2A47;
+}
+
+.an-nav__badge--red {
+    background: rgba(196, 69, 69, 0.1);
+    color: #C44545;
+}
+
+.an-nav__badge--green {
+    background: rgba(45, 156, 90, 0.1);
+    color: #2D9C5A;
+}
+
+.an-nav__badge--yellow {
+    background: rgba(255, 193, 7, 0.1);
+    color: #FFC107;
+}
+
+/* ─── ACTIVE BADGE (invert on dark bg) ─────────────────────── */
+
+
+a.an-nav__item.active {
+    background: #1E2A47 !important;
+    color: white !important;
+}
+
+    a.an-nav__item.active svg {
+        stroke: white !important;
     }
+
+    a.an-nav__item.active .an-nav__badge {
+        background: rgba(255, 255, 255, 0.2) !important;
+        color: white !important;
+    }
+
+.an-brand {
+    padding: 21px;
+    border-bottom: 1px solid rgba(169, 183, 204, 0.3);
+    background: white; /* ← should be white */
+}
