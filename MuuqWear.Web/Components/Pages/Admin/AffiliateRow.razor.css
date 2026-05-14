@@ -1,0 +1,120 @@
+﻿/* ================================
+   AFFILIATE ROW
+   ================================ */
+
+.mw-affiliate-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    background: #FFFFFF;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+    .mw-affiliate-row:hover {
+        border-color: #D1D5DB;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+/* LEFT: INFO */
+.mw-affiliate-row__info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.mw-affiliate-row__name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1E2A47;
+}
+
+.mw-affiliate-row__handle {
+    font-size: 13px;
+    color: #6B7280;
+}
+
+.mw-affiliate-row__meta {
+    font-size: 12px;
+    color: #9CA3AF;
+}
+
+/* RIGHT: ACTIONS */
+.mw-affiliate-row__actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.mw-btn-action {
+    padding: 8px 16px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.mw-btn-action--view {
+    background: #F3F4F6;
+    color: #4A5C7A;
+}
+
+    .mw-btn-action--view:hover {
+        background: #E5E7EB;
+        color: #1E2A47;
+    }
+
+.mw-btn-action--approve {
+    background: #1E2A47;
+    color: #FFFFFF;
+}
+
+    .mw-btn-action--approve:hover {
+        background: #2D3F5F;
+    }
+
+.mw-btn-action--deny {
+    background: #DC2626;
+    color: #FFFFFF;
+}
+
+    .mw-btn-action--deny:hover {
+        background: #B91C1C;
+    }
+
+.mw-btn-action--waitlist {
+    background: #F3F4F6;
+    color: #4A5C7A;
+    border: 1px solid #E5E7EB;
+}
+
+    .mw-btn-action--waitlist:hover {
+        background: #E5E7EB;
+        color: #1E2A47;
+        border-color: #D1D5DB;
+    }
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+    .mw-affiliate-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+
+    .mw-affiliate-row__actions {
+        width: 100%;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .mw-btn-action {
+        flex: 1;
+        min-width: 80px;
+    }
+}

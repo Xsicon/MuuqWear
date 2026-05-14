@@ -1,0 +1,355 @@
+﻿@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Components.Authorization
+@using MuuqWear.Application.Interfaces
+@using MuuqWear.Application.Services.NotificationService
+@using MuuqWear.Application.Services.VoteService
+@using MuuqWear.Application.Shared
+@using MuuqWear.Model.NotificationModel
+@inject INotificationService NotificationService
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NotificationRealtimeService NotifyRealtime
+@inject IConfiguration Configuration
+@implements IAsyncDisposable
+
+<!-- ─── TOPBAR ───────────────────────────────────────────── -->
+<header class="at-topbar">
+
+    <!-- HAMBURGER (mobile) -->
+    <button class="at-topbar__hamburger" onclick="window.adminSidebar.toggle()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+             viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 3v16a2 2 0 0 0 2 2h16"></path>
+            <path d="M18 17V9"></path>
+            <path d="M13 17V5"></path>
+            <path d="M8 17v-3"></path>
+        </svg>
+    </button>
+
+    <!-- RIGHT ICONS -->
+    <div class="at-topbar__right">
+
+        <!-- NOTIFICATIONS -->
+        <div class="at-topbar__icon-wrap">
+            <button class="at-topbar__icon-btn"
+                    @onclick="ToggleNotifications">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10.268 21a2 2 0 0 0 3.464 0"></path>
+                    <path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"></path>
+                </svg>
+                @if (unreadCount > 0)
+                {
+                    <span class="at-topbar__badge at-topbar__badge--red">
+                        @unreadCount
+                    </span>
+                }
+            </button>
+
+            <!-- NOTIFICATION DROPDOWN -->
+            @if (isNotificationsOpen)
+            {
+                <div class="at-notif-dropdown">
+                    <div class="at-notif-dropdown__header">
+                        <span class="at-notif-dropdown__title">Notifications</span>
+                        <button class="at-notif-dropdown__mark-read"
+                                @onclick="MarkAllRead">
+                            Mark All Read
+                        </button>
+                    </div>
+
+                    @if (isLoadingNotifications)
+                    {
+                        <div class="at-notif-dropdown__empty">
+                            Loading...
+                        </div>
+                    }
+                    else if (!notifications.Any())
+                    {
+                        <div class="at-notif-dropdown__empty">
+                            No notifications
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var notif in notifications)
+                        {
+                            <div class="at-notif-item @(notif.IsRead ? "" : "at-notif-item--unread")"
+                                 @key="notif.Id">
+                                <div class="at-notif-item__icon @GetNotifIconClass(notif.Type)">
+                                    @GetNotifIcon(notif.Type)
+                                </div>
+                                <div class="at-notif-item__content">
+                                    <p class="at-notif-item__message">@notif.Message</p>
+                                    <p class="at-notif-item__time">@notif.TimeDisplay</p>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            }
+        </div>
+
+        <!-- MAIL (static) -->
+        <button class="at-topbar__icon-btn" style="position:relative">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="20" height="16" x="2" y="4" rx="2"></rect>
+                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+            </svg>
+            <span class="at-topbar__badge at-topbar__badge--dark">2</span>
+        </button>
+
+        <!-- USER AVATAR + DROPDOWN -->
+        <div class="at-topbar__icon-wrap">
+            <button class="at-topbar__user-btn" @onclick="ToggleUserMenu">
+                <div class="at-topbar__avatar">@userInitials</div>
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m6 9 6 6 6-6"></path>
+                </svg>
+            </button>
+
+            @if (isUserMenuOpen)
+            {
+                <div class="at-user-dropdown">
+                    <div class="at-user-dropdown__header">
+                        <p class="at-user-dropdown__name">@userName</p>
+                        <p class="at-user-dropdown__role">Admin</p>
+                    </div>
+                    <button class="at-user-dropdown__logout"
+                            @onclick="HandleLogout">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                             viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                            <polyline points="16 17 21 12 16 7"></polyline>
+                            <line x1="21" x2="9" y1="12" y2="12"></line>
+                        </svg>
+                        Sign Out
+                    </button>
+                </div>
+            }
+        </div>
+
+    </div>
+</header>
+
+<!-- CLICK OUTSIDE OVERLAY -->
+@if (isNotificationsOpen || isUserMenuOpen)
+{
+    <div class="at-topbar__overlay" @onclick="CloseAllDropdowns"></div>
+}
+
+@code {
+
+    // ─── STATE ────────────────────────────────────────────────
+    private string searchQuery = string.Empty;
+    private bool isNotificationsOpen = false;
+    private bool isUserMenuOpen = false;
+    private bool isLoadingNotifications = false;
+    private List<NotificationModel> notifications = new();
+    private int unreadCount = 0;
+    private string userName = string.Empty;
+    private string userInitials = "AD";
+
+    // ─── REALTIME ─────────────────────────────────────────────
+    private VoteRealtimeSubscription? _ordersSub;
+    private VoteRealtimeSubscription? _ticketsSub;
+    private VoteRealtimeSubscription? _returnsSub;
+
+    protected override async Task OnInitializedAsync()
+    {
+        //  get user info from auth state
+        var authState = await AuthStateProvider
+            .GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        userName = user.FindFirst("FullName")?.Value
+                   ?? user.FindFirst("name")?.Value
+                   ?? "Admin";
+
+        var parts = userName.Trim()
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+        userInitials = parts.Length >= 2
+            ? $"{parts[0][0]}{parts[^1][0]}".ToUpper()
+            : parts[0][..Math.Min(2, parts[0].Length)].ToUpper();
+
+        //  load initial notifications
+        await LoadNotifications();
+        NotifyRealtime.OnNotification += HandleNewNotification;
+
+        //  subscribe to realtime
+        _ = NotifyRealtime.InitializeAsync(
+         Configuration["Supabase:Url"]!,
+         Configuration["Supabase:AnonKey"]!);
+    }
+
+
+    private void HandleNewNotification(NotificationModel notify)
+    {
+        InvokeAsync(() =>
+        {
+            notifications.Insert(0, notify);
+            if (notifications.Count > 5)
+                notifications.RemoveAt(notifications.Count - 1);
+            unreadCount++;
+            StateHasChanged();
+        });
+    }
+
+    // ─── NOTIFICATIONS ────────────────────────────────────────
+    private async Task LoadNotifications()
+    {
+        isLoadingNotifications = true;
+        StateHasChanged();
+
+        var result = await NotificationService.GetRecent();
+        if (result.Success && result.Data != null)
+        {
+            notifications = result.Data;
+            unreadCount = notifications.Count(n => !n.IsRead);
+        }
+
+        isLoadingNotifications = false;
+        StateHasChanged();
+    }
+
+    private void ToggleNotifications()
+    {
+        isNotificationsOpen = !isNotificationsOpen;
+        isUserMenuOpen = false;
+    }
+
+    private async Task MarkAllRead()
+    {
+        foreach (var n in notifications)
+            n.IsRead = true;
+        unreadCount = 0;
+        StateHasChanged();
+
+        await NotificationService.MarkAllRead();
+    }
+    // ─── REALTIME ─────────────────────────────────────────────
+    //  subscribes to orders, tickets, returns tables
+    // new row inserted → adds notification to top of list
+    private void HandleNewOrder(string message)
+    {
+        AddNotification(NotificationType.Order, message);
+    }
+
+    private void HandleNewTicket(string message)
+    {
+        AddNotification(NotificationType.Ticket, message);
+    }
+
+    private void HandleNewReturn(string message)
+    {
+        AddNotification(NotificationType.Return, message);
+    }
+
+    private void AddNotification(string type, string message)
+    {
+        var notif = new NotificationModel
+        {
+            Type = type,
+            Message = message,
+            CreatedAt = DateTime.UtcNow,
+            IsRead = false
+        };
+
+        //  add to top, keep only 5
+        InvokeAsync(() =>
+        {
+            notifications.Insert(0, notif);
+            if (notifications.Count > 5)
+                notifications.RemoveAt(notifications.Count - 1);
+            unreadCount++;
+            StateHasChanged();
+        });
+    }
+
+    // ─── SEARCH ───────────────────────────────────────────────
+    private void HandleSearchKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key != "Enter" ||
+            string.IsNullOrWhiteSpace(searchQuery)) return;
+
+        var query = searchQuery.Trim();
+        var url = DetectSearchUrl(query);
+        searchQuery = string.Empty;
+        NavigationManager.NavigateTo(url);
+    }
+
+    private string DetectSearchUrl(string query)
+    {
+        // order number pattern → MQ-XXXXXXXX
+        if (query.StartsWith("MQ-", StringComparison.OrdinalIgnoreCase) ||
+            query.StartsWith("#MQ-", StringComparison.OrdinalIgnoreCase))
+            return $"/admin/orders?search={Uri.EscapeDataString(query)}";
+
+        // email pattern → customers
+        if (query.Contains('@'))
+            return $"/admin/customers?search={Uri.EscapeDataString(query)}";
+
+        // TKT- pattern → tickets
+        if (query.StartsWith("TKT-", StringComparison.OrdinalIgnoreCase))
+            return $"/admin/tickets?search={Uri.EscapeDataString(query)}";
+
+        // default → products
+        return $"/admin/products?search={Uri.EscapeDataString(query)}";
+    }
+
+    // ─── USER MENU ────────────────────────────────────────────
+    private void ToggleUserMenu()
+    {
+        isUserMenuOpen = !isUserMenuOpen;
+        isNotificationsOpen = false;
+    }
+
+    private void HandleLogout()
+    {
+        NavigationManager.NavigateTo("/auth/clear", forceLoad: true);
+    }
+
+    private void CloseAllDropdowns()
+    {
+        isNotificationsOpen = false;
+        isUserMenuOpen = false;
+    }
+
+    // ─── HELPERS ──────────────────────────────────────────────
+    private string GetNotifIconClass(string type) => type switch
+    {
+        NotificationType.Order => "at-notif-item__icon--order",
+        NotificationType.Ticket => "at-notif-item__icon--ticket",
+        NotificationType.Return => "at-notif-item__icon--return",
+        NotificationType.LowStock => "at-notif-item__icon--stock",
+        _ => "at-notif-item__icon--order"
+    };
+
+    private RenderFragment GetNotifIcon(string type) => type switch
+    {
+        NotificationType.Order => @<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"></path></svg>,
+
+        NotificationType.Ticket => @<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path></svg>,
+
+        NotificationType.Return => @<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>,
+
+        _ => @<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"></path></svg>
+    };
+
+    // ─── DISPOSE ──────────────────────────────────────────────
+    public async ValueTask DisposeAsync()
+    {
+        NotifyRealtime.OnNotification -= HandleNewNotification;
+        await ValueTask.CompletedTask;
+
+    }
+}
+

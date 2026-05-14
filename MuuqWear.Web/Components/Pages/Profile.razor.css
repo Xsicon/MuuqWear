@@ -4,12 +4,161 @@
 
 .mw-profile-mobile-toggle {
     width: 100%;
-    padding: 12px 16px;
-    border: 1px solid rgba(169,183,204,0.4);
     display: flex;
     justify-content: space-between;
-    background: white;
+    align-items: center;
+    padding: 12px 16px;
+    background: #FFFFFF;
+    border: 1px solid #E5E7EB;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1E2A47;
+    cursor: pointer;
+    transition: all 0.2s ease;
 }
+
+    .mw-profile-mobile-toggle:hover {
+        border-color: #D1D5DB;
+        background: #F9FAFB;
+    }
+
+/* Mobile Menu Container */
+.mw-mobile-menu {
+    background: #FFFFFF;
+    border: 1px solid #E5E7EB;
+    border-radius: 6px;
+    padding: 20px;
+    animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+/* User Info in Mobile Menu */
+.mw-mobile-menu__user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 16px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid #E5E7EB;
+}
+
+    .mw-mobile-menu__user .mw-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: #1E2A47;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        font-weight: 700;
+    }
+
+    .mw-mobile-menu__user .mw-user-name {
+        font-size: 16px;
+        font-weight: 700;
+        color: #1E2A47;
+        margin: 0;
+    }
+
+    .mw-mobile-menu__user .mw-user-meta {
+        font-size: 12px;
+        color: #6B7280;
+        margin: 0;
+    }
+
+/* Mobile Nav Items */
+.mw-mobile-menu__nav {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 16px;
+}
+
+.mw-mobile-nav-item {
+    width: 100%;
+    text-align: left;
+    padding: 12px 16px;
+    background: transparent;
+    border: none;
+    font-size: 14px;
+    font-weight: 500;
+    color: #4A5C7A;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+    .mw-mobile-nav-item:hover {
+        background: #F3F4F6;
+        color: #1E2A47;
+    }
+
+    .mw-mobile-nav-item.active {
+        background: #1E2A47;
+        color: #FFFFFF;
+        font-weight: 600;
+    }
+
+/* Affiliate Status in Mobile Menu */
+.mw-mobile-menu__affiliate {
+    padding: 16px;
+    background: #F9FAFB;
+    border-radius: 4px;
+    margin-bottom: 16px;
+}
+
+    .mw-mobile-menu__affiliate .mw-affiliate-label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 700;
+        color: #6B7280;
+        margin: 0 0 4px 0;
+    }
+
+    .mw-mobile-menu__affiliate .mw-affiliate-value {
+        font-size: 14px;
+        font-weight: 700;
+        color: #1E2A47;
+        margin: 0;
+    }
+
+/* Sign Out Button in Mobile Menu */
+.mw-mobile-menu__signout {
+    width: 100%;
+    padding: 12px;
+    background: transparent;
+    border: 1px solid #DC2626;
+    color: #DC2626;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+    .mw-mobile-menu__signout:hover {
+        background: #DC2626;
+        color: #FFFFFF;
+    }
+
 
 .mw-avatar {
     width: 55px;

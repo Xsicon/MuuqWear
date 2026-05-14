@@ -253,6 +253,7 @@
         var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
         if (query["expired"] == "true")
             expiredMessage = "Your session has expired. Please sign in again.";
+        System.Diagnostics.Debug.WriteLine("Call From Login Page");
 
         if (AuthenticationStateTask is null) return;
         var authState = await AuthenticationStateTask;

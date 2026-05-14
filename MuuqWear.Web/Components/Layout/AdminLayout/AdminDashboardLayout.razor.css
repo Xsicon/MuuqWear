@@ -71,7 +71,7 @@
     min-width: 0;
 }*/
 
-/* ✅ mobile — no offset */
+/*  mobile — no offset */
 /*@media (max-width: 767px) {
     .mw-admin-main {
         margin-left: 0;

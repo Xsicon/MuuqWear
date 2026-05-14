@@ -7,6 +7,9 @@ namespace MuuqWear.Web.Components.Pages.Admin
 {
     public partial class AdminProduct
     {
+        [SupplyParameterFromQuery(Name = "search")]
+        public string? SearchQuery { get; set; }
+        public string? searchTerm = string.Empty;
 
         private bool isStockModalOpen = false;
         private ProductModel? stockProduct = null;
@@ -59,6 +62,27 @@ namespace MuuqWear.Web.Components.Pages.Admin
         private List<string> AvailableGenders = new() { "Men", "Women", "Unisex" };
         private HashSet<string> SelectedSizes = new();
 
+        //Colors
+
+        //  ADD
+        private List<string> AvailableColors = new()
+{
+    "#000000", // Black
+    "#FFFFFF", // White
+    "#808080", // Gray
+    "#1E2A47", // Navy
+    "#4A5C7A", // Blue-Gray
+    "#8B4513", // Brown
+    "#2F4F4F", // Dark Slate
+    "#C0C0C0", // Silver
+    "#000080", // Navy Blue
+    "#0F52BA", // Sapphire
+    "#1E90FF", // Dodger Blue
+    "#C44545"  // Red
+};
+        private List<string> SelectedColors = new();
+
+
         // CATEGORY
         private string newCategoryName = string.Empty;
         private bool isAddingCategory = false;
@@ -93,7 +117,9 @@ namespace MuuqWear.Web.Components.Pages.Admin
         }
         protected override async Task OnInitializedAsync()
         {
-            await Task.WhenAll(LoadProducts(_currentPage, _pageSize), LoadCategories());
+            if (!string.IsNullOrEmpty(SearchQuery))
+                searchTerm = SearchQuery;
+            await Task.WhenAll(LoadProducts(_currentPage, _pageSize, searchTerm), LoadCategories());
         }
 
         private async Task LoadProducts(int page = 1, int pageSize = 10, string? search = null)
@@ -189,6 +215,8 @@ namespace MuuqWear.Web.Components.Pages.Admin
                 //  restore sizes from SizeStock — not from Sizes string
                 Sizes = product.SizeStock.Select(s => s.Size).ToList()
             };
+
+            SelectedColors = product.ColorOptions?.ToList() ?? new List<string>();
 
             //  restore selected sizes from SizeStock
             SelectedSizes = product.SizeStock
@@ -334,17 +362,23 @@ namespace MuuqWear.Web.Components.Pages.Admin
         private async Task SaveProduct()
         {
             errorMessage = string.Empty;
-
             if (string.IsNullOrEmpty(newProduct.Name))
             { errorMessage = "Product name is required"; return; }
-
             if (newProduct.Price <= 0)
             { errorMessage = "Price must be greater than 0"; return; }
-
             //  stock validation only for add mode
-            if (!isEditMode && newProduct.Stock < 0)
-            { errorMessage = "Stock cannot be negative"; return; }
+            if (!isEditMode)
+            {
+                if (newProduct.Stock <= 0)
+                { errorMessage = "Stock cannot be negative or zero"; return; }
 
+                //  ADD - check sizes selected if stock > 0
+                if (newProduct.Stock > 0 && !SelectedSizes.Any())
+                {
+                    errorMessage = "Please select at least one size to distribute stock";
+                    return;
+                }
+            }
             isSaving = true;
 
             if (isEditMode)
@@ -361,13 +395,11 @@ namespace MuuqWear.Web.Components.Pages.Admin
                     IsNewArrival = newProduct.IsNewArrival,
                     IsFeatured = newProduct.IsFeatured,
                     IsBestSeller = newProduct.IsBestSeller,
-                    Gender = newProduct.Gender
-                    // ❌ no Sizes — managed via product_size_stock 
-                    // ❌ no Stock — managed via Update Stock modal 
+                    Gender = newProduct.Gender,
+                    ColorOptions = SelectedColors //  ADD
                 };
 
                 var result = await ProductService.Update(editingProductId, updateModel);
-
                 if (result.Success && result.Data != null)
                 {
                     var index = Products.FindIndex(p => p.Id == editingProductId);
@@ -382,8 +414,10 @@ namespace MuuqWear.Web.Components.Pages.Admin
             }
             else
             {
-                var result = await ProductService.Add(newProduct);
+                //  ADD - map selected colors before saving
+                newProduct.ColorOptions = SelectedColors;
 
+                var result = await ProductService.Add(newProduct);
                 if (result.Success && result.Data != null)
                 {
                     Products.Add(result.Data);
@@ -627,7 +661,6 @@ namespace MuuqWear.Web.Components.Pages.Admin
             isUpdatingStock = true;
             stockError = string.Empty;
             StateHasChanged();
-
             try
             {
                 //  update each size one by one
@@ -635,7 +668,6 @@ namespace MuuqWear.Web.Components.Pages.Admin
                 {
                     var result = await ProductService.UpdateSizeStock(
                         size.Id, size.Quantity);
-
                     if (!result.Success)
                     {
                         stockError = result.Message ?? "Failed to update stock";
@@ -643,15 +675,14 @@ namespace MuuqWear.Web.Components.Pages.Admin
                     }
                 }
 
-                //  recalculate total stock
+                //  calculate total for local UI update
                 var totalStock = editingSizeStock.Sum(s => s.Quantity);
-                await ProductService.UpdateStock(stockProduct!.Id, totalStock);
 
                 //  update local product list
                 var product = Products.FirstOrDefault(p => p.Id == stockProduct!.Id);
                 if (product != null)
                 {
-                    product.Stock = totalStock;
+                    product.Stock = totalStock; //  calculated, not from DB
                     product.SizeStock = editingSizeStock
                         .Select(s => new SizeStockModel
                         {
@@ -660,7 +691,6 @@ namespace MuuqWear.Web.Components.Pages.Admin
                             Quantity = s.Quantity
                         }).ToList();
                 }
-
                 CloseStockModal();
             }
             finally
@@ -728,5 +758,13 @@ namespace MuuqWear.Web.Components.Pages.Admin
             isDeleting = false;
             StateHasChanged();
         }
+        private void ToggleColor(string color)
+        {
+            if (SelectedColors.Contains(color))
+                SelectedColors.Remove(color);
+            else
+                SelectedColors.Add(color);
+        }
     }
+
 }

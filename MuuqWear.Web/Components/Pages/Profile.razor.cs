@@ -15,6 +15,8 @@ namespace MuuqWear.Web.Components.Pages
 
         private bool showDeleteConfirm = false;
         private bool isDeletingAccount = false;
+
+        private bool isMobileMenuOpen = false;
         private string deleteError = string.Empty;
         //  form state
         private bool isAddressFormOpen = false;
@@ -73,6 +75,22 @@ namespace MuuqWear.Web.Components.Pages
 
         }
 
+        private void SelectTab(string tab)
+        {
+            activeTab = tab;
+            isMobileMenuOpen = false; //  close menu after selection
+        }
+        private string GetActiveTabLabel()
+        {
+            return activeTab switch
+            {
+                "overview" => "Overview",
+                "orders" => "Orders",
+                "addresses" => "Addresses",
+                "settings" => "Settings",
+                _ => "Overview"
+            };
+        }
         private async Task HandleSignOut()
         {
             await CartStateService.ClearCartState();

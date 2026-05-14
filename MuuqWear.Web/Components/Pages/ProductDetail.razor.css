@@ -13,8 +13,8 @@
     border: 1px solid rgba(169,183,204,0.3);
     padding: 20px;
     background: white;
-    
 }
+
 .mw-product-info {
     max-width: 480px;
     margin-left: auto; /* align right like figma */
@@ -24,8 +24,9 @@
 .mw-product-img {
     aspect-ratio: 3/4;
     background: #E6ECF5;
-/*    max-height: 520px;
-*/}
+    /*    max-height: 520px;
+*/
+}
 
     .mw-product-img img {
         width: 100%;
@@ -158,3 +159,34 @@
     background: white;
 }
 
+/* Color selector buttons */
+.mw-color-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+    .mw-color-btn:hover {
+        transform: scale(1.1);
+        border-color: #1E2A47;
+    }
+
+    .mw-color-btn.active {
+        border-color: #1E2A47;
+        border-width: 3px;
+    }
+
+.mw-color-check {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    text-shadow: 0 0 2px rgba(0,0,0,0.5);
+}

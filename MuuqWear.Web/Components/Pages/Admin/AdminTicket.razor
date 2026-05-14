@@ -272,7 +272,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // ✅ load stats and tickets in parallel
+        //  load stats and tickets in parallel
         await Task.WhenAll(LoadTickets(), LoadStats());
     }
 
@@ -331,7 +331,7 @@
 
         if (result.Success && result.Data != null)
         {
-            // ✅ update local list + selected ticket immediately
+            //  update local list + selected ticket immediately
             selectedTicket.Status = status;
 
             var index = tickets.FindIndex(
@@ -339,7 +339,7 @@
             if (index != -1)
                 tickets[index].Status = status;
 
-            // ✅ refresh stats after status change
+            //  refresh stats after status change
             await LoadStats();
         }
         else

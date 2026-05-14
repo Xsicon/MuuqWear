@@ -18,6 +18,7 @@ public class CartItemModel
 
     [JsonPropertyName("product_price")]
     public decimal ProductPrice { get; set; }
+    public string Color { get; set; } = string.Empty;
 
     // cart item details
     public string Size { get; set; } = string.Empty;
@@ -36,6 +37,7 @@ public class AddCartItemModel
     public string? ProductName { get; set; }
     public string? ProductImageUrl { get; set; }
     public decimal ProductPrice { get; set; }
+    public string Color { get; set; } = string.Empty;
 }
 
 // used when updating quantity

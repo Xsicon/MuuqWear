@@ -22,6 +22,7 @@ public class ProductModel
     public string? Sku { get; set; }
     public List<SizeStockModel> SizeStock { get; set; } = new();
     public List<ProductImageModel> Images { get; set; } = new();
+    public List<string> ColorOptions { get; set; } = new();
 
 
 }
@@ -51,6 +52,7 @@ public class AddProductModel
     public Guid? CategoryId { get; set; }
     public List<ProductImageModel> Images { get; set; } = new();
     public List<string> Sizes { get; set; } = new();
+    public List<string> ColorOptions { get; set; } = new();
 
 
 }

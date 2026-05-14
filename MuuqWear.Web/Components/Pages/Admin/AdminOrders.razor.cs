@@ -1,10 +1,14 @@
-﻿using MuuqWear.Model.OrderReturn;
+﻿using Microsoft.AspNetCore.Components;
+using MuuqWear.Model.OrderReturn;
 using MuuqWear.Model.Orders;
 
 namespace MuuqWear.Web.Components.Pages.Admin
 {
     public partial class AdminOrders
     {
+        [SupplyParameterFromQuery(Name = "search")]
+        public string? SearchQuery { get; set; }
+        private string searchTerm = string.Empty;
 
         // ─── STATE ────────────────────────────────────────────────
         private List<OrderModel> orders = new();
@@ -138,6 +142,8 @@ namespace MuuqWear.Web.Components.Pages.Admin
 
         protected override async Task OnInitializedAsync()
         {
+            if (!string.IsNullOrEmpty(SearchQuery))
+                searchTerm = SearchQuery;
             await LoadOrders();
         }
 
@@ -150,7 +156,7 @@ namespace MuuqWear.Web.Components.Pages.Admin
 
             var result = await OrderService.GetAllOrders(
                 string.IsNullOrEmpty(activeStatus) ? null : activeStatus,
-                null,
+                string.IsNullOrEmpty(searchTerm) ? null : searchTerm,
                 currentPage,
                 pageSize);
 
@@ -217,24 +223,26 @@ namespace MuuqWear.Web.Components.Pages.Admin
         private async Task OpenProcessModal(OrderModel order)
         {
             processingOrder = order;
-            isProcessModalOpen = true;
             processError = string.Empty;
             processOrderDetail = null;
-            StateHasChanged();
 
-            //  only fetch address for Pending → Processing
             if (order.Status?.ToLower() == "pending")
             {
-                isLoadingProcessDetail = true;
-                StateHasChanged();
-
                 var result = await OrderService.GetOrderDetail(order.Id);
-                if (result.Success && result.Data != null)
-                    processOrderDetail = result.Data;
 
-                isLoadingProcessDetail = false;
-                StateHasChanged();
+                if (!result.Success || result.Data == null)
+                {
+                    processError = result.Message
+                                   ?? "Failed to load order details.";
+                    StateHasChanged();
+                    return;
+                }
+
+                processOrderDetail = result.Data;
             }
+
+            isProcessModalOpen = true;
+            StateHasChanged();
         }
 
         private void CloseProcessModal()

@@ -58,14 +58,14 @@ public class TokenRefreshMiddleware
         var accessToken = context.User.FindFirst("AccessToken")?.Value;
         var refreshToken = context.User.FindFirst("RefreshToken")?.Value;
         var userId = context.User.FindFirst("UserId")?.Value;
-        var isActive = await CheckIsActive(accessToken);
-        if (!isActive)
-        {
-            await context.SignOutAsync(
-                CookieAuthenticationDefaults.AuthenticationScheme);
-            context.Response.Redirect("/");
-            return;
-        }
+        //var isActive = await CheckIsActive(accessToken);
+        //if (!isActive)
+        //{
+        //    await context.SignOutAsync(
+        //        CookieAuthenticationDefaults.AuthenticationScheme);
+        //    context.Response.Redirect("/");
+        //    return;
+        //}
 
         if (!string.IsNullOrEmpty(accessToken) && IsTokenExpired(accessToken))
         {
@@ -86,7 +86,7 @@ public class TokenRefreshMiddleware
                 {
                     await context.SignOutAsync(
                         CookieAuthenticationDefaults.AuthenticationScheme);
-
+                    System.Diagnostics.Debug.WriteLine("Call From TokenRefresh");
                     context.Response.Cookies.Append("session_message",
                         "Your session has expired. Please sign in again.");
 

@@ -1,9 +1,12 @@
 ﻿@page "/"
 @rendermode InteractiveServer
 @inject IJSRuntime JS
+@using MuuqWear.Application.Services.CategoryService
 @using MuuqWear.Application.Services.ProductService
 @using MuuqWear.Model.Products
 @inject IProductService ProductService
+@inject ICategoryService CategoryService
+
 
 <PageTitle>Home</PageTitle>
 

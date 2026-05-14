@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 
 namespace MuuqWear.Web.Components.Pages
@@ -30,16 +30,19 @@ namespace MuuqWear.Web.Components.Pages
             await JS.InvokeVoidAsync("mwScrollLeft", el, ".bestsellers-slide");
             await JS.InvokeVoidAsync("mwScrollLeft", el, ".mw-featured__card");
         }
+        private List<CategoryCard> Categories = new();
+
         private record CategoryCard(string Name, string Image, string Link);
 
-        private List<CategoryCard> Categories = new()
+        private Dictionary<string, string> CategoryImages = new()
     {
-    new("Men", "https://images.unsplash.com/photo-1762232975039-7b36432bcac6?w=600", "/shop"),
-    new("Women", "https://images.unsplash.com/photo-1506619928596-bb8c201545cc?w=600", "/shop"),
-    new("Kids", "https://images.unsplash.com/photo-1759313560190-d160c3567170?w=600", "/shop"),
-    new("Accessories", "https://images.unsplash.com/photo-1693592401248-c9544518318a?w=600", "/shop"),
-    new("Outerwear", "https://images.unsplash.com/photo-1704716720991-cf3197cfb190?w=600", "/shop")
+        { "Mens", "https://images.unsplash.com/photo-1762232975039-7b36432bcac6?w=600" },
+        { "Womens", "https://images.unsplash.com/photo-1506619928596-bb8c201545cc?w=600" },
+        { "Kids", "https://images.unsplash.com/photo-1759313560190-d160c3567170?w=600" },
+        { "Accessories", "https://images.unsplash.com/photo-1693592401248-c9544518318a?w=600" },
+        { "Outerwear", "https://images.unsplash.com/photo-1704716720991-cf3197cfb190?w=600" }
     };
+
 
         private record ProductCard(string Name, string Price, string Image, string Link);
 
@@ -98,6 +101,25 @@ namespace MuuqWear.Web.Components.Pages
                 NewArrivals = result.Data.NewArrivals;
                 FeaturedProducts = result.Data.Featured;
                 BestSellerProducts = result.Data.BestSellers;
+            }
+
+            await LoadCategories();
+
+        }
+        private async Task LoadCategories()
+        {
+            var result = await CategoryService.GetAll();
+
+            if (result.Success && result.Data != null)
+            {
+                Categories = result.Data
+                    .Select(c => new CategoryCard(
+                        Name: c.Name!,
+                        Image: CategoryImages!.GetValueOrDefault(c.Name,
+                            "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=600"),
+                        Link: $"/shop/apparel?categoryId={c.Id}" // FIXED
+                    ))
+                    .ToList();
             }
         }
 

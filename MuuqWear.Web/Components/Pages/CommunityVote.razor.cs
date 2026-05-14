@@ -65,11 +65,14 @@ namespace MuuqWear.Web.Components.Pages
             isAuthenticated = authState.User.Identity?.IsAuthenticated ?? false;
 
             //  load all data in parallel
-            await Task.WhenAll(
-                LoadActiveItems(),
-                LoadFinishedItems(),
-                LoadStats());
+            //await Task.WhenAll(
+            //    LoadActiveItems(),
+            //    LoadFinishedItems(),
+            //    LoadStats());
 
+            await LoadActiveItems();
+            await LoadFinishedItems();
+            await LoadStats();
             //  subscribe after data loaded
             await SubscribeToVoteUpdates();
         }
@@ -85,8 +88,6 @@ namespace MuuqWear.Web.Components.Pages
 
             if (result.Success && result.Data != null)
                 activeItems = result.Data;
-            foreach (var item in activeItems)
-                System.Diagnostics.Debug.WriteLine($"{item.StyleName} → ImageUrl: {item.ImageUrl}");
 
             isLoadingActive = false;
         }
@@ -152,13 +153,13 @@ namespace MuuqWear.Web.Components.Pages
                 //  refresh stats after vote — total votes this week updates
                 await LoadStats();
 
-                await ShowToast("Your vote has been cast! 🎉", success: true);
             }
             else
             {
                 await ShowToast(
                     result.Message ?? "Failed to cast vote.",
                     success: false);
+                return;
             }
 
             StateHasChanged();

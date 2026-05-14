@@ -11,7 +11,9 @@ using MuuqWear.Application.Services.CartService;
 using MuuqWear.Application.Services.CategoryService;
 using MuuqWear.Application.Services.ContentService;
 using MuuqWear.Application.Services.CustomerService;
+using MuuqWear.Application.Services.HelpCenterService;
 using MuuqWear.Application.Services.JournalService;
+using MuuqWear.Application.Services.NotificationService;
 using MuuqWear.Application.Services.OrderReturnService;
 using MuuqWear.Application.Services.OrderService;
 using MuuqWear.Application.Services.ProductService;
@@ -39,15 +41,13 @@ builder.Services.AddHttpClient<IAuthService, AuthService>(client =>
 builder.Services.AddHttpClient<IProductService, ProductService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
-}).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
-{
-});
+})
+.AddHttpMessageHandler<AuthenticatedHttpHandler>();
 builder.Services.AddHttpClient<ICategoryService, CategoryService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
-}).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
-{
-});
+}).AddHttpMessageHandler<AuthenticatedHttpHandler>();
+
 builder.Services.AddHttpClient<ICartService, CartService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
@@ -68,7 +68,7 @@ builder.Services.AddHttpClient<IAddressService, AddressService>(client =>
 builder.Services.AddHttpClient<IJournalService, JournalService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
-});
+}).AddHttpMessageHandler<AuthenticatedHttpHandler>();
 builder.Services.AddHttpClient<IAdminSettingService, AdminSettingService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
@@ -102,8 +102,13 @@ builder.Services.AddHttpClient<IContentService, ContentService>(client =>
 builder.Services.AddHttpClient<IHelpCenterService, HelpCenterService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
+}).AddHttpMessageHandler<AuthenticatedHttpHandler>();
+builder.Services.AddHttpClient<INotificationService, NotificationService>(client =>
+{
     client.BaseAddress = new Uri(apiBaseUrl);
 }).AddHttpMessageHandler<AuthenticatedHttpHandler>();
+builder.Services.AddSingleton<NotificationRealtimeService>();
+
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
     {
@@ -232,6 +237,7 @@ app.MapGet("/auth/set-cookie", async (
 app.MapGet("/auth/clear", async (HttpContext ctx, bool expired = false) =>
 {
     await ctx.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+    System.Diagnostics.Debug.WriteLine("Call From Program.cs");
     ctx.Response.Redirect(expired ? "/login?expired=true" : "/");
 });
 

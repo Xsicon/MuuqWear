@@ -1,0 +1,142 @@
+﻿@page "/admin/affiliates"
+@layout Layout.AdminLayout.AdminDashboardLayout
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "admin")]
+
+<div class="mw-affiliates">
+
+    <!-- HEADER -->
+    <div class="mw-affiliates__header">
+        <h1 class="mw-affiliates__title">Affiliate Management</h1>
+    </div>
+
+    <!-- TABS -->
+    <div class="mw-affiliates__tabs">
+        <button class="mw-tab @(activeTab == "pending" ? "active" : "")"
+                @onclick='() => activeTab = "pending"'>
+            PENDING (@pendingAffiliates.Count)
+        </button>
+        <button class="mw-tab @(activeTab == "active" ? "active" : "")"
+                @onclick='() => activeTab = "active"'>
+            ACTIVE (@activeAffiliates.Count/@totalDays)
+        </button>
+        <button class="mw-tab @(activeTab == "payouts" ? "active" : "")"
+                @onclick='() => activeTab = "payouts"'>
+            PAYOUTS (@payoutsAffiliates.Count)
+        </button>
+    </div>
+
+    <!-- AFFILIATE LIST -->
+    <div class="mw-affiliates__list">
+        @if (activeTab == "pending")
+        {
+            @foreach (var affiliate in pendingAffiliates)
+            {
+                <AffiliateRow Affiliate="@affiliate" OnAction="HandleAction" />
+            }
+        }
+        else if (activeTab == "active")
+        {
+            @foreach (var affiliate in activeAffiliates)
+            {
+                <AffiliateRow Affiliate="@affiliate" OnAction="HandleAction" ShowActiveActions="true" />
+            }
+        }
+        else if (activeTab == "payouts")
+        {
+            @foreach (var affiliate in payoutsAffiliates)
+            {
+                <AffiliateRow Affiliate="@affiliate" OnAction="HandleAction" ShowPayoutActions="true" />
+            }
+        }
+    </div>
+
+</div>
+
+@code {
+    private string activeTab = "pending";
+    private string totalDays = "166d";
+
+    private List<AffiliateModel> pendingAffiliates = new()
+    {
+        new AffiliateModel
+        {
+            Id = Guid.NewGuid(),
+            Name = "Sarah K.",
+            Handle = "@sarahkstyle",
+            Followers = "12,500 followers",
+            AppliedDate = "Mar 22, 2025",
+            Niche = "Streetwear Fashion"
+        },
+        new AffiliateModel
+        {
+            Id = Guid.NewGuid(),
+            Name = "Marcus G.",
+            Handle = "@marcusurban",
+            Followers = "45,500 followers",
+            AppliedDate = "Mar 21, 2025",
+            Niche = "Minimalist Lifestyle"
+        },
+        new AffiliateModel
+        {
+            Id = Guid.NewGuid(),
+            Name = "Elena B.",
+            Handle = "@elenabstyle",
+            Followers = "8,900 followers",
+            AppliedDate = "Mar 20, 2025",
+            Niche = "Minimalist Fashion"
+        },
+        new AffiliateModel
+        {
+            Id = Guid.NewGuid(),
+            Name = "Priya D.",
+            Handle = "@priyadesigns",
+            Followers = "23,100 followers",
+            AppliedDate = "Mar 19, 2025",
+            Niche = "Sustainable Fashion"
+        }
+    };
+
+    private List<AffiliateModel> activeAffiliates = new()
+    {
+        new AffiliateModel
+        {
+            Id = Guid.NewGuid(),
+            Name = "Alex Chen",
+            Handle = "@alexchen",
+            Followers = "67,800 followers",
+            AppliedDate = "Jan 15, 2025",
+            Niche = "Tech Fashion"
+        }
+    };
+
+    private List<AffiliateModel> payoutsAffiliates = new()
+    {
+        new AffiliateModel
+        {
+            Id = Guid.NewGuid(),
+            Name = "Jordan Lee",
+            Handle = "@jordanlee",
+            Followers = "89,200 followers",
+            AppliedDate = "Dec 10, 2024",
+            Niche = "Urban Streetwear"
+        }
+    };
+
+    private void HandleAction((Guid Id, string Action) data)
+    {
+        var (affiliateId, action) = data;
+        Console.WriteLine($"Action: {action} for affiliate: {affiliateId}");
+    }
+
+    public class AffiliateModel
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Handle { get; set; } = string.Empty;
+        public string Followers { get; set; } = string.Empty;
+        public string AppliedDate { get; set; } = string.Empty;
+        public string Niche { get; set; } = string.Empty;
+    }
+}

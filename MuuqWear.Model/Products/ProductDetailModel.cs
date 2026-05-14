@@ -27,6 +27,7 @@ public class ProductDetailModel
 
     // category info
     public Guid? CategoryId { get; set; }
+    public List<string> ColorOptions { get; set; } = new();
     public string? CategoryName { get; set; }
 
     // multiple images for thumbnails

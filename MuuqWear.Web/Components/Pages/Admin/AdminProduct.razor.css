@@ -520,3 +520,26 @@
         font-size: 28px;
     }
 }
+
+/* Admin color selector buttons */
+.mw-admin-color-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+    .mw-admin-color-btn:hover {
+        transform: scale(1.05);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .mw-admin-color-btn.active {
+        border-width: 3px !important;
+        border-color: #1E2A47 !important;
+    }

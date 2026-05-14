@@ -46,11 +46,7 @@
 
         <!-- TABLE -->
         <div class="customers-card__body">
-            @if (isLoading)
-            {
-                <p class="customers-empty">Loading...</p>
-            }
-            else if (!customers.Any())
+            @if (!customers.Any())
             {
                 <p class="customers-empty">No customers found.</p>
             }
@@ -94,6 +90,12 @@
                     </tbody>
                 </table>
             }
+            @if (showToast)
+            {
+                <div class="mw-toast @(toastSuccess ? "mw-toast--success" : "mw-toast--error")">
+                    @toastMessage
+                </div>
+            }
         </div>
     </div>
 
@@ -107,6 +109,13 @@
 </div>
 
 @code {
+    private string errorMsg = string.Empty;
+    // ─── TOAST STATE ──────────────────────────────────────────
+    private bool showToast = false;
+    private bool toastSuccess = true;
+    private string toastMessage = string.Empty;
+    private CancellationTokenSource? _toastCts;
+
     private List<CustomerModel> customers = new();
     private bool isLoading = true;
     private string searchQuery = string.Empty;
@@ -122,20 +131,23 @@
 
     private async Task LoadCustomers()
     {
-        isLoading = true;
-        StateHasChanged();
 
         var result = await CustomerService.GetAll(
             searchQuery, currentPage, pageSize);
 
-        if (result.Success && result.Data != null)
+        if (!result.Success || result.Data == null)
         {
-            customers = result.Data.Data;
-            totalCount = result.Data.TotalCount;
-            currentPage = result.Data.Page;
+            errorMsg = result.Message
+                           ?? "Failed to load customers.";
+            await ShowToast(
+    result.Message ?? "Failed to load Customers.",
+    success: false);
+            StateHasChanged();
+            return;
         }
-
-        isLoading = false;
+        customers = result.Data.Data;
+        totalCount = result.Data.TotalCount;
+        currentPage = result.Data.Page;
         StateHasChanged();
     }
 
@@ -172,5 +184,27 @@
         currentPage = args.Page;
         pageSize = args.PageSize;
         await LoadCustomers();
+    }
+
+    private async Task ShowToast(string message, bool success)
+    {
+        _toastCts?.Cancel();
+        _toastCts = new CancellationTokenSource();
+
+        toastMessage = message;
+        toastSuccess = success;
+        showToast = true;
+        StateHasChanged();
+
+        try
+        {
+            await Task.Delay(3000, _toastCts.Token);
+            showToast = false;
+            StateHasChanged();
+        }
+        catch (TaskCanceledException)
+        {
+            // new toast replaced this one — do nothing
+        }
     }
 }

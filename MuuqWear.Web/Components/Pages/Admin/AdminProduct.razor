@@ -268,6 +268,24 @@ else
                     </div>
 
                     <div class="mb-3">
+                        <label class="mw-form-label">Colors</label>
+                        <p class="mw-form-hint">Pick Available Colors</p>
+                        <div class="d-flex gap-2 flex-wrap">
+                            @foreach (var color in AvailableColors)
+                            {
+                                <button class="mw-admin-color-btn @(SelectedColors.Contains(color) ? "active" : "")"
+                                        style="background-color: @color; border: 2px solid @(SelectedColors.Contains(color) ? "#1E2A47" : "#E5E7EB")"
+                                        @onclick="() => ToggleColor(color)">
+                                    @if (SelectedColors.Contains(color))
+                                    {
+                                        <span style="color: @(color == "#FFFFFF" ? "#000" : "#FFF"); font-weight: bold;">✓</span>
+                                    }
+                                </button>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
                         <label class="mw-form-label">Gender</label>
                         <p class="mw-form-hint">Pick Available Gender</p>
                         <div class="mw-gender-selector">
@@ -580,9 +598,9 @@ else
                 @foreach (var size in editingSizeStock)
                 {
                     <div style="display:flex;align-items:center;
-                                                                                                                                                                                    justify-content:space-between;gap:12px">
+                                                                                                                                                                                            justify-content:space-between;gap:12px">
                         <span style="color:#1E2A47;font-size:13px;
-                                                                                                                                                                                         font-weight:700;min-width:40px">
+                                                                                                                                                                                                 font-weight:700;min-width:40px">
                             @size.Size
                         </span>
                         <input type="number"
@@ -606,8 +624,8 @@ else
 
             <!-- TOTAL -->
             <div style="display:flex;justify-content:space-between;
-                                                                                                                    padding:12px 0;border-top:1px solid rgba(169,183,204,0.3);
-                                                                                                                    margin-bottom:21px">
+                                                                                                                        padding:12px 0;border-top:1px solid rgba(169,183,204,0.3);
+                                                                                                                        margin-bottom:21px">
                 <span style="color:#4A5C7A;font-size:13px">Total Stock</span>
                 <span style="color:#1E2A47;font-size:13px;font-weight:700">
                     @editingSizeStock.Sum(s => s.Quantity)

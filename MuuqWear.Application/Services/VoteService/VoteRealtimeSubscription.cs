@@ -49,9 +49,10 @@ public class VoteRealtimeSubscription : IAsyncDisposable
         }
     }
 
+    //  add this new method to VoteRealtimeSubscription.cs
     private void HandleUpdate(
-     IRealtimeChannel _,
-     PostgresChangesResponse change)
+  IRealtimeChannel _,
+  PostgresChangesResponse change)
     {
         try
         {

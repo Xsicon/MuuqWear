@@ -312,8 +312,18 @@
         if (!string.IsNullOrEmpty(searchFromUrl))
             filter.Search = searchFromUrl;
 
-        await Task.WhenAll(LoadCategories(), LoadProducts());
+        // await Task.WhenAll(LoadCategories(), LoadProducts());
+        var categoryIdFromUrl = query["categoryId"];
+        if (!string.IsNullOrEmpty(categoryIdFromUrl) && Guid.TryParse(categoryIdFromUrl, out var categoryId))
+        {
+            filter.CategoryId = categoryId;
+        }
+
+        await LoadProducts();
+        await LoadCategories();
     }
+
+
 
     private async Task LoadCategories()
     {

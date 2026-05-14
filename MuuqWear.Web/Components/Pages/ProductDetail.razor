@@ -122,6 +122,28 @@ else
                         </div>
                     }
 
+                    <!--  ADD COLOR SELECTOR -->
+                    @if (product.ColorOptions.Any())
+                    {
+                        <div class="mb-3">
+                            <h6 class="mw-label">Select Color</h6>
+                            <div class="d-flex gap-2 flex-wrap">
+                                @foreach (var color in product.ColorOptions)
+                                {
+                                    <button class="mw-color-btn @(SelectedColor == color ? "active" : "")"
+                                            style="background-color: @color"
+                                            @onclick="() => SelectedColor = color">
+                                        @if (SelectedColor == color)
+                                        {
+                                            <span class="mw-color-check">✓</span>
+                                        }
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    }
+
+
                     <!-- GENDER -->
                     @if (!string.IsNullOrEmpty(product.Gender))
                     {
@@ -203,6 +225,7 @@ else
     private ProductDetailModel? product;
     private string SelectedImage = "";
     private string SelectedSize = "";
+    private string SelectedColor = "";
     private List<ProductModel> RelatedProducts = new();
     private bool isLoading = true;
 
@@ -244,7 +267,7 @@ else
             IsActive = result.Data.IsActive,
             Gender = result.Data.Gender,
             CategoryId = result.Data.CategoryId,
-            SizeStock = result.Data.SizeStock // ← add 
+            SizeStock = result.Data.SizeStock // ← add
           .Select(s => new SizeStockModel
           {
               Id = s.Id,
@@ -258,11 +281,14 @@ else
               ProductId = i.ProductId,
               ImageUrl = i.ImageUrl,
               SortOrder = i.SortOrder
-          }).ToList()
+          }).ToList(),
+            ColorOptions = result.Data.ColorOptions
         };
 
         SelectedImage = product.AllImageUrls.FirstOrDefault() ?? "";
         SelectedSize = product.SizeList.FirstOrDefault() ?? "";
+        SelectedColor = product.ColorOptions.FirstOrDefault() ?? ""; // ← ADD
+
 
         await LoadRelated(productId);
     }
@@ -283,6 +309,13 @@ else
             addToCartMessageCss = "text-danger";
             return;
         }
+        if (product!.ColorOptions.Any() && string.IsNullOrEmpty(SelectedColor))
+        {
+            addToCartMessage = "Please select a color";
+            addToCartMessageCss = "text-danger";
+            return;
+        }
+
 
         isAddingToCart = true;
         addToCartMessage = string.Empty;
@@ -295,7 +328,8 @@ else
             Quantity = 1,
             ProductName = product.Name,
             ProductImageUrl = product.AllImageUrls.FirstOrDefault() ?? product.ImageUrl,
-            ProductPrice = product.Price
+            ProductPrice = product.Price,
+            Color = SelectedColor
         });
 
         if (success)

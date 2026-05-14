@@ -1,0 +1,66 @@
+﻿@using static AdminAffiliates
+
+<div class="mw-affiliate-row">
+
+    <!-- LEFT: INFO -->
+    <div class="mw-affiliate-row__info">
+        <div class="mw-affiliate-row__name">@Affiliate.Name</div>
+        <div class="mw-affiliate-row__handle">
+            @Affiliate.Handle · @Affiliate.Followers
+        </div>
+        <div class="mw-affiliate-row__meta">
+            Applied @Affiliate.AppliedDate · Niche: @Affiliate.Niche
+        </div>
+    </div>
+
+    <!-- RIGHT: ACTIONS -->
+    <div class="mw-affiliate-row__actions">
+
+        <!-- VIEW (all tabs) -->
+        <button class="mw-btn-action mw-btn-action--view"
+                @onclick='() => OnAction.InvokeAsync((Affiliate.Id, "view"))'>
+            VIEW
+        </button>
+
+        @if (!ShowActiveActions && !ShowPayoutActions)
+        {
+            <!-- PENDING ACTIONS -->
+            <button class="mw-btn-action mw-btn-action--approve"
+                    @onclick='() => OnAction.InvokeAsync((Affiliate.Id, "approve"))'>
+                APPROVE
+            </button>
+            <button class="mw-btn-action mw-btn-action--deny"
+                    @onclick='() => OnAction.InvokeAsync((Affiliate.Id, "deny"))'>
+                DENY
+            </button>
+            <button class="mw-btn-action mw-btn-action--waitlist"
+                    @onclick='() => OnAction.InvokeAsync((Affiliate.Id, "waitlist"))'>
+                WAITLIST
+            </button>
+        }
+        else if (ShowActiveActions)
+        {
+            <!-- ACTIVE ACTIONS (placeholder - can add more if needed) -->
+        }
+        else if (ShowPayoutActions)
+        {
+            <!-- PAYOUT ACTIONS (placeholder - can add more if needed) -->
+        }
+
+    </div>
+
+</div>
+
+@code {
+    [Parameter]
+    public AffiliateModel Affiliate { get; set; } = new();
+
+    [Parameter]
+    public EventCallback<(Guid Id, string Action)> OnAction { get; set; }
+
+    [Parameter]
+    public bool ShowActiveActions { get; set; }
+
+    [Parameter]
+    public bool ShowPayoutActions { get; set; }
+}

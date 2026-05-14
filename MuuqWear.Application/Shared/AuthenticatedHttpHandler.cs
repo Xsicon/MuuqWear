@@ -4,8 +4,8 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
-using MuuqWear.Application.Services.AuthService;
 using MuuqWear.Model.Authentication;
+using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
@@ -36,11 +36,30 @@ public class AuthenticatedHttpHandler : DelegatingHandler
     }
 
     protected override async Task<HttpResponseMessage> SendAsync(
-     HttpRequestMessage request,
-     CancellationToken cancellationToken)
+    HttpRequestMessage request,
+    CancellationToken cancellationToken)
     {
         var context = _httpContextAccessor.HttpContext;
         var token = GetToken(context);
+
+        // ✅ ADD: Check if token is expired BEFORE sending
+        if (!string.IsNullOrEmpty(token) && IsTokenExpired(token))
+        {
+            System.Diagnostics.Debug.WriteLine("⚠️ Token expired, attempting refresh...");
+
+            var newToken = await TryRefreshAsync(context);
+            if (newToken != null)
+            {
+                token = newToken;
+                System.Diagnostics.Debug.WriteLine("✅ Token refreshed proactively");
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine("❌ Refresh failed, signing out");
+                await HandleSignOut(context);
+                return new HttpResponseMessage(System.Net.HttpStatusCode.Unauthorized);
+            }
+        }
 
         if (!string.IsNullOrEmpty(token))
             request.Headers.Authorization =
@@ -48,9 +67,12 @@ public class AuthenticatedHttpHandler : DelegatingHandler
 
         var response = await base.SendAsync(request, cancellationToken);
 
-        //  everything inside this block
-        if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        // ✅ ADD: Handle both 401 AND 400
+        if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized ||
+            response.StatusCode == System.Net.HttpStatusCode.BadRequest)
         {
+            System.Diagnostics.Debug.WriteLine($"Auth error: {response.StatusCode}");
+
             var newToken = await TryRefreshAsync(context);
             if (newToken != null)
             {
@@ -60,21 +82,42 @@ public class AuthenticatedHttpHandler : DelegatingHandler
                 return await base.SendAsync(retryRequest, cancellationToken);
             }
 
-            //  only runs when 401 AND refresh failed
-            if (context != null && !context.Response.HasStarted)
-            {
-                await context.SignOutAsync(
-                    CookieAuthenticationDefaults.AuthenticationScheme);
-                context.Response.Redirect("/login?expired=true");
-            }
-            else
-            {
-                Console.WriteLine("MarkExpired called — session expired");
-                _authSession.MarkExpired();
-            }
+            // Refresh failed → sign out
+            await HandleSignOut(context);
         }
 
         return response;
+    }
+
+    // ✅ ADD: Centralized sign out logic
+    private async Task HandleSignOut(HttpContext? context)
+    {
+        System.Diagnostics.Debug.WriteLine("🚪 Signing out user...");
+
+        // Notify Blazor (will be marshaled to UI thread by InvokeAsync)
+        _authSession.MarkExpired();
+
+        if (context != null && !context.Response.HasStarted)
+        {
+            await context.SignOutAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme);
+            System.Diagnostics.Debug.WriteLine("Call From Authenticated Http");
+            context.Response.Redirect("/login?expired=true");
+        }
+    }
+    // ✅ ADD: Token expiry check
+    private bool IsTokenExpired(string token)
+    {
+        try
+        {
+            var handler = new JwtSecurityTokenHandler();
+            var jwt = handler.ReadJwtToken(token);
+            return jwt.ValidTo < DateTime.UtcNow;
+        }
+        catch
+        {
+            return true; // Invalid token = treat as expired
+        }
     }
     private string? GetToken(HttpContext? context)
     {
