@@ -39,7 +39,7 @@
     {
         System.Diagnostics.Debug.WriteLine("🔔 Session expired event received");
 
-        // ✅ Use InvokeAsync to switch to UI thread
+        //  Use InvokeAsync to switch to UI thread
         InvokeAsync(() =>
         {
             System.Diagnostics.Debug.WriteLine("🔔 Showing modal on UI thread");

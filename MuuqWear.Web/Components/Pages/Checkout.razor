@@ -1,406 +1,1 @@
-﻿@page "/checkout"
-@rendermode InteractiveServer
-@layout Components.Layout.AuthLayout.AuthLayout
-@using Microsoft.AspNetCore.Authorization
-@using Microsoft.AspNetCore.Components.Authorization
-@using MuuqWear.Application.Services.CartService
-@using MuuqWear.Model.Cart
-@using MuuqWear.Application.Services.OrderService
-@using MuuqWear.Model.Orders
-@inject CartStateService CartStateService
-@inject NavigationManager NavigationManager
-@inject AuthenticationStateProvider AuthStateProvider
-@implements IDisposable
-@inject IOrderService OrderService
-@attribute [Authorize]
-
-<PageTitle>Checkout — MuuqWear</PageTitle>
-
-<div class="mw-checkout">
-
-    <!-- ORDER SUMMARY -->
-    <section class="mw-checkout__section">
-        <div class="mb-4">
-            <a href="/" class="mw-logo d-flex align-items-center text-decoration-none">
-                <img src="/images/muuqwearlogo.png"
-                     alt="MuuqWear logo"
-                     class="mw-logo__img img-fluid" />
-                <span class="mw-logo__text text-uppercase fw-bolder ms-2 d-none d-md-flex">
-                    MuuqWear
-                </span>
-            </a>
-        </div>
-        <h2 class="mw-checkout__section-title">Order Summary</h2>
-
-        <!-- ITEMS -->
-        <div class="mw-checkout__items">
-            @foreach (var item in CartStateService.Cart.Items)
-            {
-                <div class="mw-checkout__item">
-
-                    <!-- IMAGE -->
-                    <div class="mw-checkout__item-img">
-                        <img src="@item.ProductImageUrl"
-                             alt="@item.ProductName" loading="lazy" />
-                    </div>
-
-                    <!-- INFO -->
-                    <div class="mw-checkout__item-info">
-                        <div class="mw-checkout__item-row">
-                            <div class="mw-checkout__item-details">
-                                <h4 class="mw-checkout__item-name">
-                                    @item.ProductName
-                                </h4>
-                                <p class="mw-checkout__item-meta">
-                                    Size: @item.Size
-                                </p>
-                            </div>
-                            <span class="mw-checkout__item-price">
-                                $@item.ItemTotal.ToString("F2")
-                            </span>
-                        </div>
-
-                        <div class="mw-checkout__item-actions">
-
-                            <!-- QTY -->
-                            <div class="mw-checkout__qty">
-                                <button @onclick="() => DecreaseQty(item)"
-                                        disabled="@(item.Quantity <= 1)"
-                                        aria-label="Decrease quantity">
-                                    <svg xmlns="http://www.w3.org/2000/svg"
-                                         width="14" height="14" viewBox="0 0 24 24"
-                                         fill="none" stroke="currentColor"
-                                         stroke-width="2" stroke-linecap="round"
-                                         stroke-linejoin="round">
-                                        <path d="M5 12h14"></path>
-                                    </svg>
-                                </button>
-                                <span>@item.Quantity</span>
-                                <button @onclick="() => IncreaseQty(item)"
-                                        aria-label="Increase quantity">
-                                    <svg xmlns="http://www.w3.org/2000/svg"
-                                         width="14" height="14" viewBox="0 0 24 24"
-                                         fill="none" stroke="currentColor"
-                                         stroke-width="2" stroke-linecap="round"
-                                         stroke-linejoin="round">
-                                        <path d="M5 12h14"></path>
-                                        <path d="M12 5v14"></path>
-                                    </svg>
-                                </button>
-                            </div>
-
-                            <!-- REMOVE -->
-                            <button class="mw-checkout__remove"
-                                    @onclick="() => RemoveItem(item.Id)"
-                                    aria-label="Remove @item.ProductName">
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                     width="14" height="14" viewBox="0 0 24 24"
-                                     fill="none" stroke="currentColor"
-                                     stroke-width="2" stroke-linecap="round"
-                                     stroke-linejoin="round">
-                                    <path d="M3 6h18"></path>
-                                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
-                                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
-                                    <line x1="10" x2="10" y1="11" y2="17"></line>
-                                    <line x1="14" x2="14" y1="11" y2="17"></line>
-                                </svg>
-                                <span class="d-none d-md-inline">Remove</span>
-                            </button>
-
-                        </div>
-                    </div>
-
-                </div>
-            }
-        </div>
-
-        <!-- TOTALS -->
-        <div class="mw-checkout__totals">
-            <div class="mw-checkout__totals-rows">
-                <div class="mw-checkout__totals-row">
-                    <span>Subtotal</span>
-                    <span>$@CartStateService.Cart.Subtotal.ToString("F2")</span>
-                </div>
-                <div class="mw-checkout__totals-row">
-                    <span>Shipping</span>
-                    <span>Free</span>
-                </div>
-                <div class="mw-checkout__totals-row">
-                    <span>Estimated Tax</span>
-                    <span>$@CartStateService.Cart.Tax.ToString("F2")</span>
-                </div>
-            </div>
-            <div class="mw-checkout__total">
-                <span>Total</span>
-                <div class="mw-checkout__total-amount">
-                    <span class="mw-checkout__total-currency">USD</span>
-                    <span class="mw-checkout__total-value">
-                        $@CartStateService.Cart.Total.ToString("F2")
-                    </span>
-                </div>
-            </div>
-        </div>
-
-    </section>
-
-    <!-- CONTACT INFORMATION -->
-    <section class="mw-checkout__section">
-        <h2 class="mw-checkout__label">Contact Information</h2>
-        <input type="email"
-               class="mw-checkout__input"
-               placeholder="Email address"
-               @bind="email" />
-    </section>
-
-    <!-- SHIPPING ADDRESS -->
-    <section class="mw-checkout__section">
-        <h2 class="mw-checkout__label">Shipping Address</h2>
-
-        <div class="mw-checkout__grid-2 mb-3">
-            <input class="mw-checkout__input"
-                   placeholder="First name"
-                   @bind="firstName" />
-            <input class="mw-checkout__input"
-                   placeholder="Last name"
-                   @bind="lastName" />
-        </div>
-
-        <input class="mw-checkout__input w-100 mb-3"
-               placeholder="Address"
-               @bind="address" />
-
-        <div class="mw-checkout__grid-2">
-            <input class="mw-checkout__input"
-                   placeholder="City"
-                   @bind="city" />
-            <input class="mw-checkout__input"
-                   placeholder="Postal code"
-                   @bind="postalCode" />
-        </div>
-    </section>
-
-    <!-- PAYMENT DETAILS -->
-    <section class="mw-checkout__section">
-        <h2 class="mw-checkout__label">Payment Details</h2>
-
-        <div class="mw-checkout__payment">
-
-            <!-- HEADER -->
-            <div class="mw-checkout__payment-header">
-                <span>Credit Card</span>
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
-                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect width="20" height="14" x="2" y="5" rx="2"></rect>
-                    <line x1="2" x2="22" y1="10" y2="10"></line>
-                </svg>
-            </div>
-
-            <!-- CARD NUMBER -->
-            <input class="mw-checkout__payment-input"
-                   placeholder="Card number"
-                   @bind="cardNumber" />
-
-            <!-- EXPIRY + CVC -->
-            <div class="mw-checkout__payment-row">
-                <input class="mw-checkout__payment-input"
-                       placeholder="MM / YY"
-                       @bind="expiry" />
-                <input class="mw-checkout__payment-input"
-                       placeholder="CVC"
-                       @bind="cvc" />
-            </div>
-
-        </div>
-    </section>
-
-    <!-- PAY BUTTON -->
-    <button class="mw-checkout__pay-btn"
-            @onclick="HandlePay"
-            disabled="@isPlacingOrder">
-        @if (isPlacingOrder)
-        {
-            <span class="mw-btn-spinner"></span>
-            <span>Processing...</span>
-        }
-        else
-        {
-            <span>Pay $@CartStateService.Cart.Total.ToString("F2")</span>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M5 12h14"></path>
-                <path d="m12 5 7 7-7 7"></path>
-            </svg>
-        }
-    </button>
-
-    @if (!string.IsNullOrEmpty(errorMessage))
-    {
-        <div class="text-danger small text-center mb-3">
-            @errorMessage
-        </div>
-    }
-
-    <!-- SECURE TEXT -->
-    <div class="mw-checkout__secure">
-        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
-             viewBox="0 0 24 24" fill="none" stroke="currentColor"
-             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>
-            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-        </svg>
-        <span>Secure Encrypted Checkout</span>
-    </div>
-
-</div>
-
-@code {
-
-    // form fields
-    private string email = string.Empty;
-    private string firstName = string.Empty;
-    private string lastName = string.Empty;
-    private string address = string.Empty;
-    private string city = string.Empty;
-    private string postalCode = string.Empty;
-    private string cardNumber = string.Empty;
-    private string expiry = string.Empty;
-    private string cvc = string.Empty;
-    private bool isPlacingOrder = false;
-    private string errorMessage = string.Empty;
-
-    protected override async Task OnInitializedAsync()
-    {
-        // subscribe to cart changes
-        CartStateService.OnCartChanged += OnCartChanged;
-
-        // pre-fill email from claims
-        var authState = await AuthStateProvider
-            .GetAuthenticationStateAsync();
-
-        email = authState.User
-            .FindFirst(System.Security.Claims.ClaimTypes.Email)
-            ?.Value ?? string.Empty;
-
-    }
-
-    protected override Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            if (CartStateService.Cart.IsEmpty)
-            {
-                NavigationManager.NavigateTo("/cart");
-                return Task.CompletedTask;
-            }
-
-            StateHasChanged();
-        }
-
-        return Task.CompletedTask;
-    }
-
-    private void OnCartChanged()
-    {
-        // redirect if cart becomes empty
-        if (CartStateService.Cart.IsEmpty)
-        {
-            InvokeAsync(() =>
-                NavigationManager.NavigateTo("/cart"));
-            return;
-        }
-        InvokeAsync(StateHasChanged);
-    }
-
-    private async Task DecreaseQty(CartItemModel item)
-    {
-        if (item.Quantity <= 1) return;
-        await CartStateService.UpdateQuantity(item.Id, item.Quantity - 1);
-    }
-
-    private async Task IncreaseQty(CartItemModel item)
-    {
-        await CartStateService.UpdateQuantity(item.Id, item.Quantity + 1);
-    }
-
-    private async Task RemoveItem(Guid cartItemId)
-    {
-        await CartStateService.RemoveItem(cartItemId);
-    }
-
-    private async Task HandlePay()
-    {
-        // validate required fields
-        if (string.IsNullOrWhiteSpace(email))
-        {
-            errorMessage = "Email is required";
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(firstName))
-        {
-            errorMessage = "First name is required";
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(lastName))
-        {
-            errorMessage = "Last name is required";
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(address))
-        {
-            errorMessage = "Address is required";
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(city))
-        {
-            errorMessage = "City is required";
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(postalCode))
-        {
-            errorMessage = "Postal code is required";
-            return;
-        }
-
-        isPlacingOrder = true;
-        errorMessage = string.Empty;
-        StateHasChanged();
-
-        var result = await OrderService.PlaceOrder(new PlaceOrderModel
-        {
-            Email = email,
-            FirstName = firstName,
-            LastName = lastName,
-            Address = address,
-            City = city,
-            PostalCode = postalCode
-        });
-
-        if (result.Success && result.Data != null)
-        {
-            // clear local cart state
-            await CartStateService.ClearCartState();
-
-            // navigate to order confirmed with order id
-            NavigationManager.NavigateTo(
-                $"/order-confirmed/{result.Data.Id}");
-        }
-        else
-        {
-            errorMessage = result.Message ?? "Failed to place order";
-            isPlacingOrder = false;
-            StateHasChanged();
-        }
-    }
-
-    public void Dispose()
-    {
-        CartStateService.OnCartChanged -= OnCartChanged;
-    }
-}
+﻿@page "/checkout"@rendermode InteractiveServer@layout Components.Layout.AuthLayout.AuthLayout@using Microsoft.AspNetCore.Authorization@using Microsoft.AspNetCore.Components.Authorization@using MuuqWear.Application.Services.CartService@using MuuqWear.Model.Cart@using MuuqWear.Application.Services.OrderService@using MuuqWear.Model.Orders@inject CartStateService CartStateService@inject NavigationManager NavigationManager@inject AuthenticationStateProvider AuthStateProvider@implements IDisposable@inject IOrderService OrderService@attribute [Authorize]<PageTitle>Checkout — MuuqWear</PageTitle><div class="mw-checkout">    <!-- ORDER SUMMARY -->    <section class="mw-checkout__section">        <div class="mb-4">            <a href="/" class="mw-logo d-flex align-items-center text-decoration-none">                <img src="/images/muuqwearlogo.png" alt="MuuqWear logo" class="mw-logo__img img-fluid" />                <span class="mw-logo__text text-uppercase fw-bolder ms-2 d-none d-md-flex">                    MuuqWear                </span>            </a>        </div>        <h2 class="mw-checkout__section-title">Order Summary</h2>        <!-- ITEMS -->        <div class="mw-checkout__items">            @foreach (var item in CartStateService.Cart.Items)            {                <div class="mw-checkout__item">                    <!-- IMAGE -->                    <div class="mw-checkout__item-img">                        <img src="@item.ProductImageUrl" alt="@item.ProductName" loading="lazy" />                    </div>                    <!-- INFO -->                    <div class="mw-checkout__item-info">                        <div class="mw-checkout__item-row">                            <div class="mw-checkout__item-details">                                <h4 class="mw-checkout__item-name">                                    @item.ProductName                                </h4>                                <p class="mw-checkout__item-meta">                                    Size: @item.Size                                </p>                            </div>                            <span class="mw-checkout__item-price">                                $@item.ItemTotal.ToString("F2")                            </span>                        </div>                        <div class="mw-checkout__item-actions">                            <!-- QTY -->                            <div class="mw-checkout__qty">                                <button @onclick="() => DecreaseQty(item)" disabled="@(item.Quantity <= 1)" aria-label="Decrease quantity">                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">                                        <path d="M5 12h14"></path>                                    </svg>                                </button>                                <span>@item.Quantity</span>                                <button @onclick="() => IncreaseQty(item)" aria-label="Increase quantity">                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">                                        <path d="M5 12h14"></path>                                        <path d="M12 5v14"></path>                                    </svg>                                </button>                            </div>                            <!-- REMOVE -->                            <button class="mw-checkout__remove" @onclick="() => RemoveItem(item.Id)" aria-label="Remove @item.ProductName">                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">                                    <path d="M3 6h18"></path>                                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>                                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>                                    <line x1="10" x2="10" y1="11" y2="17"></line>                                    <line x1="14" x2="14" y1="11" y2="17"></line>                                </svg>                                <span class="d-none d-md-inline">Remove</span>                            </button>                        </div>                    </div>                </div>            }        </div>        <!-- TOTALS -->        <div class="mw-checkout__totals">            <div class="mw-checkout__totals-rows">                <div class="mw-checkout__totals-row">                    <span>Subtotal</span>                    <span>$@CartStateService.Cart.Subtotal.ToString("F2")</span>                </div>                <div class="mw-checkout__totals-row">                    <span>Shipping</span>                    <span>Free</span>                </div>                <div class="mw-checkout__totals-row">                    <span>Estimated Tax</span>                    <span>$@CartStateService.Cart.Tax.ToString("F2")</span>                </div>            </div>            <div class="mw-checkout__total">                <span>Total</span>                <div class="mw-checkout__total-amount">                    <span class="mw-checkout__total-currency">USD</span>                    <span class="mw-checkout__total-value">                        $@CartStateService.Cart.Total.ToString("F2")                    </span>                </div>            </div>        </div>    </section>    <!-- CONTACT INFORMATION -->    <section class="mw-checkout__section">        <h2 class="mw-checkout__label">Contact Information</h2>        <input type="email" class="mw-checkout__input" placeholder="Email address" @bind="email" />    </section>    <!-- SHIPPING ADDRESS -->    <section class="mw-checkout__section">        <h2 class="mw-checkout__label">Shipping Address</h2>        <div class="mw-checkout__grid-2 mb-3">            <input class="mw-checkout__input" placeholder="First name" @bind="firstName" />            <input class="mw-checkout__input" placeholder="Last name" @bind="lastName" />        </div>        <input class="mw-checkout__input w-100 mb-3" placeholder="Address" @bind="address" />        <div class="mw-checkout__grid-2">            <input class="mw-checkout__input" placeholder="City" @bind="city" />            <input class="mw-checkout__input" placeholder="Postal code" @bind="postalCode" />        </div>    </section>    <!-- PAYMENT DETAILS -->    <section class="mw-checkout__section">        <h2 class="mw-checkout__label">Payment Details</h2>        <div class="mw-checkout__payment">            <!-- HEADER -->            <div class="mw-checkout__payment-header">                <span>Credit Card</span>                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">                    <rect width="20" height="14" x="2" y="5" rx="2"></rect>                    <line x1="2" x2="22" y1="10" y2="10"></line>                </svg>            </div>            <!-- CARD NUMBER -->            <input class="mw-checkout__payment-input" placeholder="Card number" @bind="cardNumber" />            <!-- EXPIRY + CVC -->            <div class="mw-checkout__payment-row">                <input class="mw-checkout__payment-input" placeholder="MM / YY" @bind="expiry" />                <input class="mw-checkout__payment-input" placeholder="CVC" @bind="cvc" />            </div>        </div>    </section>    <!-- PAY BUTTON -->    <button class="mw-checkout__pay-btn" @onclick="HandlePay" disabled="@isPlacingOrder">        @if (isPlacingOrder)        {            <span class="mw-btn-spinner"></span>            <span>Processing...</span>        }        else        {            <span>Pay $@CartStateService.Cart.Total.ToString("F2")</span>            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">                <path d="M5 12h14"></path>                <path d="m12 5 7 7-7 7"></path>            </svg>        }    </button>    @if (!string.IsNullOrEmpty(errorMessage))    {        <div class="text-danger small text-center mb-3">            @errorMessage        </div>    }    <!-- SECURE TEXT -->    <div class="mw-checkout__secure">        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">            <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>        </svg>        <span>Secure Encrypted Checkout</span>    </div></div>@code {    // form fields    private string email = string.Empty;    private string firstName = string.Empty;    private string lastName = string.Empty;    private string address = string.Empty;    private string city = string.Empty;    private string postalCode = string.Empty;    private string cardNumber = string.Empty;    private string expiry = string.Empty;    private string cvc = string.Empty;    private bool isPlacingOrder = false;    private string errorMessage = string.Empty;    protected override async Task OnInitializedAsync()    {        // subscribe to cart changes        CartStateService.OnCartChanged += OnCartChanged;        // pre-fill email from claims        var authState = await AuthStateProvider            .GetAuthenticationStateAsync();        email = authState.User            .FindFirst(System.Security.Claims.ClaimTypes.Email)            ?.Value ?? string.Empty;    }    protected override Task OnAfterRenderAsync(bool firstRender)    {        if (firstRender)        {            if (CartStateService.Cart.IsEmpty)            {                NavigationManager.NavigateTo("/cart");                return Task.CompletedTask;            }            StateHasChanged();        }        return Task.CompletedTask;    }    private void OnCartChanged()    {        // redirect if cart becomes empty        if (CartStateService.Cart.IsEmpty)        {            InvokeAsync(() =>                NavigationManager.NavigateTo("/cart"));            return;        }        InvokeAsync(StateHasChanged);    }    private async Task DecreaseQty(CartItemModel item)    {        if (item.Quantity <= 1) return;        await CartStateService.UpdateQuantity(item.Id, item.Quantity - 1);    }    private async Task IncreaseQty(CartItemModel item)    {        await CartStateService.UpdateQuantity(item.Id, item.Quantity + 1);    }    private async Task RemoveItem(Guid cartItemId)    {        await CartStateService.RemoveItem(cartItemId);    }    private async Task HandlePay()    {        // validate required fields        if (string.IsNullOrWhiteSpace(email))        {            errorMessage = "Email is required";            return;        }        if (string.IsNullOrWhiteSpace(firstName))        {            errorMessage = "First name is required";            return;        }        if (string.IsNullOrWhiteSpace(lastName))        {            errorMessage = "Last name is required";            return;        }        if (string.IsNullOrWhiteSpace(address))        {            errorMessage = "Address is required";            return;        }        if (string.IsNullOrWhiteSpace(city))        {            errorMessage = "City is required";            return;        }        if (string.IsNullOrWhiteSpace(postalCode))        {            errorMessage = "Postal code is required";            return;        }        isPlacingOrder = true;        errorMessage = string.Empty;        StateHasChanged();        var result = await OrderService.PlaceOrder(new PlaceOrderModel        {            Email = email,            FirstName = firstName,            LastName = lastName,            Address = address,            City = city,            PostalCode = postalCode        });        if (result.Success && result.Data != null)        {            // clear local cart state            await CartStateService.ClearCartState();            // navigate to order confirmed with order id            NavigationManager.NavigateTo(                $"/order-confirmed/{result.Data.Id}");        }        else        {            errorMessage = result.Message ?? "Failed to place order";            isPlacingOrder = false;            StateHasChanged();        }    }    public void Dispose()    {        CartStateService.OnCartChanged -= OnCartChanged;    }}

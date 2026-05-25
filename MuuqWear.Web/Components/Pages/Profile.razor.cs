@@ -1,8 +1,9 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.AspNetCore.Components.Web;
+using Microsoft.JSInterop;
 using MuuqWear.Application.Services.CartService;
 using MuuqWear.Model.Address;
+using MuuqWear.Model.AffiliateApplication;
 using MuuqWear.Model.Orders;
 using MuuqWear.Model.Profile;
 
@@ -12,7 +13,22 @@ namespace MuuqWear.Web.Components.Pages
     {
         private string activeTab = "overview"; // default tab
         private List<AddressModel> addresses = new();
+        private string activeAffiliateTab = "dashboard";
 
+        // Chart state
+        private PerformanceChartModel? performanceData;
+        private bool isLoadingChart = true;
+        private bool isLoadingRecentReferral = true;
+        private string? chartError = null;
+
+        private List<RecentReferralModel>? recentReferrals;
+        private AffiliateStatusModel? affiliateStatus = new AffiliateStatusModel();
+        private bool showAffiliatePrompt = false;
+
+        private AffiliateInfoModel? affiliateInfo;
+        private bool isLoadingAffiliateInfo = false;
+        private string affiliateInfoError = "";
+        private bool linkCopied = false;
         private bool showDeleteConfirm = false;
         private bool isDeletingAccount = false;
 
@@ -29,6 +45,7 @@ namespace MuuqWear.Web.Components.Pages
         private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
 
         private List<OrderModel> userOrders = new();
+        private ProfileModel userProfile = new();
         private bool isLoadingOrders = true;
 
         public string LoggedInUserName = "";
@@ -65,20 +82,104 @@ namespace MuuqWear.Web.Components.Pages
             var ordersResult = await OrderService.GetUserOrders();
             if (ordersResult.Success && ordersResult.Data != null)
                 userOrders = ordersResult.Data;
-            System.Diagnostics.Debug.WriteLine($"Orders success: {ordersResult.Success}");
-            System.Diagnostics.Debug.WriteLine($"Orders count: {ordersResult.Data?.Count}");
-            System.Diagnostics.Debug.WriteLine($"Orders success: {ordersResult.Message}");
             isLoadingOrders = false;
-            var addressResult = await AddressService.GetAll();
-            if (addressResult.Success && addressResult.Data != null)
-                addresses = addressResult.Data;
-
+            await LoadAffiliateStatus();
         }
 
-        private void SelectTab(string tab)
+        private async Task SelectAffiliateTab(string tab)
+        {
+            var previousTab = activeAffiliateTab;
+            activeAffiliateTab = tab;
+
+            // Load chart when dashboard tab is opened for the first time
+            if (tab == "dashboard")
+            {
+                Console.WriteLine("Dashboard tab opened - loading chart...");
+
+                // Small delay to ensure tab content is rendered
+
+                await LoadPerformanceChart();
+                await LoadRecentReferrals();
+            }
+
+            StateHasChanged();
+        }
+
+
+
+        private async Task LoadAffiliateInfo()
+        {
+            isLoadingAffiliateInfo = true;
+            affiliateInfoError = "";
+
+            try
+            {
+                var result = await AffiliateService.GetAffiliateInfo();
+
+                if (result.Success && result.Data != null)
+                {
+                    affiliateInfo = result.Data;
+                }
+                else
+                {
+                    affiliateInfoError = result.Message ?? "Failed to load affiliate information";
+                }
+            }
+            catch (Exception ex)
+            {
+                affiliateInfoError = $"Error: {ex.Message}";
+            }
+            finally
+            {
+                isLoadingAffiliateInfo = false;
+            }
+        }
+
+
+
+        private async Task CopyLinkToClipboard()
+        {
+            if (affiliateInfo == null) return;
+
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", affiliateInfo.AffiliateLink);
+
+                linkCopied = true;
+                StateHasChanged();
+
+                // Reset after 3 seconds
+                await Task.Delay(3000);
+                linkCopied = false;
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to copy: {ex.Message}");
+            }
+        }
+
+        private async Task SelectTab(string tab)
         {
             activeTab = tab;
             isMobileMenuOpen = false; //  close menu after selection
+            if (tab == "affiliate")
+            {
+                //await LoadAffiliateStatus();
+                if (affiliateStatus?.ApplicationStatus == "approved")
+                {
+                    await LoadAffiliateInfo();
+
+                    await LoadPerformanceChart();
+                    await LoadRecentReferrals();
+                }
+            }
+            else if (tab == "address")
+            {
+                var addressResult = await AddressService.GetAll();
+                if (addressResult.Success && addressResult.Data != null)
+                    addresses = addressResult.Data;
+            }
         }
         private string GetActiveTabLabel()
         {
@@ -287,5 +388,280 @@ namespace MuuqWear.Web.Components.Pages
             }
         }
 
+        private async Task LoadAffiliateStatus()
+        {
+            try
+            {
+                var result = await AffiliateService.GetStatus();
+                if (result.Success && result.Data != null)
+                {
+                    affiliateStatus = result.Data;
+
+                    // Show prompt if user hasn't applied yet
+                    showAffiliatePrompt = affiliateStatus.ApplicationStatus == "not_applied";
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading affiliate status: {ex.Message}");
+            }
+        }
+
+        //private string GetUserInitials()
+        //{
+        //    if (string.IsNullOrEmpty(profile?.FullName)) return "U";
+
+        //    var parts = profile.FullName.Split(' ');
+        //    if (parts.Length >= 2)
+        //        return $"{parts[0][0]}{parts[1][0]}".ToUpper();
+
+        //    return profile.FullName[0].ToString().ToUpper();
+        //}
+
+        private string GetMemberDate()
+        {
+            // You'll need to add a "created_at" or "joined_at" field
+            // For now, use a placeholder
+            return "October 2024";
+        }
+
+        private int GetCommissionRate()
+        {
+            return affiliateInfo?.Tier?.ToLower() switch
+            {
+                "bronze" => 5,
+                "silver" => 10,
+                "gold" => 15,
+                _ => 5
+            };
+        }
+
+        private int GetDiscountRate()
+        {
+            return affiliateInfo?.Tier?.ToLower() switch
+            {
+                "bronze" => 5,
+                "silver" => 10,
+                "gold" => 15,
+                _ => 5
+            };
+        }
+
+        // Tier progression helpers
+        private int GetNextTierTarget()
+        {
+            return affiliateInfo?.Tier?.ToLower() switch
+            {
+                "bronze" => 150, // Next is Silver
+                "silver" => 500, // Next is Gold
+                "gold" => 500,   // Already at max
+                _ => 150
+            };
+        }
+
+        private string GetNextTier()
+        {
+            return affiliateInfo?.Tier?.ToLower() switch
+            {
+                "bronze" => "Silver",
+                "silver" => "Gold",
+                "gold" => "Gold (Max)",
+                _ => "Silver"
+            };
+        }
+
+        private int GetItemsToNextTier()
+        {
+            int sold = affiliateInfo?.ItemsSold ?? 0;
+            int target = GetNextTierTarget();
+            return Math.Max(0, target - sold);
+        }
+
+        private string GetProgressDashArray()
+        {
+            int sold = affiliateInfo?.ItemsSold ?? 0;
+            int target = GetNextTierTarget();
+            double percentage = Math.Min(100, (double)sold / target * 100);
+
+            double circumference = 2 * Math.PI * 42; // radius = 42
+            double progress = circumference * percentage / 100;
+            double remaining = circumference - progress;
+
+            return $"{progress:F2} {remaining:F2}";
+        }
+
+        // Commission batch helpers
+        private int GetCurrentBatchProgress()
+        {
+            int sold = affiliateInfo?.ItemsSold ?? 0;
+            return sold % 10;
+        }
+
+        private int GetItemsToNextBatch()
+        {
+            int progress = GetCurrentBatchProgress();
+            return 10 - progress;
+        }
+
+        private int GetBatchPercentage()
+        {
+            return GetCurrentBatchProgress() * 10;
+        }
+
+        private async Task LoadPerformanceChart()
+        {
+            //if (isLoadingChart) return; // Prevent multiple simultaneous loads
+
+            Console.WriteLine("Loading chart...");
+            isLoadingChart = true;
+            chartError = null;
+            StateHasChanged();
+
+            try
+            {
+                // Fetch data
+                var result = await AffiliateService.GetPerformanceChart();
+
+                if (result.Success && result.Data != null)
+                {
+                    performanceData = result.Data;
+                    Console.WriteLine($"Chart data loaded: {result.Data.DailyStats.Count} days");
+
+                    // Small delay to ensure canvas is in DOM
+                    await Task.Delay(200);
+
+                    // Render
+                    await RenderChart();
+                }
+                else
+                {
+                    chartError = result.Message ?? "Failed to load chart data";
+                    Console.WriteLine($"Chart data failed: {chartError}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Chart error: {ex.Message}");
+                chartError = "Failed to load chart";
+            }
+            finally
+            {
+                isLoadingChart = false;
+                StateHasChanged();
+            }
+        }
+
+        private async Task LoadRecentReferrals()
+        {
+            //if (isLoadingChart) return; // Prevent multiple simultaneous loads
+
+            Console.WriteLine("Loading referrals...");
+            isLoadingRecentReferral = true;
+            chartError = null;
+            StateHasChanged();
+
+            try
+            {
+                // Fetch data
+                var result = await AffiliateService.GetRecentReferrals();
+
+                if (result.Success && result.Data != null)
+                {
+                    recentReferrals = result.Data;
+
+                    // Small delay to ensure canvas is in DOM
+                    await Task.Delay(200);
+
+                    // Render
+                    await RenderChart();
+                }
+                else
+                {
+                    chartError = result.Message ?? "Failed to load chart data";
+                    Console.WriteLine($"Chart data failed: {chartError}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Chart error: {ex.Message}");
+                chartError = "Failed to load chart";
+            }
+            finally
+            {
+                isLoadingChart = false;
+                StateHasChanged();
+            }
+        }
+
+
+        private async Task RenderChart()
+        {
+            Console.WriteLine("🎨 RenderChart: Starting...");
+
+            try
+            {
+                var canvasExists = await JSRuntime.InvokeAsync<bool>(
+                    "eval",
+                    "document.getElementById('performanceChart') !== null");
+
+                if (!canvasExists)
+                {
+                    Console.WriteLine(" Canvas not found");
+                    chartError = "Chart container not ready";
+                    StateHasChanged();
+                    return;
+                }
+
+                Console.WriteLine(" Canvas found");
+
+                var chartJsLoaded = await JSRuntime.InvokeAsync<bool>(
+                    "eval",
+                    "typeof Chart !== 'undefined'");
+
+                if (!chartJsLoaded)
+                {
+                    Console.WriteLine(" Chart.js not loaded");
+                    chartError = "Chart library not loaded";
+                    StateHasChanged();
+                    return;
+                }
+
+                Console.WriteLine(" Chart.js loaded");
+
+                await JSRuntime.InvokeVoidAsync(
+                    "chartHelpers.renderPerformanceChart",
+                    performanceData);
+
+                Console.WriteLine(" Chart rendered!");
+            }
+            catch (JSException jsEx)
+            {
+                Console.WriteLine($" JS Error: {jsEx.Message}");
+                chartError = "Chart failed to render";
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($" Render error: {ex.Message}");
+                chartError = "Chart rendering failed";
+                StateHasChanged();
+            }
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("chartHelpers.destroyChart");
+            }
+            catch
+            {
+                // Ignore errors during dispose
+            }
+        }
+
+
     }
 }
+
+

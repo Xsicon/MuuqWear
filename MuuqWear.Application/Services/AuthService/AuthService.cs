@@ -9,6 +9,8 @@ public class AuthService : IAuthService
 {
     private readonly HttpClient _http;
     private readonly ProtectedSessionStorage _sessionStorage;
+    public bool IsNewSignup { get; private set; } = false;
+
 
     public AuthService(HttpClient http, ProtectedSessionStorage sessionStorage)
     {
@@ -33,7 +35,10 @@ public class AuthService : IAuthService
 
 
         var response = await result.Content.ReadFromJsonAsync<Response<AuthResponseModel>>();
-
+        if (response?.Success == true && response.Data != null)
+        {
+            IsNewSignup = true; // User is now fully registered and logged in
+        }
         return response ?? new Response<AuthResponseModel>
         {
             Success = false,

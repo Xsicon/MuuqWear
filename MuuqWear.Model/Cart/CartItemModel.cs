@@ -26,6 +26,8 @@ public class CartItemModel
 
     // computed 
     public decimal ItemTotal => ProductPrice * Quantity;
+    [JsonPropertyName("is_affiliate_discount")]
+    public bool IsAffiliateDiscount { get; set; } = false;
 }
 
 // used when adding item to cart
@@ -38,6 +40,8 @@ public class AddCartItemModel
     public string? ProductImageUrl { get; set; }
     public decimal ProductPrice { get; set; }
     public string Color { get; set; } = string.Empty;
+    public bool IsAffiliateDiscount { get; set; } = false;
+
 }
 
 // used when updating quantity

@@ -1,59 +1,46 @@
-﻿@using static AdminAffiliates
-
+﻿@using MuuqWear.Model.AffiliateApplication
 <div class="mw-affiliate-row">
-
     <!-- LEFT: INFO -->
     <div class="mw-affiliate-row__info">
-        <div class="mw-affiliate-row__name">@Affiliate.Name</div>
+        <div class="mw-affiliate-row__name">@Application.FullName</div>
         <div class="mw-affiliate-row__handle">
-            @Affiliate.Handle · @Affiliate.Followers
+            @GetFirstSocialHandle() · @GetFollowersDisplay()
         </div>
         <div class="mw-affiliate-row__meta">
-            Applied @Affiliate.AppliedDate · Niche: @Affiliate.Niche
+            Applied @Application.FormattedDate · Niche: @Application.ContentNiche
         </div>
     </div>
 
     <!-- RIGHT: ACTIONS -->
     <div class="mw-affiliate-row__actions">
-
         <!-- VIEW (all tabs) -->
         <button class="mw-btn-action mw-btn-action--view"
-                @onclick='() => OnAction.InvokeAsync((Affiliate.Id, "view"))'>
+                @onclick='() => OnAction.InvokeAsync((Application.Id, "view"))'>
             VIEW
         </button>
 
-        @if (!ShowActiveActions && !ShowPayoutActions)
+        @if (!ShowActiveActions)
         {
             <!-- PENDING ACTIONS -->
             <button class="mw-btn-action mw-btn-action--approve"
-                    @onclick='() => OnAction.InvokeAsync((Affiliate.Id, "approve"))'>
+                    @onclick='() => OnAction.InvokeAsync((Application.Id, "approve"))'>
                 APPROVE
             </button>
             <button class="mw-btn-action mw-btn-action--deny"
-                    @onclick='() => OnAction.InvokeAsync((Affiliate.Id, "deny"))'>
-                DENY
+                    @onclick='() => OnAction.InvokeAsync((Application.Id, "reject"))'>
+                REJECT
             </button>
             <button class="mw-btn-action mw-btn-action--waitlist"
-                    @onclick='() => OnAction.InvokeAsync((Affiliate.Id, "waitlist"))'>
+                    @onclick='() => OnAction.InvokeAsync((Application.Id, "waitlist"))'>
                 WAITLIST
             </button>
         }
-        else if (ShowActiveActions)
-        {
-            <!-- ACTIVE ACTIONS (placeholder - can add more if needed) -->
-        }
-        else if (ShowPayoutActions)
-        {
-            <!-- PAYOUT ACTIONS (placeholder - can add more if needed) -->
-        }
-
     </div>
-
 </div>
 
 @code {
     [Parameter]
-    public AffiliateModel Affiliate { get; set; } = new();
+    public AffiliateApplicationModel Application { get; set; } = new();
 
     [Parameter]
     public EventCallback<(Guid Id, string Action)> OnAction { get; set; }
@@ -61,6 +48,33 @@
     [Parameter]
     public bool ShowActiveActions { get; set; }
 
-    [Parameter]
-    public bool ShowPayoutActions { get; set; }
+    /// <summary>
+    /// Get first social handle or fallback
+    /// </summary>
+    private string GetFirstSocialHandle()
+    {
+        var firstHandle = Application.SocialHandles?.FirstOrDefault();
+        if (firstHandle != null && !string.IsNullOrEmpty(firstHandle.Handle))
+        {
+            return $"@{firstHandle.Handle}";
+        }
+        return Application.Email; // Fallback to email
+    }
+
+    /// <summary>
+    /// Format audience size as "X followers"
+    /// </summary>
+    private string GetFollowersDisplay()
+    {
+        if (Application.AudienceSize == 0)
+            return "No followers";
+
+        if (Application.AudienceSize >= 1000)
+        {
+            double thousands = Application.AudienceSize / 1000.0;
+            return $"{thousands:N1}k followers";
+        }
+
+        return $"{Application.AudienceSize:N0} followers";
+    }
 }

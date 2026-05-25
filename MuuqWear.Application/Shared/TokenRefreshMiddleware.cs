@@ -49,6 +49,8 @@ public class TokenRefreshMiddleware
 
             if (hadCookie)
                 _authSession.NotifySessionExpired();
+            context.Response.Cookies.Delete("muuqwear_auth");
+
 
             await _next(context);
             return;
@@ -123,7 +125,7 @@ public class TokenRefreshMiddleware
     {
         if (string.IsNullOrEmpty(refreshToken))
         {
-            System.Diagnostics.Debug.WriteLine("RefreshToken is null or empty ❌");
+            System.Diagnostics.Debug.WriteLine("RefreshToken is null or empty ");
             return false;
         }
         try

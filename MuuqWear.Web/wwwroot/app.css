@@ -685,3 +685,39 @@ a.an-nav__item.active {
     .mw-modal-session .mw-btn-primary:hover {
         background: #2D3F5F;
     }
+
+/* Performance Chart Section */
+.performance-chart-section {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+    .performance-chart-section .section-title {
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        color: #4A5C7A;
+        margin-bottom: 1rem;
+    }
+
+.chart-container {
+    position: relative;
+    height: 200px;
+    width: 100%;
+}
+
+.chart-loading,
+.chart-error {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    color: #6B7280;
+}
+
+.chart-error {
+    color: #EF4444;
+}

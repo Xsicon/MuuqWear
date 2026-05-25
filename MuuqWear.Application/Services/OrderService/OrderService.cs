@@ -1,4 +1,5 @@
-﻿using MuuqWear.Application.Shared;
+﻿using Microsoft.Extensions.Configuration;
+using MuuqWear.Application.Shared;
 using MuuqWear.Model.Orders;
 using MuuqWear.Model.Shared;
 using System.Net.Http.Json;
@@ -8,6 +9,7 @@ namespace MuuqWear.Application.Services.OrderService;
 public class OrderService : IOrderService
 {
     private readonly HttpClient _http;
+
 
     public OrderService(HttpClient http)
     {

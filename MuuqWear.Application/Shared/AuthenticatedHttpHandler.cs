@@ -42,20 +42,20 @@ public class AuthenticatedHttpHandler : DelegatingHandler
         var context = _httpContextAccessor.HttpContext;
         var token = GetToken(context);
 
-        // ✅ ADD: Check if token is expired BEFORE sending
+        //  ADD: Check if token is expired BEFORE sending
         if (!string.IsNullOrEmpty(token) && IsTokenExpired(token))
         {
-            System.Diagnostics.Debug.WriteLine("⚠️ Token expired, attempting refresh...");
+            System.Diagnostics.Debug.WriteLine(" Token expired, attempting refresh...");
 
             var newToken = await TryRefreshAsync(context);
             if (newToken != null)
             {
                 token = newToken;
-                System.Diagnostics.Debug.WriteLine("✅ Token refreshed proactively");
+                System.Diagnostics.Debug.WriteLine(" Token refreshed proactively");
             }
             else
             {
-                System.Diagnostics.Debug.WriteLine("❌ Refresh failed, signing out");
+                System.Diagnostics.Debug.WriteLine(" Refresh failed, signing out");
                 await HandleSignOut(context);
                 return new HttpResponseMessage(System.Net.HttpStatusCode.Unauthorized);
             }
@@ -67,7 +67,7 @@ public class AuthenticatedHttpHandler : DelegatingHandler
 
         var response = await base.SendAsync(request, cancellationToken);
 
-        // ✅ ADD: Handle both 401 AND 400
+        //  ADD: Handle both 401 AND 400
         if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized ||
             response.StatusCode == System.Net.HttpStatusCode.BadRequest)
         {
@@ -89,7 +89,7 @@ public class AuthenticatedHttpHandler : DelegatingHandler
         return response;
     }
 
-    // ✅ ADD: Centralized sign out logic
+    //  ADD: Centralized sign out logic
     private async Task HandleSignOut(HttpContext? context)
     {
         System.Diagnostics.Debug.WriteLine("🚪 Signing out user...");
@@ -105,7 +105,7 @@ public class AuthenticatedHttpHandler : DelegatingHandler
             context.Response.Redirect("/login?expired=true");
         }
     }
-    // ✅ ADD: Token expiry check
+    //  ADD: Token expiry check
     private bool IsTokenExpired(string token)
     {
         try

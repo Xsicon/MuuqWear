@@ -1,0 +1,1478 @@
+﻿@page "/affiliate"
+@using Microsoft.AspNetCore.Components.Authorization
+@using MuuqWear.Application.Services.AffiliateService
+@using MuuqWear.Model.AffiliateApplication
+@inject IAffiliateService AffiliateService
+@rendermode InteractiveServer
+@inject NavigationManager NavigationManager
+
+<PageTitle>Affiliate Program - MuuqWear</PageTitle>
+
+<!-- HERO SECTION -->
+<section class="mw-affiliate-hero">
+    <div class="mw-affiliate-hero-content">
+        <p class="mw-affiliate-eyebrow">The Ambassador Program</p>
+        <h1 class="mw-affiliate-title">Exclusive. Limited. Rewarding.</h1>
+        <p class="mw-affiliate-description">
+            Muuqwear does not offer public discounts. Every discount comes exclusively through our trusted ambassadors.
+            Join the inner circle of 500 members who share Muuqwear with their community and earn while you inspire.
+        </p>
+
+        <!--  AuthorizeView handles everything automatically -->
+        <AuthorizeView>
+            <Authorized>
+                <!-- User is logged in - show apply button -->
+                <button class="mw-affiliate-cta" @onclick="OpenApplicationModal">
+                    Apply to Become an Ambassador
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M5 12h14"></path>
+                        <path d="m12 5 7 7-7 7"></path>
+                    </svg>
+                </button>
+            </Authorized>
+            <NotAuthorized>
+                <!-- User is NOT logged in - show login prompt -->
+                <button class="mw-affiliate-cta" @onclick="RedirectToLogin">
+                    Login to Apply
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M5 12h14"></path>
+                        <path d="m12 5 7 7-7 7"></path>
+                    </svg>
+                </button>
+            </NotAuthorized>
+        </AuthorizeView>
+
+        <p class="mw-affiliate-spots">
+            @if (spotsRemaining > 0)
+            {
+                <span>Limited to 500 members worldwide. @spotsRemaining spots remaining.</span>
+            }
+            else
+            {
+                <span>All 500 spots are currently filled. Join the waitlist!</span>
+            }
+        </p>
+    </div>
+</section>
+<section class="mw-affiliate-benefits">
+    <div class="mw-benefits-container">
+        <div class="mw-benefits-grid">
+
+            <!-- Card 1: No Public Discounts -->
+            <div class="mw-benefit-card">
+                <div class="mw-benefit-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                </div>
+                <h3 class="mw-benefit-title">No Public Discounts</h3>
+                <p class="mw-benefit-description">
+                    Muuqwear never runs site-wide sales or public discount codes. All discounts flow through ambassadors.
+                </p>
+            </div>
+
+            <!-- Card 2: Exclusive to 500 -->
+            <div class="mw-benefit-card">
+                <div class="mw-benefit-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                </div>
+                <h3 class="mw-benefit-title">Exclusive to 500</h3>
+                <p class="mw-benefit-description">
+                    Limited membership ensures quality and authenticity. Annual evaluations maintain standards.
+                </p>
+            </div>
+
+            <!-- Card 3: Tiered Rewards -->
+            <div class="mw-benefit-card">
+                <div class="mw-benefit-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
+                        <polyline points="16 7 22 7 22 13"></polyline>
+                    </svg>
+                </div>
+                <h3 class="mw-benefit-title">Tiered Rewards</h3>
+                <p class="mw-benefit-description">
+                    Bronze → Silver → Gold. Higher tiers unlock bigger rewards for you and your audience.
+                </p>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+
+
+
+<section class="mw-how-it-works">
+    <div class="mw-how-container">
+        <!-- Header -->
+        <div class="mw-how-header">
+            <p class="mw-how-eyebrow">Step by Step</p>
+            <h2 class="mw-how-title">How It Works</h2>
+        </div>
+
+        <!-- Steps -->
+        <div class="mw-steps">
+
+            <!-- Step 1: Apply -->
+            <div class="mw-step">
+                <div class="mw-step-number">01</div>
+                <div class="mw-step-content">
+                    <div class="mw-step-title-row">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                        <h3>Apply</h3>
+                    </div>
+                    <p>Submit your application. If selected, you join an exclusive community of 500 members.</p>
+                </div>
+                <svg class="mw-step-arrow" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="m9 18 6-6-6-6"></path>
+                </svg>
+            </div>
+
+            <!-- Step 2: Share Your Link -->
+            <div class="mw-step">
+                <div class="mw-step-number">02</div>
+                <div class="mw-step-content">
+                    <div class="mw-step-title-row">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="18" cy="5" r="3"></circle>
+                            <circle cx="6" cy="12" r="3"></circle>
+                            <circle cx="18" cy="19" r="3"></circle>
+                            <line x1="8.59" x2="15.42" y1="13.51" y2="17.49"></line>
+                            <line x1="15.41" x2="8.59" y1="6.51" y2="10.49"></line>
+                        </svg>
+                        <h3>Share Your Link</h3>
+                    </div>
+                    <p>Get your unique affiliate link. Share it with your community. Every purchase through your link gives your audience an exclusive discount — the only discount Muuqwear offers.</p>
+                </div>
+                <svg class="mw-step-arrow" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="m9 18 6-6-6-6"></path>
+                </svg>
+            </div>
+
+            <!-- Step 3: Earn & Grow -->
+            <div class="mw-step">
+                <div class="mw-step-number">03</div>
+                <div class="mw-step-content">
+                    <div class="mw-step-title-row">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
+                            <polyline points="16 7 22 7 22 13"></polyline>
+                        </svg>
+                        <h3>Earn & Grow</h3>
+                    </div>
+                    <p>Earn commission per 10 items sold. Unlock milestone bonuses. Level up tiers as you sell more. Every item sold counts as XP.</p>
+                </div>
+                <svg class="mw-step-arrow" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="m9 18 6-6-6-6"></path>
+                </svg>
+            </div>
+
+            <!-- Step 4: Get Rewarded -->
+            <div class="mw-step">
+                <div class="mw-step-number">04</div>
+                <div class="mw-step-content">
+                    <div class="mw-step-title-row">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="8" width="18" height="4" rx="1"></rect>
+                            <path d="M12 8v13"></path>
+                            <path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"></path>
+                            <path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"></path>
+                        </svg>
+                        <h3>Get Rewarded</h3>
+                    </div>
+                    <p>Enjoy 25% off all personal purchases. Top ambassadors earn event tickets, travel packages, and exclusive experiences.</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<section class="mw-tier-comparison">
+    <div class="mw-tier-container">
+        <!-- Header -->
+        <div class="mw-tier-header">
+            <p class="mw-tier-eyebrow">Choose Your Path</p>
+            <h2 class="mw-tier-title">Level Up Through Sales</h2>
+        </div>
+
+        <!-- Tier Cards -->
+        <div class="mw-tier-grid">
+
+            <!-- Bronze Tier -->
+            <div class="mw-tier-card">
+                <div class="mw-tier-icon-section">
+                    <div class="mw-tier-icon mw-tier-bronze">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="mw-tier-name">Bronze</h3>
+                    <p class="mw-tier-requirement">50 items sold to unlock</p>
+                </div>
+
+                <div class="mw-tier-discount">
+                    <p class="mw-tier-discount-label">Your Audience Gets</p>
+                    <p class="mw-tier-discount-value">5% <span>off</span></p>
+                </div>
+
+                <div class="mw-tier-rewards">
+                    <p class="mw-tier-rewards-label">Your Rewards</p>
+                    <ul class="mw-tier-list">
+                        <li>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
+                                <path d="m9 11 3 3L22 4"></path>
+                            </svg>
+                            25% off all personal purchases
+                        </li>
+                        <li>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
+                                <path d="m9 11 3 3L22 4"></path>
+                            </svg>
+                            2.5% commission per 10 items
+                        </li>
+                        <li>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
+                                <path d="m9 11 3 3L22 4"></path>
+                            </svg>
+                            Event ticket discount
+                        </li>
+                        <li>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
+                                <path d="m9 11 3 3L22 4"></path>
+                            </svg>
+                            Access to Ambassador Dashboard
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Silver Tier -->
+            <div class="mw-tier-card mw-tier-featured">
+                <div class="mw-tier-badge">Most Popular</div>
+                <div class="mw-tier-icon-section">
+                    <div class="mw-tier-icon mw-tier-silver">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"></path>
+                            <path d="M5 21h14"></path>
+                        </svg>
+                    </div>
+                    <h3 class="mw-tier-name">Silver</h3>
+                    <p class="mw-tier-requirement">150 items sold to unlock</p>
+                </div>
+
+                <div class="mw-tier-discount">
+                    <p class="mw-tier-discount-label">Your Audience Gets</p>
+                    <p class="mw-tier-discount-value">10% <span>off</span></p>
+                </div>
+
+                <div class="mw-tier-rewards">
+                    <p class="mw-tier-rewards-label">Your Rewards</p>
+                    <ul class="mw-tier-list">
+                        <li>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
+                                <path d="m9 11 3 3L22 4"></path>
+                            </svg>
+                            25% off all personal purchases
+                        </li>
+                        <li>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
+                                <path d="m9 11 3 3L22 4"></path>
+                            </svg>
+                            5% commission per 10 items
+                        </li>
+                        <li>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
+                                <path d="m9 11 3 3L22 4"></path>
+                            </svg>
+                            Free Muuqsimo event tickets
+                        </li>
+                        <li>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
+                                <path d="m9 11 3 3L22 4"></path>
+                            </svg>
+                            Priority support & early access
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Gold Tier -->
+            <div class="mw-tier-card">
+                <div class="mw-tier-icon-section">
+                    <div class="mw-tier-icon mw-tier-gold">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="mw-tier-name">Gold</h3>
+                    <p class="mw-tier-requirement">500 items sold to unlock</p>
+                </div>
+
+                <div class="mw-tier-discount">
+                    <p class="mw-tier-discount-label">Your Audience Gets</p>
+                    <p class="mw-tier-discount-value">15% <span>off</span></p>
+                </div>
+
+                <div class="mw-tier-rewards">
+                    <p class="mw-tier-rewards-label">Your Rewards</p>
+                    <ul class="mw-tier-list">
+                        <li>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
+                                <path d="m9 11 3 3L22 4"></path>
+                            </svg>
+                            25% off all personal purchases
+                        </li>
+                        <li>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
+                                <path d="m9 11 3 3L22 4"></path>
+                            </svg>
+                            10% commission per 10 items
+                        </li>
+                        <li>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
+                                <path d="m9 11 3 3L22 4"></path>
+                            </svg>
+                            All-expenses-paid Muuqsimo trip
+                        </li>
+                        <li>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
+                                <path d="m9 11 3 3L22 4"></path>
+                            </svg>
+                            VIP access & exclusive experiences
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+
+<section class="mw-commission-section">
+    <div class="mw-commission-container">
+        <!-- Header -->
+        <div class="mw-commission-header">
+            <p class="mw-commission-eyebrow">Earnings</p>
+            <h2 class="mw-commission-title">Commission & Bonus Structure</h2>
+        </div>
+
+        <!-- Commission Table Section -->
+        <div class="mw-commission-table-section">
+            <h3 class="mw-commission-subtitle">Commission Per 10 Items Sold</h3>
+
+            <div class="mw-table-wrapper">
+                <table class="mw-commission-table">
+                    <thead>
+                        <tr>
+                            <th>Tier</th>
+                            <th>Rate</th>
+                            <th>Example (10 items / $5,500)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="mw-tier-cell">Bronze</td>
+                            <td>2.5%</td>
+                            <td class="mw-amount-cell">$137.50</td>
+                        </tr>
+                        <tr class="mw-table-alt">
+                            <td class="mw-tier-cell">Silver</td>
+                            <td>5%</td>
+                            <td class="mw-amount-cell">$275.00</td>
+                        </tr>
+                        <tr>
+                            <td class="mw-tier-cell">Gold</td>
+                            <td>10%</td>
+                            <td class="mw-amount-cell">$550.00</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mw-commission-notes">
+                <p>
+                    <span class="mw-bullet">•</span>
+                    Commission is paid in batches of 10 items sold
+                </p>
+                <p>
+                    <span class="mw-bullet">•</span>
+                    When you reach another multiple of 10, you receive commission on those last 10 items
+                </p>
+                <p>
+                    <span class="mw-bullet">•</span>
+                    Each item sold counts toward your XP regardless of price
+                </p>
+            </div>
+        </div>
+
+        <!-- Milestone Bonuses Section -->
+        <div class="mw-milestones-section">
+            <h3 class="mw-commission-subtitle">Milestone Bonuses</h3>
+
+            <div class="mw-milestone-list">
+                <div class="mw-milestone-item">
+                    <div class="mw-milestone-left">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"></path>
+                        </svg>
+                        <span class="mw-milestone-desc">50 items sold</span>
+                    </div>
+                    <div class="mw-milestone-amount">$500</div>
+                </div>
+
+                <div class="mw-milestone-item">
+                    <div class="mw-milestone-left">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"></path>
+                        </svg>
+                        <span class="mw-milestone-desc">100 items sold</span>
+                    </div>
+                    <div class="mw-milestone-amount">$1,000</div>
+                </div>
+
+                <div class="mw-milestone-item">
+                    <div class="mw-milestone-left">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"></path>
+                        </svg>
+                        <span class="mw-milestone-desc">250 items sold</span>
+                    </div>
+                    <div class="mw-milestone-amount">$2,000</div>
+                </div>
+
+                <div class="mw-milestone-item">
+                    <div class="mw-milestone-left">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"></path>
+                        </svg>
+                        <span class="mw-milestone-desc">500 items sold</span>
+                    </div>
+                    <div class="mw-milestone-amount">$5,000</div>
+                </div>
+
+                <div class="mw-milestone-item">
+                    <div class="mw-milestone-left">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"></path>
+                        </svg>
+                        <span class="mw-milestone-desc">1,000 items sold</span>
+                    </div>
+                    <div class="mw-milestone-right">
+                        <div class="mw-milestone-amount">$10,000</div>
+                        <p class="mw-milestone-note">Resets XP counter, retains Gold tier</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- XP Reset Box -->
+            <div class="mw-xp-reset-box">
+                <p>
+                    <span class="mw-xp-reset-label">Annual XP Reset:</span>
+                    After 1,000 items sold, your XP counter resets to 0. You retain Gold tier status and continue earning milestone bonuses again from 0.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<section class="mw-philosophy-section">
+    <div class="mw-philosophy-container">
+        <!-- Header -->
+        <div class="mw-philosophy-header">
+            <p class="mw-philosophy-eyebrow">Our Philosophy</p>
+            <h2 class="mw-philosophy-title">Why Muuqwear Does Not Offer Public Discounts</h2>
+        </div>
+
+        <!-- Content Card -->
+        <div class="mw-philosophy-card">
+            <p class="mw-philosophy-text">
+                Muuqwear believes that true value should never be diluted by constant sales or public discount codes.
+                Our pricing reflects the quality of materials, ethical production, and timeless design.
+            </p>
+
+            <p class="mw-philosophy-text">
+                Instead, we empower our ambassadors to share the Muuqwear experience with their communities.
+                Every discount comes from a trusted ambassador — never from the website.
+            </p>
+
+            <!-- Benefits List -->
+            <div class="mw-philosophy-benefits">
+                <p class="mw-benefits-label">This Approach</p>
+
+                <div class="mw-benefits-grid">
+                    <div class="mw-benefit-item">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
+                            <path d="m9 11 3 3L22 4"></path>
+                        </svg>
+                        <span>Rewards community members who share Muuqwear</span>
+                    </div>
+
+                    <div class="mw-benefit-item">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
+                            <path d="m9 11 3 3L22 4"></path>
+                        </svg>
+                        <span>Creates genuine scarcity around discounts</span>
+                    </div>
+
+                    <div class="mw-benefit-item">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
+                            <path d="m9 11 3 3L22 4"></path>
+                        </svg>
+                        <span>Builds trust through peer recommendations</span>
+                    </div>
+
+                    <div class="mw-benefit-item">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
+                            <path d="m9 11 3 3L22 4"></path>
+                        </svg>
+                        <span>Maintains brand integrity and value</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="mw-audience-section">
+    <div class="mw-audience-container">
+        <!-- Header -->
+        <div class="mw-audience-header">
+            <p class="mw-audience-eyebrow">For Your Audience</p>
+            <h2 class="mw-audience-title">How Your Audience Gets Discounts</h2>
+        </div>
+
+        <!-- Process Steps -->
+        <div class="mw-audience-steps">
+
+            <!-- Step 1 -->
+            <div class="mw-audience-step">
+                <div class="mw-audience-number">1</div>
+                <div class="mw-audience-content">
+                    <p class="mw-audience-step-title">You share your unique link</p>
+                    <p class="mw-audience-step-desc">muuqwear.com/?ref=YOURCODE</p>
+                </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="mw-audience-step">
+                <div class="mw-audience-number">2</div>
+                <div class="mw-audience-content">
+                    <p class="mw-audience-step-title">Customer clicks your link</p>
+                    <p class="mw-audience-step-desc">They land on Muuqwear with your discount pre-applied</p>
+                </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="mw-audience-step">
+                <div class="mw-audience-number">3</div>
+                <div class="mw-audience-content">
+                    <p class="mw-audience-step-title">Banner appears</p>
+                    <p class="mw-audience-step-desc">"You're shopping with [Your Name]! Enjoy [XX]% off"</p>
+                </div>
+            </div>
+
+            <!-- Step 4 -->
+            <div class="mw-audience-step">
+                <div class="mw-audience-number">4</div>
+                <div class="mw-audience-content">
+                    <p class="mw-audience-step-title">Discount auto-applies</p>
+                    <p class="mw-audience-step-desc">Customer shops. Discount applied at checkout. No code needed.</p>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Discount Info Box -->
+        <div class="mw-audience-discounts">
+            <p class="mw-audience-discounts-label">Your Audience Receives</p>
+            <div class="mw-audience-discounts-list">
+                <p><span class="mw-tier-bold">Bronze</span> ambassadors: <span class="mw-tier-bold">5% off</span> all items</p>
+                <p><span class="mw-tier-bold">Silver</span> ambassadors: <span class="mw-tier-bold">10% off</span> all items</p>
+                <p><span class="mw-tier-bold">Gold</span> ambassadors: <span class="mw-tier-bold">15% off</span> all items</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<section class="mw-personal-benefits-section">
+    <div class="mw-personal-container">
+        <!-- Header -->
+        <div class="mw-personal-header">
+            <p class="mw-personal-eyebrow">For You</p>
+            <h2 class="mw-personal-title">Your Personal Benefits</h2>
+        </div>
+
+        <!-- Benefits Cards -->
+        <div class="mw-personal-cards">
+
+            <!-- Card 1: 25% Off -->
+            <div class="mw-personal-card">
+                <div class="mw-personal-card-header">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="8" width="18" height="4" rx="1"></rect>
+                        <path d="M12 8v13"></path>
+                        <path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"></path>
+                        <path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"></path>
+                    </svg>
+                    <h3>All Tiers: 25% Off All Personal Purchases</h3>
+                </div>
+                <ul class="mw-personal-list">
+                    <li>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
+                            <path d="m9 11 3 3L22 4"></path>
+                        </svg>
+                        <span>Shop any Muuqwear item at 25% discount</span>
+                    </li>
+                    <li>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
+                            <path d="m9 11 3 3L22 4"></path>
+                        </svg>
+                        <span>No minimum spend</span>
+                    </li>
+                    <li>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
+                            <path d="m9 11 3 3L22 4"></path>
+                        </svg>
+                        <span>Automatically applied when logged into your account</span>
+                    </li>
+                    <li>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
+                            <path d="m9 11 3 3L22 4"></path>
+                        </svg>
+                        <span>For your personal wardrobe only (not for resale)</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Card 2: Exclusive Event Access -->
+            <div class="mw-personal-card">
+                <div class="mw-personal-card-header">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path>
+                    </svg>
+                    <h3>Exclusive Event Access</h3>
+                </div>
+                <ul class="mw-personal-list">
+                    <li>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
+                            <path d="m9 11 3 3L22 4"></path>
+                        </svg>
+                        <span><span class="mw-tier-highlight">Bronze:</span> Invitation to virtual events (design previews, Q&As)</span>
+                    </li>
+                    <li>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
+                            <path d="m9 11 3 3L22 4"></path>
+                        </svg>
+                        <span><span class="mw-tier-highlight">Silver:</span> Free tickets to Muuqsimo annual gala</span>
+                    </li>
+                    <li>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
+                            <path d="m9 11 3 3L22 4"></path>
+                        </svg>
+                        <span><span class="mw-tier-highlight">Gold:</span> All-expenses-paid trip to Muuqsimo (flights, hotel, VIP)</span>
+                    </li>
+                </ul>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+
+<section class="mw-get-started-section">
+    <div class="mw-get-started-container">
+        <!-- Header -->
+        <div class="mw-get-started-header">
+            <p class="mw-get-started-eyebrow">Get Started</p>
+            <h2 class="mw-get-started-title">How to Become an Ambassador</h2>
+        </div>
+
+        <!-- Steps -->
+        <div class="mw-get-started-steps">
+
+            <!-- Step 1 -->
+            <div class="mw-get-started-step">
+                <p class="mw-step-title">Step 1: Create a Muuqwear account (if you don't have one)</p>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="mw-get-started-step">
+                <p class="mw-step-title">Step 2: Click "Apply to Become an Ambassador"</p>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="mw-get-started-step">
+                <p class="mw-step-title">Step 3: Complete the application form:</p>
+                <ul class="mw-step-list">
+                    <li>Full name</li>
+                    <li>Email</li>
+                    <li>Social media handles (Instagram, TikTok, YouTube)</li>
+                    <li>Audience size</li>
+                    <li>Content niche (fashion, lifestyle, streetwear, etc.)</li>
+                    <li>Portfolio/website URL</li>
+                    <li>"Why do you want to represent Muuqwear?" (short essay)</li>
+                    <li>Upload sample content (images/videos, max 5 files)</li>
+                </ul>
+            </div>
+
+            <!-- Step 4 -->
+            <div class="mw-get-started-step">
+                <p class="mw-step-title">Step 4: Wait for review (7-14 business days)</p>
+            </div>
+
+            <!-- Step 5 -->
+            <div class="mw-get-started-step">
+                <p class="mw-step-title">Step 5: If selected, you'll receive:</p>
+                <ul class="mw-step-list">
+                    <li>Welcome email with your affiliate link</li>
+                    <li>Access to Ambassador Dashboard</li>
+                    <li>25% personal discount code</li>
+                    <li>Program guidelines and best practices</li>
+                </ul>
+            </div>
+
+        </div>
+
+        <!-- Warning Message -->
+        <p class="mw-get-started-warning">Limited to 500 active ambassadors. Apply early.</p>
+
+        <!-- CTA Button -->
+        <div class="mw-get-started-cta">
+            <AuthorizeView>
+                <Authorized>
+                    <button class="mw-cta-button" @onclick="OpenApplicationModal">
+                        Apply to Become an Ambassador
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M5 12h14"></path>
+                            <path d="m12 5 7 7-7 7"></path>
+                        </svg>
+                    </button>
+                </Authorized>
+                <NotAuthorized>
+                    <button class="mw-cta-button" @onclick="RedirectToLogin">
+                        Login to Apply
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M5 12h14"></path>
+                            <path d="m12 5 7 7-7 7"></path>
+                        </svg>
+                    </button>
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
+    </div>
+</section>
+
+
+<section class="mw-dashboard-preview-section">
+    <div class="mw-dashboard-container">
+        <!-- Header -->
+        <div class="mw-dashboard-header">
+            <p class="mw-dashboard-eyebrow">Your Control Center</p>
+            <h2 class="mw-dashboard-title">What You'll See in Your Dashboard</h2>
+        </div>
+
+        <!-- Features Card -->
+        <div class="mw-dashboard-card">
+            <ul class="mw-dashboard-list">
+                <li>
+                    <div class="mw-dashboard-bullet"></div>
+                    <span>Your unique affiliate link (one-click copy)</span>
+                </li>
+                <li>
+                    <div class="mw-dashboard-bullet"></div>
+                    <span>Live XP counter (items sold toward next tier)</span>
+                </li>
+                <li>
+                    <div class="mw-dashboard-bullet"></div>
+                    <span>Commission batch tracker (progress to next 10 items)</span>
+                </li>
+                <li>
+                    <div class="mw-dashboard-bullet"></div>
+                    <span>Milestone tracker (upcoming and achieved bonuses)</span>
+                </li>
+                <li>
+                    <div class="mw-dashboard-bullet"></div>
+                    <span>Earnings summary (commission + bonuses)</span>
+                </li>
+                <li>
+                    <div class="mw-dashboard-bullet"></div>
+                    <span>Recent referrals (clicks, conversions, commission earned)</span>
+                </li>
+                <li>
+                    <div class="mw-dashboard-bullet"></div>
+                    <span>Payout requests (minimum $50)</span>
+                </li>
+                <li>
+                    <div class="mw-dashboard-bullet"></div>
+                    <span>Partner Store (shop at your 25% discount)</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<section class="mw-faq-section">
+    <div class="mw-faq-container">
+        <!-- Header -->
+        <div class="mw-faq-header">
+            <p class="mw-faq-eyebrow">Got Questions?</p>
+            <h2 class="mw-faq-title">Frequently Asked Questions</h2>
+        </div>
+
+        <!-- FAQ List -->
+        <div class="mw-faq-list">
+
+            @for (int i = 0; i < faqs.Count; i++)
+            {
+                var index = i;
+                var faq = faqs[index];
+                var isOpen = openFaqIndex == index;
+
+                <div class="mw-faq-item">
+                    <button class="mw-faq-button" @onclick="() => ToggleFaq(index)">
+                        <span class="mw-faq-question">@faq.Question</span>
+                        <div class="mw-faq-icon @(isOpen ? "mw-faq-icon-open" : "")">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="m6 9 6 6 6-6"></path>
+                            </svg>
+                        </div>
+                    </button>
+
+                    @if (isOpen)
+                    {
+                        <div class="mw-faq-answer">
+                            <p>@faq.Answer</p>
+                        </div>
+                    }
+                </div>
+            }
+
+        </div>
+    </div>
+</section>
+
+<section class="mw-rules-section">
+    <div class="mw-rules-container">
+        <!-- Header -->
+        <div class="mw-rules-header">
+            <p class="mw-rules-eyebrow">Please Read</p>
+            <h2 class="mw-rules-title">Program Rules & Guidelines</h2>
+        </div>
+
+        <!-- Rules Card -->
+        <div class="mw-rules-card">
+            <ul class="mw-rules-list">
+                <li>
+                    <div class="mw-rules-bullet"></div>
+                    <span>500 member cap — annual evaluations determine renewal</span>
+                </li>
+                <li>
+                    <div class="mw-rules-bullet"></div>
+                    <span>No paid advertising — organic sharing only</span>
+                </li>
+                <li>
+                    <div class="mw-rules-bullet"></div>
+                    <span>Authentic representation — align with Muuqwear aesthetic</span>
+                </li>
+                <li>
+                    <div class="mw-rules-bullet"></div>
+                    <span>No discount stacking — affiliate discounts cannot combine</span>
+                </li>
+                <li>
+                    <div class="mw-rules-bullet"></div>
+                    <span>Personal discount for personal use only — not for resale</span>
+                </li>
+                <li>
+                    <div class="mw-rules-bullet"></div>
+                    <span>Commission paid on completed orders after 30-day return window</span>
+                </li>
+                <li>
+                    <div class="mw-rules-bullet"></div>
+                    <span>Fraudulent activity results in immediate termination</span>
+                </li>
+                <li>
+                    <div class="mw-rules-bullet"></div>
+                    <span>Muuqwear reserves the right to modify program terms</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+
+<section class="mw-final-cta-section">
+    <div class="mw-final-cta-container">
+        <div class="mw-final-cta-content">
+            <h2 class="mw-final-cta-title">Ready to Join the Inner Circle?</h2>
+
+            <p class="mw-final-cta-spots">
+                Limited to 500 members worldwide. Currently: @(500 - spotsRemaining) active ambassadors.
+                <span class="mw-spots-highlight">@spotsRemaining spots remaining.</span>
+            </p>
+
+            <div class="mw-final-cta-benefits">
+                <p class="mw-final-benefit">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
+                        <path d="m9 11 3 3L22 4"></path>
+                    </svg>
+                    Your unique affiliate link
+                </p>
+                <p class="mw-final-benefit">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
+                        <path d="m9 11 3 3L22 4"></path>
+                    </svg>
+                    25% off all personal purchases
+                </p>
+                <p class="mw-final-benefit">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
+                        <path d="m9 11 3 3L22 4"></path>
+                    </svg>
+                    Access to Ambassador Dashboard
+                </p>
+                <p class="mw-final-benefit">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
+                        <path d="m9 11 3 3L22 4"></path>
+                    </svg>
+                    Opportunity to earn commissions and bonuses
+                </p>
+                <p class="mw-final-benefit">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
+                        <path d="m9 11 3 3L22 4"></path>
+                    </svg>
+                    Invitation to exclusive events
+                </p>
+            </div>
+
+            <AuthorizeView>
+                <Authorized>
+                    <button class="mw-final-cta-button" @onclick="OpenApplicationModal">
+                        Apply to Become an Ambassador
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M5 12h14"></path>
+                            <path d="m12 5 7 7-7 7"></path>
+                        </svg>
+                    </button>
+                </Authorized>
+                <NotAuthorized>
+                    <button class="mw-final-cta-button" @onclick="RedirectToLogin">
+                        Login to Apply
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M5 12h14"></path>
+                            <path d="m12 5 7 7-7 7"></path>
+                        </svg>
+                    </button>
+                </NotAuthorized>
+            </AuthorizeView>
+
+            <p class="mw-final-cta-contact">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect width="20" height="16" x="2" y="4" rx="2"></rect>
+                    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+                </svg>
+                Questions? Email affiliates@muuqwear.com
+            </p>
+        </div>
+    </div>
+</section>
+
+@if (!string.IsNullOrEmpty(showAlertMessage))
+{
+    <div class="mw-alert-overlay" @onclick="CloseAlert">
+        <div class="mw-alert-box" @onclick:stopPropagation="true">
+            <div class="mw-alert-icon">ℹ️</div>
+            <p class="mw-alert-message">@showAlertMessage</p>
+            <button type="button" class="mw-alert-close" @onclick="CloseAlert">
+                Got it
+            </button>
+        </div>
+    </div>
+}
+
+<!-- APPLICATION MODAL -->
+@if (showModal)
+{
+    <div class="mw-modal-overlay" @onclick="CloseModal">
+        <div class="mw-modal-content" @onclick:stopPropagation="true">
+            <!-- Header -->
+            <div class="mw-modal-header">
+                <h2 class="mw-modal-title">Affiliate Application</h2>
+                <button type="button" class="mw-modal-close" @onclick="CloseModal">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6 6 18"></path>
+                        <path d="m6 6 12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Form Body -->
+            <div class="mw-modal-body">
+                @if (!submitted)
+                {
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="mw-form-error">
+                            @errorMessage
+                        </div>
+                    }
+
+                    <p class="mw-form-intro">
+                        Join our exclusive 500-member affiliate program. Gold affiliates receive all-expenses-paid trips to Muuqsimo.
+                    </p>
+
+                    <!-- Full Name -->
+                    <div class="mw-form-field">
+                        <label>Full Name</label>
+                        <input type="text" @bind="model.FullName" placeholder="Enter your full name" />
+                    </div>
+
+                    <!-- Email -->
+                    <div class="mw-form-field">
+                        <label>Email Address</label>
+                        <input type="email" @bind="model.Email" placeholder="your@email.com" />
+                    </div>
+
+                    <!-- Social Media -->
+                    <div class="mw-form-field">
+                        <label>Social Media Handles</label>
+                        <div class="mw-social-handles">
+                            @for (int i = 0; i < model.SocialHandles.Count; i++)
+                            {
+                                var index = i;
+                                var handle = model.SocialHandles[index];
+
+                                <div class="mw-social-row">
+                                    @if (handle.Platform == "Instagram")
+                                    {
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect>
+                                            <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                                            <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line>
+                                        </svg>
+                                    }
+                                    else if (handle.Platform == "TikTok")
+                                    {
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"></path>
+                                        </svg>
+                                    }
+                                    else if (handle.Platform == "YouTube")
+                                    {
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17"></path>
+                                            <path d="m10 15 5-3-5-3z"></path>
+                                        </svg>
+                                    }
+
+                                    <input type="text" @bind="model.SocialHandles[index].Handle" placeholder="@@@(handle.Platform.ToLower())" />
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Audience Size -->
+                    <div class="mw-form-field">
+                        <label>Audience Size</label>
+                        <input type="number" @bind="model.AudienceSize" placeholder="Total followers across all platforms" min="100" />
+                    </div>
+
+                    <!-- Content Niche -->
+                    <div class="mw-form-field">
+                        <label>Content Niche (Fashion, Lifestyle, Streetwear, etc.)</label>
+                        <input type="text" @bind="model.ContentNiche" placeholder="e.g., Fashion & Lifestyle" />
+                    </div>
+
+                    <!-- Portfolio URL -->
+                    <div class="mw-form-field">
+                        <label>Portfolio / Website URL</label>
+                        <input type="url" @bind="model.PortfolioUrl" placeholder="https://..." />
+                    </div>
+
+                    <!-- Why Question -->
+                    <div class="mw-form-field">
+                        <label>Why do you want to represent Muuqwear?</label>
+                        <textarea rows="4" @bind="model.WhyMuuqwear" placeholder="Tell us why you'd be a great fit..."></textarea>
+                    </div>
+
+                    <!-- Sample Content Upload (Placeholder) -->
+                    <div class="mw-form-field">
+                        <label>Sample Content (max 5 files)</label>
+                        <div class="mw-file-upload-placeholder">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" x2="12" y1="3" y2="15"></line>
+                            </svg>
+                            <span>Click to upload images or videos</span>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="button" class="mw-submit-btn" @onclick="HandleSubmit" disabled="@isSubmitting">
+                        @if (isSubmitting)
+                        {
+                            <span>Submitting...</span>
+                        }
+                        else
+                        {
+                            <span>Submit Application</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M5 12h14"></path>
+                                <path d="m12 5 7 7-7 7"></path>
+                            </svg>
+                        }
+                    </button>
+
+                    <p class="mw-form-footer">
+                        Review period: 7-14 business days. Limited to 500 active ambassadors.
+                    </p>
+                }
+                else
+                {
+                    <!-- Success State -->
+                    <div class="mw-success-state">
+                        <div class="mw-success-icon">✓</div>
+                        <h3>Application Submitted!</h3>
+                        <p>Thank you for applying. We'll review your application and get back to you within 7-14 business days.</p>
+                        <button type="button" class="mw-close-btn" @onclick="CloseModal">
+                            Close
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+
+@code {
+    private bool showModal = false;
+    private bool submitted = false;
+    private bool isSubmitting = false;
+    private string errorMessage = "";
+    private string showAlertMessage = "";
+    private int spotsRemaining = 0;
+    private AffiliateStatusModel? affiliateStatus = new AffiliateStatusModel();
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthStateTask { get; set; }
+
+    // FAQ State
+    private int? openFaqIndex = null;
+
+    private List<FaqItem> faqs = new()
+    {
+        new FaqItem
+        {
+            Question = "How do I get my affiliate link?",
+            Answer = "Once approved, your unique link appears in your Ambassador Dashboard. Copy and share it anywhere."
+        },
+        new FaqItem
+        {
+            Question = "Why doesn't Muuqwear have public discounts?",
+            Answer = "We believe in maintaining brand value and rewarding our community members who authentically share Muuqwear. All discounts come through trusted ambassadors, not mass sales."
+        },
+        new FaqItem
+        {
+            Question = "How do my followers get their discount?",
+            Answer = "When someone clicks your affiliate link, the discount is automatically pre-applied to their cart. They see a banner confirming they're shopping with you and enjoying your exclusive discount."
+        },
+        new FaqItem
+        {
+            Question = "How do I level up to the next tier?",
+            Answer = "Every item sold through your link counts as 1 XP. Bronze unlocks at 50 items, Silver at 150 items, and Gold at 500 items. Track your progress in real-time on your dashboard."
+        },
+        new FaqItem
+        {
+            Question = "When do I get paid?",
+            Answer = "Commission is earned in batches of 10 items sold. Once you reach a multiple of 10, that commission is added to your balance. You can request payout once you reach a minimum of $50."
+        },
+        new FaqItem
+        {
+            Question = "Can I use my personal discount and affiliate link together?",
+            Answer = "Your 25% personal discount is for your own purchases only and cannot be combined with your affiliate link. Your affiliate link provides discounts for your audience."
+        },
+        new FaqItem
+        {
+            Question = "What happens if I stop selling?",
+            Answer = "We conduct annual evaluations. Inactive ambassadors may be moved to a waitlist to make room for active members. Stay engaged to maintain your status."
+        },
+        new FaqItem
+        {
+            Question = "Is the program really limited to 500 members?",
+            Answer = "Yes. We maintain an exclusive community of 500 active ambassadors worldwide. When we reach capacity, new applicants are added to a waitlist."
+        },
+        new FaqItem
+        {
+            Question = "Can I share my link on paid ads?",
+            Answer = "Organic sharing is encouraged. Paid advertising requires prior approval. Contact us through your dashboard to discuss paid promotion opportunities."
+        },
+        new FaqItem
+        {
+            Question = "How do I get free tickets to Muuqsimo?",
+            Answer = "Silver tier ambassadors receive complimentary tickets to our annual Muuqsimo gala. Gold tier members receive an all-expenses-paid trip including flights, hotel, and VIP access."
+        }
+    };
+
+    public class FaqItem
+    {
+        public string Question { get; set; } = string.Empty;
+        public string Answer { get; set; } = string.Empty;
+    }
+    private void ToggleFaq(int index)
+    {
+        if (openFaqIndex == index)
+        {
+            // Close if already open
+            openFaqIndex = null;
+        }
+        else
+        {
+            // Open the clicked one (closes any other)
+            openFaqIndex = index;
+        }
+    }
+
+    private SubmitAffiliateApplicationModel model = new()
+    {
+        SocialHandles = new List<SocialHandleModel>
+        {
+            new() { Platform = "Instagram" },
+            new() { Platform = "TikTok" },
+            new() { Platform = "YouTube" }
+        }
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Only load status for authenticated users
+        if (AuthStateTask != null)
+        {
+            var authState = await AuthStateTask;
+            if (authState.User.Identity?.IsAuthenticated ?? false)
+            {
+                await LoadAffiliateStatus();
+            }
+        }
+        await LoadSpotsRemaining();
+    }
+
+
+
+    private void RedirectToLogin()
+    {
+        // Save current URL so user returns here after login
+        NavigationManager.NavigateTo($"/login?returnUrl={Uri.EscapeDataString("/affiliate")}", true);
+    }
+
+    private async Task LoadSpotsRemaining()
+    {
+        var result = await AffiliateService.GetSpotsRemaining();
+        if (result.Success)
+        {
+            spotsRemaining = result.Data;
+        }
+    }
+
+    private async Task LoadAffiliateStatus()
+    {
+        try
+        {
+            var result = await AffiliateService.GetStatus();
+            if (result.Success && result.Data != null)
+            {
+                affiliateStatus = result.Data;
+
+                // Show prompt if user hasn't applied yet
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading affiliate status: {ex.Message}");
+        }
+
+    }
+
+    private void OpenApplicationModal()
+    {
+        // Check if user can apply
+        if (affiliateStatus == null)
+        {
+            showAlertMessage = "Please wait, loading your status...";
+            return;
+        }
+
+        if (affiliateStatus.ApplicationStatus == "pending")
+        {
+            showAlertMessage = "Your application is currently under review. We'll notify you within 7-14 business days.";
+            return;
+        }
+
+        if (affiliateStatus.ApplicationStatus == "approved")
+        {
+            showAlertMessage = "You're already an approved affiliate! Check your profile to access your dashboard.";
+            return;
+        }
+
+        if (affiliateStatus.ApplicationStatus == "rejected")
+        {
+            showAlertMessage = "Your previous application was not approved. You may reapply after 30 days.";
+            return;
+        }
+
+        if (affiliateStatus.ApplicationStatus == "waitlisted")
+        {
+            showAlertMessage = "You're on the waitlist. We'll notify you when a spot opens up.";
+            return;
+        }
+
+        // Only open modal if status is "not_applied"
+        if (affiliateStatus.ApplicationStatus == "not_applied")
+        {
+            showModal = true;
+            submitted = false;
+            errorMessage = "";
+
+            model = new SubmitAffiliateApplicationModel
+            {
+                SocialHandles = new List<SocialHandleModel>
+            {
+                new() { Platform = "Instagram" },
+                new() { Platform = "TikTok" },
+                new() { Platform = "YouTube" }
+            }
+            };
+        }
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+        submitted = false;
+    }
+
+    private async Task HandleSubmit()
+    {
+        errorMessage = "";
+        isSubmitting = true;
+
+        try
+        {
+            // Validation
+            if (string.IsNullOrWhiteSpace(model.FullName))
+            {
+                errorMessage = "Full name is required";
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.Email))
+            {
+                errorMessage = "Email is required";
+                return;
+            }
+
+            var validHandles = model.SocialHandles
+            .Where(h => !string.IsNullOrWhiteSpace(h.Handle))
+            .ToList();
+
+            if (!validHandles.Any())
+            {
+                errorMessage = "Please add at least one social media handle";
+                return;
+            }
+
+            if (model.AudienceSize < 100)
+            {
+                errorMessage = "Minimum audience size is 100 followers";
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(model.ContentNiche))
+            {
+                errorMessage = "Content niche is required";
+                return;
+            }
+
+            var request = new SubmitAffiliateApplicationModel
+            {
+                FullName = model.FullName,
+                Email = model.Email,
+                SocialHandles = validHandles,
+                AudienceSize = model.AudienceSize,
+                ContentNiche = model.ContentNiche,
+                PortfolioUrl = model.PortfolioUrl,
+                WhyMuuqwear = model.WhyMuuqwear,
+                SampleFiles = new List<string>
+                ()
+            };
+
+            var result = await AffiliateService.SubmitApplication(request);
+
+            if (result.Success)
+            {
+                submitted = true;
+                await LoadSpotsRemaining(); // Refresh spots count
+            }
+            else
+            {
+                errorMessage = result.Message ?? "Failed to submit application";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+    private void CloseAlert()
+    {
+        showAlertMessage = "";
+    }
+
+
+}

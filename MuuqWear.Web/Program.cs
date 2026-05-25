@@ -6,6 +6,7 @@ using Microsoft.Extensions.Caching.Memory;
 using MuuqWear.Application.Interfaces;
 using MuuqWear.Application.Services.AddressService;
 using MuuqWear.Application.Services.AdminUserService;
+using MuuqWear.Application.Services.AffiliateService;
 using MuuqWear.Application.Services.AuthService;
 using MuuqWear.Application.Services.CartService;
 using MuuqWear.Application.Services.CategoryService;
@@ -30,7 +31,7 @@ var apiBaseUrl = builder.Configuration["ApiBaseUrl"]!;
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
-
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient<IAuthService, AuthService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
@@ -55,7 +56,10 @@ builder.Services.AddHttpClient<ICartService, CartService>(client =>
 builder.Services.AddHttpClient<IOrderService, OrderService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
-}).AddHttpMessageHandler<AuthenticatedHttpHandler>();
+}).AddHttpMessageHandler<AuthenticatedHttpHandler>()
+.AddHttpMessageHandler<AffiliateCookieHandler>();
+
+
 builder.Services.AddHttpClient<IOrderReturnService, OrderReturnService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
@@ -88,10 +92,10 @@ builder.Services.AddHttpClient<IVoteService, VoteService>(client =>
 builder.Services.AddScoped<AuthStateService>();
 builder.Services.AddScoped<CartStateService>();
 builder.Services.AddCascadingAuthenticationState();
-builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<CustomAuthenticationStateProvider>();
 builder.Services.AddScoped<AuthenticatedHttpHandler>();
 builder.Services.AddSingleton<AuthSessionService>();
+builder.Services.AddTransient<AffiliateCookieHandler>();
 
 builder.Services.AddScoped<AuthenticationStateProvider>(sp =>
     sp.GetRequiredService<CustomAuthenticationStateProvider>());
@@ -108,6 +112,12 @@ builder.Services.AddHttpClient<INotificationService, NotificationService>(client
     client.BaseAddress = new Uri(apiBaseUrl);
 }).AddHttpMessageHandler<AuthenticatedHttpHandler>();
 builder.Services.AddSingleton<NotificationRealtimeService>();
+// Add after other services
+builder.Services.AddHttpClient<IAffiliateService, AffiliateService>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+})
+.AddHttpMessageHandler<AuthenticatedHttpHandler>();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
@@ -167,6 +177,7 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseMiddleware<TokenRefreshMiddleware>(); // ← add this line
+app.UseMiddleware<AffiliateTrackingMiddleware>();
 app.UseAntiforgery();
 
 //Set Cookie
