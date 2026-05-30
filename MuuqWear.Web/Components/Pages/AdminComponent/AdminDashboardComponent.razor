@@ -1,0 +1,353 @@
+﻿@page "/admin"
+@using Microsoft.AspNetCore.Authorization
+@using MuuqWear.Application.Interfaces
+@using MuuqWear.Application.Services.HelpCenterService
+@using MuuqWear.Application.Services.OrderService
+@using MuuqWear.Model.Orders
+@using MuuqWear.Model.HelpCenter
+@layout Components.Layout.AdminLayoutComponent.AdminDashboardLayoutComponent
+@rendermode InteractiveServer
+@attribute [Authorize(Roles = "admin")]
+@inject IOrderService OrderService
+@inject IHelpCenterService HelpService
+
+<PageTitle>Admin Dashboard</PageTitle>
+
+<div class="ov-page">
+
+    <h1 class="ov-title">Overview — Last 30 Days</h1>
+
+    <!-- ─── STATS GRID ──────────────────────────────────── -->
+    <div class="ov-stats">
+
+        <div class="ov-stat">
+            <p class="ov-stat__label">Revenue</p>
+            <p class="ov-stat__value">$@totalRevenue.ToString("N0")</p>
+            <p class="ov-stat__change ov-stat__change--up">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m5 12 7-7 7 7"></path>
+                    <path d="M12 19V5"></path>
+                </svg>
+                +12%
+            </p>
+        </div>
+
+        <div class="ov-stat">
+            <p class="ov-stat__label">Orders</p>
+            <p class="ov-stat__value">@totalOrders.ToString("N0")</p>
+            <p class="ov-stat__change ov-stat__change--up">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m5 12 7-7 7 7"></path>
+                    <path d="M12 19V5"></path>
+                </svg>
+                +8%
+            </p>
+        </div>
+
+        <div class="ov-stat">
+            <p class="ov-stat__label">New Affiliates</p>
+            <p class="ov-stat__value">89</p>
+            <p class="ov-stat__change ov-stat__change--up">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m5 12 7-7 7 7"></path>
+                    <path d="M12 19V5"></path>
+                </svg>
+                +23%
+            </p>
+        </div>
+
+        <div class="ov-stat">
+            <p class="ov-stat__label">Avg Rating</p>
+            <p class="ov-stat__value">4.8 ★</p>
+            <p class="ov-stat__change ov-stat__change--down">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 5v14"></path>
+                    <path d="m19 12-7 7-7-7"></path>
+                </svg>
+                -2%
+            </p>
+        </div>
+
+    </div>
+
+    <!-- ─── TWO COL GRID ────────────────────────────────── -->
+    <div class="ov-grid">
+
+        <!-- RECENT ORDERS -->
+        <div class="ov-card">
+            <div class="ov-card__header">
+                <h3 class="ov-card__title">Recent Orders</h3>
+                <a href="/admin/orders" class="ov-card__link">View All</a>
+            </div>
+            <div class="ov-card__body">
+                @if (isLoadingOrders)
+                {
+                    <p class="ov-empty">Loading...</p>
+                }
+                else if (!recentOrders.Any())
+                {
+                    <p class="ov-empty">No orders yet.</p>
+                }
+                else
+                {
+                    @foreach (var order in recentOrders)
+                    {
+                        <div class="ov-order-row" @key="order.Id">
+                            <div>
+                                <span class="ov-order-number">#@order.OrderNumber</span>
+                                <span class="ov-order-amount">$@order.Total.ToString("F2")</span>
+                            </div>
+                            <span class="ov-status-badge @GetOrderStatusClass(order.Status)">
+                                @order.Status
+                            </span>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+
+        <!-- SUPPORT TICKETS PREVIEW -->
+        <div class="ov-card">
+            <div class="ov-card__header">
+                <h3 class="ov-card__title">Support Tickets</h3>
+                <a href="/admin/tickets" class="ov-card__link">Review All</a>
+            </div>
+            <div class="ov-card__body">
+                @if (isLoadingTickets)
+                {
+                    <p class="ov-empty">Loading...</p>
+                }
+                else if (!recentTickets.Any())
+                {
+                    <p class="ov-empty">No tickets yet.</p>
+                }
+                else
+                {
+                    @foreach (var ticket in recentTickets)
+                    {
+                        <div class="ov-ticket-row" @key="ticket.Id">
+                            <div>
+                                <span class="ov-order-number">@ticket.TicketNumber</span>
+                                <span class="ov-ticket-name">@ticket.Name</span>
+                            </div>
+                            <span class="ov-status-badge @GetTicketStatusClass(ticket.Status)">
+                                @GetTicketStatusDisplay(ticket.Status)
+                            </span>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ─── SYSTEM HEALTH ────────────────────────────────── -->
+    <div class="ov-card ov-card--full">
+        <div class="ov-card__header">
+            <h3 class="ov-card__title">System Health</h3>
+        </div>
+        <div class="ov-card__body">
+            <div class="ov-health-grid">
+
+                <div class="ov-health-item">
+                    <div class="ov-health-item__icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                             viewBox="0 0 24 24" fill="none" stroke="#2D9C5A"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                            <path d="M3 5V19A9 3 0 0 0 21 19V5"></path>
+                            <path d="M3 12A9 3 0 0 0 21 12"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="ov-health-item__label">Database</p>
+                        <p class="ov-health-item__status">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"
+                                 viewBox="0 0 24 24" fill="none" stroke="#2D9C5A"
+                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
+                                <path d="m9 11 3 3L22 4"></path>
+                            </svg>
+                            Connected
+                        </p>
+                    </div>
+                </div>
+
+                <div class="ov-health-item">
+                    <div class="ov-health-item__icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                             viewBox="0 0 24 24" fill="none" stroke="#2D9C5A"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect width="20" height="14" x="2" y="5" rx="2"></rect>
+                            <line x1="2" x2="22" y1="10" y2="10"></line>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="ov-health-item__label">Stripe</p>
+                        <p class="ov-health-item__status">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"
+                                 viewBox="0 0 24 24" fill="none" stroke="#2D9C5A"
+                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
+                                <path d="m9 11 3 3L22 4"></path>
+                            </svg>
+                            Connected
+                        </p>
+                    </div>
+                </div>
+
+                <div class="ov-health-item">
+                    <div class="ov-health-item__icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                             viewBox="0 0 24 24" fill="none" stroke="#2D9C5A"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect width="20" height="8" x="2" y="2" rx="2" ry="2"></rect>
+                            <rect width="20" height="8" x="2" y="14" rx="2" ry="2"></rect>
+                            <line x1="6" x2="6.01" y1="6" y2="6"></line>
+                            <line x1="6" x2="6.01" y1="18" y2="18"></line>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="ov-health-item__label">Supabase</p>
+                        <p class="ov-health-item__status">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"
+                                 viewBox="0 0 24 24" fill="none" stroke="#2D9C5A"
+                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
+                                <path d="m9 11 3 3L22 4"></path>
+                            </svg>
+                            Connected
+                        </p>
+                    </div>
+                </div>
+
+                <div class="ov-health-item">
+                    <div class="ov-health-item__icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                             viewBox="0 0 24 24" fill="none" stroke="#2D9C5A"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
+                            <path d="M21 3v5h-5"></path>
+                            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
+                            <path d="M8 16H3v5"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="ov-health-item__label">Last Backup</p>
+                        <p class="ov-health-item__status ov-health-item__status--plain">
+                            Today 2:00 AM
+                        </p>
+                    </div>
+                </div>
+
+                <div class="ov-health-item">
+                    <div class="ov-health-item__icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                             viewBox="0 0 24 24" fill="none" stroke="#2D9C5A"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="ov-health-item__label">Active Users</p>
+                        <p class="ov-health-item__status ov-health-item__status--plain">
+                            @activeUsers
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@code {
+
+    // ─── STATE ────────────────────────────────────────────────
+    private List<OrderModel> recentOrders = new();
+    private List<SupportTicketModel> recentTickets = new();
+    private bool isLoadingOrders = true;
+    private bool isLoadingTickets = true;
+    private decimal totalRevenue = 0;
+    private int totalOrders = 0;
+    private int activeUsers = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.WhenAll(
+            LoadRecentOrders(),
+            LoadRecentTickets());
+    }
+
+    // ─── LOAD ─────────────────────────────────────────────────
+    private async Task LoadRecentOrders()
+    {
+        isLoadingOrders = true;
+
+        var result = await OrderService.GetAllOrders(
+            null, null, 1, 4);
+
+        if (result.Success && result.Data != null)
+        {
+            recentOrders = result.Data.Data;
+            totalOrders = result.Data.TotalCount;
+
+            totalRevenue = recentOrders.Sum(o => o.Total);
+        }
+
+        isLoadingOrders = false;
+        StateHasChanged();
+    }
+
+    private async Task LoadRecentTickets()
+    {
+        isLoadingTickets = true;
+
+        var result = await HelpService.GetAllTickets(null, 1, 4);
+
+        if (result.Success && result.Data != null)
+            recentTickets = result.Data.Data;
+
+        isLoadingTickets = false;
+        StateHasChanged();
+    }
+
+    // ─── HELPERS ──────────────────────────────────────────────
+    private string GetOrderStatusClass(string? status) => status?.ToLower() switch
+    {
+        "pending" => "ov-status-badge--pending",
+        "processing" => "ov-status-badge--processing",
+        "shipped" => "ov-status-badge--shipped",
+        "delivered" => "ov-status-badge--delivered",
+        "cancelled" => "ov-status-badge--cancelled",
+        _ => "ov-status-badge--pending"
+    };
+
+    private string GetTicketStatusClass(string? status) => status switch
+    {
+        "open" => "ov-status-badge--pending",
+        "in_progress" => "ov-status-badge--processing",
+        "resolved" => "ov-status-badge--delivered",
+        _ => "ov-status-badge--pending"
+    };
+
+    private string GetTicketStatusDisplay(string? status) => status switch
+    {
+        "open" => "Open",
+        "in_progress" => "In Progress",
+        "resolved" => "Resolved",
+        _ => status ?? "Unknown"
+    };
+}

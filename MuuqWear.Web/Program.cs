@@ -10,6 +10,7 @@ using MuuqWear.Application.Services.AffiliateService;
 using MuuqWear.Application.Services.AuthService;
 using MuuqWear.Application.Services.CartService;
 using MuuqWear.Application.Services.CategoryService;
+using MuuqWear.Application.Services.ChatService;
 using MuuqWear.Application.Services.ContentService;
 using MuuqWear.Application.Services.CustomerService;
 using MuuqWear.Application.Services.HelpCenterService;
@@ -117,6 +118,13 @@ builder.Services.AddHttpClient<IAffiliateService, AffiliateService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
 })
+.AddHttpMessageHandler<AuthenticatedHttpHandler>();
+
+builder.Services.AddHttpClient<IChatService,
+                               ChatService>(client =>
+                               {
+                                   client.BaseAddress = new Uri(apiBaseUrl);
+                               })
 .AddHttpMessageHandler<AuthenticatedHttpHandler>();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

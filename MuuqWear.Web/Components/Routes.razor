@@ -5,7 +5,7 @@
 @* remove <AuthInitializer /> *@
 <Router AppAssembly="typeof(Program).Assembly">
     <Found Context="routeData">
-        <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
+        <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayoutComponent)">
             <NotAuthorized>
                 @if (NavigationManager.Uri.Contains("/admin"))
                 {
@@ -22,7 +22,7 @@
     </Found>
     <NotFound>
         <PageTitle>404 - Not Found</PageTitle>
-        <LayoutView Layout="typeof(Layout.MainLayout)">
+        <LayoutView Layout="typeof(Layout.MainLayoutComponent)">
             <RedirectToNotFound />
         </LayoutView>
     </NotFound>

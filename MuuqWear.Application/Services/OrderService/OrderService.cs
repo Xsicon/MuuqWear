@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
-using MuuqWear.Application.Shared;
+﻿using MuuqWear.Application.Shared;
 using MuuqWear.Model.Orders;
 using MuuqWear.Model.Shared;
 using System.Net.Http.Json;

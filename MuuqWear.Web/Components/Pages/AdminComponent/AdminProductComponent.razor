@@ -1,0 +1,654 @@
+﻿@page "/admin/products"
+@layout Layout.AdminLayoutComponent.AdminDashboardLayoutComponent
+@rendermode InteractiveServer
+@using MuuqWear.Application.Services.ProductService
+@using MuuqWear.Application.Services.CategoryService
+@using MuuqWear.Model.Products
+@using Microsoft.AspNetCore.Authorization
+@using MuuqWear.Web.Components.Shared
+@inject IProductService ProductService
+@inject ICategoryService CategoryService
+@attribute [Authorize(Roles = "admin")]
+
+@if (!isFormOpen)
+{
+    <section class="mw-admin-products">
+
+        <!-- HEADER -->
+        <div class="products-header">
+            <h1 class="products-header__title">Products & Inventory</h1>
+            <div class="products-header__actions">
+                <button class="btn-primary" @onclick="OpenAddForm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 12h14"></path>
+                        <path d="M12 5v14"></path>
+                    </svg>
+                    Add New Product
+                </button>
+                <button class="btn-secondary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" x2="12" y1="3" y2="15"></line>
+                    </svg>
+                    Import CSV
+                </button>
+                <button class="btn-secondary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" x2="12" y1="15" y2="3"></line>
+                    </svg>
+                    Export
+                </button>
+            </div>
+        </div>
+
+        <!-- FILTER TABS -->
+        <div class="products-filters">
+            <button class="products-filter-tab @(activeFilter == "All" ? "active" : "")"
+                    @onclick='() => SetFilter("All")'>
+                All
+            </button>
+            @foreach (var cat in Categories)
+            {
+                <button class="products-filter-tab @(activeFilter == cat.Id.ToString() ? "active" : "")"
+                        @onclick="() => SetFilter(cat.Id.ToString())">
+                    @cat.Name
+                </button>
+            }
+            <button class="products-filter-tab @(activeFilter == "LowStock" ? "active" : "")"
+                    @onclick='() => SetFilter("LowStock")'>
+                Low Stock
+            </button>
+            <button class="products-filter-tab @(activeFilter == "OutOfStock" ? "active" : "")"
+                    @onclick='() => SetFilter("OutOfStock")'>
+                Out of Stock
+            </button>
+        </div>
+
+
+        <div style="margin-bottom:16px">
+            <input class="mw-admin-input w-100"
+                   placeholder="Search products..."
+                   value="@searchQuery"
+                   @oninput="HandleSearchInput"
+                   @onkeydown="HandleSearchKeyDown" />
+        </div>
+
+        <!-- PRODUCT CARDS -->
+        <div class="products-list">
+            @if (isLoading)
+            {
+                <p style="color:#4A5C7A;font-size:14px">Loading...</p>
+            }
+            else if (!FilteredProducts.Any())
+            {
+                <p style="color:#4A5C7A;font-size:14px">No products found.</p>
+            }
+            else
+            {
+                @foreach (var item in FilteredProducts)
+                {
+                    <div class="product-card" @key="item.Id">
+
+                        <!-- TOP ROW: name + badge + buttons -->
+                        <div class="product-card__top">
+                            <div class="product-card__name-row">
+                                <p class="product-card__name">@item.Name</p>
+                                @if (item.Stock == 0)
+                                {
+                                    <span class="stock-badge stock-badge--out">
+                                        Out of Stock
+                                    </span>
+                                }
+                                else if (item.Stock < LowStockThreshold)
+                                {
+                                    <span class="stock-badge stock-badge--low">
+                                        Low Stock
+                                    </span>
+                                }
+                            </div>
+
+                            <div class="product-card__actions">
+                                <button class="btn-secondary"
+                                        @onclick="() => OpenEditForm(item)">
+                                    Edit
+                                </button>
+                                <button class="@(item.Stock == 0 ? "btn-primary" : "btn-secondary")"
+                                        @onclick="() => OpenStockModal(item)">
+                                    @(item.Stock == 0 ? "Restock" : "Update Stock")
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- SECOND ROW: SKU · Price · Category -->
+                        <p class="product-card__meta">
+                            @if (!string.IsNullOrEmpty(item.Sku))
+                            {
+                                <span>SKU: @item.Sku · </span>
+                            }
+                        <span>Price: @item.Price.ToString("C") · </span>
+                        <span>
+                            @(Categories.FirstOrDefault(c => c.Id == item.CategoryId)?.Name
+                                                ?? "Uncategorised")
+                </span>
+            </p>
+
+                        <!-- THIRD ROW: size pills with counts -->
+            @if (item.SizeStock.Any())
+                        {
+                            <div class="product-card__sizes">
+                                @foreach (var s in item.SizeStock)
+                                {
+                                    var pillClass = s.Quantity == 0
+                                    ? "size-pill size-pill--out"
+                                    : s.Quantity < LowStockThreshold
+                                    ? "size-pill size-pill--low"
+                                    : "size-pill size-pill--normal";
+
+                                    <span class="@pillClass">
+                                        @($"{s.Size}({s.Quantity})")
+                                    </span>
+                                }
+                            </div>
+                        }
+
+                    </div>
+                }
+            }
+        </div>
+
+        <!-- PAGINATION -->
+        <PaginationComponent TItem="ProductModel"
+                             TotalCount="_totalCount"
+                             CurrentPage="_currentPage"
+                             PageSize="_pageSize"
+                             OnPageChanged="HandlePageChanged" />
+
+        <!-- LOW STOCK WARNING BANNER -->
+        @if (LowStockCount > 0)
+        {
+            <div class="low-stock-banner">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3">
+                    </path>
+                    <path d="M12 9v4"></path>
+                    <path d="M12 17h.01"></path>
+                </svg>
+                @LowStockCount product@(LowStockCount == 1 ? "" : "s") below threshold
+            </div>
+        }
+
+
+
+    </section>
+}
+else
+{
+    <!-- ADD / EDIT FORM VIEW -->
+    <section class="mw-product-form">
+
+        <!-- HEADER -->
+        <div class="mw-product-form__header">
+            <div class="d-flex align-items-center gap-3">
+                <button class="mw-back-btn" @onclick="CloseForm">
+                    ← Back
+                </button>
+                <h3 class="mw-admin-heading mb-0">
+                    @(isEditMode ? "Edit Product" : "Add New Product")
+                </h3>
+            </div>
+            <div class="d-flex gap-2">
+
+                @if (isEditMode)
+                {
+                    <button class="mw-btn-danger"
+                            @onclick="() => OpenDeleteModal(new ProductModel
+                            { Id = editingProductId,Name = newProduct.Name})">
+                Delete
+            </button>
+                        }
+                <button class="mw-btn-secondary" @onclick="CloseForm">Cancel</button>
+                <button class="mw-btn-primary" @onclick="SaveProduct" disabled="@isSaving">
+                    @(isSaving ? "Saving..." : (isEditMode ? "Update Product" : "Add Product"))
+                </button>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger mt-3">@errorMessage</div>
+        }
+
+        <div class="row g-4 mt-1">
+
+            <!-- LEFT COLUMN -->
+            <div class="col-12 col-lg-7">
+
+                <!-- GENERAL INFORMATION -->
+                <div class="mw-form-card mb-4">
+                    <h6 class="mw-form-card__title">General Information</h6>
+
+                    <div class="mb-3">
+                        <label class="mw-form-label">Name Product</label>
+                        <input class="mw-admin-input w-100"
+                               placeholder="e.g. Puffer Jacket"
+                               @bind="newProduct.Name" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="mw-form-label">Description Product</label>
+                        <textarea class="mw-admin-input w-100"
+                                  rows="4"
+                                  placeholder="Describe the product..."
+                                  @bind="newProduct.Description"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="mw-form-label">Size</label>
+                        <p class="mw-form-hint">Pick Available Size</p>
+                        <div class="mw-size-selector">
+                            @foreach (var size in AvailableSizes)
+                            {
+                                <button class="mw-size-btn @(SelectedSizes.Contains(size) ? "active" : "")"
+                                        @onclick="() => ToggleSize(size)">
+                                    @size
+                                </button>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="mw-form-label">Colors</label>
+                        <p class="mw-form-hint">Pick Available Colors</p>
+                        <div class="d-flex gap-2 flex-wrap">
+                            @foreach (var color in AvailableColors)
+                            {
+                                <button class="mw-admin-color-btn @(SelectedColors.Contains(color) ? "active" : "")"
+                                        style="background-color: @color; border: 2px solid @(SelectedColors.Contains(color) ? "#1E2A47" : "#E5E7EB")"
+                                        @onclick="() => ToggleColor(color)">
+                                    @if (SelectedColors.Contains(color))
+                                    {
+                                        <span style="color: @(color == "#FFFFFF" ? "#000" : "#FFF"); font-weight: bold;">✓</span>
+                                    }
+                                </button>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="mw-form-label">Gender</label>
+                        <p class="mw-form-hint">Pick Available Gender</p>
+                        <div class="mw-gender-selector">
+                            @foreach (var gender in AvailableGenders)
+                            {
+                                <label class="mw-gender-option">
+                                    <input type="radio"
+                                           name="gender"
+                                           value="@gender"
+                                           checked="@(newProduct.Gender == gender)"
+                                           @onchange="() => newProduct.Gender = gender" />
+                                    <span>@gender</span>
+                                </label>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PRICING AND STOCK -->
+                <div class="mw-form-card">
+                    <h6 class="mw-form-card__title">Pricing And Stock</h6>
+
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <label class="mw-form-label">Base Pricing</label>
+                            <div class="mw-input-prefix">
+                                <span>$</span>
+                                <input type="number"
+                                       class="mw-admin-input w-100"
+                                       placeholder="0.00"
+                                       @bind="newProduct.Price" />
+                            </div>
+                        </div>
+                        @if (isEditMode)
+                        {
+                            <div class="col-6">
+                                <label class="mw-form-label">Stock</label>
+                                <p class="mw-form-hint" style="margin-top:8px">
+                                    Managed per size via Update Stock
+                                </p>
+                            </div>
+                        }
+                        else
+                        {
+                            <!-- show stock field only when adding new product -->
+                            <div class="col-6">
+                                <label class="mw-form-label">Stock</label>
+                                <input type="number"
+                                       class="mw-admin-input w-100"
+                                       placeholder="0"
+                                       @bind="newProduct.Stock" />
+                            </div>
+                        }
+                        <div class="col-6">
+                            <label class="mw-form-label">Badge</label>
+                            <select class="mw-admin-input w-100" @bind="newProduct.Badge">
+                                <option value="">None</option>
+                                <option value="NEW">NEW</option>
+                                <option value="SALE">SALE</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="mw-form-label">Status</label>
+                            <select class="mw-admin-input w-100" @bind="newProduct.IsActive">
+                                <option value="true">Active</option>
+                                <option value="false">Inactive</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mt-3">
+                        <label class="mw-form-label">Sections</label>
+                        <div class="d-flex gap-4 mt-1">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input"
+                                       id="isNewArrival"
+                                       @bind="newProduct.IsNewArrival" />
+                                <label class="form-check-label" for="isNewArrival">New Arrival</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input"
+                                       id="isFeatured"
+                                       @bind="newProduct.IsFeatured" />
+                                <label class="form-check-label" for="isFeatured">Featured</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input"
+                                       id="isBestSeller"
+                                       @bind="newProduct.IsBestSeller" />
+                                <label class="form-check-label" for="isBestSeller">Best Seller</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- RIGHT COLUMN -->
+            <div class="col-12 col-lg-5">
+
+
+
+                <!-- IMAGE UPLOAD -->
+                <div class="mw-form-card mb-4">
+                    <h6 class="mw-form-card__title">Upload Image</h6>
+
+                    <!-- IMAGE PREVIEW -->
+                    <div class="mw-image-preview">
+                        @if (!string.IsNullOrEmpty(newProduct.ImageUrl))
+                        {
+                            <img src="@newProduct.ImageUrl" class="mw-image-preview__img" />
+                        }
+                        else
+                        {
+                            <div class="mw-image-preview__placeholder">
+                                <span>No image selected</span>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- IMAGE SOURCE -->
+                    <div class="mt-3">
+                        <label class="mw-form-label">Image Source</label>
+                        <select class="mw-admin-input w-100 mb-2" @bind="imageSource">
+                            <option value="url">Paste URL</option>
+                            <option value="upload">Upload File</option>
+                        </select>
+
+                        @if (imageSource == "url")
+                        {
+                            <input class="mw-admin-input w-100"
+                                   placeholder="https://images.unsplash.com/..."
+                                   @bind="newProduct.ImageUrl" />
+                        }
+                        else
+                        {
+                            <InputFile OnChange="HandleImageUpload" class="mw-file-input" />
+                            @if (isUploading)
+                            {
+                                <p class="text-muted mt-1 small">Uploading...</p>
+                            }
+                        }
+                    </div>
+                </div>
+
+                <!-- CATEGORY -->
+                <div class="mw-form-card">
+                    <h6 class="mw-form-card__title">Category</h6>
+
+                    <div class="mb-3">
+                        <label class="mw-form-label">Product Category</label>
+                        <select class="mw-admin-input w-100" @bind="newProduct.CategoryId">
+                            <option value="">Select Category</option>
+                            @foreach (var cat in Categories)
+                            {
+                                <option value="@cat.Id">@cat.Name</option>
+                            }
+                        </select>
+                    </div>
+
+                    <!-- ADD CATEGORY -->
+                    <div class="mw-add-category">
+                        <input class="mw-admin-input flex-grow-1"
+                               placeholder="New category name..."
+                               @bind="newCategoryName" />
+                        <button class="mw-btn-primary"
+                                @onclick="AddCategory"
+                                disabled="@isAddingCategory">
+                            @(isAddingCategory ? "Adding..." : "Add Category")
+                        </button>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(categoryError))
+                    {
+                        <p class="text-danger small mt-1">@categoryError</p>
+                    }
+                </div>
+
+                <!-- PRODUCT IMAGES -->
+                @if (isEditMode && editingProductId != Guid.Empty)
+                {
+                    <div class="mw-form-card mt-4">
+                        <h6 class="mw-form-card__title">Product Images</h6>
+                        <p class="mw-form-hint">
+                            Add multiple images for product detail page
+                        </p>
+
+                        <!-- EXISTING IMAGES -->
+                        @if (editingProductImages.Any())
+                        {
+                            <div class="mw-product-images-grid mb-3">
+                                @foreach (var img in editingProductImages.OrderBy(i => i.SortOrder))
+                                {
+                                    <div class="mw-product-image-item" @key="img.Id">
+
+                                        <!-- IMAGE PREVIEW -->
+                                        <img src="@img.ImageUrl" class="mw-product-image-thumb" />
+
+                                        <!-- SORT ORDER -->
+                                        <input type="number"
+                                               class="mw-admin-input w-100 mt-1"
+                                               placeholder="Order"
+                                               value="@img.SortOrder"
+                                               @onchange="async e => await UpdateImageOrder(img, e)" />
+
+                                        <!-- DELETE BUTTON -->
+                                        <button class="mw-btn-danger w-100 mt-1"
+                                                @onclick="() => DeleteImage(img.Id)">
+                                            Remove
+                                        </button>
+
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-muted small mb-3">No additional images yet.</p>
+                        }
+
+                        <!-- ADD NEW IMAGE -->
+                        <div class="mb-2">
+                            <label class="mw-form-label">Add Image URL</label>
+                            <div class="d-flex gap-2">
+                                <input class="mw-admin-input flex-grow-1"
+                                       placeholder="https://images.unsplash.com/..."
+                                       @bind="newImageUrl" />
+                                <button class="mw-btn-primary"
+                                        @onclick="AddImageUrl"
+                                        disabled="@isAddingImage">
+                                    @(isAddingImage ? "Adding..." : "Add")
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- OR UPLOAD FILE -->
+                        <div>
+                            <label class="mw-form-label">Or Upload Image</label>
+                            <InputFile OnChange="HandleAdditionalImageUpload" />
+                            @if (isUploadingAdditional)
+                            {
+                                <p class="text-muted small mt-1">Uploading...</p>
+                            }
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(imageError))
+                        {
+                            <p class="text-danger small mt-2">@imageError</p>
+                        }
+                    </div>
+                }
+
+            </div>
+        </div>
+    </section>
+}
+
+<!-- DELETE MODAL — unchanged -->
+@if (isDeleteModalOpen)
+{
+    <div class="mw-modal-overlay" @onclick="CloseDeleteModal">
+        <div class="mw-modal" style="max-width:400px;"
+             @onclick:stopPropagation="true">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5>Delete Product</h5>
+                <button class="mw-close-btn" @onclick="CloseDeleteModal">✕</button>
+            </div>
+            <p>
+                Are you sure you want to delete
+                <strong>@deletingProductName</strong>?
+            </p>
+            <p class="text-danger small">This action cannot be undone.</p>
+            <div class="d-flex gap-2 mt-3">
+                <button class="mw-btn-secondary w-100"
+                        @onclick="CloseDeleteModal">
+                    Cancel
+                </button>
+                <button class="mw-btn-danger w-100"
+                        @onclick="ConfirmDelete"
+                        disabled="@isDeleting">
+                    @(isDeleting ? "Deleting..." : "Delete")
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (isStockModalOpen && stockProduct != null)
+{
+    <div class="mw-modal-overlay" @onclick="CloseStockModal">
+        <div class="mw-modal" style="max-width:420px"
+             @onclick:stopPropagation="true">
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 style="margin:0;color:#1E2A47;font-weight:700">
+                    Update Stock — @stockProduct.Name
+                </h5>
+                <button class="mw-close-btn" @onclick="CloseStockModal">✕</button>
+            </div>
+
+            @if (!string.IsNullOrEmpty(stockError))
+            {
+                <p style="color:#C44545;font-size:13px;margin-bottom:12px">
+                    @stockError
+                </p>
+            }
+
+            <!-- SIZE STOCK INPUTS -->
+            <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:21px">
+                @foreach (var size in editingSizeStock)
+                {
+                    <div style="display:flex;align-items:center;
+                                                                                                                                                                                            justify-content:space-between;gap:12px">
+                        <span style="color:#1E2A47;font-size:13px;
+                                                                                                                                                                                                 font-weight:700;min-width:40px">
+                            @size.Size
+                        </span>
+                        <input type="number"
+                               class="mw-admin-input"
+                               style="width:100px;text-align:center"
+                               min="0"
+                               value="@size.Quantity"
+                               @onchange="e => size.Quantity =
+                               int.TryParse(e.Value?.ToString(), out var q)
+                               ? Math.Max(0, q) : 0" />
+                                             <span style="color:#4A5C7A;font-size:12px;min-width:60px">
+                    @(size.Quantity == 0
+                    ? "Out of stock"
+                    : size.Quantity < LowStockThreshold
+                    ? "Low stock"
+                    : "In stock")
+                </span>
+            </div>
+                        }
+            </div>
+
+            <!-- TOTAL -->
+            <div style="display:flex;justify-content:space-between;
+                                                                                                                        padding:12px 0;border-top:1px solid rgba(169,183,204,0.3);
+                                                                                                                        margin-bottom:21px">
+                <span style="color:#4A5C7A;font-size:13px">Total Stock</span>
+                <span style="color:#1E2A47;font-size:13px;font-weight:700">
+                    @editingSizeStock.Sum(s => s.Quantity)
+                </span>
+            </div>
+
+            <!-- BUTTONS -->
+            <div class="d-flex gap-2">
+                <button class="mw-btn-secondary w-100"
+                        @onclick="CloseStockModal">
+                    Cancel
+                </button>
+                <button class="mw-btn-primary w-100"
+                        @onclick="SaveSizeStock"
+                        disabled="@isUpdatingStock">
+                    @(isUpdatingStock ? "Saving..." : "Save Stock")
+                </button>
+            </div>
+
+        </div>
+    </div>
+}
+
+
+
+
