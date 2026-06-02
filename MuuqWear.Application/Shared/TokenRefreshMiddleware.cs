@@ -88,7 +88,6 @@ public class TokenRefreshMiddleware
                 {
                     await context.SignOutAsync(
                         CookieAuthenticationDefaults.AuthenticationScheme);
-                    System.Diagnostics.Debug.WriteLine("Call From TokenRefresh");
                     context.Response.Cookies.Append("session_message",
                         "Your session has expired. Please sign in again.");
 
@@ -125,36 +124,25 @@ public class TokenRefreshMiddleware
     {
         if (string.IsNullOrEmpty(refreshToken))
         {
-            System.Diagnostics.Debug.WriteLine("RefreshToken is null or empty ");
             return false;
         }
         try
         {
             var apiBaseUrl = _configuration["ApiBaseUrl"];
-            System.Diagnostics.Debug.WriteLine($"Calling: {apiBaseUrl}api/Auth/refresh-token");
-            System.Diagnostics.Debug.WriteLine($"RefreshToken length: {refreshToken?.Length}");
-            System.Diagnostics.Debug.WriteLine($"RefreshToken preview: {refreshToken?[..Math.Min(20, refreshToken.Length)]}...");
-            System.Diagnostics.Debug.WriteLine($"RefreshToken: {refreshToken}"); // ← full token
             using var http = new HttpClient();
 
             var body = new { refreshToken = refreshToken };
             var result = await http.PostAsJsonAsync(
                 $"{apiBaseUrl}api/Auth/refresh-token", body);
-            System.Diagnostics.Debug.WriteLine($"Backend response: {result.StatusCode}");
 
             if (!result.IsSuccessStatusCode)
             {
                 var error = await result.Content.ReadAsStringAsync();
-                System.Diagnostics.Debug.WriteLine($"Backend error: {error}");
                 return false;
             }
             var response = await result.Content
                 .ReadFromJsonAsync<Response<AuthResponseModel>>();
 
-
-            System.Diagnostics.Debug.WriteLine($"Deserialized success: {response?.Success}");
-            System.Diagnostics.Debug.WriteLine($"Data null: {response?.Data == null}");
-            System.Diagnostics.Debug.WriteLine($"AccessToken null: {response?.Data?.AccessToken == null}");
             if (response?.Success != true || response.Data == null) return false;
             var cacheKey = $"access_token_{userId}";
             _cache.Set(cacheKey, response.Data.AccessToken,
@@ -162,13 +150,11 @@ public class TokenRefreshMiddleware
 
             // rewrite cookie with fresh tokens 
             await RewriteCookieAsync(context, response.Data);
-            System.Diagnostics.Debug.WriteLine($"New token expires: {GetTokenExpiry(response.Data.AccessToken!)}");
 
             return true;
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Exception in TryRefreshAsync: {ex.Message}");
             return false;
         }
     }

@@ -444,3 +444,9 @@
     height: 32px;
     object-fit: contain;
 }
+
+.mw-checkout__input[readonly] {
+    background-color: #F4F6F9;
+    color: #4A5C7A;
+    cursor: not-allowed;
+}

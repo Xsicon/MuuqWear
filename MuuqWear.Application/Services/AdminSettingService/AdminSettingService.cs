@@ -159,4 +159,28 @@ public class AdminSettingService : IAdminSettingService
             };
         }
     }
+
+    public async Task<Response<StripeHealthModel>> CheckStripeHealth()
+    {
+        try
+        {
+            var result = await _http.GetAsync(
+                "api/AdminSetting/stripe-health");
+            var response = await result.Content
+                .ReadFromJsonAsync<Response<StripeHealthModel>>();
+            return response ?? new Response<StripeHealthModel>
+            {
+                Success = false,
+                Message = "Unexpected response from server"
+            };
+        }
+        catch (Exception)
+        {
+            return new Response<StripeHealthModel>
+            {
+                Success = false,
+                Message = "Unable to connect to server. Please try again."
+            };
+        }
+    }
 }

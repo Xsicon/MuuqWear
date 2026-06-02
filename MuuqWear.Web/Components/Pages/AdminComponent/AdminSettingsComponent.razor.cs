@@ -131,6 +131,11 @@ public partial class AdminSettingsComponent
 
         if (integration.Name == "Supabase")
             await CheckSupabaseHealth();
+        if (integration.Name == "Stripe")
+        {
+
+        }
+
     }
 
     // ─── INVITE ───────────────────────────────────────────────

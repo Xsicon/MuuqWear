@@ -224,7 +224,6 @@
 
         if (result.Success && result.Data != null)
         {
-            System.Diagnostics.Debug.WriteLine($"Role from login: {result.Data.Role}"); // ← add
 
             var authData = result.Data;
             if (authData.Role != "user")
@@ -253,7 +252,6 @@
         var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
         if (query["expired"] == "true")
             expiredMessage = "Your session has expired. Please sign in again.";
-        System.Diagnostics.Debug.WriteLine("Call From Login Page");
 
         if (AuthenticationStateTask is null) return;
         var authState = await AuthenticationStateTask;

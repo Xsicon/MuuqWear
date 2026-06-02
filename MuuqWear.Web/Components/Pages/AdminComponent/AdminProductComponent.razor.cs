@@ -315,13 +315,24 @@ public partial class AdminProductComponent
 
         StateHasChanged();
     }
+    private bool ValidateImage(IBrowserFile file)
+    {
+        if (file.Size > 5 * 1024 * 1024)
+        { errorMessage = "Image must be under 5MB"; return false; }
 
+        if (!file.ContentType.StartsWith("image/"))
+        { errorMessage = "File must be an image"; return false; }
+
+        return true;
+    }
     private async Task HandleImageUpload(InputFileChangeEventArgs e)
     {
         isUploading = true;
         errorMessage = string.Empty;
 
         var file = e.File;
+        if (!ValidateImage(file)) return;
+
         var stream = file.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
         var result = await ProductService.UploadImage(stream, file.Name, file.ContentType);
 

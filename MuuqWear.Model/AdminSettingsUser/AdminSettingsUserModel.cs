@@ -62,6 +62,12 @@ public class SupabaseHealthModel
     public DateTime CheckedAt { get; set; }
 }
 
+public class StripeHealthModel
+{
+    public bool IsHealthy { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public DateTime CheckedAt { get; set; }
+}
 public class IntegrationModel
 {
     public string Name { get; set; } = string.Empty;

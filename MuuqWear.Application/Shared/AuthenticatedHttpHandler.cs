@@ -45,17 +45,14 @@ public class AuthenticatedHttpHandler : DelegatingHandler
         //  ADD: Check if token is expired BEFORE sending
         if (!string.IsNullOrEmpty(token) && IsTokenExpired(token))
         {
-            System.Diagnostics.Debug.WriteLine(" Token expired, attempting refresh...");
 
             var newToken = await TryRefreshAsync(context);
             if (newToken != null)
             {
                 token = newToken;
-                System.Diagnostics.Debug.WriteLine(" Token refreshed proactively");
             }
             else
             {
-                System.Diagnostics.Debug.WriteLine(" Refresh failed, signing out");
                 await HandleSignOut(context);
                 return new HttpResponseMessage(System.Net.HttpStatusCode.Unauthorized);
             }
@@ -71,7 +68,6 @@ public class AuthenticatedHttpHandler : DelegatingHandler
         if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized ||
             response.StatusCode == System.Net.HttpStatusCode.BadRequest)
         {
-            System.Diagnostics.Debug.WriteLine($"Auth error: {response.StatusCode}");
 
             var newToken = await TryRefreshAsync(context);
             if (newToken != null)
@@ -92,7 +88,6 @@ public class AuthenticatedHttpHandler : DelegatingHandler
     //  ADD: Centralized sign out logic
     private async Task HandleSignOut(HttpContext? context)
     {
-        System.Diagnostics.Debug.WriteLine("🚪 Signing out user...");
 
         // Notify Blazor (will be marshaled to UI thread by InvokeAsync)
         _authSession.MarkExpired();
@@ -101,7 +96,6 @@ public class AuthenticatedHttpHandler : DelegatingHandler
         {
             await context.SignOutAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme);
-            System.Diagnostics.Debug.WriteLine("Call From Authenticated Http");
             context.Response.Redirect("/login?expired=true");
         }
     }

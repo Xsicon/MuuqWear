@@ -62,14 +62,59 @@
         </div>
     </section>
 
-    <!-- Section 4: Team grid (Step 5) -->
+    <!-- Section 4: Team grid -->
     <section class="about-team">
-        <p class="about-placeholder">Team grid — Step 5</p>
+        <div class="about-team__inner">
+
+            <p class="about-eyebrow about-team__eyebrow">The People</p>
+            <h2 class="about-team__title">Behind the Veil</h2>
+
+            <div class="about-team__grid">
+                @foreach (var member in Team)
+                {
+                    <div class="about-team__card" @key="member.Name">
+                        <div class="about-team__photo">
+                            <img src="@member.ImageUrl" alt="@member.Name" loading="lazy" />
+                        </div>
+                        <div class="about-team__info">
+                            <h3 class="about-team__name">@member.Name</h3>
+                            <p class="about-team__role">@member.Role</p>
+                        </div>
+                    </div>
+                }
+            </div>
+
+        </div>
     </section>
 
-    <!-- Section 5: Closing quote (Step 6) -->
+    <!-- Section 5: Closing quote -->
     <section class="about-closing">
-        <p class="about-placeholder">Closing quote — Step 6</p>
+        <div class="about-closing__inner">
+            <p class="about-closing__text">
+                &ldquo;The constraint is the freedom. When you limit yourself to the
+                Sapphire palette and natural silhouettes, you&rsquo;re forced to
+                innovate at the material level. That&rsquo;s where the magic happens.&rdquo;
+            </p>
+            <p class="about-closing__attribution">
+                &mdash; Amina Osman, Head of Textiles
+            </p>
+        </div>
     </section>
 
 </div>
+
+@code {
+    private record TeamMember(string Name, string Role, string ImageUrl);
+
+    private List<TeamMember> Team => new()
+    {
+        new("Amina Osman", "Head of Textiles",
+            "https://images.unsplash.com/photo-1570410185342-ea1d50289ab4?w=300&h=300&fit=crop&crop=face"),
+        new("Luca Moretti", "Lead Pattern Engineer",
+            "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=300&fit=crop&crop=face"),
+        new("Yuki Tanaka", "Creative Director",
+            "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=300&h=300&fit=crop&crop=face"),
+        new("Marcus Chen", "Sustainability Lead",
+            "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300&h=300&fit=crop&crop=face"),
+    };
+}

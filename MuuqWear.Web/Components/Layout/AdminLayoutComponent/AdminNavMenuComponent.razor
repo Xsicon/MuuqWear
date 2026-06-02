@@ -1,6 +1,9 @@
 ﻿@using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Components.Routing
+@using MuuqWear.Application.Services.AdminBadgeService
+@using MuuqWear.Model.AdminBadgeCount
 @inject AuthenticationStateProvider AuthStateProvider
+@inject IAdminBadgeService BadgeService
 
 <!-- ─── BRAND ──────────────────────────────────────────── -->
 <div class="an-brand">
@@ -47,6 +50,10 @@
             <path d="m7.5 4.27 9 5.15"></path>
         </svg>
         <span class="an-nav__label">Orders &amp; Returns</span>
+        @if (counts is not null && counts.PendingOrders > 0)
+        {
+            <span class="an-nav__badge an-nav__badge--red">@counts.PendingOrders</span>
+        }
     </NavLink>
 
     <NavLink href="/admin/customers"
@@ -165,6 +172,7 @@
     private string userName = string.Empty;
     private string userInitials = "AD";
     private int openTickets = 0;
+    private AdminBadgeCountsModel? counts;
 
     protected override async Task OnInitializedAsync()
     {
@@ -183,5 +191,10 @@
         userInitials = parts.Length >= 2
             ? $"{parts[0][0]}{parts[^1][0]}".ToUpper()
             : parts[0][..Math.Min(2, parts[0].Length)].ToUpper();
+        var result = await BadgeService.GetCounts();
+        if (result.Success && result.Data != null)
+        {
+            counts = result.Data;
+        }
     }
 }

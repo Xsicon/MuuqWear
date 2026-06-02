@@ -9,5 +9,6 @@ public interface IAdminSettingService
     Task<Response<AdminSettingsUserModel>> Update(Guid userId, UpdateAdminSettingsUserModel request);
     Task<Response<bool>> Deactivate(Guid userId);
     Task<Response<SupabaseHealthModel>> CheckSupabaseHealth();
+    Task<Response<StripeHealthModel>> CheckStripeHealth();
 
 }

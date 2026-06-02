@@ -76,7 +76,6 @@ public class JournalService : IJournalService
 
             //  debug — see raw response
             var json = await result.Content.ReadAsStringAsync();
-           System.Diagnostics.Debug.WriteLine($"Journal raw response: {json}");
 
             if (!result.IsSuccessStatusCode)
                 return new Response<PaginatedResponse<ContentItemModel>>

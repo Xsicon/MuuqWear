@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Caching.Memory;
 using MuuqWear.Application.Interfaces;
 using MuuqWear.Application.Services.AddressService;
+using MuuqWear.Application.Services.AdminBadgeService;
 using MuuqWear.Application.Services.AdminUserService;
 using MuuqWear.Application.Services.AffiliateService;
 using MuuqWear.Application.Services.AuthService;
@@ -18,6 +19,7 @@ using MuuqWear.Application.Services.JournalService;
 using MuuqWear.Application.Services.NotificationService;
 using MuuqWear.Application.Services.OrderReturnService;
 using MuuqWear.Application.Services.OrderService;
+using MuuqWear.Application.Services.PaymentService;
 using MuuqWear.Application.Services.ProductService;
 using MuuqWear.Application.Services.ProfileService;
 using MuuqWear.Application.Services.VoteService;
@@ -126,6 +128,20 @@ builder.Services.AddHttpClient<IChatService,
                                    client.BaseAddress = new Uri(apiBaseUrl);
                                })
 .AddHttpMessageHandler<AuthenticatedHttpHandler>();
+builder.Services.AddHttpClient<IPaymentService,
+                               PaymentService>(client =>
+                               {
+                                   client.BaseAddress = new Uri(apiBaseUrl);
+                               })
+.AddHttpMessageHandler<AuthenticatedHttpHandler>();
+
+builder.Services.AddHttpClient<IAdminBadgeService, AdminBadgeService>(client =>
+    {
+        client.BaseAddress = new Uri(apiBaseUrl);
+    })
+.AddHttpMessageHandler<AuthenticatedHttpHandler>();
+
+
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
@@ -221,7 +237,6 @@ app.MapGet("/auth/set-cookie", async (
 
     cache.Remove(key);
     authSession.Reset();
-    System.Diagnostics.Debug.WriteLine("AuthSession reset on fresh login ");
 
     var claims = new List<Claim>
     {
@@ -256,7 +271,6 @@ app.MapGet("/auth/set-cookie", async (
 app.MapGet("/auth/clear", async (HttpContext ctx, bool expired = false) =>
 {
     await ctx.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-    System.Diagnostics.Debug.WriteLine("Call From Program.cs");
     ctx.Response.Redirect(expired ? "/login?expired=true" : "/");
 });
 

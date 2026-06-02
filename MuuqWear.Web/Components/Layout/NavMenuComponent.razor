@@ -625,12 +625,10 @@
     // }
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        System.Diagnostics.Debug.WriteLine($"OnAfterRenderAsync — IsSessionExpired: {AuthSession.IsSessionExpired}");
 
         //  check on every render if session expired
         if (AuthSession.IsSessionExpired)
         {
-            System.Diagnostics.Debug.WriteLine("Redirecting to auth/clear...");
 
             AuthSession.Reset(); // ← reset BEFORE redirect to prevent loop
             await JS.InvokeVoidAsync("eval",
@@ -831,7 +829,6 @@
         CartStateService.OnCartChanged += OnCartChanged;
         AuthSession.OnSessionExpired += HandleSessionExpired;
         AuthSession.OnProfileUpdated += HandleProfileUpdated;
-        System.Diagnostics.Debug.WriteLine("NavMenu subscribed to OnSessionExpired ");
 
     }
 
@@ -862,7 +859,6 @@
 
     private void HandleSessionExpired()
     {
-        System.Diagnostics.Debug.WriteLine("🔔 Session expired notification received");
 
         // Redirect to login
         NavigationManager.NavigateTo("/login?expired=true", forceLoad: true);
