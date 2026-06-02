@@ -99,6 +99,7 @@ public partial class AdminSettingsComponent
     private async Task LoadIntegrations()
     {
         await CheckSupabaseHealth();
+        await CheckStripeHealth();
     }
 
     //  single responsibility — only checks Supabase health
@@ -118,7 +119,22 @@ public partial class AdminSettingsComponent
 
         StateHasChanged();
     }
+    private async Task CheckStripeHealth()
+    {
+        var supabase = integrations.First(i => i.Name == "Stripe");
+        supabase.IsLoading = true;
+        StateHasChanged();
 
+        var result = await AdminSettingService.CheckStripeHealth();
+
+        supabase.IsLoading = false;
+        supabase.IsHealthy = result.Success && result.Data?.IsHealthy == true;
+        supabase.Subtitle = supabase.IsHealthy
+            ? $"Status: Healthy · Checked {DateTime.Now:hh:mm tt}"
+            : "Status: Unhealthy";
+
+        StateHasChanged();
+    }
     //  single responsibility — handles Test button per integration
     private async Task HandleTest(IntegrationModel integration)
     {
@@ -132,10 +148,7 @@ public partial class AdminSettingsComponent
         if (integration.Name == "Supabase")
             await CheckSupabaseHealth();
         if (integration.Name == "Stripe")
-        {
-
-        }
-
+            await CheckStripeHealth();
     }
 
     // ─── INVITE ───────────────────────────────────────────────
