@@ -4,9 +4,13 @@
 @using Microsoft.AspNetCore.Authorization
 @using MuuqWear.Application.Services.ChatService
 @using MuuqWear.Model.Chat
+@using MuuqWear.Web.Components.Shared
 @attribute [Authorize(Roles = "admin")]
 @implements IDisposable
 @inject IChatService ChatService
+
+
+<SpinnerComponent Show="@isLoading" />
 
 <div class="mw-livechat">
 
@@ -18,11 +22,7 @@
         <aside class="mw-livechat-sessions">
             <h2 class="mw-livechat-sessions-title">ACTIVE CONVERSATIONS</h2>
 
-            @if (isLoadingSessions && sessions.Count == 0)
-            {
-                <p class="mw-livechat-muted">Loading…</p>
-            }
-            else if (sessions.Count == 0)
+            @if (sessions.Count == 0)
             {
                 <p class="mw-livechat-muted">No active conversations.</p>
             }
@@ -113,8 +113,8 @@
                     <button class="mw-chat__send"
                             @onclick="SendAdminMessage"
                             disabled="@(selectedSession?.Status == "closed"
-                                                                                                            || isSendingAdminMessage
-                                                                                                            || string.IsNullOrWhiteSpace(adminMessageInput))">
+                                                                                                                                                                                                                            || isSendingAdminMessage
+                                                                                                                                                                                                                            || string.IsNullOrWhiteSpace(adminMessageInput))">
                     SEND
                 </button>
             </div>
@@ -135,7 +135,7 @@
     // ─── STATE ────────────────────────────────────────────────
     private List<ChatSessionModel> sessions = new();
     private Guid? selectedSessionId;
-    private bool isLoadingSessions = true;
+    private bool isLoading = false;
     private string? errorMessage;
 
     private System.Timers.Timer? sessionsTimer;
@@ -153,8 +153,10 @@
     // ─── LIFECYCLE ────────────────────────────────────────────
     protected override async Task OnInitializedAsync()
     {
+        isLoading = true;
         await LoadSessions();
         StartSessionsPolling();
+        isLoading = false;
     }
 
     public void Dispose()
@@ -191,7 +193,6 @@
         finally
         {
             isPollingSessions = false;
-            isLoadingSessions = false;
         }
     }
 

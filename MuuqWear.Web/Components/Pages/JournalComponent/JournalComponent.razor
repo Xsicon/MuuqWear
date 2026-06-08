@@ -5,10 +5,14 @@
 @using MuuqWear.Application.Interfaces
 @using MuuqWear.Application.Services.JournalService
 @using MuuqWear.Model.ContentItem
+@using MuuqWear.Web.Components.Shared
 
 <PageTitle>Journal</PageTitle>
 
 <!-- Journal Hero Section -->
+
+<SpinnerComponent Show="@isLoading" />
+
 <section class="mw-journal-hero">
     <div class="mw-journal-hero__container">
         @if (heroArticle != null)
@@ -89,51 +93,45 @@
             </div>
         </div>
 
-        @if (isLoading)
-        {
-            <p style="color:#4A5C7A">Loading articles...</p>
-        }
-        else
-        {
-            <div class="mw-carousel__track" @ref="articleRef">
-                <div class="mw-carousel-inner">
-                    @foreach (var item in filteredArticles)
-                    {
-                        <div class="mw-carousel-item">
-                            <article class="mw-article-card d-flex">
-                                <div class="mw-article-card__img">
-                                    @if (!string.IsNullOrEmpty(item.ImageUrl))
-                                    {
-                                        <img src="@item.ImageUrl" alt="@item.Title" />
-                                    }
-                                </div>
-                                <div class="mw-article-card__content">
-                                    <p class="mw-article-card__category">@item.Category</p>
-                                    <h3 class="mw-article-card__title">@item.Title</h3>
-                                    <p class="mw-article-card__desc">
-                                        @TruncateContent(item.Content, 100)
-                                    </p>
-                                    <span class="mw-article-card__link"
-                                          @onclick="() => OpenArticle(item)">
-                                        Read More →
-                                    </span>
-                                </div>
-                            </article>
-                        </div>
-                    }
-                </div>
+        <p style="color:#4A5C7A">Loading articles...</p>
+        <div class="mw-carousel__track" @ref="articleRef">
+            <div class="mw-carousel-inner">
+                @foreach (var item in filteredArticles)
+                {
+                    <div class="mw-carousel-item">
+                        <article class="mw-article-card d-flex">
+                            <div class="mw-article-card__img">
+                                @if (!string.IsNullOrEmpty(item.ImageUrl))
+                                {
+                                    <img src="@item.ImageUrl" alt="@item.Title" />
+                                }
+                            </div>
+                            <div class="mw-article-card__content">
+                                <p class="mw-article-card__category">@item.Category</p>
+                                <h3 class="mw-article-card__title">@item.Title</h3>
+                                <p class="mw-article-card__desc">
+                                    @TruncateContent(item.Content, 100)
+                                </p>
+                                <span class="mw-article-card__link"
+                                      @onclick="() => OpenArticle(item)">
+                                    Read More →
+                                </span>
+                            </div>
+                        </article>
+                    </div>
+                }
             </div>
-            <!--  only one, in the right place, with conditions -->
-            @if (hasMore)
-            {
-                <div class="text-center mt-4">
-                    <button class="mw-articles__btn"
-                            @onclick="LoadMore"
-                            disabled="@isLoadingMore">
-                        @(isLoadingMore ? "Loading..." : "Load More Articles")
-                    </button>
-                </div>
-            }
+        </div>
+        <!--  only one, in the right place, with conditions -->
+        @if (hasMore)
+        {
+            <div class="text-center mt-4">
+                <button class="mw-articles__btn"
+                        @onclick="LoadMore"
+                        disabled="@isLoadingMore">
+                    @(isLoadingMore ? "Loading..." : "Load More Articles")
+                </button>
+            </div>
         }
 
     </div>
@@ -147,16 +145,16 @@
     </div>
 
     <div style="position:fixed;top:0;right:0;bottom:0;width:100%;
-                                                                                        max-width:800px;background:white;z-index:61;
-                                                                                        overflow-y:auto;box-shadow:-4px 0 24px rgba(0,0,0,0.15)">
+                                                                                            max-width:800px;background:white;z-index:61;
+                                                                                            overflow-y:auto;box-shadow:-4px 0 24px rgba(0,0,0,0.15)">
 
         <!-- close button -->
         <button @onclick="CloseArticle"
                 style="position:absolute;top:21px;right:21px;z-index:10;
-                                                                                               width:40px;height:40px;background:white;
-                                                                                               border:1px solid #A9B7CC;display:flex;
-                                                                                               align-items:center;justify-content:center;
-                                                                                               color:#1E2A47;cursor:pointer">
+                                                                                                   width:40px;height:40px;background:white;
+                                                                                                   border:1px solid #A9B7CC;display:flex;
+                                                                                                   align-items:center;justify-content:center;
+                                                                                                   color:#1E2A47;cursor:pointer">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
                  viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -179,24 +177,24 @@
         <div style="padding:34px;max-width:618px;margin:0 auto">
 
             <p style="color:#4A5C7A;font-size:12px;letter-spacing:2px;
-                                                                                              text-transform:uppercase;font-weight:700;margin-bottom:13px">
+                                                                                                  text-transform:uppercase;font-weight:700;margin-bottom:13px">
                 @selectedArticle.Category
             </p>
 
             <h2 style="color:#1E2A47;font-size:30px;font-weight:800;
-                                                                                               letter-spacing:-1px;line-height:1.2;margin-bottom:21px;
-                                                                                               font-family:'Manrope',sans-serif">
+                                                                                                   letter-spacing:-1px;line-height:1.2;margin-bottom:21px;
+                                                                                                   font-family:'Manrope',sans-serif">
                 @selectedArticle.Title
             </h2>
 
             <div style="color:#1E2A47;font-size:17px;line-height:30px;
-                                                                                                font-family:'Playfair Display',serif;white-space:pre-line">
+                                                                                                    font-family:'Playfair Display',serif;white-space:pre-line">
                 @selectedArticle.Content
             </div>
 
             <!-- social links -->
             <div style="margin-top:55px;padding-top:21px;
-                                                                                                border-top:1px solid #A9B7CC">
+                                                                                                    border-top:1px solid #A9B7CC">
                 <p style="color:#4A5C7A;font-size:14px;margin-bottom:13px">
                     Enjoyed the read? Follow us for more.
                 </p>

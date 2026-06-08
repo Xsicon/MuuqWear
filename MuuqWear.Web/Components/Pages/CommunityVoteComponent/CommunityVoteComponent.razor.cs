@@ -15,7 +15,7 @@ public partial class CommunityVoteComponent
     private List<VoteItemModel> activeItems = new();
     private List<VoteItemModel> finishedItems = new();
     private VoteStatsModel? stats;
-    private bool isLoadingActive = true;
+    private bool isLoading = false;
     private bool isLoadingFinished = true;
     private bool isAuthenticated = false;
 
@@ -59,27 +59,24 @@ public partial class CommunityVoteComponent
     }
     protected override async Task OnInitializedAsync()
     {
+        isLoading = true;
         var authState = await AuthStateProvider
             .GetAuthenticationStateAsync();
         isAuthenticated = authState.User.Identity?.IsAuthenticated ?? false;
 
         //  load all data in parallel
-        //await Task.WhenAll(
-        //    LoadActiveItems(),
-        //    LoadFinishedItems(),
-        //    LoadStats());
-
-        await LoadActiveItems();
-        await LoadFinishedItems();
-        await LoadStats();
+        await Task.WhenAll(
+            LoadActiveItems(),
+            LoadFinishedItems(),
+            LoadStats());
         //  subscribe after data loaded
         await SubscribeToVoteUpdates();
+        isLoading = false;
     }
 
     // ─── LOAD ─────────────────────────────────────────────────
     private async Task LoadActiveItems()
     {
-        isLoadingActive = true;
 
         var result = isAuthenticated
         ? await VoteService.GetActiveItems()
@@ -88,16 +85,13 @@ public partial class CommunityVoteComponent
         if (result.Success && result.Data != null)
             activeItems = result.Data;
 
-        isLoadingActive = false;
     }
 
     private async Task LoadFinishedItems()
     {
-        isLoadingFinished = true;
         var result = await VoteService.GetFinishedItems();
         if (result.Success && result.Data != null)
             finishedItems = result.Data;
-        isLoadingFinished = false;
     }
 
     private async Task LoadStats()

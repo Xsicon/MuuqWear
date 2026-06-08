@@ -169,4 +169,20 @@ public class ContentService : IContentService
             return Response<string>.Fail("Error: " + ex.Message);
         }
     }
+
+    // =============================================
+    // GET PUBLISHED DESIGN HISTORY (public Archive page)
+    // =============================================
+    public async Task<Response<List<ContentItemModel>>> GetPublishedDesignHistory()
+    {
+        try
+        {
+            var result = await _http.GetAsync("api/Content/design-history/published");
+            return await ReadResponse<List<ContentItemModel>>(result);
+        }
+        catch (Exception ex)
+        {
+            return Response<List<ContentItemModel>>.Fail("Error: " + ex.Message);
+        }
+    }
 }

@@ -8,16 +8,13 @@
 @using MuuqWear.Application.Services.ProductService
 @using MuuqWear.Model.Cart
 @using MuuqWear.Model.Products
+@using MuuqWear.Web.Components.Shared
 
 <PageTitle>@(product?.Name ?? "Product")</PageTitle>
 
-@if (isLoading)
-{
-    <div class="container py-5 text-center">
-        <p>Loading...</p>
-    </div>
-}
-else if (product == null)
+<SpinnerComponent Show="@isLoading" />
+
+@if (product == null)
 {
     <div class="container py-5 text-center">
         <p>Product not found.</p>
@@ -227,7 +224,7 @@ else
     private string SelectedSize = "";
     private string SelectedColor = "";
     private List<ProductModel> RelatedProducts = new();
-    private bool isLoading = true;
+    private bool isLoading = false;
 
 
     private bool isAddingToCart = false;
@@ -235,6 +232,7 @@ else
     private string addToCartMessageCss = string.Empty;
     protected override async Task OnInitializedAsync()
     {
+        isLoading = true;
         if (string.IsNullOrEmpty(Id) || !Guid.TryParse(Id, out Guid productId))
         {
             NavigationManager.NavigateTo("/");

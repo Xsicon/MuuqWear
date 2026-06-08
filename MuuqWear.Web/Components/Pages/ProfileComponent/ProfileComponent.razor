@@ -28,6 +28,7 @@
 @using MuuqWear.Web.Components.Pages.MileStoneComponent
 @using MuuqWear.Web.Components.Pages.OrderConfirmedComponent
 @using MuuqWear.Web.Components.Pages.PartnerStoreComponent
+@using MuuqWear.Web.Components.Shared
 @inject IHttpClientFactory HttpClientFactory
 @inject AuthSessionService AuthSession
 @inject IAffiliateService AffiliateService
@@ -35,6 +36,8 @@
 
 
 <PageTitle>Profile</PageTitle>
+
+<SpinnerComponent Show="@isLoadingOrders" />
 
 <section class="mw-profile container py-4 py-md-5">
 

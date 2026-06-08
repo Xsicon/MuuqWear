@@ -1,4 +1,5 @@
 ﻿using MuuqWear.Application.Shared;
+using MuuqWear.Model.Archive;
 using MuuqWear.Model.ContentItem;
 
 namespace MuuqWear.Application.Services.ContentService;
@@ -13,4 +14,5 @@ public interface IContentService
     Task<Response<ContentItemModel>> Publish(ContentCategory type, Guid id);
     Task<Response<ContentItemModel>> Unpublish(ContentCategory type, Guid id);
     Task<Response<string>> UploadImage(string fileName, byte[] bytes, string contentType);
+    Task<Response<List<ContentItemModel>>> GetPublishedDesignHistory();
 }

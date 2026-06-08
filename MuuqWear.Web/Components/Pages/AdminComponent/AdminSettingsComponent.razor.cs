@@ -7,7 +7,7 @@ public partial class AdminSettingsComponent
 
     // ─── STATE ────────────────────────────────────────────────
     private List<AdminSettingsUserModel> users = new();
-    private bool isLoading = true;
+    private bool isLoading = false;
     private string activeTab = "users";
     private string modalError = string.Empty;
     private bool isSaving = false;

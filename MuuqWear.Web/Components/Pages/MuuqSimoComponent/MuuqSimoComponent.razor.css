@@ -1,0 +1,2005 @@
+﻿.ms {
+    --c-ink: #1E2A47;
+    --c-muted: #4A5C7A;
+    --c-soft: #E6ECF5;
+    color: var(--c-ink);
+    background: #FFFFFF;
+}
+
+/* =============================================
+   HERO
+   ============================================= */
+.ms-hero {
+    position: relative;
+    width: 100%;
+    height: 85vh;
+    overflow: hidden;
+}
+
+@media (min-width: 768px) {
+    .ms-hero {
+        height: 90vh;
+    }
+}
+
+/* Carousel layer */
+.ms-hero__carousel {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.ms-hero__slide {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.ms-hero__slide-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Dark gradient over each slide (image → readable text) */
+.ms-hero__slide-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient( to top, #1E2A47 0%, rgba(30, 42, 71, 0.4) 50%, transparent 100% );
+}
+
+/* Content layer (bottom-anchored, above carousel) */
+.ms-hero__content-wrap {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.ms-hero__content {
+    max-width: 1280px;
+    margin: 0 auto;
+    width: 100%;
+    padding: 0 16px 55px;
+    pointer-events: auto;
+}
+
+@media (min-width: 768px) {
+    .ms-hero__content {
+        padding: 0 34px 89px;
+    }
+}
+
+/* Text */
+.ms-hero__eyebrow {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin: 0 0 8px;
+}
+
+@media (min-width: 768px) {
+    .ms-hero__eyebrow {
+        font-size: 12px;
+    }
+}
+
+.ms-hero__title {
+    color: #fff;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 36px;
+    font-weight: 400;
+    letter-spacing: -1px;
+    line-height: 1.1;
+    margin: 0 0 13px;
+}
+
+@media (min-width: 768px) {
+    .ms-hero__title {
+        font-size: 64px;
+        letter-spacing: -2px;
+    }
+}
+
+.ms-hero__tagline {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 16px;
+    font-weight: 300;
+    letter-spacing: -0.3px;
+    margin: 0 0 5px;
+}
+
+@media (min-width: 768px) {
+    .ms-hero__tagline {
+        font-size: 21px;
+    }
+}
+
+.ms-hero__meta {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    margin: 0 0 34px;
+}
+
+@media (min-width: 768px) {
+    .ms-hero__meta {
+        font-size: 14px;
+    }
+}
+
+/* CTAs */
+.ms-hero__ctas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 13px;
+}
+
+.ms-hero__cta {
+    padding: 13px 34px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    display: inline-block;
+}
+
+.ms-hero__cta--solid {
+    background: #FFFFFF;
+    color: #1E2A47;
+}
+
+    .ms-hero__cta--solid:hover {
+        background: #E6ECF5;
+        color: #1E2A47;
+    }
+
+.ms-hero__cta--outline {
+    background: transparent;
+    color: #FFFFFF;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+    .ms-hero__cta--outline:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: #FFFFFF;
+    }
+
+/* Swiper pagination dots — override default position to bottom-right corner */
+.ms-hero .swiper-pagination {
+    position: absolute;
+    bottom: 21px;
+    right: 21px;
+    left: auto;
+    width: auto;
+    text-align: right;
+    z-index: 3;
+}
+
+.ms-hero .swiper-pagination-bullet {
+    background: rgba(255, 255, 255, 0.5);
+    opacity: 1;
+    width: 8px;
+    height: 8px;
+    margin: 0 4px;
+    transition: background-color 0.2s ease, width 0.2s ease;
+}
+
+.ms-hero .swiper-pagination-bullet-active {
+    background: #FFFFFF;
+    width: 24px;
+    border-radius: 4px;
+}
+
+
+/* =============================================
+   SECTION 2 — COUNTDOWN BAND
+   ============================================= */
+.ms-countdown {
+    border-bottom: 1px solid rgba(169, 183, 204, 0.4);
+}
+
+.ms-countdown__inner {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 34px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 21px;
+}
+
+@media (min-width: 768px) {
+    .ms-countdown__inner {
+        padding: 55px 34px;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+    }
+}
+
+/* LEFT — info */
+.ms-countdown__info {
+    /* default block; flex parent handles alignment */
+}
+
+.ms-countdown__eyebrow {
+    color: #4A5C7A;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin: 0 0 5px;
+}
+
+.ms-countdown__date {
+    color: #1E2A47;
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0;
+    display: flex;
+    align-items: center;
+}
+
+.ms-countdown__date-icon {
+    margin-right: 6px;
+    flex-shrink: 0;
+}
+
+/* RIGHT — tiles */
+.ms-countdown__tiles {
+    display: flex;
+    gap: 13px;
+}
+
+@media (min-width: 768px) {
+    .ms-countdown__tiles {
+        gap: 21px;
+    }
+}
+
+.ms-countdown__tile {
+    text-align: center;
+}
+
+.ms-countdown__tile-num {
+    width: 60px;
+    height: 60px;
+    border: 1px solid rgba(169, 183, 204, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 24px;
+    font-weight: 300;
+    letter-spacing: -1px;
+    color: #1E2A47;
+    margin: 0 0 5px;
+}
+
+@media (min-width: 768px) {
+    .ms-countdown__tile-num {
+        width: 75px;
+        height: 75px;
+        font-size: 32px;
+    }
+}
+
+.ms-countdown__tile-label {
+    color: #4A5C7A;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+
+/* =============================================
+   SECTION 3 — EXPERIENCE
+   ============================================= */
+.ms-experience {
+    border-bottom: 1px solid rgba(169, 183, 204, 0.4);
+}
+
+.ms-experience__inner {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 55px 16px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 34px;
+}
+
+@media (min-width: 768px) {
+    .ms-experience__inner {
+        padding: 89px 34px;
+        grid-template-columns: 35% 1fr;
+        gap: 55px;
+    }
+}
+
+/* LEFT — copy */
+.ms-experience__eyebrow {
+    color: #4A5C7A;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin: 0 0 13px;
+}
+
+.ms-experience__title {
+    color: #1E2A47;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 28px;
+    font-weight: 400;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+    margin: 0 0 21px;
+}
+
+@media (min-width: 768px) {
+    .ms-experience__title {
+        font-size: 34px;
+    }
+}
+
+.ms-experience__body {
+    color: #4A5C7A;
+    font-size: 14px;
+    line-height: 1.8;
+    margin: 0;
+}
+
+/* RIGHT — 2×2 grid */
+.ms-experience__grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 13px;
+}
+
+/* CARD */
+.ms-experience__card {
+    position: relative;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    display: block;
+    text-decoration: none;
+}
+
+.ms-experience__card-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.7s ease;
+}
+
+.ms-experience__card:hover .ms-experience__card-img {
+    transform: scale(1.05);
+}
+
+.ms-experience__card-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient( to top, rgba(30, 42, 71, 0.8) 0%, transparent 100% );
+    pointer-events: none;
+}
+
+.ms-experience__card-label {
+    position: absolute;
+    bottom: 13px;
+    left: 13px;
+    color: #FFFFFF;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    margin: 0;
+}
+
+
+/* =============================================
+   SECTION 4 — THE BLUE VEIL WALK (DARK)
+   ============================================= */
+.ms-veil {
+    background: #1E2A47;
+    border-bottom: 1px solid rgba(169, 183, 204, 0.4);
+}
+
+.ms-veil__inner {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 55px 16px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 34px;
+    align-items: center;
+}
+
+@media (min-width: 768px) {
+    .ms-veil__inner {
+        padding: 89px 34px;
+        grid-template-columns: 1fr 35%;
+    }
+}
+
+/* LEFT — copy */
+.ms-veil__eyebrow {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin: 0 0 13px;
+}
+
+.ms-veil__title {
+    color: #FFFFFF;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 28px;
+    font-weight: 400;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+    margin: 0 0 21px;
+}
+
+@media (min-width: 768px) {
+    .ms-veil__title {
+        font-size: 34px;
+    }
+}
+
+.ms-veil__body {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+    line-height: 1.8;
+    margin: 0 0 21px;
+}
+
+/* SPECS GRID */
+.ms-veil__specs {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 13px;
+}
+
+.ms-veil__spec {
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 13px;
+}
+
+.ms-veil__spec-label {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin: 0;
+}
+
+.ms-veil__spec-value {
+    color: #FFFFFF;
+    font-size: 13px;
+    font-weight: 600;
+    margin: 3px 0 0;
+}
+
+/* RIGHT — media */
+.ms-veil__media {
+    position: relative;
+    aspect-ratio: 3 / 4;
+    overflow: hidden;
+}
+
+    .ms-veil__media img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+.ms-veil__media-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient( to top, #1E2A47 0%, transparent 100% );
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+/* =============================================
+   SECTION 5 — SCHEDULE
+   ============================================= */
+.ms-schedule {
+    border-bottom: 1px solid rgba(169, 183, 204, 0.4);
+    scroll-margin-top: 72px;
+}
+
+.ms-schedule__inner {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 55px 16px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 34px;
+}
+
+@media (min-width: 768px) {
+    .ms-schedule__inner {
+        padding: 89px 34px;
+        grid-template-columns: 35% 1fr;
+        gap: 55px;
+    }
+}
+
+/* LEFT — copy */
+.ms-schedule__eyebrow {
+    color: #4A5C7A;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin: 0 0 13px;
+}
+
+.ms-schedule__title {
+    color: #1E2A47;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 28px;
+    font-weight: 400;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+    margin: 0 0 21px;
+}
+
+@media (min-width: 768px) {
+    .ms-schedule__title {
+        font-size: 34px;
+    }
+}
+
+/* INFO CARDS (Venue / Dress code) */
+.ms-schedule__info {
+    border: 1px solid rgba(169, 183, 204, 0.4);
+    padding: 21px;
+}
+
+.ms-schedule__info--secondary {
+    margin-top: 13px;
+}
+
+.ms-schedule__info-label {
+    color: #4A5C7A;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin: 0 0 8px;
+}
+
+.ms-schedule__info-name {
+    color: #1E2A47;
+    font-size: 15px;
+    font-weight: 700;
+    margin: 0 0 3px;
+}
+
+.ms-schedule__info-sub {
+    color: #4A5C7A;
+    font-size: 13px;
+    margin: 0 0 13px;
+}
+
+.ms-schedule__info--secondary .ms-schedule__info-sub {
+    margin-bottom: 0;
+}
+
+.ms-schedule__info-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+    .ms-schedule__info-details p {
+        color: #4A5C7A;
+        font-size: 12px;
+        margin: 0;
+    }
+
+.ms-schedule__info-key {
+    color: #1E2A47;
+    font-weight: 700;
+}
+
+/* RIGHT — timeline of entries */
+.ms-schedule__timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.ms-schedule__entry {
+    border: 1px solid rgba(169, 183, 204, 0.4);
+    padding: 21px;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    transition: background-color 0.15s ease;
+}
+
+    .ms-schedule__entry:hover {
+        background: #F4F6F9;
+    }
+
+/* ICON TILE */
+.ms-schedule__entry-icon {
+    width: 42px;
+    height: 42px;
+    background: #1E2A47;
+    color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background-color 0.15s ease;
+}
+
+.ms-schedule__entry:hover .ms-schedule__entry-icon {
+    background: #0B1A33;
+}
+
+/* ENTRY BODY */
+.ms-schedule__entry-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.ms-schedule__entry-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 13px;
+    margin-bottom: 3px;
+}
+
+.ms-schedule__entry-title {
+    color: #1E2A47;
+    font-size: 15px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.ms-schedule__entry-time {
+    color: #1E2A47;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 14px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.ms-schedule__entry-location {
+    color: #4A5C7A;
+    font-size: 12px;
+    font-weight: 600;
+    margin: 0 0 5px;
+    display: flex;
+    align-items: center;
+}
+
+.ms-schedule__entry-pin {
+    margin-right: 4px;
+    flex-shrink: 0;
+}
+
+.ms-schedule__entry-desc {
+    color: #4A5C7A;
+    font-size: 13px;
+    line-height: 1.6;
+    margin: 0;
+}
+
+
+
+
+/* =============================================
+   SECTION 6 — RUNWAY / SAPPHIRE PROPHECY
+   ============================================= */
+.ms-runway {
+    border-bottom: 1px solid rgba(169, 183, 204, 0.4);
+    background: #F4F6F9;
+}
+
+.ms-runway__inner {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 55px 16px;
+}
+
+@media (min-width: 768px) {
+    .ms-runway__inner {
+        padding: 89px 34px;
+    }
+}
+
+/* CENTERED HEADER */
+.ms-runway__header {
+    text-align: center;
+    margin-bottom: 34px;
+}
+
+@media (min-width: 768px) {
+    .ms-runway__header {
+        margin-bottom: 55px;
+    }
+}
+
+.ms-runway__eyebrow {
+    color: #4A5C7A;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin: 0 0 8px;
+}
+
+.ms-runway__title {
+    color: #1E2A47;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 28px;
+    font-weight: 400;
+    letter-spacing: -0.5px;
+    margin: 0 0 8px;
+    line-height: 1.2;
+}
+
+@media (min-width: 768px) {
+    .ms-runway__title {
+        font-size: 40px;
+    }
+}
+
+.ms-runway__sub {
+    color: #4A5C7A;
+    font-size: 14px;
+    max-width: 550px;
+    margin: 0 auto;
+    line-height: 1.5;
+}
+
+/* COLLECTIONS GRID — 4 numbered cards */
+.ms-runway__collections {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 13px;
+    margin-bottom: 34px;
+}
+
+@media (min-width: 768px) {
+    .ms-runway__collections {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .ms-runway__collections {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+.ms-runway__collection {
+    background: #FFFFFF;
+    border: 1px solid rgba(169, 183, 204, 0.4);
+    padding: 21px;
+}
+
+.ms-runway__collection-num {
+    width: 34px;
+    height: 34px;
+    background: #1E2A47;
+    color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 13px;
+}
+
+.ms-runway__collection-title {
+    color: #1E2A47;
+    font-size: 15px;
+    font-weight: 700;
+    margin: 0 0 5px;
+}
+
+.ms-runway__collection-desc {
+    color: #4A5C7A;
+    font-size: 13px;
+    line-height: 1.6;
+    margin: 0;
+}
+
+/* TWO-COLUMN DETAILS PANEL */
+.ms-runway__details {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 21px;
+}
+
+@media (min-width: 768px) {
+    .ms-runway__details {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.ms-runway__panel {
+    background: #FFFFFF;
+    border: 1px solid rgba(169, 183, 204, 0.4);
+    padding: 21px;
+}
+
+.ms-runway__panel-label {
+    color: #4A5C7A;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin: 0 0 13px;
+}
+
+/* FEATURED MODELS LIST */
+.ms-runway__models {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.ms-runway__model {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 13px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(169, 183, 204, 0.1);
+}
+
+    .ms-runway__model:last-child {
+        border-bottom: 0;
+    }
+
+.ms-runway__model-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.ms-runway__model-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: #E6ECF5;
+    color: #1E2A47;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.ms-runway__model-name {
+    color: #1E2A47;
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.ms-runway__model-credit {
+    color: #4A5C7A;
+    font-size: 12px;
+    text-align: right;
+    margin: 0;
+}
+
+.ms-runway__models-extra {
+    color: #4A5C7A;
+    font-size: 12px;
+    font-style: italic;
+    margin: 10px 0 0;
+}
+
+/* MUSIC & LIGHTING ITEMS */
+.ms-runway__music {
+    display: flex;
+    flex-direction: column;
+    gap: 13px;
+}
+
+.ms-runway__music-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.ms-runway__music-icon {
+    color: #1E2A47;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+    /* Force 18x18 size for icons in this section
+   (RenderIcon helper outputs 20x20 by default) */
+    .ms-runway__music-icon svg {
+        width: 18px;
+        height: 18px;
+    }
+
+.ms-runway__music-title {
+    color: #1E2A47;
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.ms-runway__music-desc {
+    color: #4A5C7A;
+    font-size: 13px;
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* PRODUCTION SUB-GRID */
+.ms-runway__production {
+    margin-top: 21px;
+    padding-top: 13px;
+    border-top: 1px solid rgba(169, 183, 204, 0.2);
+}
+
+.ms-runway__production-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+
+.ms-runway__production-item {
+    color: #4A5C7A;
+    font-size: 12px;
+    margin: 0;
+}
+
+.ms-runway__production-key {
+    color: #1E2A47;
+    font-weight: 700;
+}
+
+/* =============================================
+   SECTION 7 — AWARDS
+   ============================================= */
+.ms-awards {
+    border-bottom: 1px solid rgba(169, 183, 204, 0.4);
+}
+
+.ms-awards__inner {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 55px 16px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 34px;
+}
+
+@media (min-width: 768px) {
+    .ms-awards__inner {
+        padding: 89px 34px;
+        grid-template-columns: 1fr 35%;
+        gap: 55px;
+    }
+}
+
+/* LEFT — copy */
+.ms-awards__eyebrow {
+    color: #4A5C7A;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin: 0 0 13px;
+}
+
+.ms-awards__title {
+    color: #1E2A47;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 28px;
+    font-weight: 400;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+    margin: 0 0 21px;
+}
+
+@media (min-width: 768px) {
+    .ms-awards__title {
+        font-size: 34px;
+    }
+}
+
+/* AWARD LIST */
+.ms-awards__list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.ms-awards__item {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    padding: 13px;
+    border: 1px solid rgba(169, 183, 204, 0.4);
+    transition: background-color 0.15s ease;
+}
+
+    .ms-awards__item:hover {
+        background: #F4F6F9;
+    }
+
+/* Icon tile */
+.ms-awards__item-icon {
+    width: 38px;
+    height: 38px;
+    background: #1E2A47;
+    color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+    .ms-awards__item-icon svg {
+        width: 18px;
+        height: 18px;
+    }
+
+/* Body */
+.ms-awards__item-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.ms-awards__item-title {
+    color: #1E2A47;
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.ms-awards__item-prize {
+    color: #4A5C7A;
+    font-size: 12px;
+    margin: 0;
+}
+
+/* RIGHT — image + credit */
+.ms-awards__side {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.ms-awards__photo {
+    position: relative;
+    aspect-ratio: 3 / 4;
+    overflow: hidden;
+    margin-bottom: 13px;
+}
+
+    .ms-awards__photo img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+.ms-awards__photo-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient( to top, rgba(30, 42, 71, 0.6) 0%, transparent 100% );
+    pointer-events: none;
+}
+
+.ms-awards__photo-caption {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    color: #FFFFFF;
+    font-size: 13px;
+    font-weight: 700;
+    margin: 0;
+}
+
+/* CREDIT CARD */
+.ms-awards__credit {
+    border: 1px solid rgba(169, 183, 204, 0.4);
+    padding: 16px;
+    text-align: center;
+}
+
+.ms-awards__credit-sub {
+    color: #4A5C7A;
+    font-size: 12px;
+    margin: 0;
+}
+
+.ms-awards__credit-main {
+    color: #1E2A47;
+    font-size: 13px;
+    font-weight: 700;
+    margin: 3px 0 0;
+}
+
+
+/* =============================================
+   SECTION 8 — TICKETS
+   ============================================= */
+.ms-tickets {
+    border-bottom: 1px solid rgba(169, 183, 204, 0.4);
+    background: #F4F6F9;
+    scroll-margin-top: 72px;
+}
+
+.ms-tickets__inner {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 55px 16px;
+}
+
+@media (min-width: 768px) {
+    .ms-tickets__inner {
+        padding: 89px 34px;
+    }
+}
+
+/* CENTERED HEADER */
+.ms-tickets__header {
+    text-align: center;
+    margin-bottom: 34px;
+}
+
+.ms-tickets__eyebrow {
+    color: #4A5C7A;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin: 0 0 8px;
+}
+
+.ms-tickets__title {
+    color: #1E2A47;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 28px;
+    font-weight: 400;
+    letter-spacing: -0.5px;
+    margin: 0 0 8px;
+    line-height: 1.2;
+}
+
+@media (min-width: 768px) {
+    .ms-tickets__title {
+        font-size: 40px;
+    }
+}
+
+.ms-tickets__sub {
+    color: #4A5C7A;
+    font-size: 14px;
+    margin: 0;
+}
+
+/* TIER CARDS */
+.ms-tickets__tiers {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 13px;
+    margin-bottom: 21px;
+}
+
+@media (min-width: 768px) {
+    .ms-tickets__tiers {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.ms-ticket {
+    background: #FFFFFF;
+    border: 2px solid rgba(169, 183, 204, 0.4);
+    padding: 34px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.ms-ticket--highlighted {
+    border-color: #1E2A47;
+}
+
+/* Badge */
+.ms-ticket__badge {
+    align-self: flex-start;
+    background: #1E2A47;
+    color: #FFFFFF;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    margin-bottom: 13px;
+}
+
+.ms-ticket__name {
+    color: #1E2A47;
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0 0 3px;
+}
+
+.ms-ticket__price {
+    color: #1E2A47;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 34px;
+    font-weight: 400;
+    letter-spacing: -1px;
+    margin: 0 0 5px;
+}
+
+.ms-ticket__availability {
+    color: #4A5C7A;
+    font-size: 12px;
+    margin: 0 0 21px;
+}
+
+/* Perks list */
+.ms-ticket__perks {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 21px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+}
+
+.ms-ticket__perk {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    color: #4A5C7A;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.ms-ticket__perk-check {
+    color: #1E2A47;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+/* CTA button */
+.ms-ticket__cta {
+    width: 100%;
+    padding: 13px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    font-family: inherit;
+    /* Default — outlined */
+    background: transparent;
+    border: 1px solid #1E2A47;
+    color: #1E2A47;
+}
+
+    .ms-ticket__cta:hover {
+        background: #1E2A47;
+        color: #FFFFFF;
+    }
+
+/* Highlighted tier — solid CTA */
+.ms-ticket--highlighted .ms-ticket__cta {
+    background: #1E2A47;
+    border-color: #1E2A47;
+    color: #FFFFFF;
+}
+
+    .ms-ticket--highlighted .ms-ticket__cta:hover {
+        background: #0B1A33;
+        color: #FFFFFF;
+    }
+
+/* INFO ROW (Affiliate Partner / Press & Media) */
+.ms-tickets__info-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 13px;
+}
+
+@media (min-width: 768px) {
+    .ms-tickets__info-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.ms-tickets__info-card {
+    background: #FFFFFF;
+    border: 1px solid rgba(169, 183, 204, 0.4);
+    padding: 21px;
+}
+
+.ms-tickets__info-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.ms-tickets__info-icon {
+    color: #1E2A47;
+    flex-shrink: 0;
+}
+
+.ms-tickets__info-icon--gold {
+    color: #D4A843;
+}
+
+.ms-tickets__info-title {
+    color: #1E2A47;
+    font-size: 14px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.ms-tickets__info-body {
+    color: #4A5C7A;
+    font-size: 13px;
+    margin: 0 0 8px;
+}
+
+/* Tier color legend */
+.ms-tickets__tiers-line {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 13px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.ms-tickets__tier-bronze {
+    color: #CD7F32;
+}
+
+.ms-tickets__tier-silver {
+    color: #A9B7CC;
+}
+
+.ms-tickets__tier-gold {
+    color: #D4A843;
+}
+
+.ms-tickets__info-contact {
+    color: #4A5C7A;
+    font-size: 12px;
+    margin: 0;
+}
+
+.ms-tickets__info-email {
+    color: #1E2A47;
+    font-weight: 600;
+}
+
+/* =============================================
+   SECTION 9 — AFFILIATE CTA
+   ============================================= */
+.ms-affiliate {
+    border-bottom: 1px solid rgba(169, 183, 204, 0.4);
+}
+
+.ms-affiliate__inner {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 55px 16px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 34px;
+    align-items: center;
+}
+
+@media (min-width: 768px) {
+    .ms-affiliate__inner {
+        padding: 89px 34px;
+        grid-template-columns: 1fr 40%;
+    }
+}
+
+/* LEFT — copy */
+.ms-affiliate__eyebrow {
+    color: #4A5C7A;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin: 0 0 13px;
+}
+
+.ms-affiliate__title {
+    color: #1E2A47;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 28px;
+    font-weight: 400;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+    margin: 0 0 13px;
+}
+
+@media (min-width: 768px) {
+    .ms-affiliate__title {
+        font-size: 34px;
+    }
+}
+
+.ms-affiliate__body {
+    color: #4A5C7A;
+    font-size: 14px;
+    line-height: 1.8;
+    margin: 0 0 21px;
+}
+
+.ms-affiliate__cta {
+    background: #1E2A47;
+    color: #FFFFFF;
+    border: 0;
+    padding: 13px 34px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    font-family: inherit;
+}
+
+    .ms-affiliate__cta:hover {
+        background: #0B1A33;
+    }
+
+/* RIGHT — benefits card */
+.ms-affiliate__benefits {
+    border: 1px solid rgba(169, 183, 204, 0.4);
+    padding: 21px;
+}
+
+.ms-affiliate__benefits-label {
+    color: #4A5C7A;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin: 0 0 13px;
+}
+
+/* Tier row */
+.ms-affiliate__tier {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(169, 183, 204, 0.1);
+}
+
+    .ms-affiliate__tier:last-child {
+        border-bottom: 0;
+    }
+
+.ms-affiliate__tier-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.ms-affiliate__tier-name {
+    color: #1E2A47;
+    font-size: 14px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.ms-affiliate__tier-benefit {
+    color: #4A5C7A;
+    font-size: 12px;
+    margin: 0;
+    line-height: 1.4;
+}
+
+
+/* =============================================
+   SECTION 10 — TEAM & SPONSORS
+   ============================================= */
+.ms-credits {
+    border-bottom: 1px solid rgba(169, 183, 204, 0.4);
+    background: #F4F6F9;
+}
+
+.ms-credits__inner {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 55px 16px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 34px;
+}
+
+@media (min-width: 768px) {
+    .ms-credits__inner {
+        padding: 89px 34px;
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Shared column header */
+.ms-credits__eyebrow {
+    color: #4A5C7A;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin: 0 0 13px;
+}
+
+.ms-credits__title {
+    color: #1E2A47;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 24px;
+    font-weight: 400;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+    margin: 0 0 21px;
+}
+
+/* TEAM LIST (left column) */
+.ms-credits__list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.ms-credits__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 13px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(169, 183, 204, 0.2);
+}
+
+    .ms-credits__row:last-child {
+        border-bottom: 0;
+    }
+
+.ms-credits__row-name {
+    color: #1E2A47;
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.ms-credits__row-role {
+    color: #4A5C7A;
+    font-size: 12px;
+    margin: 0;
+    text-align: right;
+}
+
+/* SPONSORS GRID (right column) */
+.ms-credits__sponsors {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 13px;
+}
+
+.ms-credits__sponsor {
+    background: #FFFFFF;
+    border: 1px solid rgba(169, 183, 204, 0.4);
+    padding: 21px;
+    text-align: center;
+}
+
+.ms-credits__sponsor-role {
+    color: #4A5C7A;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin: 0 0 5px;
+}
+
+.ms-credits__sponsor-name {
+    color: #1E2A47;
+    font-size: 15px;
+    font-weight: 700;
+    margin: 0;
+}
+
+/* =============================================
+   SECTION 11 — CLOSING CTA
+   ============================================= */
+.ms-closing {
+    position: relative;
+    height: 50vh;
+    overflow: hidden;
+}
+
+@media (min-width: 768px) {
+    .ms-closing {
+        height: 60vh;
+    }
+}
+
+.ms-closing__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.ms-closing__overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient( to top, #1E2A47 0%, rgba(30, 42, 71, 0.3) 100% );
+    pointer-events: none;
+}
+
+.ms-closing__content {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0 16px;
+}
+
+.ms-closing__eyebrow {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin: 0 0 8px;
+}
+
+.ms-closing__title {
+    color: #FFFFFF;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 28px;
+    font-weight: 400;
+    letter-spacing: -1px;
+    margin: 0 0 21px;
+    line-height: 1.1;
+}
+
+@media (min-width: 768px) {
+    .ms-closing__title {
+        font-size: 48px;
+    }
+}
+
+.ms-closing__cta {
+    background: #FFFFFF;
+    color: #1E2A47;
+    padding: 13px 34px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: background-color 0.2s ease;
+    display: inline-block;
+}
+
+    .ms-closing__cta:hover {
+        background: #E6ECF5;
+        color: #1E2A47;
+    }
+
+/* =============================================
+   STORY DETAIL PANEL — slide-in from right
+   ============================================= */
+
+.ar-story {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+}
+
+/* Backdrop */
+.ar-story__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(30, 42, 71, 0.4);
+    animation: ar-story-fade-in 0.2s ease-out;
+}
+
+@keyframes ar-story-fade-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* Sliding panel */
+.ar-story__panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    max-width: 600px;
+    background: #FFFFFF;
+    box-shadow: -8px 0 24px rgba(30, 42, 71, 0.15);
+    overflow-y: auto;
+    animation: ar-story-slide-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+}
+
+@keyframes ar-story-slide-in {
+    from {
+        transform: translateX(100%);
+    }
+
+    to {
+        transform: translateX(0);
+    }
+}
+
+/* Top bar */
+.ar-story__topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 21px;
+    border-bottom: 1px solid rgba(169, 183, 204, 0.4);
+    background: #FFFFFF;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+.ar-story__topbar-title {
+    color: #1E2A47;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin: 0;
+}
+
+.ar-story__close {
+    width: 32px;
+    height: 32px;
+    border: 1px solid #A9B7CC;
+    background: transparent;
+    color: #1E2A47;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+    flex-shrink: 0;
+}
+
+    .ar-story__close:hover {
+        background: rgba(230, 236, 245, 0.7);
+    }
+
+/* Body */
+.ar-story__body {
+    padding: 21px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 21px;
+}
+
+@media (min-width: 768px) {
+    .ar-story__body {
+        padding: 21px 34px;
+    }
+}
+
+/* Image strip */
+.ar-story__images {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+
+.ar-story__image {
+    margin: 0;
+}
+
+    .ar-story__image img {
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        object-fit: cover;
+        display: block;
+        background: #F4F6F9;
+    }
+
+.ar-story__caption {
+    color: #4A5C7A;
+    font-size: 11px;
+    margin: 8px 0 0;
+    line-height: 1.4;
+}
+
+/* Meta cards */
+.ar-story__meta {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.ar-story__meta-card {
+    border: 1px solid rgba(169, 183, 204, 0.4);
+    padding: 13px;
+    text-align: center;
+}
+
+.ar-story__meta-label {
+    color: #4A5C7A;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin: 0 0 5px;
+}
+
+.ar-story__meta-value {
+    color: #1E2A47;
+    font-size: 13px;
+    font-weight: 700;
+    margin: 0;
+    line-height: 1.3;
+}
+
+/* Section heading */
+.ar-story__section-label {
+    color: #4A5C7A;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin: 0 0 13px;
+}
+
+/* Story paragraphs */
+.ar-story__section {
+    margin: 0;
+}
+
+.ar-story__paragraph {
+    color: #4A5C7A;
+    font-size: 14px;
+    line-height: 1.7;
+    margin: 0 0 13px;
+}
+
+    .ar-story__paragraph:last-child {
+        margin-bottom: 0;
+    }
+
+/* Technical details */
+.ar-story__tech {
+    border: 1px solid rgba(169, 183, 204, 0.4);
+    padding: 16px;
+}
+
+.ar-story__tech-list {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.ar-story__tech-row {
+    display: flex;
+    gap: 8px;
+    font-size: 13px;
+}
+
+.ar-story__tech-key {
+    color: #1E2A47;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin: 0;
+}
+
+.ar-story__tech-val {
+    color: #4A5C7A;
+    margin: 0;
+}
+
+/* Action bar */
+.ar-story__actions {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    padding: 16px 21px;
+    border-top: 1px solid rgba(169, 183, 204, 0.4);
+    background: #FFFFFF;
+    position: sticky;
+    bottom: 0;
+}
+
+@media (min-width: 768px) {
+    .ar-story__actions {
+        padding: 16px 34px;
+    }
+}
+
+.ar-story__action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 13px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+    font-family: inherit;
+    border: 1px solid #1E2A47;
+}
+
+.ar-story__action--solid {
+    background: #1E2A47;
+    color: #FFFFFF;
+}
+
+    .ar-story__action--solid:hover {
+        background: #0B1A33;
+    }
+
+.ar-story__action--outline {
+    background: transparent;
+    color: #1E2A47;
+}
+
+    .ar-story__action--outline:hover {
+        background: #1E2A47;
+        color: #FFFFFF;
+    }
+
+.ms-tickets__loading {
+    text-align: center;
+    padding: 55px 16px;
+    color: #4A5C7A;
+    font-size: 14px;
+}

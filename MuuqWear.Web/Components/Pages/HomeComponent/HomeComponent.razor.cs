@@ -1,10 +1,11 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
-
+using MuuqWear.Application.Services.JobPostingService;
 namespace MuuqWear.Web.Components.Pages.HomeComponent;
 
 public partial class HomeComponent
 {
+    private bool isLoading = false;
 
     //Slider References
     // private ElementReference finishedRef;
@@ -77,6 +78,17 @@ public partial class HomeComponent
                 return;
             }
 
+            try
+            {
+                await JS.InvokeAsync<bool>("mwImageLoad.waitForVisibleImages", 5000);
+            }
+            catch
+            {
+                // JS failure — proceed without waiting
+            }
+
+            isLoading = false;
+            StateHasChanged();
             // For AutoSliding Images in carousel
             await JS.InvokeVoidAsync("mwStartAutoSlide", categoryRef, ".mw-categorycarousel-item", 3000);
             await JS.InvokeVoidAsync("mwStartAutoSlide", newArrivalRef, ".mw-newarrivalcarousel-item", 3000);
@@ -94,6 +106,7 @@ public partial class HomeComponent
 
     protected override async Task OnInitializedAsync()
     {
+        isLoading = true;
         var result = await ProductService.GetHomeProducts();
 
         if (result.Success && result.Data != null)

@@ -132,7 +132,6 @@ public class NotificationRealtimeService : IAsyncDisposable
 
             await channel.Subscribe();
             _channels.Add(channel);
-            Console.WriteLine($" Subscribed to {table}");
         }
         catch (Exception ex)
         {

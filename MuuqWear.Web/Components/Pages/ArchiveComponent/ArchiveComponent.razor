@@ -1,0 +1,370 @@
+﻿@page "/design-history"
+@using MuuqWear.Application.Services.ContentService
+@using MuuqWear.Model.Archive
+@using MuuqWear.Model.ContentItem
+@rendermode InteractiveServer
+@inject IJSRuntime JS
+@inject IContentService ContentService
+
+
+<PageTitle>The Archive — Muuqwear</PageTitle>
+
+<div class="ar">
+
+    <!-- Section 1: Intro hero -->
+    <section class="ar-intro">
+        <div class="ar-intro__inner">
+            <p class="ar-intro__eyebrow">The Archive</p>
+            <h1 class="ar-intro__title">A History of Design</h1>
+            <p class="ar-intro__body">
+                Every Muuqwear design tells a story. From cultural heritage to
+                modern minimalism, explore the inspirations, designers, and
+                craftsmanship that shaped our collections. Click any card to
+                dive deeper into the story.
+            </p>
+        </div>
+    </section>
+    @if (isLoading)
+    {
+        <div class="ar-loading">Loading the archive…</div>
+    }
+    else
+    {
+        @foreach (var def in ArchiveCollections.All)
+        {
+            var items = ItemsFor(def.CollectionKey);
+            if (items.Count == 0) continue;
+
+            var handle = handles[def.CollectionKey];
+
+            <section class="ar-section @(def.UseSoftBackground ? "ar-section--soft" : "")">
+                <div class="ar-section__inner">
+
+                    <header class="ar-section__header">
+                        <div class="ar-section__title-row">
+                            <div class="ar-section__bar"></div>
+                            <h2 class="ar-section__title">@def.Title</h2>
+                        </div>
+                        <p class="ar-section__sub">@def.Description</p>
+                    </header>
+
+                    <div class="ar-carousel">
+
+                        <button type="button"
+                                class="ar-carousel__nav ar-carousel__nav--prev"
+                                @onclick="() => ScrollLeft(handle.TrackRef)"
+                                aria-label="Previous">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="m15 18-6-6 6-6"></path>
+                            </svg>
+                        </button>
+
+                        <div class="ar-carousel__track" @ref="handle.TrackRef">
+                            @foreach (var c in items)
+                            {
+                                <article class="ar-card" @onclick="() => OpenStoryPanel(c)">
+                                    <div class="ar-card__media">
+                                        <img src="@c.ImageUrl"
+                                             alt="@c.Title"
+                                             loading="lazy" />
+                                    </div>
+                                    <div class="ar-card__body">
+                                        <h3 class="ar-card__title">@c.Title</h3>
+                                        <p class="ar-card__designer">@c.Designer</p>
+                                        <p class="ar-card__meta">
+                                            @c.Year · @c.Inspiration
+                                        </p>
+                                        <button type="button"
+                                                class="ar-card__cta"
+                                                @onclick="() => OpenStoryPanel(c)"
+                                                @onclick:stopPropagation="true">
+                                            Read the Story →
+                                        </button>
+                                    </div>
+                                </article>
+                            }
+                        </div>
+
+                        <button type="button"
+                                class="ar-carousel__nav ar-carousel__nav--next"
+                                @onclick="() => ScrollRight(handle.TrackRef)"
+                                aria-label="Next">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="m9 18 6-6-6-6"></path>
+                            </svg>
+                        </button>
+
+                    </div>
+
+                </div>
+            </section>
+        }
+    }
+
+
+</div>
+<!-- STORY DETAIL PANEL -->
+@if (viewingItem is not null)
+{
+    <div class="ar-story">
+
+        <!-- Backdrop — clicking closes -->
+        <div class="ar-story__backdrop" @onclick="CloseStoryPanel"></div>
+
+        <!-- Sliding panel -->
+        <aside class="ar-story__panel"
+               role="dialog"
+               aria-modal="true"
+               aria-labelledby="story-title"
+               @onclick:stopPropagation="true">
+
+            <!-- Top bar -->
+            <div class="ar-story__topbar">
+                <p id="story-title" class="ar-story__topbar-title">@viewingItem.Title</p>
+                <button type="button"
+                        class="ar-story__close"
+                        @onclick="CloseStoryPanel"
+                        aria-label="Close story">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="ar-story__body">
+
+                <!-- Image strip -->
+                <div class="ar-story__images">
+                    <figure class="ar-story__image">
+                        <img src="@viewingItem.ImageUrl" alt="@viewingItem.Title" />
+                        @if (!string.IsNullOrWhiteSpace(viewingItem.Inspiration))
+                        {
+                            <figcaption class="ar-story__caption">
+                                @viewingItem.Inspiration
+                            </figcaption>
+                        }
+                    </figure>
+
+                    @if (!string.IsNullOrWhiteSpace(viewingItem.SecondImageUrl))
+                    {
+                        <figure class="ar-story__image">
+                            <img src="@viewingItem.SecondImageUrl" alt="@viewingItem.Title" />
+                            <figcaption class="ar-story__caption">
+                                @viewingItem.Title
+                            </figcaption>
+                        </figure>
+                    }
+                </div>
+
+                <!-- Meta cards -->
+                <div class="ar-story__meta">
+                    @if (!string.IsNullOrWhiteSpace(viewingItem.Designer))
+                    {
+                        <div class="ar-story__meta-card">
+                            <p class="ar-story__meta-label">Designer</p>
+                            <p class="ar-story__meta-value">@viewingItem.Designer</p>
+                        </div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(viewingItem.Year))
+                    {
+                        <div class="ar-story__meta-card">
+                            <p class="ar-story__meta-label">Year</p>
+                            <p class="ar-story__meta-value">@viewingItem.Year</p>
+                        </div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(viewingItem.Collection))
+                    {
+                        <div class="ar-story__meta-card">
+                            <p class="ar-story__meta-label">Collection</p>
+                            <p class="ar-story__meta-value">@viewingItem.Collection</p>
+                        </div>
+                    }
+                </div>
+
+                <!-- Story body (paragraphs) -->
+                @if (!string.IsNullOrWhiteSpace(viewingItem.Content))
+                {
+                    <section class="ar-story__section">
+                        <p class="ar-story__section-label">The Story</p>
+                        @foreach (var paragraph in SplitParagraphs(viewingItem.Content))
+                        {
+                            <p class="ar-story__paragraph">@paragraph</p>
+                        }
+                    </section>
+                }
+
+                <!-- Technical details -->
+                @if (HasTechnicalDetails(viewingItem))
+                {
+                    <section class="ar-story__tech">
+                        <p class="ar-story__section-label">Technical Details</p>
+                        <dl class="ar-story__tech-list">
+                            @if (!string.IsNullOrWhiteSpace(viewingItem.TechnicalFabric))
+                            {
+                                <div class="ar-story__tech-row">
+                                    <dt class="ar-story__tech-key">Fabric:</dt>
+                                    <dd class="ar-story__tech-val">@viewingItem.TechnicalFabric</dd>
+                                </div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(viewingItem.TechnicalTechniques))
+                            {
+                                <div class="ar-story__tech-row">
+                                    <dt class="ar-story__tech-key">Techniques:</dt>
+                                    <dd class="ar-story__tech-val">@viewingItem.TechnicalTechniques</dd>
+                                </div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(viewingItem.TechnicalProduction))
+                            {
+                                <div class="ar-story__tech-row">
+                                    <dt class="ar-story__tech-key">Production:</dt>
+                                    <dd class="ar-story__tech-val">@viewingItem.TechnicalProduction</dd>
+                                </div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(viewingItem.TechnicalAvailability))
+                            {
+                                <div class="ar-story__tech-row">
+                                    <dt class="ar-story__tech-key">Availability:</dt>
+                                    <dd class="ar-story__tech-val">@viewingItem.TechnicalAvailability</dd>
+                                </div>
+                            }
+                        </dl>
+                    </section>
+                }
+
+            </div>
+
+            <!-- Action bar -->
+            <div class="ar-story__actions">
+                <button type="button" class="ar-story__action ar-story__action--solid">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="8" cy="21" r="1"></circle>
+                        <circle cx="19" cy="21" r="1"></circle>
+                        <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path>
+                    </svg>
+                    <span>Shop This Design</span>
+                </button>
+                <button type="button" class="ar-story__action ar-story__action--outline">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="18" cy="5" r="3"></circle>
+                        <circle cx="6" cy="12" r="3"></circle>
+                        <circle cx="18" cy="19" r="3"></circle>
+                        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                    </svg>
+                    <span>Share Story</span>
+                </button>
+            </div>
+
+        </aside>
+    </div>
+}
+
+@code {
+
+    // Story panel state
+    private ContentItemModel? viewingItem = null;
+
+    private void OpenStoryPanel(ContentItemModel item)
+    {
+        viewingItem = item;
+    }
+
+    private void CloseStoryPanel()
+    {
+        viewingItem = null;
+    }
+
+
+    private class CarouselHandle
+    {
+        public ElementReference TrackRef;
+        public bool DragEnabled = false;
+    }
+    private Dictionary<string, CarouselHandle> handles = new();
+    private bool isLoading = true;
+    private Dictionary<string, List<ContentItemModel>> itemsByCollection = new();
+    private Dictionary<string, ElementReference> carouselRefs = new();
+    private List<ContentItemModel> ItemsFor(string collectionKey)
+        => itemsByCollection.TryGetValue(collectionKey, out var items)
+            ? items
+            : new List<ContentItemModel>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadItems();
+    }
+
+
+    private async Task ScrollLeft(ElementReference el)
+    => await JS.InvokeVoidAsync("mwScrollLeft", el, ".ar-card");
+
+    private async Task ScrollRight(ElementReference el)
+        => await JS.InvokeVoidAsync("mwScrollRight", el, ".ar-card");
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender || carouselRefs.Count == 0) return;
+
+        // Enable drag-scroll on each rendered carousel
+        foreach (var refPair in carouselRefs)
+        {
+            await JS.InvokeVoidAsync("enableDragScroll", refPair.Value);
+        }
+    }
+
+    private async Task LoadItems()
+    {
+        isLoading = true;
+
+        var result = await ContentService.GetPublishedDesignHistory();
+        if (result.Success && result.Data != null)
+        {
+            itemsByCollection = result.Data
+                .Where(x => !string.IsNullOrWhiteSpace(x.Collection))
+                .GroupBy(x => x.Collection!)
+                .ToDictionary(g => g.Key, g => g.ToList());
+        }
+
+        // Create a handle for every defined collection that has items
+        handles = ArchiveCollections.All
+            .Where(def => itemsByCollection.ContainsKey(def.CollectionKey))
+            .ToDictionary(def => def.CollectionKey, _ => new CarouselHandle());
+
+        isLoading = false;
+    }
+
+    private IEnumerable<string> SplitParagraphs(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            yield break;
+
+        // Split on blank lines (one or more consecutive newlines)
+        var paragraphs = text
+            .Replace("\r\n", "\n")
+            .Split(new[] { "\n\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+
+        foreach (var p in paragraphs)
+        {
+            var trimmed = p.Trim();
+            if (!string.IsNullOrWhiteSpace(trimmed))
+                yield return trimmed;
+        }
+    }
+
+    private static bool HasTechnicalDetails(ContentItemModel item)
+        => !string.IsNullOrWhiteSpace(item.TechnicalFabric)
+        || !string.IsNullOrWhiteSpace(item.TechnicalTechniques)
+        || !string.IsNullOrWhiteSpace(item.TechnicalProduction)
+        || !string.IsNullOrWhiteSpace(item.TechnicalAvailability);
+}

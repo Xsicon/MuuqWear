@@ -10,6 +10,9 @@
 @inject ICategoryService CategoryService
 @attribute [Authorize(Roles = "admin")]
 
+
+<SpinnerComponent Show="@isLoading" />
+
 @if (!isFormOpen)
 {
     <section class="mw-admin-products">

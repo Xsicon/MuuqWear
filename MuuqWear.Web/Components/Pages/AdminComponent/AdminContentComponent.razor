@@ -5,10 +5,15 @@
 @using MuuqWear.Application.Interfaces
 @using MuuqWear.Application.Services.ContentService
 @using MuuqWear.Model.ContentItem
+@using MuuqWear.Web.Components.Shared
 @inject IContentService ContentService
+
 @attribute [Authorize(Roles = "admin")]
 
 <PageTitle>Content Management</PageTitle>
+
+
+<SpinnerComponent Show="@isLoading" />
 
 <div class="content-page">
 
@@ -196,6 +201,172 @@
                         }
                     </div>
                 }
+
+                <!-- Design History specific fields -->
+                @if (activeTab == ContentCategory.DesignHistory)
+                {
+                    <!-- Designer -->
+                    <div class="form-field">
+                        <label class="form-label">Designer</label>
+                        <input @bind="form.Designer"
+                               placeholder="e.g. Marcus Chen"
+                               class="form-input" />
+                    </div>
+
+                    <!-- Year + Collection (side by side) -->
+                    <div class="form-field-row">
+                        <div class="form-field">
+                            <label class="form-label">Year</label>
+                            <input @bind="form.Year"
+                                   placeholder="e.g. 2024"
+                                   class="form-input" />
+                        </div>
+
+                        <div class="form-field">
+                            <label class="form-label">Collection</label>
+                            <select @bind="form.Collection" class="form-input">
+                                <option value="">Select collection</option>
+                                <option value="The Essentials Collection">The Essentials Collection</option>
+                                <option value="The Technical Series">The Technical Series</option>
+                                <option value="The Veil Capsule">The Veil Capsule</option>
+                                <option value="Cultural Collaborations">Cultural Collaborations</option>
+                                <option value="Limited Editions">Limited Editions</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Inspiration -->
+                    <div class="form-field">
+                        <label class="form-label">Inspiration</label>
+                        <input @bind="form.Inspiration"
+                               placeholder="e.g. Japanese Kimono silhouette"
+                               class="form-input" />
+                    </div>
+
+                    <!-- Main image (URL/Upload tabs) -->
+                    <div class="form-field">
+                        <label class="form-label">Main Image</label>
+
+                        <div style="display:flex;gap:8px;margin-bottom:10px">
+                            <button type="button"
+                                    class="content-tab @(imageTab == "url" ? "active" : "")"
+                                    @onclick='() => imageTab = "url"'>
+                                URL
+                            </button>
+                            <button type="button"
+                                    class="content-tab @(imageTab == "upload" ? "active" : "")"
+                                    @onclick='() => imageTab = "upload"'>
+                                Upload
+                            </button>
+                        </div>
+
+                        @if (imageTab == "url")
+                        {
+                            <input @bind="form.ImageUrl"
+                                   placeholder="https://..."
+                                   class="form-input" />
+                        }
+                        else
+                        {
+                            <InputFile OnChange="HandleImageUpload"
+                                       accept="image/*"
+                                       class="form-input" />
+
+                            @if (isUploading)
+                            {
+                                <p style="color:#4A5C7A;font-size:13px;margin-top:6px">
+                                    Uploading...
+                                </p>
+                            }
+                        }
+
+                        @if (!string.IsNullOrEmpty(form.ImageUrl))
+                        {
+                            <img src="@form.ImageUrl"
+                                 alt="preview"
+                                 style="width:100%;height:160px;object-fit:cover;margin-top:10px" />
+                        }
+                    </div>
+
+                    <!-- Second image (URL/Upload tabs) -->
+                    <div class="form-field">
+                        <label class="form-label">Second Image (for story panel)</label>
+
+                        <div style="display:flex;gap:8px;margin-bottom:10px">
+                            <button type="button"
+                                    class="content-tab @(secondImageTab == "url" ? "active" : "")"
+                                    @onclick='() => secondImageTab = "url"'>
+                                URL
+                            </button>
+                            <button type="button"
+                                    class="content-tab @(secondImageTab == "upload" ? "active" : "")"
+                                    @onclick='() => secondImageTab = "upload"'>
+                                Upload
+                            </button>
+                        </div>
+
+                        @if (secondImageTab == "url")
+                        {
+                            <input @bind="form.SecondImageUrl"
+                                   placeholder="https://..."
+                                   class="form-input" />
+                        }
+                        else
+                        {
+                            <InputFile OnChange="HandleSecondImageUpload"
+                                       accept="image/*"
+                                       class="form-input" />
+
+                            @if (isSecondImageUploading)
+                            {
+                                <p style="color:#4A5C7A;font-size:13px;margin-top:6px">
+                                    Uploading...
+                                </p>
+                            }
+                        }
+
+                        @if (!string.IsNullOrEmpty(form.SecondImageUrl))
+                        {
+                            <img src="@form.SecondImageUrl"
+                                 alt="preview"
+                                 style="width:100%;height:160px;object-fit:cover;margin-top:10px" />
+                        }
+                    </div>
+
+                    <!-- Technical details (4 fields) -->
+                    <div class="form-section-divider">
+                        <p class="form-section-label">Technical Details</p>
+                    </div>
+
+                    <div class="form-field">
+                        <label class="form-label">Fabric</label>
+                        <input @bind="form.TechnicalFabric"
+                               placeholder="e.g. 100% Supima cotton, 200 GSM"
+                               class="form-input" />
+                    </div>
+
+                    <div class="form-field">
+                        <label class="form-label">Techniques</label>
+                        <input @bind="form.TechnicalTechniques"
+                               placeholder="e.g. Four-seam construction, raw-edge finishing"
+                               class="form-input" />
+                    </div>
+
+                    <div class="form-field">
+                        <label class="form-label">Production</label>
+                        <input @bind="form.TechnicalProduction"
+                               placeholder="e.g. Single-source cotton farm, California"
+                               class="form-input" />
+                    </div>
+
+                    <div class="form-field">
+                        <label class="form-label">Availability</label>
+                        <input @bind="form.TechnicalAvailability"
+                               placeholder="e.g. Core collection, always available"
+                               class="form-input" />
+                    </div>
+                }
+
 
                 <!-- Content — all types -->
                 <div class="form-field">

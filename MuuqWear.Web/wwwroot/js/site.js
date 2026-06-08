@@ -173,4 +173,75 @@ window.clearCartCookie = function () {
     }
 };
 
+window.mwScrollLock = {
+    lock: function () {
+        document.body.classList.add("mw-spinner-active");
+    },
+    unlock: function () {
+        document.body.classList.remove("mw-spinner-active");
+    }
+};
 
+window.mwMuuqsimoCountdown = {
+    timer: null,
+
+    start: function (targetIso) {
+        // Clear any prior timer (handles re-mounts during dev)
+        if (this.timer) clearInterval(this.timer);
+
+        var target = new Date(targetIso).getTime();
+        if (isNaN(target)) {
+            console.error('[Countdown] Invalid target date:', targetIso);
+            return;
+        }
+
+        var self = this;
+
+        function update() {
+            var now = Date.now();
+            var diff = target - now;
+
+            // Event passed — show all zeros and stop
+            if (diff <= 0) {
+                self.render(0, 0, 0, 0);
+                if (self.timer) {
+                    clearInterval(self.timer);
+                    self.timer = null;
+                }
+                return;
+            }
+
+            var days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            var hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+            var minutes = Math.floor((diff / (1000 * 60)) % 60);
+            var seconds = Math.floor((diff / 1000) % 60);
+
+            self.render(days, hours, minutes, seconds);
+        }
+
+        function pad(n) {
+            return n < 10 ? '0' + n : '' + n;
+        }
+
+        this.render = function (d, h, m, s) {
+            var setText = function (key, val) {
+                var el = document.querySelector('[data-ms-cd="' + key + '"]');
+                if (el) el.textContent = pad(val);
+            };
+            setText('days', d);
+            setText('hours', h);
+            setText('minutes', m);
+            setText('seconds', s);
+        };
+
+        update();   // initial render — don't wait 1s for first display
+        this.timer = setInterval(update, 1000);
+    },
+
+    stop: function () {
+        if (this.timer) {
+            clearInterval(this.timer);
+            this.timer = null;
+        }
+    }
+};

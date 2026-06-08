@@ -94,7 +94,6 @@ public partial class ProfileComponent
         // Load chart when dashboard tab is opened for the first time
         if (tab == "dashboard")
         {
-            Console.WriteLine("Dashboard tab opened - loading chart...");
 
             // Small delay to ensure tab content is rendered
 
@@ -109,7 +108,6 @@ public partial class ProfileComponent
 
     private async Task LoadAffiliateInfo()
     {
-        isLoadingAffiliateInfo = true;
         affiliateInfoError = "";
 
         try
@@ -131,7 +129,6 @@ public partial class ProfileComponent
         }
         finally
         {
-            isLoadingAffiliateInfo = false;
         }
     }
 
@@ -163,6 +160,7 @@ public partial class ProfileComponent
     {
         activeTab = tab;
         isMobileMenuOpen = false; //  close menu after selection
+        isLoadingOrders = true;
         if (tab == "affiliate")
         {
             //await LoadAffiliateStatus();
@@ -172,6 +170,7 @@ public partial class ProfileComponent
 
                 await LoadPerformanceChart();
                 await LoadRecentReferrals();
+                isLoadingOrders = false;
             }
         }
         else if (tab == "address")
@@ -512,8 +511,6 @@ public partial class ProfileComponent
     {
         //if (isLoadingChart) return; // Prevent multiple simultaneous loads
 
-        Console.WriteLine("Loading chart...");
-        isLoadingChart = true;
         chartError = null;
         StateHasChanged();
 
@@ -525,7 +522,6 @@ public partial class ProfileComponent
             if (result.Success && result.Data != null)
             {
                 performanceData = result.Data;
-                Console.WriteLine($"Chart data loaded: {result.Data.DailyStats.Count} days");
 
                 // Small delay to ensure canvas is in DOM
                 await Task.Delay(200);
@@ -546,7 +542,6 @@ public partial class ProfileComponent
         }
         finally
         {
-            isLoadingChart = false;
             StateHasChanged();
         }
     }
@@ -555,8 +550,6 @@ public partial class ProfileComponent
     {
         //if (isLoadingChart) return; // Prevent multiple simultaneous loads
 
-        Console.WriteLine("Loading referrals...");
-        isLoadingRecentReferral = true;
         chartError = null;
         StateHasChanged();
 
@@ -588,7 +581,6 @@ public partial class ProfileComponent
         }
         finally
         {
-            isLoadingChart = false;
             StateHasChanged();
         }
     }
@@ -596,7 +588,6 @@ public partial class ProfileComponent
 
     private async Task RenderChart()
     {
-        Console.WriteLine("🎨 RenderChart: Starting...");
 
         try
         {

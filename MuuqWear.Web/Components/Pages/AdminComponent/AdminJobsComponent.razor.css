@@ -1,0 +1,408 @@
+﻿/* =============================================
+   ADMIN JOBS PAGE
+   ============================================= */
+
+.jobs-page {
+    padding: 24px;
+}
+
+.jobs-page__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.jobs-page__title {
+    font-size: 22px;
+    font-weight: 600;
+    color: #1E2A47;
+    margin: 0 0 4px;
+}
+
+.jobs-page__subtitle {
+    font-size: 13px;
+    color: #4A5C7A;
+    margin: 0;
+}
+
+/* =============================================
+   JOBS LIST
+   ============================================= */
+
+.jobs-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.jobs-empty {
+    text-align: center;
+    color: #4A5C7A;
+    padding: 40px 16px;
+    font-size: 14px;
+}
+
+/* =============================================
+   JOB CARD
+   ============================================= */
+
+.job-card {
+    background: #FFFFFF;
+    border: 1px solid rgba(169, 183, 204, 0.4);
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    transition: box-shadow 0.15s ease;
+}
+
+    .job-card:hover {
+        box-shadow: 0 2px 8px rgba(30, 42, 71, 0.08);
+    }
+
+.job-card__info {
+    flex: 1;
+    min-width: 0;
+}
+
+.job-card__heading {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.job-card__title {
+    font-size: 17px;
+    font-weight: 600;
+    color: #1E2A47;
+    margin: 0;
+}
+
+.job-card__app-count {
+    font-size: 13px;
+    color: #4A5C7A;
+}
+
+.job-card__meta {
+    font-size: 13px;
+    color: #4A5C7A;
+    margin: 0;
+}
+
+.job-card__actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+/* =============================================
+   BADGES
+   ============================================= */
+
+.badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+}
+
+.badge--department {
+    background: #D1FAE5;
+    color: #065F46;
+}
+
+.badge--open {
+    background: #DBEAFE;
+    color: #1E3A8A;
+}
+
+.badge--closed {
+    background: #F3F4F6;
+    color: #4B5563;
+}
+
+/* =============================================
+   BUTTONS
+   ============================================= */
+
+.btn-create {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: #1E2A47;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+}
+
+    .btn-create:hover {
+        opacity: 0.85;
+    }
+
+.btn-ghost {
+    padding: 8px 14px;
+    background: transparent;
+    color: #1E2A47;
+    border: 1px solid rgba(169, 183, 204, 0.6);
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+    .btn-ghost:hover {
+        background: #F4F6F9;
+    }
+
+.btn-ghost--danger {
+    color: #C44545;
+    border-color: rgba(196, 69, 69, 0.4);
+}
+
+    .btn-ghost--danger:hover {
+        background: rgba(196, 69, 69, 0.08);
+    }
+
+/* =============================================
+   FORM PANEL (slide-in from right)
+   ============================================= */
+
+.form-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(30, 42, 71, 0.4);
+    z-index: 999;
+    animation: fade-in 0.2s ease-out;
+}
+
+@keyframes fade-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.form-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    max-width: 560px;
+    background: #FFFFFF;
+    z-index: 1000;
+    overflow-y: auto;
+    box-shadow: -8px 0 24px rgba(30, 42, 71, 0.15);
+    animation: slide-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+}
+
+@keyframes slide-in {
+    from {
+        transform: translateX(100%);
+    }
+
+    to {
+        transform: translateX(0);
+    }
+}
+
+.form-panel__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(169, 183, 204, 0.4);
+    position: sticky;
+    top: 0;
+    background: #FFFFFF;
+    z-index: 2;
+}
+
+.form-panel__title {
+    font-size: 17px;
+    font-weight: 600;
+    color: #1E2A47;
+    margin: 0;
+}
+
+.form-panel__close {
+    background: transparent;
+    border: none;
+    color: #4A5C7A;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px 8px;
+}
+
+.form-fields {
+    padding: 20px 24px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 13px;
+}
+
+.form-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #1E2A47;
+    margin-bottom: 6px;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+}
+
+.form-input {
+    padding: 10px 12px;
+    font-size: 14px;
+    color: #1E2A47;
+    background: #FFFFFF;
+    border: 1px solid rgba(169, 183, 204, 0.6);
+    border-radius: 6px;
+    font-family: inherit;
+}
+
+    .form-input:focus {
+        outline: 2px solid rgba(30, 42, 71, 0.15);
+        outline-offset: -1px;
+        border-color: #1E2A47;
+    }
+
+.form-textarea {
+    padding: 10px 12px;
+    font-size: 14px;
+    color: #1E2A47;
+    background: #FFFFFF;
+    border: 1px solid rgba(169, 183, 204, 0.6);
+    border-radius: 6px;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 120px;
+}
+
+    .form-textarea:focus {
+        outline: 2px solid rgba(30, 42, 71, 0.15);
+        outline-offset: -1px;
+        border-color: #1E2A47;
+    }
+
+.form-hint {
+    font-size: 12px;
+    color: #4A5C7A;
+    margin: 4px 0 0;
+}
+
+.form-error {
+    margin: 20px 24px 0;
+    padding: 10px 14px;
+    background: rgba(196, 69, 69, 0.1);
+    color: #C44545;
+    border-radius: 6px;
+    font-size: 13px;
+}
+
+.form-submit {
+    margin: 20px 24px;
+    padding: 12px;
+    background: #1E2A47;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+}
+
+    .form-submit:hover:not(:disabled) {
+        opacity: 0.9;
+    }
+
+    .form-submit:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+/* =============================================
+   DELETE MODAL
+   ============================================= */
+
+.delete-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #FFFFFF;
+    border-radius: 8px;
+    padding: 24px;
+    max-width: 400px;
+    width: 90%;
+    z-index: 1001;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+}
+
+.delete-modal__title {
+    font-size: 17px;
+    font-weight: 600;
+    color: #1E2A47;
+    margin: 0 0 8px;
+}
+
+.delete-modal__text {
+    font-size: 14px;
+    color: #4A5C7A;
+    margin: 0 0 20px;
+}
+
+.delete-modal__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.btn-primary {
+    padding: 8px 14px;
+    background: #1E2A47;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+}
+
+    .btn-primary:hover {
+        opacity: 0.85;
+    }

@@ -5,6 +5,7 @@
 @using MuuqWear.Application.Services.OrderService
 @using MuuqWear.Model.Orders
 @using MuuqWear.Model.HelpCenter
+@using MuuqWear.Web.Components.Shared
 @layout Components.Layout.AdminLayoutComponent.AdminDashboardLayoutComponent
 @rendermode InteractiveServer
 @attribute [Authorize(Roles = "admin")]
@@ -12,6 +13,8 @@
 @inject IHelpCenterService HelpService
 
 <PageTitle>Admin Dashboard</PageTitle>
+
+<SpinnerComponent Show="@isLoading" />
 
 <div class="ov-page">
 
@@ -88,11 +91,7 @@
                 <a href="/admin/orders" class="ov-card__link">View All</a>
             </div>
             <div class="ov-card__body">
-                @if (isLoadingOrders)
-                {
-                    <p class="ov-empty">Loading...</p>
-                }
-                else if (!recentOrders.Any())
+                @if (!recentOrders.Any())
                 {
                     <p class="ov-empty">No orders yet.</p>
                 }
@@ -121,11 +120,7 @@
                 <a href="/admin/tickets" class="ov-card__link">Review All</a>
             </div>
             <div class="ov-card__body">
-                @if (isLoadingTickets)
-                {
-                    <p class="ov-empty">Loading...</p>
-                }
-                else if (!recentTickets.Any())
+                @if (!recentTickets.Any())
                 {
                     <p class="ov-empty">No tickets yet.</p>
                 }
@@ -278,23 +273,23 @@
     // ─── STATE ────────────────────────────────────────────────
     private List<OrderModel> recentOrders = new();
     private List<SupportTicketModel> recentTickets = new();
-    private bool isLoadingOrders = true;
-    private bool isLoadingTickets = true;
+    private bool isLoading = false;
     private decimal totalRevenue = 0;
     private int totalOrders = 0;
     private int activeUsers = 0;
 
     protected override async Task OnInitializedAsync()
     {
+        isLoading = true;
         await Task.WhenAll(
             LoadRecentOrders(),
             LoadRecentTickets());
+        isLoading = false;
     }
 
     // ─── LOAD ─────────────────────────────────────────────────
     private async Task LoadRecentOrders()
     {
-        isLoadingOrders = true;
 
         var result = await OrderService.GetAllOrders(
             null, null, 1, 4);
@@ -307,20 +302,17 @@
             totalRevenue = recentOrders.Sum(o => o.Total);
         }
 
-        isLoadingOrders = false;
         StateHasChanged();
     }
 
     private async Task LoadRecentTickets()
     {
-        isLoadingTickets = true;
 
         var result = await HelpService.GetAllTickets(null, 1, 4);
 
         if (result.Success && result.Data != null)
             recentTickets = result.Data.Data;
 
-        isLoadingTickets = false;
         StateHasChanged();
     }
 

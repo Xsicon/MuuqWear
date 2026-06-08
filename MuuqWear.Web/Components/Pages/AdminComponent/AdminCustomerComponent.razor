@@ -11,6 +11,8 @@
 
 <PageTitle>Customers</PageTitle>
 
+<SpinnerComponent Show="@isLoading" />
+
 <div class="customers-page">
 
     <h1 class="customers-title">Customers</h1>
@@ -117,7 +119,7 @@
     private CancellationTokenSource? _toastCts;
 
     private List<CustomerModel> customers = new();
-    private bool isLoading = true;
+    private bool isLoading = false;
     private string searchQuery = string.Empty;
     private int currentPage = 1;
     private int pageSize = 20;
@@ -131,7 +133,7 @@
 
     private async Task LoadCustomers()
     {
-
+        isLoading = true;
         var result = await CustomerService.GetAll(
             searchQuery, currentPage, pageSize);
 
@@ -148,6 +150,7 @@
         customers = result.Data.Data;
         totalCount = result.Data.TotalCount;
         currentPage = result.Data.Page;
+        isLoading = false;
         StateHasChanged();
     }
 

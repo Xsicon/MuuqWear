@@ -45,7 +45,7 @@ public partial class AdminProductComponent
     private List<ProductModel> Products = new();
     private List<CategoryModel> Categories = new();
     private string searchQuery = "";
-    private bool isLoading = true;
+    private bool isLoading = false;
 
     // FORM STATE
     private bool isFormOpen = false;
@@ -119,12 +119,14 @@ public partial class AdminProductComponent
     {
         if (!string.IsNullOrEmpty(SearchQuery))
             searchTerm = SearchQuery;
+
+        isLoading = true;
         await Task.WhenAll(LoadProducts(_currentPage, _pageSize, searchTerm), LoadCategories());
+        isLoading = false;
     }
 
     private async Task LoadProducts(int page = 1, int pageSize = 10, string? search = null)
     {
-        isLoading = true;
 
         Guid? categoryId = null;
         if (activeFilter != "All" &&
@@ -144,7 +146,8 @@ public partial class AdminProductComponent
             Page = page,
             PageSize = isStockFilter ? 1000 : pageSize, // ← load all for stock filters
             Search = string.IsNullOrEmpty(search) ? null : search,
-            CategoryId = categoryId
+            CategoryId = categoryId,
+            IncludeTickets = true
         };
 
         var result = await ProductService.GetAll(filterModel);
@@ -169,7 +172,6 @@ public partial class AdminProductComponent
             _pageSize = isStockFilter ? Products.Count : result.Data.PageSize;
         }
 
-        isLoading = false;
         StateHasChanged();
     }
 

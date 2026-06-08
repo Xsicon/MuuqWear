@@ -1,0 +1,47 @@
+﻿@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+@if (Show)
+{
+    <div class="mw-spinner-overlay" role="status" aria-live="polite" aria-busy="true">
+        <div class="mw-spinner">
+            <img src="/images/muuqwearlogo.png" alt="" class="mw-spinner__logo" />
+            <div class="mw-spinner__ring"></div>
+        </div>
+        <span class="visually-hidden">Loading...</span>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public bool Show { get; set; }
+
+    private bool _wasShown = false;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // Toggle scroll lock when Show changes
+        if (Show && !_wasShown)
+        {
+            try { await JS.InvokeVoidAsync("mwScrollLock.lock"); }
+            catch { /* prerender — JS not yet ready */ }
+            _wasShown = true;
+        }
+        else if (!Show && _wasShown)
+        {
+            try { await JS.InvokeVoidAsync("mwScrollLock.unlock"); }
+            catch { /* runtime gone */ }
+            _wasShown = false;
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        // Always unlock on dispose — safety net
+        if (_wasShown)
+        {
+            try { await JS.InvokeVoidAsync("mwScrollLock.unlock"); }
+            catch { /* runtime gone */ }
+        }
+    }
+}

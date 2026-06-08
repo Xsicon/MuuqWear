@@ -1,0 +1,135 @@
+﻿/* =============================================
+   ADMIN ANALYTICS PAGE
+   ============================================= */
+
+.aa {
+    --c-ink: #1E2A47;
+    --c-muted: #4A5C7A;
+    --c-soft: #E6ECF5;
+    --c-line: #A9B7CC;
+    --c-bg: #FFFFFF;
+    padding: 24px;
+    max-width: 1440px;
+    margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+    .aa {
+        padding: 32px;
+    }
+}
+
+/* HEADER */
+.aa-header {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+@media (min-width: 768px) {
+    .aa-header {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+    }
+}
+
+.aa-header__title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--c-ink);
+    margin: 0;
+    line-height: 1.2;
+}
+
+@media (min-width: 768px) {
+    .aa-header__title {
+        font-size: 28px;
+    }
+}
+
+/* CARDS */
+.aa-card {
+    background: var(--c-bg);
+    border: 1px solid var(--c-soft);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 16px;
+}
+
+@media (min-width: 768px) {
+    .aa-card {
+        margin-bottom: 24px;
+    }
+}
+
+.aa-card--full {
+    /* Hint that this card spans the row */
+}
+
+.aa-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--c-soft);
+}
+
+.aa-card__title {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--c-muted);
+    margin: 0;
+}
+
+.aa-card__action {
+    background: none;
+    border: 0;
+    color: var(--c-muted);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 4px 8px;
+}
+
+    .aa-card__action:hover {
+        color: var(--c-ink);
+    }
+
+.aa-card__body {
+    padding: 24px;
+    min-height: 200px;
+}
+
+/* TWO-COLUMN ROW */
+.aa-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+}
+
+@media (min-width: 1024px) {
+    .aa-row {
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+    }
+}
+
+/* PLACEHOLDERS (removed as each section is filled) */
+.aa-placeholder {
+    color: var(--c-line);
+    text-align: center;
+    margin: 0;
+    padding: 32px 0;
+    font-size: 13px;
+}
+
+/* DATE RANGE (Step 9 will replace) */
+.aa-daterange {
+    background: var(--c-soft);
+    border-radius: 6px;
+    padding: 8px 16px;
+    min-width: 200px;
+}

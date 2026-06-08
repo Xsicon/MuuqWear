@@ -1,0 +1,77 @@
+﻿/* =============================================
+   MW SPINNER — full-screen overlay loader
+   ============================================= */
+
+/* Overlay — semi-transparent so page peeks through */
+.mw-spinner-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: #ffffff;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: mw-spinner-fade-in 0.15s ease-out;
+}
+
+/* Spinner — logo with rotating ring around it */
+.mw-spinner {
+    position: relative;
+    width: 96px;
+    height: 96px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mw-spinner__logo {
+    width: 56px;
+    height: 56px;
+    object-fit: contain;
+    z-index: 1;
+}
+
+/* Rotating ring — sits outside the logo */
+.mw-spinner__ring {
+    position: absolute;
+    inset: 0;
+    border: 3px solid rgba(30, 42, 71, 0.15); /* faint static ring */
+    border-top-color: #1E2A47; /* solid arc, brand blue */
+    border-radius: 50%;
+    animation: mw-spinner-rotate 0.9s linear infinite;
+}
+
+/* Accessibility helper — visually hides text but keeps it for screen readers */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+}
+
+@keyframes mw-spinner-rotate {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes mw-spinner-fade-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* Body scroll lock — applied via class when spinner is active */
+body.mw-spinner-active {
+    overflow: hidden;
+}

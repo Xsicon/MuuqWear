@@ -29,11 +29,10 @@ public class AffiliateCookieHandler : DelegatingHandler
             request.Headers.Add("X-Affiliate-Code", affiliateCode);
 
             // Log for debugging
-            Console.WriteLine($"🔐 [Handler] Forwarding affiliate cookie: {affiliateCode}");
         }
         else
         {
-            Console.WriteLine($"🔐 [Handler] No affiliate cookie found");
+            Console.WriteLine($" [Handler] No affiliate cookie found");
         }
 
         // Continue with the request

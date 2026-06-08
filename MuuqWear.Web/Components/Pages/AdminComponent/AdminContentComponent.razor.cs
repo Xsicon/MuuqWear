@@ -17,6 +17,9 @@ public partial class AdminContentComponent
     private bool isUploading = false;
     private string imageTab = "url";
 
+    private string secondImageTab = "url";
+    private bool isSecondImageUploading = false;
+
     private static readonly ContentCategory[] Tabs =
     {
         ContentCategory.JournalArticles,
@@ -130,7 +133,16 @@ public partial class AdminContentComponent
             Title = item.Title,
             Content = item.Content,
             Category = item.Category,
-            ImageUrl = item.ImageUrl
+            ImageUrl = item.ImageUrl,
+            Designer = item.Designer,
+            Year = item.Year,
+            Inspiration = item.Inspiration,
+            Collection = item.Collection,
+            SecondImageUrl = item.SecondImageUrl,
+            TechnicalFabric = item.TechnicalFabric,
+            TechnicalTechniques = item.TechnicalTechniques,
+            TechnicalProduction = item.TechnicalProduction,
+            TechnicalAvailability = item.TechnicalAvailability
 
         };
     }
@@ -151,7 +163,16 @@ public partial class AdminContentComponent
                 Title = form.Title,
                 Content = form.Content,
                 Category = form.Category,
-                ImageUrl = form.ImageUrl
+                ImageUrl = form.ImageUrl,
+                Designer = form.Designer,
+                Year = form.Year,
+                Inspiration = form.Inspiration,
+                Collection = form.Collection,
+                SecondImageUrl = form.SecondImageUrl,
+                TechnicalFabric = form.TechnicalFabric,
+                TechnicalTechniques = form.TechnicalTechniques,
+                TechnicalProduction = form.TechnicalProduction,
+                TechnicalAvailability = form.TechnicalAvailability
             });
 
         if (result.Success && result.Data != null)
@@ -214,6 +235,43 @@ public partial class AdminContentComponent
         {
             isUploading = false;
             StateHasChanged(); // ← hide spinner, show result 
+        }
+    }
+
+    private async Task HandleSecondImageUpload(InputFileChangeEventArgs e)
+    {
+        formError = string.Empty;
+        var file = e.File;
+
+        if (!ValidateImage(file)) return;
+
+        isSecondImageUploading = true;
+        StateHasChanged();
+
+        try
+        {
+            using var stream = file.OpenReadStream(5 * 1024 * 1024);
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+
+            var result = await ContentService.UploadImage(
+                $"{Guid.NewGuid()}{Path.GetExtension(file.Name)}",
+                ms.ToArray(),
+                file.ContentType);
+
+            if (result.Success && result.Data != null)
+                form.SecondImageUrl = result.Data;
+            else
+                formError = result.Message ?? "Upload failed";
+        }
+        catch (Exception ex)
+        {
+            formError = "Upload failed: " + ex.Message;
+        }
+        finally
+        {
+            isSecondImageUploading = false;
+            StateHasChanged();
         }
     }
 }

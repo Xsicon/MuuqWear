@@ -5,10 +5,13 @@
 @using MuuqWear.Application.Interfaces
 @using MuuqWear.Application.Services.HelpCenterService
 @using MuuqWear.Model.HelpCenter
+@using MuuqWear.Web.Components.Shared
 @inject IHelpCenterService HelpCenterService
 @attribute [Authorize(Roles = "admin")]
 
 <PageTitle>Support Tickets</PageTitle>
+
+<SpinnerComponent Show="@isLoading" />
 
 <div class="at-page">
 
@@ -79,11 +82,7 @@
                 </div>
 
                 <div class="at-card__body">
-                    @if (isLoading)
-                    {
-                        <p class="at-empty">Loading...</p>
-                    }
-                    else if (!tickets.Any())
+                    @if (!tickets.Any())
                     {
                         <p class="at-empty">No tickets found.</p>
                     }
@@ -261,25 +260,35 @@
 
 @code {
 
+
+
+
+
+
+
     // ─── STATE ────────────────────────────────────────────────
     private List<SupportTicketModel> tickets = new();
     private SupportTicketModel? selectedTicket = null;
     private TicketStatsModel? stats;
-    private bool isLoading = true;
+    private bool isLoading = false;
     private bool isUpdating = false;
     private string activeStatus = string.Empty;
     private string statusError = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
+
         //  load stats and tickets in parallel
+
+        isLoading = true;
         await Task.WhenAll(LoadTickets(), LoadStats());
+
+        isLoading = false;
     }
 
     // ─── LOAD ─────────────────────────────────────────────────
     private async Task LoadTickets()
     {
-        isLoading = true;
         StateHasChanged();
 
         var result = await HelpCenterService.GetAllTickets(
@@ -289,7 +298,6 @@
         if (result.Success && result.Data != null)
             tickets = result.Data.Data;
 
-        isLoading = false;
         StateHasChanged();
     }
 

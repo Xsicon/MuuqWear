@@ -15,6 +15,7 @@ using MuuqWear.Application.Services.ChatService;
 using MuuqWear.Application.Services.ContentService;
 using MuuqWear.Application.Services.CustomerService;
 using MuuqWear.Application.Services.HelpCenterService;
+using MuuqWear.Application.Services.JobPostingService;
 using MuuqWear.Application.Services.JournalService;
 using MuuqWear.Application.Services.NotificationService;
 using MuuqWear.Application.Services.OrderReturnService;
@@ -139,6 +140,12 @@ builder.Services.AddHttpClient<IAdminBadgeService, AdminBadgeService>(client =>
     {
         client.BaseAddress = new Uri(apiBaseUrl);
     })
+.AddHttpMessageHandler<AuthenticatedHttpHandler>();
+
+builder.Services.AddHttpClient<IJobPostingService, JobPostingService>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+})
 .AddHttpMessageHandler<AuthenticatedHttpHandler>();
 
 

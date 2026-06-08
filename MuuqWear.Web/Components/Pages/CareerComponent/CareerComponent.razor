@@ -1,0 +1,429 @@
+﻿@page "/careers"
+@using MuuqWear.Application.Services.JobPostingService
+@using MuuqWear.Model.JobApplication
+@using MuuqWear.Model.JobPosting
+@rendermode InteractiveServer
+@inject IJobPostingService JobPostingService
+
+<PageTitle>Careers — Muuqwear</PageTitle>
+
+<div class="career">
+
+    <!-- Section 1: Hero -->
+    <section class="career-hero">
+        <div class="career-hero__text">
+            <p class="career-eyebrow">Join the Atelier</p>
+            <h1 class="career-hero__title">Craft the Future.</h1>
+            <p class="career-hero__lede">
+                Join the team shaping minimalist luxury. We&rsquo;re looking
+                for people who believe that the constraint is the freedom.
+            </p>
+        </div>
+        <div class="career-hero__media">
+            <img src="https://images.unsplash.com/photo-1745095034955-1019067b7ce4?w=800&h=500&fit=crop"
+                 alt="Craftsmanship" />
+        </div>
+    </section>
+    <!-- Section 2: Why + Open Positions -->
+    <section class="career-positions">
+
+
+        <div class="career-positions__list">
+            <h2 class="career-positions__title">Open Positions</h2>
+
+            <div class="career-jobs">
+                @if (isJobsLoading)
+                {
+                    <p class="career-jobs__loading">Loading open positions…</p>
+                }
+                else if (!jobs.Any())
+                {
+                    <p class="career-jobs__empty">
+                        No open positions right now. Check back soon.
+                    </p>
+                }
+                else
+                {
+                    @foreach (var job in jobs)
+                    {
+                        var isOpen = expandedJobId == job.Id;
+                        <article class="career-job @(isOpen ? "career-job--open" : "")">
+                            <button type="button"
+                                    class="career-job__header"
+                                    @onclick="() => ToggleJob(job.Id)"
+                                    aria-expanded="@(isOpen ? "true" : "false")">
+                                <div class="career-job__heading">
+                                    <h3 class="career-job__title">@job.Title</h3>
+                                    <div class="career-job__meta">
+                                        <span class="career-job__meta-item">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+                                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path>
+                                                <circle cx="12" cy="10" r="3"></circle>
+                                            </svg>
+                                            @job.Location
+                                        </span>
+                                        <span class="career-job__meta-item">@job.Type</span>
+                                    </div>
+                                </div>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                     class="career-job__chevron">
+                                    <path d="m6 9 6 6 6-6"></path>
+                                </svg>
+                            </button>
+
+                            @if (isOpen)
+                            {
+                                <div class="career-job__body">
+                                    <p class="career-job__description">@job.Description</p>
+                                    <button type="button"
+                                            class="career-job__apply"
+                                            @onclick="() => OpenApplyPanel(job)">
+                                        Apply Now
+                                    </button>
+                                </div>
+                            }
+                        </article>
+                    }
+                }
+            </div>
+        </div>
+
+
+    </section>
+    <!-- More sections will be added below as you provide them -->
+
+</div>
+
+<!-- APPLY PANEL (slides in from right) -->
+@if (applyingFor is not null)
+{
+    <div class="career-apply">
+
+        <!-- Backdrop — clicking closes the panel -->
+        <div class="career-apply__backdrop" @onclick="CloseApplyPanel"></div>
+
+        <!-- Sliding panel -->
+        <aside class="career-apply__panel"
+               role="dialog"
+               aria-modal="true"
+               aria-labelledby="apply-title"
+               @onclick:stopPropagation="true">
+
+            <!-- Close button -->
+            <button type="button"
+                    class="career-apply__close"
+                    @onclick="CloseApplyPanel"
+                    aria-label="Close application">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+
+            <div class="career-apply__body">
+
+                @if (applySubmitted)
+                {
+                    <!-- Success state -->
+                    <p class="career-apply__eyebrow">Thank You</p>
+                    <h2 id="apply-title" class="career-apply__title">
+                        Application Received
+                    </h2>
+                    <p class="career-apply__success-text">
+                        Thanks for your interest in the @applyingFor.Title role.
+                        We&rsquo;ll be in touch soon.
+                    </p>
+                    <button type="button"
+                            class="career-apply__submit"
+                            @onclick="CloseApplyPanel">
+                        Close
+                    </button>
+                }
+                else
+                {
+                    <!-- Form state -->
+                    <p class="career-apply__eyebrow">Apply</p>
+                    <h2 id="apply-title" class="career-apply__title">
+                        @applyingFor.Title
+                    </h2>
+
+                    <!-- FULL NAME -->
+                    <div class="career-apply__field">
+                        <label class="career-apply__label" for="apply-name">Full Name</label>
+                        <input id="apply-name"
+                               type="text"
+                               class="career-apply__input"
+                               placeholder="Your full name"
+                               @bind="applyName" />
+                    </div>
+
+                    <!-- EMAIL -->
+                    <div class="career-apply__field">
+                        <label class="career-apply__label" for="apply-email">Email</label>
+                        <input id="apply-email"
+                               type="email"
+                               class="career-apply__input"
+                               placeholder="your@email.com"
+                               @bind="applyEmail" />
+                    </div>
+
+                    <!-- PORTFOLIO -->
+                    <div class="career-apply__field">
+                        <label class="career-apply__label" for="apply-portfolio">
+                            Portfolio / LinkedIn
+                        </label>
+                        <input id="apply-portfolio"
+                               type="url"
+                               class="career-apply__input"
+                               placeholder="https://"
+                               @bind="applyPortfolio" />
+                    </div>
+
+                    <!-- RESUME -->
+                    <div class="career-apply__field">
+                        <label class="career-apply__label">Resume</label>
+                        <label class="career-apply__dropzone @(isDragOver ? "career-apply__dropzone--over" : "")"
+                               @ondragenter="() => isDragOver = true"
+                               @ondragleave="() => isDragOver = false"
+                               @ondragover:preventDefault="true">
+
+                            <InputFile OnChange="OnResumeSelected"
+                                       accept=".pdf,.doc,.docx"
+                                       class="career-apply__dropzone-input" />
+
+                            @if (applyResumeFileName is not null)
+                            {
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                     class="career-apply__dropzone-icon">
+                                    <path d="M9 12l2 2 4-4"></path>
+                                    <path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"></path>
+                                </svg>
+                                <p class="career-apply__dropzone-main">@applyResumeFileName</p>
+                                <p class="career-apply__dropzone-hint">Click or drop a new file to replace</p>
+                            }
+                            else
+                            {
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                     class="career-apply__dropzone-icon">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                                <p class="career-apply__dropzone-main">Drag &amp; drop or click to upload</p>
+                                <p class="career-apply__dropzone-hint">PDF, DOC up to 5MB</p>
+                            }
+                        </label>
+                    </div>
+
+                    @if (applyError is not null)
+                    {
+                        <p class="career-apply__error">@applyError</p>
+                    }
+
+                    <!-- SUBMIT -->
+                    <button type="button"
+                            class="career-apply__submit"
+                            disabled="@applySubmitting"
+                            @onclick="SubmitApplication">
+                        @if (applySubmitting)
+                        {
+                            <span>Submitting…</span>
+                        }
+                        else
+                        {
+                            <span>Submit Application</span>
+                        }
+                    </button>
+                }
+
+            </div>
+        </aside>
+    </div>
+}
+@code {
+
+    private JobPostingModel? applyingFor = null;
+
+    private string applyName = string.Empty;
+    private string applyEmail = string.Empty;
+    private string applyPortfolio = string.Empty;
+    private string? applyResumeFileName = null; // displayed after a file is picked
+    private bool isDragOver = false;             // drag-over visual feedback
+    private string? applyError = null;
+    private bool applySubmitting = false;
+    private bool applySubmitted = false;
+    private IBrowserFile? applyResumeFile = null;
+    // Loaded from API
+    private List<JobPostingModel> jobs = new();
+    private bool isJobsLoading = true;
+
+    // Which job is expanded. Null = nothing expanded.
+    private Guid? expandedJobId = null;
+
+    private List<string> Perks => new()
+{
+    "Radical transparency in everything we do",
+    "4-day work weeks during summer",
+    "Full healthcare + wellness stipend",
+    "Annual team retreat (last year: Kyoto)",
+    "Employee discount on all collections",
+    "Equity participation for all full-time roles"
+};
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadJobs();
+    }
+
+
+    private async Task LoadJobs()
+    {
+        isJobsLoading = true;
+
+        var result = await JobPostingService.GetOpen();
+        jobs = result.Success && result.Data != null
+            ? result.Data
+            : new();
+
+        // Pre-expand the first job (matches Figma pattern)
+        expandedJobId = jobs.FirstOrDefault()?.Id;
+
+        isJobsLoading = false;
+    }
+
+    private void OpenApplyPanel(JobPostingModel job)
+    {
+        applyingFor = job;
+        applyName = string.Empty;
+        applyEmail = string.Empty;
+        applyPortfolio = string.Empty;
+        applyResumeFileName = null;
+        applyResumeFile = null;
+        applyError = null;
+        applySubmitted = false;
+    }
+
+    private void CloseApplyPanel()
+    {
+        applyingFor = null;
+    }
+
+    private void OnResumeSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file == null) return;
+
+        // Size check — 5MB cap
+        const long maxBytes = 5 * 1024 * 1024;
+        if (file.Size > maxBytes)
+        {
+            applyError = "Resume must be 5MB or smaller.";
+            applyResumeFileName = null;
+            applyResumeFile = null;
+            return;
+        }
+
+        // Type check — PDF or DOC/DOCX
+        var ext = Path.GetExtension(file.Name).ToLowerInvariant();
+        if (ext != ".pdf" && ext != ".doc" && ext != ".docx")
+        {
+            applyError = "Resume must be PDF or DOC/DOCX.";
+            applyResumeFileName = null;
+            applyResumeFile = null;
+            return;
+        }
+
+        applyResumeFileName = file.Name;
+        applyResumeFile = file;
+        applyError = null;
+    }
+
+    private async Task SubmitApplication()
+    {
+        // Validation
+        if (string.IsNullOrWhiteSpace(applyName))
+        { applyError = "Full name is required."; return; }
+        if (string.IsNullOrWhiteSpace(applyEmail) || !applyEmail.Contains('@'))
+        { applyError = "A valid email is required."; return; }
+        if (applyResumeFile is null)
+        { applyError = "Please attach your resume."; return; }
+        if (applyingFor is null)
+        { applyError = "Job not selected."; return; }
+
+        applySubmitting = true;
+        applyError = null;
+        StateHasChanged();
+
+        try
+        {
+            // Step 1 — Upload the resume to storage
+            using var stream = applyResumeFile.OpenReadStream(5 * 1024 * 1024);
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+
+            var uploadResult = await JobPostingService.UploadResume(
+                applyResumeFile.Name,
+                ms.ToArray(),
+                applyResumeFile.ContentType);
+
+            if (!uploadResult.Success || string.IsNullOrEmpty(uploadResult.Data))
+            {
+                applyError = "Failed to upload resume. " + (uploadResult.Message ?? "");
+                applySubmitting = false;
+                StateHasChanged();
+                return;
+            }
+
+            // Step 2 — Submit the application with the uploaded URL
+            var submission = new SubmitJobApplicationModel
+            {
+                JobId = applyingFor.Id,
+                Name = applyName,
+                Email = applyEmail,
+                PortfolioUrl = string.IsNullOrWhiteSpace(applyPortfolio)
+                    ? null
+                    : applyPortfolio,
+                ResumeUrl = uploadResult.Data
+            };
+
+            var submitResult = await JobPostingService.SubmitApplication(
+                applyingFor.Id, submission);
+
+            if (submitResult.Success)
+            {
+                applySubmitted = true;
+            }
+            else
+            {
+                applyError = submitResult.Message ?? "Failed to submit application.";
+            }
+        }
+        catch (Exception ex)
+        {
+            applyError = "Submission failed: " + ex.Message;
+        }
+        finally
+        {
+            applySubmitting = false;
+            StateHasChanged();
+        }
+    }
+
+    // Track which job is expanded. Null = nothing expanded.
+    // Pre-expand the first job to match Figma.
+
+    private void ToggleJob(Guid id)
+    {
+        expandedJobId = expandedJobId == id ? null : id;
+    }
+}

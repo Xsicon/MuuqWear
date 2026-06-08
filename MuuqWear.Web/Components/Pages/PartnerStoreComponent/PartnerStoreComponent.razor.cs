@@ -76,26 +76,6 @@ public partial class PartnerStoreComponent
     /// <summary>
     /// Add product to cart with affiliate discount
     /// </summary>
-    private async Task AddToBag(PartnerStoreProductModel product)
-    {
-        try
-        {
-            Console.WriteLine($"🛒 Adding {product.Name} to cart");
-
-            // TODO: Implement cart integration in next phase
-            // For now, just show a message
-
-            // Placeholder: This will be replaced with actual cart service call
-            Console.WriteLine($"Product: {product.Name}");
-            Console.WriteLine($"Price: ${product.DiscountedPrice}");
-            Console.WriteLine($"Discount: ${product.DiscountAmount}");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($" [PartnerStore] Add to cart error: {ex.Message}");
-            errorMessage = "Failed to add item to cart";
-        }
-    }
     private async Task HandlePageChanged((int Page, int PageSize) pageInfo)
     {
         currentPage = pageInfo.Page;
@@ -154,7 +134,6 @@ public partial class PartnerStoreComponent
     {
         try
         {
-            Console.WriteLine($" [PartnerStore] Checking limit for {quantity} item(s)");
 
             // Call backend to validate
             var result = await AffiliateService.CanPurchaseQuantity(quantity);
@@ -173,7 +152,6 @@ public partial class PartnerStoreComponent
                     ? $"You can only purchase {remaining} more item(s) this month"
                     : "You've reached your 20 item monthly limit";
 
-                Console.WriteLine($" [PartnerStore] Limit exceeded: {message}");
                 return (false, message);
             }
 
@@ -220,7 +198,6 @@ public partial class PartnerStoreComponent
             }
 
             // STEP 4: Add to cart with affiliate discount
-            Console.WriteLine($"[PartnerStore] Adding to cart: {product.Name}, Size: {selectedSize}");
 
             var addToCartRequest = new AddCartItemModel
             {
@@ -245,7 +222,6 @@ public partial class PartnerStoreComponent
                 return;
             }
 
-            Console.WriteLine($" [PartnerStore] Successfully added to cart");
 
             selectedProductId = null;
             selectedSize = null;
@@ -256,7 +232,7 @@ public partial class PartnerStoreComponent
             await LoadLimitStatus();
 
             // TODO: Show success toast/message
-            Console.WriteLine($"🎉 [PartnerStore] Item added! Cart updated.");
+            Console.WriteLine($" [PartnerStore] Item added! Cart updated.");
         }
         catch (Exception ex)
         {

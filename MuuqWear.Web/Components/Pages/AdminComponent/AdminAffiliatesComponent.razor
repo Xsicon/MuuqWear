@@ -3,8 +3,12 @@
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.Authorization
 @using MuuqWear.Application.Services.AffiliateService
+@using MuuqWear.Web.Components.Shared
 @inject IAffiliateService AffiliateService
 @attribute [Authorize(Roles = "admin")]
+
+<SpinnerComponent Show="@isLoading" />
+
 
 <div class="mw-affiliates">
     <!-- HEADER -->
@@ -51,7 +55,7 @@
                     @foreach (var application in pendingApplications)
                     {
                         <AffiliateRowComponent Application="@application"
-                                      OnAction="HandleAction" />
+                                               OnAction="HandleAction" />
                     }
                 }
             }
@@ -65,7 +69,7 @@
                 {
                     @foreach (var application in activeApplications)
                     {
-                        <AffiliateRow Application="@application"
+                        <AffiliateRowComponent Application="@application"
                                       OnAction="HandleAction"
                                       ShowActiveActions="true" />
                     }

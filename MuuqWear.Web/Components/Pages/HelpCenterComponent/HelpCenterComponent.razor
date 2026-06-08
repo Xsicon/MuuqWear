@@ -670,7 +670,6 @@
     {
         if (pollTimer != null) return;
 
-        Console.WriteLine($"[Poll] STARTED for session {chatSessionId}");   // ←
         pollTimer = new System.Timers.Timer(3000);
         pollTimer.Elapsed += async (_, _) => await PollMessages();
         pollTimer.AutoReset = true;

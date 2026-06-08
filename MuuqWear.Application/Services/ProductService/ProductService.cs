@@ -41,6 +41,8 @@ public class ProductService : IProductService
             if (!string.IsNullOrEmpty(filter.SortBy))
                 queryParams.Add($"sortBy={filter.SortBy}");
 
+            if (filter.IncludeTickets)
+                queryParams.Add("includeTickets=true");
             var url = $"api/Product/all?{string.Join("&", queryParams)}";
 
             var result = await _http

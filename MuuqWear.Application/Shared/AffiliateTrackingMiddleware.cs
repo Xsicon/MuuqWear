@@ -34,21 +34,16 @@ public class AffiliateTrackingMiddleware
                         // Same code = already tracked, just refresh cookie
                         if (existingCode == affiliateCode)
                         {
-                            Console.WriteLine($"🔄 Cookie exists for {affiliateCode}, refreshing expiry only");
                             SetAffiliateCookie(context, affiliateCode);
                             await _next(context);
                             return;
                         }
-
-                        // Different code = new affiliate, allow tracking
-                        Console.WriteLine($"🔀 Switching from {existingCode} to {affiliateCode}");
                     }
 
                     // 🛡️ ANTI-SPAM CHECK #2: Bot detection
                     var userAgent = context.Request.Headers["User-Agent"].ToString();
                     if (IsBot(userAgent))
                     {
-                        Console.WriteLine($"🤖 Bot detected: {userAgent}");
                         await _next(context);
                         return;
                     }
@@ -60,7 +55,6 @@ public class AffiliateTrackingMiddleware
                         var recentClickCheck = await affiliateService.HasRecentClick(affiliateCode, ipAddress);
                         if (recentClickCheck.Success && recentClickCheck.Data)
                         {
-                            Console.WriteLine($"⏰ Recent click from IP {ipAddress} for {affiliateCode}, skipping");
 
                             // Still set cookie for attribution, but don't count click
                             SetAffiliateCookie(context, affiliateCode);
@@ -74,7 +68,6 @@ public class AffiliateTrackingMiddleware
 
                     if (validationResponse.Success && validationResponse.Data)
                     {
-                        Console.WriteLine($" Tracking new click for {affiliateCode}");
 
                         // Track the click
                         var trackRequest = new TrackClickRequestModel

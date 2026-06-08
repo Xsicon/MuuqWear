@@ -101,7 +101,6 @@ public partial class AdminAffiliatesComponent
     {
         var (applicationId, action) = data;
 
-        Console.WriteLine($"🔧 [Admin] Action: {action} for application: {applicationId}");
         if (action.ToLower() == "view")
         {
             OpenViewModal(applicationId);

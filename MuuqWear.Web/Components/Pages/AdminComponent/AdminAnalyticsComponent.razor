@@ -1,0 +1,61 @@
+﻿@page "/admin/analytics"
+@rendermode InteractiveServer
+@layout Components.Layout.AdminLayoutComponent.AdminDashboardLayoutComponent
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "admin")]
+
+<PageTitle>Analytics & Reports — MuuqWear Admin</PageTitle>
+
+<div class="aa">
+
+    <!-- HEADER -->
+    <header class="aa-header">
+        <h1 class="aa-header__title">Analytics &amp; Reports</h1>
+
+        <!-- Date picker (Step 9 will wire this up) -->
+        <div class="aa-daterange">
+            <p class="aa-placeholder">Date range picker — Step 9</p>
+        </div>
+    </header>
+
+    <!-- REVENUE CHART CARD -->
+    <section class="aa-card aa-card--full">
+        <header class="aa-card__header">
+            <h2 class="aa-card__title">Revenue Over Time</h2>
+            <button class="aa-card__action">Export</button>
+        </header>
+        <div class="aa-card__body">
+            <p class="aa-placeholder">Revenue chart — Step 6</p>
+        </div>
+    </section>
+
+    <!-- TWO-COLUMN ROW -->
+    <div class="aa-row">
+
+        <!-- TOP SELLING PRODUCTS -->
+        <section class="aa-card">
+            <header class="aa-card__header">
+                <h2 class="aa-card__title">Top Selling Products</h2>
+            </header>
+            <div class="aa-card__body">
+                <p class="aa-placeholder">Top products — Step 7</p>
+            </div>
+        </section>
+
+        <!-- AFFILIATE PERFORMANCE -->
+        <section class="aa-card">
+            <header class="aa-card__header">
+                <h2 class="aa-card__title">Affiliate Performance</h2>
+            </header>
+            <div class="aa-card__body">
+                <p class="aa-placeholder">Affiliate tiers — Step 8</p>
+            </div>
+        </section>
+
+    </div>
+
+</div>
+
+@code {
+    // Steps 5–9 will populate this
+}

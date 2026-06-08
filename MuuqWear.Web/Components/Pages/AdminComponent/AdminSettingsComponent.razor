@@ -6,11 +6,13 @@
 @using MuuqWear.Application.Services.AdminBadgeService
 @using MuuqWear.Application.Services.AdminUserService
 @using MuuqWear.Model.AdminSettingsUser
+@using MuuqWear.Web.Components.Shared
 @inject IAdminSettingService AdminSettingService
 @inject IAdminBadgeService BadgeService
 @attribute [Authorize(Roles = "admin")]
 
 <PageTitle>Settings & Users</PageTitle>
+<SpinnerComponent Show="@isLoading" />
 
 <div class="settings-page">
 

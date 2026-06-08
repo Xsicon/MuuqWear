@@ -7,11 +7,13 @@
 @using MuuqWear.Application.Interfaces
 @using MuuqWear.Application.Services.VoteService
 @using MuuqWear.Model.Vote
+@using MuuqWear.Web.Components.Shared
 @inject IConfiguration Configuration
 @inject AuthenticationStateProvider AuthStateProvider
 @implements IAsyncDisposable
 
 <PageTitle>Community Vote</PageTitle>
+<SpinnerComponent Show="@isLoading" />
 
 <!-- ─── VOTE HERO ────────────────────────────────────────── -->
 <section class="mw-vote">
@@ -139,13 +141,7 @@
         </div>
 
         <!-- LOADING -->
-        @if (isLoadingActive)
-        {
-            <p style="color:#4A5C7A;font-size:14px;padding:34px 0">
-                Loading designs...
-            </p>
-        }
-        else if (!activeItems.Any())
+        @if (!activeItems.Any())
         {
             <p style="color:#4A5C7A;font-size:14px;padding:34px 0">
                 No active designs at the moment.

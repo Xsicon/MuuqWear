@@ -10,5 +10,6 @@ public class ProductFilterModel
     public string? Sizes { get; set; }  // ← add back 
 
     public string? SortBy { get; set; } = "featured";
+    public bool IncludeTickets { get; set; } = false;
 }
 

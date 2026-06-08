@@ -360,3 +360,27 @@ select.form-input {
     background-position: right 12px center;
     padding-right: 32px;
 }
+
+
+/* Side-by-side form fields (Year + Collection) */
+.form-field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 13px;
+}
+
+/* Section divider with label inside the form (e.g., "Technical Details") */
+.form-section-divider {
+    margin-top: 13px;
+    padding-top: 13px;
+    border-top: 1px solid rgba(169, 183, 204, 0.4);
+}
+
+.form-section-label {
+    color: #4A5C7A;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin: 0;
+}
