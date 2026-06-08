@@ -838,25 +838,6 @@
         userEmail = email;
         InvokeAsync(StateHasChanged);
     }
-    // private void HandleSessionExpired()
-    // {
-    //     InvokeAsync(async () =>
-    //     {
-    //         try
-    //         {
-    //             System.Diagnostics.Debug.WriteLine("Executing JS redirect...");
-
-    //             await JS.InvokeVoidAsync("eval",
-    //                 "window.location.href='/auth/clear?expired=true'");
-    //         }
-    //         catch (Exception ex)
-    //         {
-    //             System.Diagnostics.Debug.WriteLine($"JS redirect failed: {ex.Message}");
-    //         }
-    //     });
-    // }
-    // // fires when cart changes → re-render
-
     private void HandleSessionExpired()
     {
 

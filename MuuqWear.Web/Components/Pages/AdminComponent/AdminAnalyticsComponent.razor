@@ -1,61 +1,157 @@
 ﻿@page "/admin/analytics"
+@layout Layout.AdminLayoutComponent.AdminDashboardLayoutComponent
 @rendermode InteractiveServer
-@layout Components.Layout.AdminLayoutComponent.AdminDashboardLayoutComponent
 @using Microsoft.AspNetCore.Authorization
+@using MuuqWear.Application.Services.AnalyticsService
+@using MuuqWear.Web.Components.Shared
+@inject IAnalyticsService AnalyticsService
+@inject IJSRuntime JS
 @attribute [Authorize(Roles = "admin")]
 
-<PageTitle>Analytics & Reports — MuuqWear Admin</PageTitle>
+<PageTitle>Analytics & Reports — Admin</PageTitle>
 
-<div class="aa">
+<SpinnerComponent Show="@isLoading" />
 
-    <!-- HEADER -->
-    <header class="aa-header">
-        <h1 class="aa-header__title">Analytics &amp; Reports</h1>
+<div class="analytics-page">
 
-        <!-- Date picker (Step 9 will wire this up) -->
-        <div class="aa-daterange">
-            <p class="aa-placeholder">Date range picker — Step 9</p>
+    <!-- Header -->
+    <div class="analytics-page__header">
+        <h2 class="analytics-page__title">Analytics &amp; Reports</h2>
+        <button class="btn-refresh"
+                @onclick="HandleRefresh"
+                disabled="@isLoading">
+            @(isLoading ? "Refreshing..." : "↻ Refresh")
+        </button>
+    </div>
+
+    <!-- ─────────────────────────────────────────── -->
+    <!-- Section 1: Revenue Over Time -->
+    <!-- ─────────────────────────────────────────── -->
+    <section class="card revenue-card">
+
+        <div class="card__header">
+            <p class="card__eyebrow">Revenue Over Time (Last 30 Days)</p>
+            <button class="btn-export" @onclick="HandleExport">
+                ↓ EXPORT
+            </button>
         </div>
-    </header>
 
-    <!-- REVENUE CHART CARD -->
-    <section class="aa-card aa-card--full">
-        <header class="aa-card__header">
-            <h2 class="aa-card__title">Revenue Over Time</h2>
-            <button class="aa-card__action">Export</button>
-        </header>
-        <div class="aa-card__body">
-            <p class="aa-placeholder">Revenue chart — Step 6</p>
-        </div>
+        @if (revenue is null)
+        {
+            <p class="card__empty">Loading revenue data...</p>
+        }
+        else
+        {
+            <!-- Headline number -->
+            <div class="revenue-headline">
+                <p class="revenue-headline__amount">
+                    $@FormatNumber(revenue.CurrentTotal)
+                </p>
+                @if (revenue.PreviousTotal > 0)
+                {
+                    <p class="revenue-headline__change @(revenue.IsUp ? "is-up" : "is-down")">
+                        @(revenue.IsUp ? "↑" : "↓")
+                        @Math.Abs(revenue.PercentChange).ToString("0.#")% vs previous
+                    </p>
+                }
+                else
+                {
+                    <p class="revenue-headline__change">
+                        — vs previous
+                    </p>
+                }
+            </div>
+
+            <!-- Chart canvas placeholder -->
+            <div class="chart-container">
+                <canvas id="revenue-chart"></canvas>
+            </div>
+        }
+
     </section>
 
-    <!-- TWO-COLUMN ROW -->
-    <div class="aa-row">
 
-        <!-- TOP SELLING PRODUCTS -->
-        <section class="aa-card">
-            <header class="aa-card__header">
-                <h2 class="aa-card__title">Top Selling Products</h2>
-            </header>
-            <div class="aa-card__body">
-                <p class="aa-placeholder">Top products — Step 7</p>
+    <!-- ─────────────────────────────────────────── -->
+    <!-- Two-column section: Products + Affiliates -->
+    <!-- ─────────────────────────────────────────── -->
+    <div class="analytics-grid">
+
+        <!-- Top Selling Products -->
+        <section class="card products-card">
+            <div class="card__header">
+                <p class="card__eyebrow">Top Selling Products</p>
             </div>
+
+            @if (topProducts is null)
+            {
+                <p class="card__empty">Loading...</p>
+            }
+            else if (!topProducts.Any())
+            {
+                <p class="card__empty">No sales in the last 30 days.</p>
+            }
+            else
+            {
+                <ol class="products-list">
+                    @for (int i = 0; i < topProducts.Count; i++)
+                    {
+                        var product = topProducts[i];
+                        var rank = i + 1;
+                        <li class="products-list__item">
+                            <div class="products-list__rank">@rank.</div>
+                            <div class="products-list__info">
+                                <p class="products-list__name">@product.ProductName</p>
+                                <p class="products-list__sold">@product.UnitsSold sold</p>
+                            </div>
+                            <p class="products-list__revenue">
+                                $@FormatNumber(product.Revenue)
+                            </p>
+                        </li>
+                    }
+                </ol>
+            }
         </section>
 
-        <!-- AFFILIATE PERFORMANCE -->
-        <section class="aa-card">
-            <header class="aa-card__header">
-                <h2 class="aa-card__title">Affiliate Performance</h2>
-            </header>
-            <div class="aa-card__body">
-                <p class="aa-placeholder">Affiliate tiers — Step 8</p>
+
+        <!-- Affiliate Performance -->
+        <section class="card affiliates-card">
+            <div class="card__header">
+                <p class="card__eyebrow">Affiliate Performance</p>
             </div>
+
+            @if (affiliatePerformance is null)
+            {
+                <p class="card__empty">Loading...</p>
+            }
+            else if (!affiliatePerformance.Any())
+            {
+                <p class="card__empty">No affiliates yet.</p>
+            }
+            else
+            {
+                <ul class="affiliates-list">
+                    @foreach (var tier in affiliatePerformance)
+                    {
+                        <li class="affiliates-list__item">
+                            <div class="affiliates-list__icon @GetTierIconClass(tier.Tier)">
+                                @GetTierIcon(tier.Tier)
+                            </div>
+                            <div class="affiliates-list__info">
+                                <p class="affiliates-list__tier">@GetTierLabel(tier.Tier)</p>
+                                <p class="affiliates-list__stats">
+                                    Sales: $@FormatNumber(tier.Sales)
+                                    · Commission: $@FormatNumber(tier.Commission)
+                                </p>
+                            </div>
+                            <p class="affiliates-list__count">
+                                @tier.AffiliateCount affiliate@(tier.AffiliateCount == 1 ? "" : "s")
+                            </p>
+                        </li>
+                    }
+                </ul>
+            }
         </section>
 
     </div>
 
 </div>
-
-@code {
-    // Steps 5–9 will populate this
-}

@@ -8,6 +8,7 @@ using MuuqWear.Application.Services.AddressService;
 using MuuqWear.Application.Services.AdminBadgeService;
 using MuuqWear.Application.Services.AdminUserService;
 using MuuqWear.Application.Services.AffiliateService;
+using MuuqWear.Application.Services.AnalyticsService;
 using MuuqWear.Application.Services.AuthService;
 using MuuqWear.Application.Services.CartService;
 using MuuqWear.Application.Services.CategoryService;
@@ -143,6 +144,11 @@ builder.Services.AddHttpClient<IAdminBadgeService, AdminBadgeService>(client =>
 .AddHttpMessageHandler<AuthenticatedHttpHandler>();
 
 builder.Services.AddHttpClient<IJobPostingService, JobPostingService>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+})
+.AddHttpMessageHandler<AuthenticatedHttpHandler>();
+builder.Services.AddHttpClient<IAnalyticsService, AnalyticsService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
 })

@@ -245,3 +245,119 @@ window.mwMuuqsimoCountdown = {
         }
     }
 };
+
+
+
+
+
+
+
+
+// MuuqWear Analytics Chart — Chart.js wrapper
+
+window.muuqAnalyticsChart = {
+    // Holds the current chart instance so we can destroy/replace it
+    _chart: null,
+
+    render: function (canvasId, labels, values) {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) {
+            console.warn("[muuqAnalyticsChart] Canvas not found:", canvasId);
+            return;
+        }
+
+        // Destroy existing chart if any (prevents overlap on refresh)
+        if (this._chart) {
+            this._chart.destroy();
+            this._chart = null;
+        }
+
+        const ctx = canvas.getContext("2d");
+
+        // Gradient under the line
+        const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height || 280);
+        gradient.addColorStop(0, "rgba(30, 42, 71, 0.18)");
+        gradient.addColorStop(1, "rgba(30, 42, 71, 0.0)");
+
+        this._chart = new Chart(ctx, {
+            type: "line",
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: values,
+                    borderColor: "#1E2A47",
+                    backgroundColor: gradient,
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 0,
+                    pointHoverRadius: 5,
+                    pointHoverBackgroundColor: "#1E2A47",
+                    pointHoverBorderColor: "#FFFFFF",
+                    pointHoverBorderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: "#1E2A47",
+                        titleColor: "#FFFFFF",
+                        bodyColor: "#FFFFFF",
+                        borderColor: "#1E2A47",
+                        borderWidth: 0,
+                        padding: 10,
+                        displayColors: false,
+                        callbacks: {
+                            label: function (ctx) {
+                                return "$" + ctx.parsed.y.toLocaleString();
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: {
+                            color: "#A9B7CC",
+                            font: { size: 11 },
+                            maxRotation: 0,
+                            autoSkip: true,
+                            maxTicksLimit: 7
+                        }
+                    },
+                    y: {
+                        beginAtZero: false,
+                        grid: {
+                            color: "rgba(169, 183, 204, 0.2)",
+                            drawBorder: false
+                        },
+                        ticks: {
+                            color: "#A9B7CC",
+                            font: { size: 11 },
+                            callback: function (value) {
+                                if (value >= 1000) {
+                                    return "$" + (value / 1000).toFixed(0) + "k";
+                                }
+                                return "$" + value;
+                            }
+                        }
+                    }
+                },
+                interaction: {
+                    intersect: false,
+                    mode: "index"
+                }
+            }
+        });
+    },
+
+    destroy: function () {
+        if (this._chart) {
+            this._chart.destroy();
+            this._chart = null;
+        }
+    }
+};
