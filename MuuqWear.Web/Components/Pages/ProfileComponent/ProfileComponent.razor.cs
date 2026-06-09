@@ -170,7 +170,7 @@ public partial class ProfileComponent
 
                 await LoadPerformanceChart();
                 await LoadRecentReferrals();
-                isLoadingOrders = false;
+                //isLoadingOrders = false;
             }
         }
         else if (tab == "address")
@@ -179,6 +179,7 @@ public partial class ProfileComponent
             if (addressResult.Success && addressResult.Data != null)
                 addresses = addressResult.Data;
         }
+        isLoadingOrders = false;
     }
     private string GetActiveTabLabel()
     {
