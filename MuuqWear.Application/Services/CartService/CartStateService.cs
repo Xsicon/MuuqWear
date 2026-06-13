@@ -16,6 +16,9 @@ public class CartStateService
     // true when user is logged in 
     public bool IsAuthenticated { get; private set; } = false;
 
+    private bool _initialized;
+    private string? _initializedUserId;
+
     // fired when cart changes → UI re-renders 
     public event Action? OnCartChanged;
 
@@ -32,6 +35,11 @@ public class CartStateService
     // =============================================
     public async Task InitializeAsync(bool isAuthenticated, string? userId)
     {
+        if (_initialized && IsAuthenticated == isAuthenticated && _initializedUserId == userId)
+            return;
+
+        _initialized = true;
+        _initializedUserId = userId;
         IsAuthenticated = isAuthenticated;
 
         if (isAuthenticated)
@@ -296,6 +304,9 @@ public class CartStateService
     public async Task ClearCartState()
     {
         Cart = new CartModel();
+        _initialized = false;
+        _initializedUserId = null;
+        IsAuthenticated = false;
         await ClearCartCookie();
         NotifyCartChanged();
     }

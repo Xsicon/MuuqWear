@@ -10,7 +10,10 @@
 @inject IChatService ChatService
 
 
-<SpinnerComponent Show="@isLoading" />
+@if (isLoading)
+{
+    <p class="mw-section-loading">Loading chat...</p>
+}
 
 <div class="mw-livechat">
 

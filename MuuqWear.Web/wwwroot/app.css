@@ -107,6 +107,63 @@ input:invalid,
 }
 
 
+/* Instant feedback while Blazor navigates between pages */
+body.mw-nav-loading::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    width: 100%;
+    z-index: 10001;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        #1E2A47 35%,
+        #4A5C7A 50%,
+        #1E2A47 65%,
+        transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: mw-nav-progress 0.9s ease-in-out infinite;
+    pointer-events: none;
+}
+
+@keyframes mw-nav-progress {
+    0% {
+        background-position: 100% 0;
+    }
+
+    100% {
+        background-position: -100% 0;
+    }
+}
+
+.mw-section-loading {
+    color: #4A5C7A;
+    padding: 24px 16px;
+    margin: 0;
+}
+
+.mw-product-detail-skeleton {
+    min-height: 420px;
+    border-radius: 8px;
+    background: linear-gradient(90deg, #E6ECF5 25%, #f5f7fa 50%, #E6ECF5 75%);
+    background-size: 200% 100%;
+    animation: mw-skeleton-shimmer 1.2s ease-in-out infinite;
+}
+
+@keyframes mw-skeleton-shimmer {
+    0% {
+        background-position: 100% 0;
+    }
+
+    100% {
+        background-position: -100% 0;
+    }
+}
+
+
 /* removes default link styles on product cards */
 .mw-arrivals__card-link,
 .mw-featured__card-link {

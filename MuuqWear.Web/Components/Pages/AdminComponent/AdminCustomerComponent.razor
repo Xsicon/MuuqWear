@@ -11,7 +11,10 @@
 
 <PageTitle>Customers</PageTitle>
 
-<SpinnerComponent Show="@isLoading" />
+@if (isLoading)
+{
+    <p class="mw-section-loading">Loading customers...</p>
+}
 
 <div class="customers-page">
 

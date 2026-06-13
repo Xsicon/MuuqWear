@@ -46,7 +46,6 @@ public partial class ProfileComponent
 
     private List<OrderModel> userOrders = new();
     private ProfileModel userProfile = new();
-    private bool isLoadingOrders = true;
 
     public string LoggedInUserName = "";
 
@@ -65,25 +64,27 @@ public partial class ProfileComponent
     protected override async Task OnInitializedAsync()
     {
         if (AuthenticationStateTask is null) return;
+
         var authState = await AuthenticationStateTask;
-        var isAuthenticated = authState.User.Identity?.IsAuthenticated == true;
-        var userId = authState.User.FindFirst("UserId")?.Value;
-        var profileResult = await ProfileService.GetProfile();
+        AuthStateProvider.SyncFromPrincipal(authState.User);
+
+        var profileTask = ProfileService.GetProfile();
+        var ordersTask = OrderService.GetUserOrders();
+        var affiliateTask = LoadAffiliateStatus();
+
+        await Task.WhenAll(profileTask, ordersTask, affiliateTask);
+
+        var profileResult = await profileTask;
         if (profileResult.Success && profileResult.Data != null)
         {
             LoggedInUserName = profileResult.Data.FullName ?? "";
             settingsFullName = profileResult.Data.FullName ?? "";
             settingsEmail = profileResult.Data.Email ?? "";
         }
-        AuthStateProvider.SyncFromPrincipal(authState.User);
-        await CartStateService.InitializeAsync(isAuthenticated, userId);
 
-        // fetch orders
-        var ordersResult = await OrderService.GetUserOrders();
+        var ordersResult = await ordersTask;
         if (ordersResult.Success && ordersResult.Data != null)
             userOrders = ordersResult.Data;
-        isLoadingOrders = false;
-        await LoadAffiliateStatus();
     }
 
     private async Task SelectAffiliateTab(string tab)
@@ -159,8 +160,7 @@ public partial class ProfileComponent
     private async Task SelectTab(string tab)
     {
         activeTab = tab;
-        isMobileMenuOpen = false; //  close menu after selection
-        isLoadingOrders = true;
+        isMobileMenuOpen = false;
         if (tab == "affiliate")
         {
             //await LoadAffiliateStatus();
@@ -179,7 +179,6 @@ public partial class ProfileComponent
             if (addressResult.Success && addressResult.Data != null)
                 addresses = addressResult.Data;
         }
-        isLoadingOrders = false;
     }
     private string GetActiveTabLabel()
     {

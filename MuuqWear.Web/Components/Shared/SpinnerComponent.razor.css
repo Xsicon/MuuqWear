@@ -24,6 +24,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    /* Override global .mw-spinner in app.css — only the ring should rotate */
+    animation: none;
+    border: none;
 }
 
 .mw-spinner__logo {

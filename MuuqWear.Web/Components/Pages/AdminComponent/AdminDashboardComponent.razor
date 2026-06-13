@@ -14,7 +14,10 @@
 
 <PageTitle>Admin Dashboard</PageTitle>
 
-<SpinnerComponent Show="@isLoading" />
+@if (isLoading)
+{
+    <p class="mw-section-loading">Loading dashboard...</p>
+}
 
 <div class="ov-page">
 

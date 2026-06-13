@@ -7,7 +7,10 @@
 @inject IAffiliateService AffiliateService
 @attribute [Authorize(Roles = "admin")]
 
-<SpinnerComponent Show="@isLoading" />
+@if (isLoading)
+{
+    <p class="mw-section-loading">Loading affiliates...</p>
+}
 
 
 <div class="mw-affiliates">

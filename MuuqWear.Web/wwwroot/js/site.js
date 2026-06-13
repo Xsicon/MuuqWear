@@ -173,12 +173,96 @@ window.clearCartCookie = function () {
     }
 };
 
+// Sign in via single POST — no cache key round-trip (avoids json=1 fetch race).
+window.mwSignIn = function (session) {
+    return fetch("/auth/sign-in", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(session)
+    })
+        .then(function (res) { return res.ok; })
+        .catch(function (e) {
+            console.error("mwSignIn error:", e);
+            return false;
+        });
+};
+
+// Legacy cache-key path (fallback only).
+window.mwSetCookieFromKey = function (key) {
+    return fetch(
+        "/auth/set-cookie?key=" + encodeURIComponent(key) + "&json=1",
+        { method: "GET", credentials: "include" }
+    )
+        .then(function (res) { return res.ok; })
+        .catch(function (e) {
+            console.error("mwSetCookieFromKey error:", e);
+            return false;
+        });
+};
+
+window.mwAuth = {
+    signIn: function (session) {
+        return window.mwSignIn(session);
+    },
+    setCookieFromKey: function (key) {
+        return window.mwSetCookieFromKey(key);
+    }
+};
+
 window.mwScrollLock = {
     lock: function () {
         document.body.classList.add("mw-spinner-active");
     },
     unlock: function () {
         document.body.classList.remove("mw-spinner-active");
+    }
+};
+
+window.mwNavProgress = {
+    _initialized: false,
+
+    start: function () {
+        window.mwNavProgress._startedAt = Date.now();
+        document.body.classList.add("mw-nav-loading");
+    },
+
+    done: function () {
+        var elapsed = Date.now() - (window.mwNavProgress._startedAt || 0);
+        var remaining = Math.max(0, 500 - elapsed);
+
+        window.setTimeout(function () {
+            document.body.classList.remove("mw-nav-loading");
+        }, remaining);
+    },
+
+    init: function () {
+        if (window.mwNavProgress._initialized) return;
+        window.mwNavProgress._initialized = true;
+
+        document.addEventListener("click", function (e) {
+            var link = e.target.closest("a[href]");
+            if (!link || link.target === "_blank" || link.hasAttribute("download")) return;
+
+            var href = link.getAttribute("href");
+            if (!href || href.charAt(0) === "#") return;
+            if (href.indexOf("javascript:") === 0) return;
+
+            if (href.indexOf("http") === 0 || href.indexOf("//") === 0) {
+                try {
+                    var url = new URL(href);
+                    if (url.origin !== window.location.origin) return;
+                    href = url.pathname + url.search + url.hash;
+                } catch (_) {
+                    return;
+                }
+            }
+
+            var current = window.location.pathname + window.location.search;
+            if (href === current || href === current + window.location.hash) return;
+
+            window.mwNavProgress.start();
+        }, true);
     }
 };
 

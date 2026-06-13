@@ -5,8 +5,6 @@ namespace MuuqWear.Web.Components.Pages.HomeComponent;
 
 public partial class HomeComponent
 {
-    private bool isLoading = false;
-
     //Slider References
     // private ElementReference finishedRef;
     private ElementReference categoryRef;
@@ -78,17 +76,6 @@ public partial class HomeComponent
                 return;
             }
 
-            try
-            {
-                await JS.InvokeAsync<bool>("mwImageLoad.waitForVisibleImages", 5000);
-            }
-            catch
-            {
-                // JS failure — proceed without waiting
-            }
-
-            isLoading = false;
-            StateHasChanged();
             // For AutoSliding Images in carousel
             await JS.InvokeVoidAsync("mwStartAutoSlide", categoryRef, ".mw-categorycarousel-item", 3000);
             await JS.InvokeVoidAsync("mwStartAutoSlide", newArrivalRef, ".mw-newarrivalcarousel-item", 3000);
@@ -106,7 +93,11 @@ public partial class HomeComponent
 
     protected override async Task OnInitializedAsync()
     {
-        isLoading = true;
+        await Task.WhenAll(LoadHomeProducts(), LoadCategories());
+    }
+
+    private async Task LoadHomeProducts()
+    {
         var result = await ProductService.GetHomeProducts();
 
         if (result.Success && result.Data != null)
@@ -115,9 +106,6 @@ public partial class HomeComponent
             FeaturedProducts = result.Data.Featured;
             BestSellerProducts = result.Data.BestSellers;
         }
-
-        await LoadCategories();
-
     }
     private async Task LoadCategories()
     {

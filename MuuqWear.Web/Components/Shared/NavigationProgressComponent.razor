@@ -1,0 +1,55 @@
+@rendermode InteractiveServer
+@inject IJSRuntime JS
+@inject NavigationManager NavigationManager
+@implements IDisposable
+
+@code {
+    private IDisposable? _locationChangingRegistration;
+
+    protected override void OnInitialized()
+    {
+        _locationChangingRegistration =
+            NavigationManager.RegisterLocationChangingHandler(OnLocationChanging);
+        NavigationManager.LocationChanged += OnLocationChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        try
+        {
+            await JS.InvokeVoidAsync("mwNavProgress.init");
+        }
+        catch
+        {
+            // JS not ready during prerender
+        }
+    }
+
+    private ValueTask OnLocationChanging(LocationChangingContext context)
+    {
+        _ = InvokeAsync(async () =>
+        {
+            try { await JS.InvokeVoidAsync("mwNavProgress.start"); }
+            catch { }
+        });
+        return ValueTask.CompletedTask;
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        _ = InvokeAsync(async () =>
+        {
+            try { await JS.InvokeVoidAsync("mwNavProgress.done"); }
+            catch { }
+        });
+    }
+
+    public void Dispose()
+    {
+        _locationChangingRegistration?.Dispose();
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+}

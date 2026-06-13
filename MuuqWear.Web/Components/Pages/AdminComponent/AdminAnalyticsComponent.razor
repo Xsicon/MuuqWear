@@ -10,7 +10,10 @@
 
 <PageTitle>Analytics & Reports — Admin</PageTitle>
 
-<SpinnerComponent Show="@isLoading" />
+@if (isLoading)
+{
+    <p class="mw-section-loading">Loading analytics...</p>
+}
 
 <div class="analytics-page">
 

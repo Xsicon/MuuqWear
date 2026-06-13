@@ -1,47 +1,51 @@
 ﻿using Microsoft.AspNetCore.Components;
+using Microsoft.JSInterop;
+using MuuqWear.Application.Services.AuthService;
 using MuuqWear.Model.Authentication;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http.Json;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MuuqWear.Application.Shared;
+
 public static class AuthNavigationHelper
 {
-    private static readonly HttpClient _http = new();
-
     public static async Task PrepareAndNavigateAsync(
         AuthResponseModel data,
         NavigationManager navigationManager,
-        string returnUrl = "/profile", bool rememberMe = false)
-
+        CustomAuthenticationStateProvider authStateProvider,
+        IJSRuntime js,
+        string returnUrl = "/profile",
+        bool rememberMe = false)
     {
-        var session = new CookieAuthSession
+        var session = CookieAuthHelper.FromAuthResponse(data, returnUrl, rememberMe);
+
+        try
         {
-            Token = data.AccessToken ?? "",
-            RefreshToken = data.RefreshToken ?? "",
-            Username = data.UserName ?? "",
-            Email = data.Email ?? "",
-            Role = data.Role ?? "user",
-            UserId = data.UserId ?? "",
-            ReturnUrl = returnUrl,
-            RememberMe = rememberMe
-        };
+            var ok = await js.InvokeAsync<bool>("mwSignIn", session);
+            if (!ok)
+                return;
 
+            // Full load so HttpContext carries the auth cookie for API handlers.
+            // Cookie is already set via fetch — no /auth/set-cookie redirect needed.
+            navigationManager.NavigateTo(returnUrl, forceLoad: true);
+        }
+        catch (JSException)
+        {
+            await FallbackForceLoadAsync(session, navigationManager);
+        }
+    }
 
-        var response = await _http.PostAsJsonAsync(
+    private static async Task FallbackForceLoadAsync(
+        CookieAuthSession session,
+        NavigationManager navigationManager)
+    {
+        using var http = new HttpClient();
+        var response = await http.PostAsJsonAsync(
             $"{navigationManager.BaseUri}auth/prepare-cookie", session);
 
-        if (!response.IsSuccessStatusCode) return;
+        if (!response.IsSuccessStatusCode)
+            return;
 
-        var key = await response.Content.ReadAsStringAsync();
-
-        key = key.Trim('"');
-
-
-        navigationManager.NavigateTo(
-            $"/auth/set-cookie?key={key}", forceLoad: true);
+        var key = (await response.Content.ReadAsStringAsync()).Trim('"');
+        navigationManager.NavigateTo($"/auth/set-cookie?key={key}", forceLoad: true);
     }
 }

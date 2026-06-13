@@ -36,12 +36,15 @@ public partial class AdminApplicationsComponent
         isLoading = true;
         StateHasChanged();
 
-        // Load job details
-        var jobResult = await JobPostingService.GetById(JobId);
+        var jobTask = JobPostingService.GetById(JobId);
+        var appsTask = JobPostingService.GetApplicationsByJob(JobId);
+
+        await Task.WhenAll(jobTask, appsTask);
+
+        var jobResult = await jobTask;
         job = jobResult.Success ? jobResult.Data : null;
 
-        // Load applications for this job
-        var appsResult = await JobPostingService.GetApplicationsByJob(JobId);
+        var appsResult = await appsTask;
         applications = appsResult.Success && appsResult.Data != null
             ? appsResult.Data
             : new();

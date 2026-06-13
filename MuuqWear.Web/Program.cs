@@ -219,6 +219,25 @@ app.UseAntiforgery();
 
 //Set Cookie
 
+app.MapPost("/auth/sign-in", async (
+    HttpContext ctx,
+    CookieAuthSession session,
+    AuthSessionService authSession) =>
+{
+    if (string.IsNullOrEmpty(session.Token) ||
+        string.IsNullOrEmpty(session.Role))
+        return Results.BadRequest("Invalid session data");
+
+    authSession.Reset();
+
+    await ctx.SignInAsync(
+        CookieAuthenticationDefaults.AuthenticationScheme,
+        CookieAuthHelper.CreatePrincipal(session),
+        CookieAuthHelper.CreateProperties(session));
+
+    return Results.Ok(new { success = true });
+}).DisableAntiforgery();
+
 app.MapPost("/auth/prepare-cookie", (
     CookieAuthSession session,
     IMemoryCache cache) =>
@@ -229,7 +248,7 @@ app.MapPost("/auth/prepare-cookie", (
     var key = Guid.NewGuid().ToString();
     cache.Set(key, session, TimeSpan.FromSeconds(30));
     return Results.Ok(key);
-});
+}).DisableAntiforgery();
 
 app.MapGet("/logout", async (HttpContext ctx) =>
 {
@@ -240,46 +259,31 @@ app.MapGet("/logout", async (HttpContext ctx) =>
 app.MapGet("/auth/set-cookie", async (
     HttpContext ctx,
     string key,
-    IMemoryCache cache, AuthSessionService authSession) =>
+    IMemoryCache cache,
+    AuthSessionService authSession,
+    bool json = false) =>
 {
     if (!cache.TryGetValue(key, out CookieAuthSession? session) || session is null)
     {
-        ctx.Response.Redirect("/register");
-        return;
+        return json
+            ? Results.BadRequest("Invalid or expired sign-in key")
+            : Results.Redirect("/register");
     }
 
     cache.Remove(key);
     authSession.Reset();
 
-    var claims = new List<Claim>
-    {
-        new Claim(ClaimTypes.Name, session.Username!),
-        new Claim(ClaimTypes.Email, session.Email!),
-        new Claim(ClaimTypes.Role, session.Role!),
-        new Claim("AccessToken", session.Token!),
-        new Claim("RefreshToken", session.RefreshToken!),
-        new Claim("UserId", session.UserId!)
-    };
-
-    var identity = new ClaimsIdentity(
-        claims, CookieAuthenticationDefaults.AuthenticationScheme);
-    var principal = new ClaimsPrincipal(identity);
-
-    var expiry = session.RememberMe ?? false
-        ? DateTimeOffset.UtcNow.AddDays(30)
-        : DateTimeOffset.UtcNow.AddHours(5);
+    var principal = CookieAuthHelper.CreatePrincipal(session);
 
     await ctx.SignInAsync(
         CookieAuthenticationDefaults.AuthenticationScheme,
         principal,
-        new AuthenticationProperties
-        {
-            IsPersistent = session.RememberMe ?? false,
-            ExpiresUtc = expiry
-        });
+        CookieAuthHelper.CreateProperties(session));
 
-    ctx.Response.Redirect(session.ReturnUrl!);
-}).DisableAntiforgery(); //  add this
+    return json
+        ? Results.Ok(new { success = true })
+        : Results.Redirect(session.ReturnUrl!);
+}).DisableAntiforgery();
 
 app.MapGet("/auth/clear", async (HttpContext ctx, bool expired = false) =>
 {

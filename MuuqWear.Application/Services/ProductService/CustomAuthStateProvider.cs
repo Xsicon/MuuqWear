@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Http;
+using MuuqWear.Application.Shared;
 using MuuqWear.Model.Authentication;
 using System.Security.Claims;
 
@@ -8,14 +9,18 @@ namespace MuuqWear.Application.Services.AuthService;
 public class CustomAuthenticationStateProvider : AuthenticationStateProvider
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly AuthSessionService _authSession;
     private AuthenticationState? _cachedState;
-    private bool _sessionExpired = false; // ← add this
+    private bool _sessionExpired = false;
 
     public LoggedInUserModel CurrentUser { get; private set; } = new();
 
-    public CustomAuthenticationStateProvider(IHttpContextAccessor httpContextAccessor)
+    public CustomAuthenticationStateProvider(
+        IHttpContextAccessor httpContextAccessor,
+        AuthSessionService authSession)
     {
         _httpContextAccessor = httpContextAccessor;
+        _authSession = authSession;
     }
 
     //public void NotifySessionExpired()
@@ -31,6 +36,7 @@ public class CustomAuthenticationStateProvider : AuthenticationStateProvider
     public void NotifyLoggedIn(ClaimsPrincipal principal)
     {
         _sessionExpired = false;
+        _authSession.Reset();
         _cachedState = new AuthenticationState(principal);
         CurrentUser = LoggedInUserModel.FromClaimsPrincipal(principal);
         NotifyAuthenticationStateChanged(Task.FromResult(_cachedState));

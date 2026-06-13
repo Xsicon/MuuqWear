@@ -10,6 +10,7 @@
 @inject IJSRuntime JS
 @inject AuthStateService AuthStateService
 @inject NavigationManager NavigationManager
+@inject CustomAuthenticationStateProvider CustomAuthStateProvider
 
 <section class="mw-auth">
     <div class="container">
@@ -72,8 +73,16 @@
                                 </div>
                             </div>
 
-                            <button type="submit" class="mw-btn-primary w-100">
-                                Login
+                            <button type="submit" class="mw-btn-primary w-100" disabled="@isSubmitting">
+                                @if (isSubmitting)
+                                {
+                                    <span class="mw-btn-spinner"></span>
+                                    <span>Signing in...</span>
+                                }
+                                else
+                                {
+                                    <span>Login</span>
+                                }
                             </button>
 
                             @if (!string.IsNullOrEmpty(message))
@@ -187,6 +196,7 @@
 
 @code {
     private bool isGoogleLoading = false;
+    private bool isSubmitting = false;
     private string? expiredMessage;
 
     [CascadingParameter]
@@ -220,29 +230,42 @@
 
     private async Task HandleLogin()
     {
-        var result = await IAuthService.Login(loginModel);
+        isSubmitting = true;
+        message = string.Empty;
+        StateHasChanged();
 
-        if (result.Success && result.Data != null)
+        try
         {
+            var result = await IAuthService.Login(loginModel);
 
-            var authData = result.Data;
-            if (authData.Role != "user")
+            if (result.Success && result.Data != null)
             {
-                message = "Access denied.";
-                messageCssClass = "text-danger";
-                return;
-            }
+                var authData = result.Data;
+                if (authData.Role != "user")
+                {
+                    message = "Access denied.";
+                    messageCssClass = "text-danger";
+                    return;
+                }
 
-            await AuthNavigationHelper.PrepareAndNavigateAsync(
-                result.Data,
-                NavigationManager,
-                "/profile",
-                rememberMe);
+                await AuthNavigationHelper.PrepareAndNavigateAsync(
+                    result.Data,
+                    NavigationManager,
+                    CustomAuthStateProvider,
+                    JS,
+                    "/profile",
+                    rememberMe);
+            }
+            else
+            {
+                message = result.Message;
+                messageCssClass = "text-danger";
+            }
         }
-        else
+        finally
         {
-            message = result.Message;
-            messageCssClass = "text-danger";
+            isSubmitting = false;
+            StateHasChanged();
         }
     }
 

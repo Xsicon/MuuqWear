@@ -8,6 +8,7 @@
 @inject IAuthService IAuthService
 @inject AuthStateService AuthStateService
 @inject NavigationManager NavigationManager
+@inject CustomAuthenticationStateProvider CustomAuthStateProvider
 @inject IJSRuntime JS
 
 
@@ -140,6 +141,8 @@
             await AuthNavigationHelper.PrepareAndNavigateAsync(
                 result.Data,
                 NavigationManager,
+                CustomAuthStateProvider,
+                JS,
                 "/admin");
         }
         else
