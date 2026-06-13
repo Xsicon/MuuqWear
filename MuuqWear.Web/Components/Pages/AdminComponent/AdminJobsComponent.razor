@@ -1,0 +1,206 @@
+﻿@page "/admin/jobs"
+@layout Layout.AdminLayoutComponent.AdminDashboardLayoutComponent
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using MuuqWear.Application.Services.JobPostingService
+@using MuuqWear.Model.JobPosting
+@using MuuqWear.Web.Components.Shared
+@inject IJobPostingService JobPostingService
+@inject NavigationManager NavigationManager
+@attribute [Authorize(Roles = "admin")]
+
+<PageTitle>Job Postings — Admin</PageTitle>
+
+<SpinnerComponent Show="@isLoading" />
+
+<div class="jobs-page">
+
+    <!-- Header row -->
+    <div class="jobs-page__header">
+        <div>
+            <h2 class="jobs-page__title">Career Management Job Postings</h2>
+            <p class="jobs-page__subtitle">Create and manage job postings</p>
+        </div>
+        <button class="btn-create" @onclick="OpenCreateForm">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h14"></path>
+                <path d="M12 5v14"></path>
+            </svg>
+            NEW POSTING
+        </button>
+    </div>
+
+    <!-- Jobs list -->
+    <div class="jobs-list">
+        @if (isLoading)
+        {
+            <p class="jobs-empty">Loading...</p>
+        }
+        else if (!jobs.Any())
+        {
+            <p class="jobs-empty">No job postings yet. Click "New Posting" to create one.</p>
+        }
+        else
+        {
+            @foreach (var job in jobs)
+            {
+                <article class="job-card">
+
+                    <div class="job-card__info">
+                        <div class="job-card__heading">
+                            <h3 class="job-card__title">@job.Title</h3>
+                            <span class="badge badge--department">@job.Department</span>
+                            <span class="badge @(job.IsOpen ? "badge--open" : "badge--closed")">
+                                @(job.IsOpen ? "Open" : "Closed")
+                            </span>
+                            <span class="job-card__app-count">
+                                @job.ApplicationCount application@(job.ApplicationCount == 1 ? "" : "s")
+                            </span>
+                        </div>
+                        <p class="job-card__meta">@job.Location · @job.Type</p>
+                    </div>
+
+                    <div class="job-card__actions">
+                        <button class="btn-ghost" @onclick="() => OpenEditForm(job)">Edit</button>
+                        <button class="btn-ghost" @onclick="() => DuplicateJob(job)">Duplicate</button>
+
+                        @if (job.IsOpen)
+                        {
+                            <button class="btn-ghost" @onclick="() => HandleClose(job.Id)">Close</button>
+                        }
+                        else
+                        {
+                            <button class="btn-ghost" @onclick="() => HandleReopen(job.Id)">Reopen</button>
+                        }
+
+                        <button class="btn-ghost btn-ghost--danger"
+                                @onclick="() => OpenDeleteConfirm(job)">
+                            Delete
+                        </button>
+                        <button class="btn-primary"
+                                @onclick="() => ViewApplications(job.Id)">
+                            View Applications →
+                        </button>
+                    </div>
+
+                </article>
+            }
+        }
+    </div>
+
+
+    <!-- Slide-in form panel (Create / Edit) -->
+    @if (isFormOpen)
+    {
+        <div class="form-overlay" @onclick="CloseForm"></div>
+
+        <div class="form-panel" @onclick:stopPropagation="true">
+
+            <div class="form-panel__header">
+                <p class="form-panel__title">
+                    @(isEditMode ? "Edit" : "Create") Job Posting
+                </p>
+                <button class="form-panel__close" @onclick="CloseForm">✕</button>
+            </div>
+
+            @if (!string.IsNullOrEmpty(formError))
+            {
+                <p class="form-error">@formError</p>
+            }
+
+        <div class="form-fields">
+
+            <!-- Title -->
+            <div class="form-field">
+                <label class="form-label">Title *</label>
+                <input class="form-input"
+                       placeholder="e.g. Senior Product Designer"
+                       value="@form.Title"
+                       @oninput="OnTitleChanged" />
+            </div>
+
+            <!-- Slug -->
+            <div class="form-field">
+                <label class="form-label">Slug *</label>
+                <input class="form-input"
+                       placeholder="e.g. senior-product-designer"
+                       @bind="form.Slug" />
+                <p class="form-hint">
+                    Auto-generated from title. Edit if you want a custom URL.
+                </p>
+            </div>
+
+            <!-- Department + Type (side by side) -->
+            <div class="form-field-row">
+                <div class="form-field">
+                    <label class="form-label">Department *</label>
+                    <input class="form-input"
+                           placeholder="e.g. Design"
+                           @bind="form.Department" />
+                </div>
+
+                <div class="form-field">
+                    <label class="form-label">Type *</label>
+                    <select class="form-input" @bind="form.Type">
+                        <option value="">Select type</option>
+                        <option value="Full-time">Full-time</option>
+                        <option value="Part-time">Part-time</option>
+                        <option value="Contract">Contract</option>
+                        <option value="Internship">Internship</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Location -->
+            <div class="form-field">
+                <label class="form-label">Location *</label>
+                <input class="form-input"
+                       placeholder="e.g. New York (Hybrid)"
+                       @bind="form.Location" />
+            </div>
+
+            <!-- Description -->
+            <div class="form-field">
+                <label class="form-label">Description</label>
+                <textarea class="form-textarea"
+                          placeholder="Job responsibilities, requirements, perks..."
+                          rows="10"
+                          @bind="form.Description"></textarea>
+            </div>
+
+        </div>
+
+        <button class="form-submit"
+                @onclick="@(isEditMode? HandleEdit : HandleCreate)"
+                disabled="@isSaving">
+            @(isSaving
+                        ? "Saving..."
+                        : isEditMode ? "Save Changes" : "Create Posting")
+        </button>
+
+        </div>
+        }
+
+
+    <!-- Delete confirmation modal -->
+    @if (deletingJob is not null)
+    {
+        <div class="form-overlay" @onclick="CancelDelete"></div>
+        <div class="delete-modal" @onclick:stopPropagation="true">
+            <h3 class="delete-modal__title">Delete Job Posting?</h3>
+            <p class="delete-modal__text">
+                Are you sure you want to delete <strong>@deletingJob.Title</strong>?
+                This cannot be undone.
+            </p>
+            <div class="delete-modal__actions">
+                <button class="btn-ghost" @onclick="CancelDelete">Cancel</button>
+                <button class="btn-ghost btn-ghost--danger" @onclick="ConfirmDelete">
+                    Delete
+                </button>
+            </div>
+        </div>
+    }
+
+</div>

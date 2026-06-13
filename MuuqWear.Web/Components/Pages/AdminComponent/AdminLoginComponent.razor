@@ -1,0 +1,152 @@
+﻿@page "/admin/f8e2a947-3c1b-4d9e-b562-7a0f1e8d3c92/login"
+@rendermode InteractiveServer
+@using MuuqWear.Application.Services.AuthService
+@using MuuqWear.Application.Shared
+@using MuuqWear.Model.Authentication
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@layout Components.Layout.AuthLayoutComponent.AuthLayoutComponent
+@inject IAuthService IAuthService
+@inject AuthStateService AuthStateService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+
+
+<section class="mw-auth">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-12 col-sm-10 col-md-7 col-lg-5">
+                <div class="mw-admin-login">
+                    <div class="mw-admin-login__card">
+
+                        <!-- ICON -->
+                        <div class="text-center mb-4">
+                            <div class="mw-admin-login__icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28"
+                                     viewBox="0 0 24 24" fill="none" stroke="white"
+                                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z">
+                                    </path>
+                                </svg>
+                            </div>
+                            <h1 class="mw-admin-login__title">Admin Portal</h1>
+                            <p class="mw-admin-login__subtitle">
+                                Secure access for administrators only
+                            </p>
+                        </div>
+
+                        <!-- FORM -->
+                        <EditForm Model="@loginModel" OnSubmit="HandleLogin">
+                            <DataAnnotationsValidator />
+
+                            <!-- EMAIL -->
+                            <div class="mb-4">
+                                <label class="mw-admin-login__label">Admin Email</label>
+                                <InputText class="mw-admin-login__input"
+                                           placeholder="admin@muuqwear.com"
+                                           @bind-Value="loginModel.Email" />
+                                <ValidationMessage For="@(() => loginModel.Email)" />
+
+                            </div>
+
+                            <!-- PASSWORD -->
+                            <div class="mb-4">
+                                <label class="mw-admin-login__label">Admin Password</label>
+                                <InputText class="mw-admin-login__input"
+                                           placeholder="••••••••"
+                                           type="password"
+                                           @bind-Value="loginModel.Password" />
+                            </div>
+
+                            <!-- ERROR -->
+                            @if (!string.IsNullOrEmpty(message))
+                            {
+                                <div class="@messageCssClass mb-3 small">
+                                    @message
+                                </div>
+                            }
+
+                            <!-- SUBMIT -->
+                            <button type="submit"
+                                    class="mw-admin-login__btn w-100"
+                                    disabled="@isSubmitting">
+                                @if (isSubmitting)
+                                {
+                                    <span class="mw-btn-spinner"></span>
+                                    <span>Verifying...</span>
+                                }
+                                else
+                                {
+                                    <span>Access Admin Portal</span>
+                                }
+                            </button>
+
+                        </EditForm>
+
+                        <!-- BACK LINK -->
+                        <div class="text-center mt-4">
+                            <a href="/login" class="mw-admin-login__back">
+                                ← Back to User Login
+                            </a>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@code {
+    private LoginModel loginModel = new();
+    private string message = string.Empty;
+    private string messageCssClass = string.Empty;
+    private bool isSubmitting = false;
+
+
+    private async Task HandleLogin()
+    {
+        if (string.IsNullOrWhiteSpace(loginModel.Email))
+        {
+            message = "Email is required";
+            messageCssClass = "text-danger";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(loginModel.Password))
+        {
+            message = "Password is required";
+            messageCssClass = "text-danger";
+            return;
+        }
+
+        isSubmitting = true;
+        message = string.Empty;
+        StateHasChanged();
+
+        var result = await IAuthService.Login(loginModel);
+
+        if (result.Success && result.Data != null)
+        {
+
+            var authData = result.Data;
+            if (authData.Role != "admin")
+            {
+                message = "Access denied.";
+                messageCssClass = "text-danger";
+                isSubmitting = false;
+                return;
+            }
+
+            await AuthNavigationHelper.PrepareAndNavigateAsync(
+                result.Data,
+                NavigationManager,
+                "/admin");
+        }
+        else
+        {
+            message = result.Message;
+            messageCssClass = "text-danger";
+            isSubmitting = false;
+        }
+    }
+}

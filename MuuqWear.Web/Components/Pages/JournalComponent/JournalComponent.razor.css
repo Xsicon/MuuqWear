@@ -1,0 +1,348 @@
+﻿.mw-carousel_nav {
+    display: flex;
+    gap: 8px;
+}
+
+
+    .mw-carousel_nav button {
+        width: 40px;
+        height: 40px;
+        border: 1px solid #A9B7CC;
+        background: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #1E2A47;
+        SVG uses this transition: all 0.2s ease;
+    }
+
+        .mw-carousel_nav button:hover {
+            background: #1E2A47;
+            color: white;
+        }
+/* UTILITY CLASSES END HERE*/
+
+
+/* Section */
+.mw-journal-hero {
+    padding: 21px 16px;
+}
+
+@media (min-width: 768px) {
+    .mw-journal-hero {
+        padding: 34px;
+    }
+}
+
+/* Container */
+.mw-journal-hero__container {
+    max-width: 1208px;
+    margin: 0 auto;
+}
+
+/* Card */
+.mw-journal-hero__card {
+    display: flex;
+    flex-direction: column;
+    background: #1E2A47;
+    overflow: hidden;
+    min-height: 400px;
+    cursor: pointer;
+}
+
+/* Desktop layout */
+@media (min-width: 768px) {
+    .mw-journal-hero__card {
+        flex-direction: row;
+    }
+}
+
+/* Content */
+.mw-journal-hero__content {
+    flex: 1;
+    padding: 21px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+@media (min-width: 768px) {
+    .mw-journal-hero__content {
+        padding: 55px;
+    }
+}
+
+/* Category */
+.mw-journal-hero__category {
+    color: rgba(255,255,255,0.5);
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 13px;
+}
+
+/* Title */
+.mw-journal-hero__title {
+    color: white;
+    font-size: 26px;
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -1.5px;
+    margin-bottom: 13px;
+}
+
+@media (min-width: 768px) {
+    .mw-journal-hero__title {
+        font-size: 42px;
+    }
+}
+
+/* Description */
+.mw-journal-hero__description {
+    color: rgba(255,255,255,0.7);
+    font-size: 16px;
+    line-height: 26px;
+    max-width: 420px;
+    margin-bottom: 21px;
+}
+
+/* CTA */
+.mw-journal-hero__cta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: white;
+    font-size: 13px;
+    font-weight: 700;
+    transition: all 0.3s ease;
+}
+
+/* Hover effect */
+.mw-journal-hero__card:hover .mw-journal-hero__cta {
+    gap: 13px;
+}
+
+/* Icon */
+.mw-journal-hero__icon {
+    width: 16px;
+    height: 16px;
+    stroke: currentColor;
+    fill: none;
+}
+
+/* Image Wrapper */
+.mw-journal-hero__image-wrapper {
+    flex: 1;
+    position: relative;
+    min-height: 300px;
+}
+
+/* Image */
+.mw-journal-hero__image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.7s ease;
+}
+
+/* Hover zoom */
+.mw-journal-hero__card:hover .mw-journal-hero__image {
+    transform: scale(1.05);
+}
+
+
+
+/* Article Links Section*/
+/* Hide scrollbar (optional but clean) */
+.mw-tabs-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.mw-tabs-scroll {
+    scrollbar-width: none;
+}
+
+/* Tab */
+.mw-filter-tab {
+    padding: 8px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    border: 1px solid #A9B7CC;
+    background: #fff;
+    color: #1E2A47;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+
+    /* Hover */
+    .mw-filter-tab:hover {
+        background: #E6ECF5;
+    }
+
+    /* Active */
+    .mw-filter-tab.active {
+        background: #1E2A47;
+        color: #fff;
+        border-color: #1E2A47;
+    }
+
+
+/*Articles Section*/
+
+/* Section */
+.mw-articles {
+    max-width: 1280px;
+    margin: 0 auto;
+}
+
+/* Title */
+.mw-articles__title {
+    font-size: 24px;
+    font-weight: 800;
+    color: #1E2A47;
+}
+
+/* Nav buttons */
+.mw-nav-btn {
+    width: 40px;
+    height: 40px;
+    border: 1px solid #A9B7CC;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.2s;
+}
+
+    .mw-nav-btn:hover {
+        background: #1E2A47;
+        color: white;
+    }
+
+/* Track */
+.mw-carousel__track {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-behavior: smooth;
+}
+
+    .mw-carousel__track::-webkit-scrollbar {
+        display: none;
+    }
+
+/* Card */
+.mw-article-card {
+    background: white;
+    border: 1px solid rgba(169,183,204,0.3);
+    height: 260px; /* 🔥 EXACT from figma */
+    overflow: hidden;
+}
+
+/* Image (45%) */
+.mw-article-card__img {
+    width: 45%;
+    flex-shrink: 0;
+    background: #E6ECF5;
+    overflow: hidden;
+}
+
+    .mw-article-card__img img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: 0.5s;
+    }
+
+/* Hover zoom */
+.mw-article-card:hover img {
+    transform: scale(1.05);
+}
+
+/* Content */
+.mw-article-card__content {
+    flex: 1;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* Category */
+.mw-article-card__category {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #4A5C7A;
+    margin-bottom: 6px;
+}
+
+/* Title */
+.mw-article-card__title {
+    font-size: 17px;
+    font-weight: 700;
+    color: #1E2A47;
+    margin-bottom: 6px;
+}
+
+/* Description */
+.mw-article-card__desc {
+    font-size: 13px;
+    color: #4A5C7A;
+    margin-bottom: 10px;
+}
+
+/* Link */
+.mw-article-card__link {
+    font-size: 12px;
+    font-weight: 700;
+    color: #1E2A47;
+}
+
+/* CTA button */
+.mw-articles__btn {
+    border: 2px solid #1E2A47;
+    padding: 12px 30px;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    background: transparent;
+    transition: 0.2s;
+}
+
+    .mw-articles__btn:hover {
+        background: #1E2A47;
+        color: white;
+    }
+
+
+
+/* Inner */
+.mw-carousel-inner {
+    display: flex;
+    gap: 12px;
+    padding: 0 12px; /*  safe padding */
+    box-sizing: border-box;
+}
+
+/* 🔥 MOBILE FIRST */
+.mw-carousel-item {
+    flex: 0 0 100%;
+}
+
+/* Tablet */
+@media (min-width: 576px) {
+    .mw-carousel-item {
+        flex: 0 0 calc((100% - 12px) / 2);
+    }
+}
+
+/* Desktop */
+@media (min-width: 992px) {
+    .mw-carousel-item {
+        flex: 0 0 calc((100% - 24px) / 3);
+    }
+}

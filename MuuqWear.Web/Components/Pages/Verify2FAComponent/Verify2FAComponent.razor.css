@@ -1,0 +1,75 @@
+﻿/* Page */
+.mw-auth {
+    background: #F5F6F8;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    padding: 24px 0;
+}
+
+/* Card */
+.mw-auth-card {
+    background: white;
+    padding: 24px;
+    border-radius: 8px;
+    border: 1px solid rgba(169,183,204,0.3);
+}
+
+/* Logo */
+
+/* Title */
+.mw-auth-title {
+    font-weight: 700;
+    color: #1E2A47;
+}
+
+/* Subtitle */
+.mw-auth-subtitle {
+    font-size: 14px;
+    color: #6c7a92;
+}
+
+/* OTP input */
+.mw-otp-input {
+    text-align: center;
+    font-size: 24px;
+    letter-spacing: 8px;
+    padding: 12px;
+    border: 1px solid #d6dde8;
+}
+
+    /* Focus */
+    .mw-otp-input:focus {
+        border-color: #1E2A47;
+        box-shadow: 0 0 0 2px rgba(30,42,71,0.1);
+    }
+
+/* Button */
+.mw-btn-primary {
+    background: #1E2A47;
+    color: white;
+    border: none;
+    padding: 12px;
+    font-weight: 600;
+}
+
+/* Resend */
+.mw-link-btn {
+    background: none;
+    border: none;
+    color: #1E2A47;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* Desktop */
+@media (min-width: 768px) {
+
+    .mw-auth-card {
+        padding: 40px;
+    }
+
+    .mw-auth-title {
+        font-size: 28px;
+    }
+}

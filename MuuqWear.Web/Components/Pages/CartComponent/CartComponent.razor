@@ -1,0 +1,207 @@
+﻿@page "/cart"
+@rendermode InteractiveServer
+@using MuuqWear.Application.Services.CartService
+@using MuuqWear.Model.Cart
+@inject CartStateService CartStateService
+@inject NavigationManager NavigationManager
+@implements IDisposable
+
+<PageTitle>Your Bag — MuuqWear</PageTitle>
+
+<section class="mw-cart-page container py-5">
+
+    <!-- HEADER -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <h1 class="mw-cart-page__title">
+            Your Bag
+            @if (CartStateService.Cart.TotalItems > 0)
+            {
+                <span class="mw-cart-count ms-2">
+                    @CartStateService.Cart.TotalItems
+                </span>
+            }
+        </h1>
+        <a href="/shop/apparel" class="mw-link">
+            Continue Shopping
+        </a>
+    </div>
+
+    @if (CartStateService.Cart.IsEmpty)
+    {
+        <!-- EMPTY STATE -->
+        <div class="mw-cart-page__empty text-center py-5">
+            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"
+                 viewBox="0 0 24 24" fill="none" stroke="#d1d5db"
+                 stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path>
+                <path d="M3 6h18"></path>
+                <path d="M16 10a4 4 0 0 1-8 0"></path>
+            </svg>
+            <p class="text-muted mt-3 mb-4">Your bag is empty</p>
+            <a href="/shop/apparel" class="mw-btn-primary">
+                Shop Now
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="row g-5">
+
+            <!-- LEFT: CART ITEMS -->
+            <div class="col-12 col-lg-8">
+
+                @foreach (var item in CartStateService.Cart.Items)
+                {
+                    <div class="mw-cart-page__item d-flex gap-4">
+
+                        <!-- IMAGE -->
+                        <a href="/productdetail/@item.ProductId"
+                           class="mw-cart-page__img">
+                            <img src="@item.ProductImageUrl"
+                                 alt="@item.ProductName"
+                                 loading="lazy" />
+                        </a>
+
+                        <!-- INFO -->
+                        <div class="flex-grow-1">
+
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <a href="/productdetail/@item.ProductId"
+                                       class="mw-cart-page__name text-decoration-none">
+                                        @item.ProductName
+                                    </a>
+                                    <p class="mw-cart-meta mt-1">Size: @item.Size</p>
+                                    <p class="mw-cart-meta">
+                                        $@item.ProductPrice.ToString("F2") each
+                                    </p>
+                                </div>
+                                <span class="mw-cart-page__price">
+                                    $@item.ItemTotal.ToString("F2")
+                                </span>
+                            </div>
+
+                            <div class="d-flex align-items-center justify-content-between mt-3">
+
+                                <!-- QTY -->
+                                <div class="mw-qty">
+                                    <button @onclick="() => DecreaseQty(item)"
+                                            disabled="@(item.Quantity <= 1)">
+                                        -
+                                    </button>
+                                    <span>@item.Quantity</span>
+                                    <button @onclick="() => IncreaseQty(item)">
+                                        +
+                                    </button>
+                                </div>
+
+                                <!-- REMOVE -->
+                                <button class="mw-cart-del-btn d-flex align-items-center gap-1"
+                                        @onclick="() => RemoveItem(item.Id)">
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                         width="12" height="12" viewBox="0 0 24 24"
+                                         fill="none" stroke="currentColor"
+                                         stroke-width="2" stroke-linecap="round"
+                                         stroke-linejoin="round">
+                                        <path d="M3 6h18"></path>
+                                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                                        <line x1="10" x2="10" y1="11" y2="17"></line>
+                                        <line x1="14" x2="14" y1="11" y2="17"></line>
+                                    </svg>
+                                    Remove
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <hr class="mw-cart-page__divider" />
+                }
+
+            </div>
+
+            <!-- RIGHT: ORDER SUMMARY -->
+            <div class="col-12 col-lg-4">
+                <div class="mw-cart-page__summary">
+
+                    <h5 class="mw-cart-page__summary-title mb-4">
+                        Order Summary
+                    </h5>
+
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="text-muted">Subtotal</span>
+                        <span>$@CartStateService.Cart.Subtotal.ToString("F2")</span>
+                    </div>
+
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="text-muted">Shipping</span>
+                        <span class="text-success">Free</span>
+                    </div>
+
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="text-muted">Tax (10%)</span>
+                        <span>$@CartStateService.Cart.Tax.ToString("F2")</span>
+                    </div>
+
+                    <hr />
+
+                    <div class="d-flex justify-content-between mb-4">
+                        <span class="fw-bold fs-5">Total</span>
+                        <span class="fw-bold fs-5">
+                            $@CartStateService.Cart.Total.ToString("F2")
+                        </span>
+                    </div>
+
+                    <a href="/checkout"
+                       class="mw-checkout-btn w-100 d-block text-center text-decoration-none">
+                        Checkout Securely
+                    </a>
+
+                    <p class="text-center text-muted small mt-3">
+                        🔒 Secure checkout
+                    </p>
+
+                </div>
+            </div>
+
+        </div>
+    }
+
+</section>
+
+@code {
+
+    protected override void OnInitialized()
+    {
+        CartStateService.OnCartChanged += OnCartChanged;
+    }
+
+    private void OnCartChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    private async Task DecreaseQty(CartItemModel item)
+    {
+        if (item.Quantity <= 1) return;
+        await CartStateService.UpdateQuantity(item.Id, item.Quantity - 1);
+    }
+
+    private async Task IncreaseQty(CartItemModel item)
+    {
+        await CartStateService.UpdateQuantity(item.Id, item.Quantity + 1);
+    }
+
+    private async Task RemoveItem(Guid cartItemId)
+    {
+        await CartStateService.RemoveItem(cartItemId);
+    }
+
+    public void Dispose()
+    {
+        CartStateService.OnCartChanged -= OnCartChanged;
+    }
+}

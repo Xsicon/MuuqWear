@@ -1,0 +1,806 @@
+﻿/* UTILITY CLASSES*/
+
+
+.mw-carousel_nav {
+    display: flex;
+    gap: 8px;
+}
+
+
+    .mw-carousel_nav button {
+        width: 40px;
+        height: 40px;
+        border: 1px solid #A9B7CC;
+        background: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #1E2A47;
+    }
+
+        .mw-carousel_nav button:hover {
+            background: #1E2A47;
+            color: white;
+        }
+/* UTILITY CLASSES END HERE*/
+
+
+
+
+/* VoteSection */
+.mw-vote {
+    padding: 21px 16px;
+}
+
+@media (max-width: 1024px) {
+    .mw-card {
+        flex: 0 0 calc((100% - 16px) / 2); /* 2 cards */
+    }
+}
+
+@media (max-width: 600px) {
+    .mw-card {
+        flex: 0 0 100%; /* 1 card */
+    }
+}
+
+/* Container */
+.mw-vote__container {
+    max-width: 1280px;
+    margin: 0 auto;
+    background-color: #E6ECF5;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Desktop layout */
+@media (min-width: 768px) {
+    .mw-vote__container {
+        flex-direction: row;
+    }
+}
+
+/* Content */
+.mw-vote__content {
+    flex: 1;
+    padding: 21px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+@media (min-width: 768px) {
+    .mw-vote__content {
+        padding: 55px;
+    }
+}
+
+/* Title */
+.mw-vote__title {
+    color: #1E2A47;
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -2px;
+    margin-bottom: 13px;
+}
+
+@media (min-width: 768px) {
+    .mw-vote__title {
+        font-size: 48px;
+    }
+}
+
+/* Description */
+.mw-vote__description {
+    color: #4A5C7A;
+    font-size: 16px;
+    line-height: 26px;
+    max-width: 400px;
+}
+
+/* Image Wrapper */
+.mw-vote__image-wrapper {
+    width: 100%;
+    height: 300px;
+    position: relative;
+}
+
+@media (min-width: 768px) {
+    .mw-vote__image-wrapper {
+        width: 400px;
+        height: auto;
+    }
+}
+
+/* Image */
+.mw-vote__image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* ---End VoteSection---  */
+
+/* How To Section*/
+
+/* Section */
+.mw-how {
+    padding: 21px 16px;
+}
+
+@media (min-width: 768px) {
+    .mw-how {
+        padding: 34px;
+    }
+}
+
+/* Container */
+.mw-how__container {
+    max-width: 1280px;
+    margin: 0 auto;
+}
+
+/* Title */
+.mw-how__title {
+    text-align: center;
+    color: #1E2A47;
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    margin-bottom: 34px;
+}
+
+@media (min-width: 768px) {
+    .mw-how__title {
+        font-size: 28px;
+    }
+}
+
+/* Steps Grid */
+.mw-how__steps {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 34px;
+    margin-bottom: 34px;
+}
+
+@media (min-width: 768px) {
+    .mw-how__steps {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* Step */
+.mw-how__step {
+    text-align: center;
+}
+
+/* Step Number */
+.mw-how__step-number {
+    width: 48px;
+    height: 48px;
+    background-color: #1E2A47;
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 800;
+    margin: 0 auto 13px;
+}
+
+/* Step Title */
+.mw-how__step-title {
+    color: #1E2A47;
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+/* Step Description */
+.mw-how__step-desc {
+    color: #4A5C7A;
+    font-size: 14px;
+    line-height: 22px;
+    max-width: 320px;
+    margin: 0 auto;
+}
+
+/* Stats Bar */
+.mw-how__stats {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 21px;
+    padding: 13px 0;
+    border-top: 1px solid rgba(169, 183, 204, 0.4);
+    border-bottom: 1px solid rgba(169, 183, 204, 0.4);
+}
+
+/* Stat Item */
+.mw-how__stat {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #1E2A47;
+}
+
+/* Icon */
+.mw-how__icon {
+    width: 16px;
+    height: 16px;
+    stroke: currentColor;
+    fill: none;
+}
+
+/* Strong text */
+.mw-how__stat-strong {
+    font-weight: 700;
+}
+
+/* Secondary text */
+.mw-how__stat-text {
+    color: #4A5C7A;
+}
+
+/* ---End How To Section---- */
+
+
+/*Vote Trending Section*/
+
+/* Section */
+/*.mw-carousel {
+    padding: 0 16px 55px;
+}*/
+
+/* Hide scrollbar */
+/*.mw-carousel__track::-webkit-scrollbar {
+    display: none;
+}*/
+
+/* Fix Bootstrap row inside carousel */
+/*.mw-carousel__track .row {
+    margin: 0;
+}*/
+
+
+/* Header */
+/*.mw-carousel__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 34px;
+}*/
+
+/* Tabs */
+/*.mw-carousel__tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.mw-carousel__tab {
+    padding: 8px 21px;
+    font-size: 13px;
+    font-weight: 600;
+    border: 1px solid #A9B7CC;
+    background: white;
+    color: #1E2A47;
+    cursor: pointer;
+}
+
+.mw-carousel__tab--active {
+    background: #1E2A47;
+    color: white;
+}*/
+
+/* Nav */
+
+/*.mw-carousel__btn {
+    width: 40px;
+    height: 40px;
+    border: 1px solid #A9B7CC;
+    background: white;
+    cursor: pointer;
+}*/
+
+/* Track */
+/*.mw-carousel__track {
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+}*/
+
+/* Hide scrollbar */
+/*.mw-carousel__track::-webkit-scrollbar {
+        display: none;
+    }*/
+
+/* Card */
+/*.mw-card {
+    width: 100%;
+}*/
+
+/* Image */
+/*.mw-card__image-wrapper {
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    position: relative;
+}
+
+.mw-card__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.mw-card__badge {
+    position: absolute;
+    top: 13px;
+    left: 13px;
+    background: #1E2A47;
+    color: white;
+    font-size: 10px;
+    padding: 5px 13px;
+}*/
+
+/* Content */
+/*.mw-card__content {
+    padding: 21px;
+}
+
+.mw-card__title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1E2A47;
+}
+
+.mw-card__subtitle {
+    font-size: 13px;
+    color: #4A5C7A;
+}*/
+
+
+/* Section */
+.mw-carousel {
+    padding: 0 16px 55px;
+}
+
+.mw-carousel__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 34px;
+}
+
+/* Tabs */
+.mw-carousel__tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.mw-carousel__tab {
+    padding: 8px 21px;
+    font-size: 13px;
+    font-weight: 600;
+    border: 1px solid #A9B7CC;
+    background: white;
+    color: #1E2A47;
+    cursor: pointer;
+}
+
+.mw-carousel__tab--active {
+    background: #1E2A47;
+    color: white;
+}
+
+/* Nav */
+
+.mw-carousel__btn {
+    width: 40px;
+    height: 40px;
+    border: 1px solid #A9B7CC;
+    background: white;
+    cursor: pointer;
+}
+
+/* Colors */
+.mw-card__colors {
+    display: flex;
+    gap: 5px;
+    margin: 10px 0;
+}
+
+.mw-card__color {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 1px solid #A9B7CC;
+}
+
+/*Buttons*/
+.mw-card__primary {
+    width: 100%;
+    padding: 10px;
+    background: #1E2A47;
+    color: white;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+}
+
+    .mw-card__primary:hover {
+        background-color: #0B1A33;
+    }
+
+.mw-card__secondary {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #A9B7CC;
+    margin-top: 8px;
+}
+
+    .mw-card__secondary:hover {
+        background: #E6ECF5;
+    }
+
+/* Fix Bootstrap row inside carousel */
+
+/* Card takes full column width */
+.mw-card {
+    width: 100%;
+}
+
+/* Image (keeps SAME ratio always) */
+.mw-card__image-wrapper {
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    position: relative;
+}
+
+.mw-card__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Content */
+.mw-card__content {
+    padding: 21px;
+}
+
+/* Recently Finised Section */
+.mw-finished {
+    background: #E6ECF5;
+    padding: 55px 0;
+}
+
+.mw-finished__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.mw-finished__title {
+    font-size: 28px;
+    font-weight: 800;
+    color: #1E2A47;
+}
+
+.mw-finished__desc {
+    color: #4A5C7A;
+    font-size: 14px;
+    margin-bottom: 34px;
+}
+
+.mw-finished-card__badge {
+    position: absolute;
+    top: 13px;
+    left: 13px;
+    font-size: 10px;
+    padding: 5px 13px;
+    color: white;
+    font-weight: 700;
+}
+
+.mw-finished-card__badge--winner {
+    background: #1E2A47;
+}
+
+.mw-finished-card__badge--production {
+    background: #22c55e;
+}
+
+
+.mw-finished-card__content {
+    padding: 21px;
+}
+
+.mw-finished-card__title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1E2A47;
+}
+
+.mw-finished-card__subtitle {
+    font-size: 13px;
+    color: #4A5C7A;
+    margin-bottom: 13px;
+}
+
+.mw-finished-card__btn {
+    width: 100%;
+    padding: 10px;
+    background: #1E2A47;
+    color: white;
+    font-weight: 700;
+}
+
+/*
+.mw-finished__container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 16px;
+}
+
+.mw-finished__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.mw-finished__title {
+    font-size: 28px;
+    font-weight: 800;
+    color: #1E2A47;
+}
+
+.mw-finished__desc {
+    color: #4A5C7A;
+    font-size: 14px;
+    margin-bottom: 34px;
+}
+
+.mw-finished-card {
+    flex: 0 0 calc((100% - 32px) / 3);
+    max-width: calc((100% - 32px) / 3);
+    background: white;
+    border: 1px solid rgba(169,183,204,0.3);
+}
+
+.mw-finished-card__image-wrapper {
+    width: 100%;
+    aspect-ratio: 4 / 3;*/ /* DIFFERENT from previous */
+/*position: relative;
+    overflow: hidden;
+    background: #E6ECF5;
+}
+
+.mw-finished-card__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+
+.mw-finished-card__badge {
+    position: absolute;
+    top: 13px;
+    left: 13px;
+    font-size: 10px;
+    padding: 5px 13px;
+    color: white;
+    font-weight: 700;
+}
+
+.mw-finished-card__badge--winner {
+    background: #1E2A47;
+}
+
+.mw-finished-card__badge--production {
+    background: #22c55e;
+}
+
+
+.mw-finished-card__content {
+    padding: 21px;
+}
+
+.mw-finished-card__title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1E2A47;
+}
+
+.mw-finished-card__subtitle {
+    font-size: 13px;
+    color: #4A5C7A;
+    margin-bottom: 13px;
+}
+
+.mw-finished-card__btn {
+    width: 100%;
+    padding: 10px;
+    background: #1E2A47;
+    color: white;
+    font-weight: 700;
+}*/
+
+
+/* Section */
+.mw-finished {
+    padding: 60px 0;
+}
+
+/* Track */
+.mw-carousel__track {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-behavior: smooth;
+}
+
+    /* Hide scrollbar */
+    .mw-carousel__track::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Fix Bootstrap row inside carousel */
+    .mw-carousel__track .row {
+        margin: 0;
+    }
+
+    /* Control spacing */
+    .mw-carousel__track [class*="col-"] {
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+
+/* Card */
+.mw-finished-card {
+    width: 100%;
+}
+
+/* Image (same size always) */
+.mw-finished-card__image-wrapper {
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    position: relative;
+}
+
+.mw-finished-card__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Content */
+.mw-finished-card__content {
+    padding: 16px;
+}
+
+
+
+
+/* ─── GUEST BANNER ──────────────────────────────────────────── */
+.mw-vote-guest-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 13px;
+    background: #E6ECF5;
+    border: 1px solid rgba(169, 183, 204, 0.4);
+    padding: 13px 21px;
+    margin-bottom: 21px;
+}
+
+.mw-vote-guest-banner__text {
+    color: #1E2A47;
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.mw-vote-guest-banner__btn {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    padding: 8px 16px;
+    background: #1E2A47;
+    color: white;
+    text-decoration: none;
+    transition: background 0.2s;
+    white-space: nowrap;
+}
+
+    .mw-vote-guest-banner__btn:hover {
+        background: #0B1A33;
+        color: white;
+    }
+
+
+/* ─── VOTED BUTTON STATE ────────────────────────────────────── */
+.mw-card__primary--voted {
+    background: #2D9C5A;
+    cursor: not-allowed;
+    opacity: 0.9;
+}
+
+.mw-card__secondary--ordered {
+    opacity: 0.9;
+    cursor: not-allowed;
+}
+
+/* ─── COLOR CHIP SELECTED ───────────────────────────────────── */
+.mw-card__color {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform 0.2s, border-color 0.2s;
+    display: inline-block;
+}
+
+    .mw-card__color:hover {
+        transform: scale(1.15);
+    }
+
+.mw-card__color--selected {
+    border-color: #1E2A47;
+    transform: scale(1.2);
+    box-shadow: 0 0 0 2px white, 0 0 0 4px #1E2A47;
+}
+
+/* ─── TOAST ─────────────────────────────────────────────────── */
+.mw-toast {
+    position: fixed;
+    bottom: 34px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 13px 21px;
+    font-size: 14px;
+    font-weight: 600;
+    z-index: 99;
+    border-radius: 2px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    animation: toast-in 0.3s ease;
+    white-space: nowrap;
+}
+
+.mw-toast--success {
+    background: #1E2A47;
+    color: white;
+}
+
+.mw-toast--error {
+    background: #C44545;
+    color: white;
+}
+
+@keyframes toast-in {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}

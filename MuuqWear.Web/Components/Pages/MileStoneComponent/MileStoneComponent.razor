@@ -1,0 +1,111 @@
+﻿@using MuuqWear.Application.Services.AffiliateService
+@inject IAffiliateService AffiliateService
+
+
+<div class="milestones-container">
+
+    @if (isLoading)
+    {
+        <p>Loading milestones...</p>
+    }
+    else if (affiliateInfo != null && mileStones != null)
+    {
+        <!-- Header with current XP -->
+        <p class="milestones-header">
+            Earn one-time cash bonuses at major XP milestones. Your current XP: @affiliateInfo.ItemsSold
+        </p>
+
+        <!-- Milestone cards -->
+        <div class="milestone-cards">
+            @foreach (var milestone in mileStones)
+            {
+                <div class="milestone-card @(milestone.IsAchieved ? "achieved" : "not-achieved")">
+
+                    <!-- Left: Icon + Text -->
+                    <div class="milestone-left">
+                        <div class="milestone-icon @(milestone.IsAchieved ? "achieved" : "not-achieved")">
+                            @if (milestone.IsAchieved)
+                            {
+                                <!-- Checkmark SVG -->
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M20 6 9 17l-5-5"></path>
+                                </svg>
+                            }
+                            else
+                            {
+                                <!-- Trophy SVG -->
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
+                                    <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
+                                    <path d="M4 22h16"></path>
+                                    <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path>
+                                    <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path>
+                                    <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path>
+                                </svg>
+                            }
+                        </div>
+
+                        <div>
+                            <p class="milestone-title">@milestone.Title</p>
+                            <p class="milestone-status">@milestone.StatusText</p>
+                        </div>
+                    </div>
+
+                    <!-- Right: Bonus amount -->
+                    <p class="milestone-bonus @(milestone.IsAchieved ? "achieved" : "not-achieved")">
+                        $@milestone.BonusAmount.ToString("N2")
+                    </p>
+
+                </div>
+            }
+        </div>
+        <!-- Tier Benefits Section -->
+        <div class="tier-benefits-section">
+            <p class="tier-benefits-title">TIER BENEFITS</p>
+
+            <div class="tier-cards-grid">
+
+                <!-- Bronze Tier -->
+                <div class="tier-card @(affiliateInfo?.Tier?.ToLower() == "bronze" ? "active" : "inactive")">
+                    <svg class="tier-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="rgb(205, 127, 50)" stroke-width="2">
+                        <path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"></path>
+                        <circle cx="12" cy="8" r="6"></circle>
+                    </svg>
+                    <p class="tier-name">Bronze</p>
+                    <p class="tier-detail">50+ items</p>
+                    <p class="tier-detail">2.5% commission</p>
+                    <p class="tier-detail">5% referral discount</p>
+                </div>
+
+                <!-- Silver Tier -->
+                <div class="tier-card @(affiliateInfo?.Tier?.ToLower() == "silver" ? "active" : "inactive")">
+                    <svg class="tier-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="rgb(169, 183, 204)" stroke-width="2">
+                        <path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"></path>
+                        <circle cx="12" cy="8" r="6"></circle>
+                    </svg>
+                    <p class="tier-name">Silver</p>
+                    <p class="tier-detail">150+ items</p>
+                    <p class="tier-detail">5% commission</p>
+                    <p class="tier-detail">10% referral discount</p>
+                </div>
+
+                <!-- Gold Tier -->
+                <div class="tier-card @(affiliateInfo?.Tier?.ToLower() == "gold" ? "active" : "inactive")">
+                    <svg class="tier-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="rgb(212, 168, 67)" stroke-width="2">
+                        <path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"></path>
+                        <circle cx="12" cy="8" r="6"></circle>
+                    </svg>
+                    <p class="tier-name">Gold</p>
+                    <p class="tier-detail">500+ items</p>
+                    <p class="tier-detail">10% commission</p>
+                    <p class="tier-detail">15% referral discount</p>
+                </div>
+
+            </div>
+        </div>
+    }
+    else
+    {
+        <p>Unable to load milestones</p>
+    }
+</div>

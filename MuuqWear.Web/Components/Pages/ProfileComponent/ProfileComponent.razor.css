@@ -1,0 +1,1137 @@
+﻿.mw-profile {
+    max-width: 1280px;
+}
+
+.mw-profile-mobile-toggle {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: #FFFFFF;
+    border: 1px solid #E5E7EB;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1E2A47;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+    .mw-profile-mobile-toggle:hover {
+        border-color: #D1D5DB;
+        background: #F9FAFB;
+    }
+
+/* Mobile Menu Container */
+.mw-mobile-menu {
+    background: #FFFFFF;
+    border: 1px solid #E5E7EB;
+    border-radius: 6px;
+    padding: 20px;
+    animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+/* User Info in Mobile Menu */
+.mw-mobile-menu__user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 16px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid #E5E7EB;
+}
+
+    .mw-mobile-menu__user .mw-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: #1E2A47;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        font-weight: 700;
+    }
+
+    .mw-mobile-menu__user .mw-user-name {
+        font-size: 16px;
+        font-weight: 700;
+        color: #1E2A47;
+        margin: 0;
+    }
+
+    .mw-mobile-menu__user .mw-user-meta {
+        font-size: 12px;
+        color: #6B7280;
+        margin: 0;
+    }
+
+/* Mobile Nav Items */
+.mw-mobile-menu__nav {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 16px;
+}
+
+.mw-mobile-nav-item {
+    width: 100%;
+    text-align: left;
+    padding: 12px 16px;
+    background: transparent;
+    border: none;
+    font-size: 14px;
+    font-weight: 500;
+    color: #4A5C7A;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+    .mw-mobile-nav-item:hover {
+        background: #F3F4F6;
+        color: #1E2A47;
+    }
+
+    .mw-mobile-nav-item.active {
+        background: #1E2A47;
+        color: #FFFFFF;
+        font-weight: 600;
+    }
+
+/* Affiliate Status in Mobile Menu */
+.mw-mobile-menu__affiliate {
+    padding: 16px;
+    background: #F9FAFB;
+    border-radius: 4px;
+    margin-bottom: 16px;
+}
+
+    .mw-mobile-menu__affiliate .mw-affiliate-label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 700;
+        color: #6B7280;
+        margin: 0 0 4px 0;
+    }
+
+    .mw-mobile-menu__affiliate .mw-affiliate-value {
+        font-size: 14px;
+        font-weight: 700;
+        color: #1E2A47;
+        margin: 0;
+    }
+
+/* Sign Out Button in Mobile Menu */
+.mw-mobile-menu__signout {
+    width: 100%;
+    padding: 12px;
+    background: transparent;
+    border: 1px solid #DC2626;
+    color: #DC2626;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+    .mw-mobile-menu__signout:hover {
+        background: #DC2626;
+        color: #FFFFFF;
+    }
+
+
+.mw-avatar {
+    width: 55px;
+    height: 55px;
+    background: #1E2A47;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.mw-user-name {
+    font-weight: 700;
+    color: #1E2A47;
+}
+
+.mw-user-meta {
+    font-size: 12px;
+    color: #4A5C7A;
+}
+
+.mw-profile-nav {
+    margin: 20px 0;
+}
+
+.mw-nav-item {
+    width: 100%;
+    padding: 10px;
+    text-align: right;
+    background: none;
+    border: none;
+    color: #4A5C7A;
+    font-weight: 600;
+}
+
+    .mw-nav-item.active {
+        background: #F4F6F9;
+        color: #1E2A47;
+        font-weight: 700;
+    }
+
+.mw-affiliate {
+    border: 1px solid rgba(169,183,204,0.4);
+    padding: 12px;
+    text-align: right;
+    margin-bottom: 10px;
+}
+
+.mw-affiliate-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: #4A5C7A;
+}
+
+.mw-affiliate-value {
+    font-weight: 700;
+}
+
+.mw-signout {
+    width: 100%;
+    padding: 10px;
+    color: #C44545;
+    border: none;
+    background: transparent;
+}
+
+.mw-stat-card {
+    border: 1px solid rgba(169,183,204,0.4);
+    padding: 16px;
+}
+
+.mw-stat-value {
+    font-size: 20px;
+    font-weight: 300;
+    color: #1E2A47;
+}
+
+.mw-stat-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: #4A5C7A;
+}
+
+.mw-orders {
+    border: 1px solid rgba(169,183,204,0.4);
+    padding: 20px;
+}
+
+.mw-section-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    margin-bottom: 15px;
+}
+
+.mw-order-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(169,183,204,0.1);
+}
+
+.mw-order-id {
+    font-weight: 600;
+}
+
+.mw-order-meta {
+    font-size: 12px;
+    color: #4A5C7A;
+}
+
+.mw-order-price {
+    font-weight: 600;
+}
+
+.mw-order-status {
+    font-size: 12px;
+    font-weight: 600;
+}
+
+    .mw-order-status.delivered {
+        color: green;
+    }
+
+    .mw-order-status.transit {
+        color: #D4A843;
+    }
+
+/* Affiliate Section in Profile */
+.affiliate-section {
+    margin-top: 32px;
+}
+
+/* Affiliate Prompt Card */
+.affiliate-prompt {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 32px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.prompt-icon {
+    font-size: 48px;
+}
+
+.prompt-content h3 {
+    color: white;
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.prompt-content p {
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 16px;
+}
+
+.btn-apply {
+    background: white;
+    color: #667eea;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+    .btn-apply:hover {
+        transform: translateY(-2px);
+    }
+
+/* Affiliate Status Card */
+.affiliate-status-card {
+    background: white;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+    .affiliate-status-card h3 {
+        color: #1E2A47;
+        font-size: 20px;
+        font-weight: 600;
+        margin-bottom: 20px;
+    }
+
+.status-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+    .status-row .label {
+        color: #6B7280;
+        font-size: 14px;
+    }
+
+.status-badge {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.status-pending {
+    background: #FEF3C7;
+    color: #92400E;
+}
+
+.status-approved {
+    background: #D1FAE5;
+    color: #065F46;
+}
+
+.status-rejected {
+    background: #FEE2E2;
+    color: #991B1B;
+}
+
+.status-waitlisted {
+    background: #DBEAFE;
+    color: #1E40AF;
+}
+
+/* Affiliate Stats */
+.affiliate-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 20px;
+}
+
+.stat-item {
+    background: #F9FAFB;
+    padding: 16px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.stat-label {
+    display: block;
+    color: #6B7280;
+    font-size: 12px;
+    margin-bottom: 8px;
+}
+
+.stat-value {
+    display: block;
+    color: #1E2A47;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.tier-bronze {
+    color: #CD7F32;
+}
+
+.tier-silver {
+    color: #C0C0C0;
+}
+
+.tier-gold {
+    color: #FFD700;
+}
+
+/* Status Messages */
+.pending-message,
+.rejected-message,
+.waitlist-message {
+    background: #F9FAFB;
+    padding: 16px;
+    border-radius: 8px;
+    margin-top: 16px;
+}
+
+.pending-message {
+    border-left: 4px solid #F59E0B;
+}
+
+.rejected-message {
+    border-left: 4px solid #EF4444;
+}
+
+.waitlist-message {
+    border-left: 4px solid #3B82F6;
+}
+
+    .pending-message p,
+    .rejected-message p,
+    .waitlist-message p {
+        color: #374151;
+        margin: 0;
+    }
+
+.submitted-date {
+    color: #6B7280;
+    font-size: 12px;
+    margin-top: 8px;
+}
+
+@media (max-width: 768px) {
+    .affiliate-prompt {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .affiliate-stats {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+/* Affiliate Dashboard Styles */
+.affiliate-dashboard {
+    padding: 21px 0;
+}
+
+/* Affiliate Link Section */
+.affiliate-link-section {
+    background: #F4F6F9;
+    border: 1px solid rgba(169, 183, 204, 0.4);
+    padding: 21px;
+    margin-bottom: 34px;
+}
+
+.section-label {
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: #4A5C7A;
+    margin-bottom: 13px;
+}
+
+.link-container {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.link-display {
+    flex: 1;
+    min-width: 200px;
+    background: white;
+    padding: 10px 13px;
+    color: #4A5C7A;
+    font-size: 13px;
+    font-weight: 500;
+    border: 1px solid rgba(169, 183, 204, 0.4);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.copy-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #1E2A47;
+    color: white;
+    padding: 10px 21px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    flex-shrink: 0;
+}
+
+    .copy-btn:hover {
+        background: #0B1A33;
+    }
+
+.success-message {
+    color: #22C55E;
+    font-size: 13px;
+    font-weight: 600;
+    margin-top: 8px;
+}
+
+/* Stats Grid */
+.affiliate-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 13px;
+}
+
+@media (min-width: 768px) {
+    .affiliate-stats-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+.stat-card {
+    background: white;
+    border: 1px solid rgba(169, 183, 204, 0.4);
+    padding: 16px;
+    text-align: center;
+}
+
+.stat-icon {
+    color: #A9B7CC;
+    margin-bottom: 8px;
+}
+
+.stat-value {
+    color: #1E2A47;
+    font-size: 20px;
+    font-weight: 300;
+    letter-spacing: -0.5px;
+    margin: 0;
+}
+
+.stat-label {
+    color: #4A5C7A;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin: 5px 0 0 0;
+}
+
+.error-message {
+    background: #FEE2E2;
+    border: 1px solid #FCA5A5;
+    color: #991B1B;
+    padding: 13px;
+    margin-bottom: 13px;
+    font-size: 14px;
+}
+
+    .error-message button {
+        margin-top: 8px;
+    }
+
+
+/* Complete Affiliate Dashboard */
+.affiliate-dashboard-complete {
+    padding: 34px 0;
+}
+
+/* Dashboard Header */
+.affiliate-dashboard-header {
+    display: flex;
+    flex-direction: column;
+    gap: 21px;
+    margin-bottom: 34px;
+}
+
+@media (min-width: 768px) {
+    .affiliate-dashboard-header {
+        flex-direction: row;
+        align-items: start;
+        justify-between;
+    }
+}
+
+/* Header Left: User Info */
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+}
+
+.user-avatar {
+    width: 55px;
+    height: 55px;
+    background: #1E2A47;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.user-name {
+    color: #1E2A47;
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0 0 3px 0;
+}
+
+.member-since {
+    color: #4A5C7A;
+    font-size: 12px;
+    margin: 0;
+}
+
+/* Header Center: Tier + Commission Info */
+.header-center {
+    flex: 1;
+}
+
+.tier-badge-row {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    margin-bottom: 8px;
+}
+
+.tier-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 13px;
+    border: 1px solid #A9B7CC;
+    color: #1E2A47;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.tier-star {
+    color: #D4A843;
+}
+
+.active-status {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #22C55E;
+}
+
+.commission-info {
+    color: #4A5C7A;
+    font-size: 13px;
+    margin: 0;
+}
+
+/* Header Right: Total Earnings */
+.header-right {
+    text-align: right;
+}
+
+.total-earnings-amount {
+    color: #1E2A47;
+    font-size: 32px;
+    font-weight: 300;
+    letter-spacing: -1px;
+    font-family: 'Playfair Display', serif;
+    margin: 0 0 5px 0;
+}
+
+.total-earnings-label {
+    color: #4A5C7A;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin: 0;
+}
+
+/* Tab Navigation */
+.affiliate-tabs {
+    display: flex;
+    gap: 21px;
+    border-bottom: 1px solid rgba(169, 183, 204, 0.3);
+    margin-bottom: 34px;
+}
+
+.tab-button {
+    padding-bottom: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: #4A5C7A;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+    .tab-button:hover {
+        color: #1E2A47;
+    }
+
+    .tab-button.active {
+        border-bottom-color: #1E2A47;
+        color: #1E2A47;
+    }
+
+/* Dashboard Content */
+.dashboard-content {
+    display: flex;
+    flex-direction: column;
+    gap: 34px;
+}
+
+/* Progress Grid */
+.progress-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 21px;
+    margin-bottom: 34px;
+}
+
+@media (min-width: 768px) {
+    .progress-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.progress-card {
+    border: 1px solid rgba(169, 183, 204, 0.4);
+    padding: 21px;
+}
+
+/* Tier Progression */
+.tier-progress-content {
+    display: flex;
+    align-items: center;
+    gap: 21px;
+}
+
+.circular-progress {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    flex-shrink: 0;
+}
+
+.progress-ring {
+    width: 100%;
+    height: 100%;
+}
+
+.progress-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.progress-value {
+    color: #1E2A47;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.progress-label {
+    color: #4A5C7A;
+    font-size: 10px;
+}
+
+.tier-info {
+    flex: 1;
+}
+
+.tier-text {
+    color: #1E2A47;
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0 0 5px 0;
+}
+
+.tier-goal {
+    color: #4A5C7A;
+    font-size: 13px;
+    margin: 0 0 5px 0;
+}
+
+.tier-remaining {
+    color: #4A5C7A;
+    font-size: 12px;
+    margin: 0;
+}
+
+/* Commission Batch */
+.batch-progress {
+    margin-bottom: 13px;
+}
+
+.batch-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+
+.batch-current {
+    color: #1E2A47;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.batch-remaining {
+    color: #4A5C7A;
+    font-size: 13px;
+}
+
+.batch-bar {
+    width: 100%;
+    height: 8px;
+    background: #E6ECF5;
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.batch-fill {
+    height: 100%;
+    background: #1E2A47;
+    border-radius: 999px;
+    transition: width 0.3s;
+}
+
+.batch-info {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.batch-icon {
+    color: #D4A843;
+    flex-shrink: 0;
+}
+
+.batch-info p {
+    color: #4A5C7A;
+    font-size: 12px;
+    margin: 0;
+}
+
+/* Share Buttons */
+.share-buttons {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    margin-top: 13px;
+}
+
+.share-label {
+    font-size: 11px;
+    color: #4A5C7A;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.share-icon-btn {
+    width: 34px;
+    height: 34px;
+    border: 1px solid rgba(169, 183, 204, 0.4);
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #1E2A47;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+    .share-icon-btn:hover {
+        background: #1E2A47;
+        color: white;
+    }
+
+/* Stats Grid (4 boxes) */
+.stats-grid-4 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 13px;
+    margin-bottom: 34px;
+}
+
+@media (min-width: 768px) {
+    .stats-grid-4 {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+.stat-box {
+    border: 1px solid rgba(169, 183, 204, 0.4);
+    padding: 16px;
+}
+
+.stat-box-icon {
+    color: #A9B7CC;
+    margin-bottom: 8px;
+}
+
+.stat-box-value {
+    color: #1E2A47;
+    font-size: 20px;
+    font-weight: 300;
+    letter-spacing: -0.5px;
+    margin: 0;
+}
+
+.stat-box-label {
+    color: #4A5C7A;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin: 5px 0 0 0;
+}
+
+/* Performance Chart & Referrals */
+.performance-chart-card,
+.referrals-card {
+    border: 1px solid rgba(169, 183, 204, 0.4);
+    padding: 21px;
+    margin-bottom: 34px;
+}
+
+.chart-placeholder,
+.referrals-placeholder {
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #F4F6F9;
+    color: #4A5C7A;
+}
+
+/* Earnings & Payout */
+.earnings-payout-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 21px;
+}
+
+@media (min-width: 768px) {
+    .earnings-payout-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.earnings-card,
+.payout-card {
+    border: 1px solid rgba(169, 183, 204, 0.4);
+    padding: 21px;
+}
+
+.payout-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.earnings-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(169, 183, 204, 0.1);
+}
+
+    .earnings-row span:first-child {
+        color: #4A5C7A;
+        font-size: 13px;
+    }
+
+.earnings-value {
+    color: #1E2A47;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.payout-info {
+    color: #4A5C7A;
+    font-size: 13px;
+    margin-bottom: 13px;
+}
+
+.payout-btn {
+    width: 100%;
+    background: #1E2A47;
+    color: white;
+    padding: 13px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+    .payout-btn:hover {
+        background: #0B1A33;
+    }
+
+
+/* =============================================
+   RECENT REFERRALS SECTION
+   ============================================= */
+
+/* Empty state message */
+.recent-referrals-empty {
+    font-size: 13px;
+    color: #4A5C7A;
+    padding: 20px 0;
+    text-align: center;
+}
+
+/* Table wrapper for overflow */
+.recent-referrals-table-wrapper {
+    overflow-x: auto;
+}
+
+/* Table styling */
+.recent-referrals-table {
+    width: 100%;
+    text-align: right;
+}
+
+    .recent-referrals-table thead tr {
+        border-bottom: 1px solid rgba(169, 183, 204, 0.2);
+    }
+
+    .recent-referrals-table th {
+        padding-bottom: 8px;
+        font-size: 11px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        font-weight: 700;
+        color: #4A5C7A;
+    }
+
+    .recent-referrals-table tbody tr {
+        border-bottom: 1px solid rgba(169, 183, 204, 0.1);
+    }
+
+    .recent-referrals-table td {
+        padding: 10px 0;
+        font-size: 13px;
+    }
+
+/* Column-specific styling */
+.recent-referrals-date {
+    color: #1E2A47;
+}
+
+.recent-referrals-customer {
+    color: #4A5C7A;
+}
+
+.recent-referrals-order-value {
+    color: #1E2A47;
+}
+
+.recent-referrals-commission {
+    color: #1E2A47;
+    font-weight: 600;
+}

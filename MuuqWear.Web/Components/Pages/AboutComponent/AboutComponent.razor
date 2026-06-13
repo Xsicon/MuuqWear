@@ -1,0 +1,120 @@
+﻿@page "/about"
+@rendermode InteractiveServer
+
+<PageTitle>About — Muuqwear</PageTitle>
+
+<div class="about">
+
+    <!-- Section 1: Hero (Step 2) -->
+    <!-- Section 1: Hero -->
+    <section class="about-hero">
+        <div class="about-hero__text">
+            <p class="about-eyebrow">Our Story</p>
+            <h1 class="about-hero__title">
+                The Origin<br />of Clarity
+            </h1>
+            <p class="about-hero__lede">
+                Founded in the belief that luxury lives in intention, not excess.
+                Muuqwear crafts garments that honor the space between you and the world.
+            </p>
+        </div>
+        <div class="about-hero__media">
+            <img src="https://images.unsplash.com/photo-1744502672203-98316831f121?w=900&h=600&fit=crop"
+                 alt="Atelier" />
+        </div>
+    </section>
+
+    <!-- Section 2: Pull quote -->
+    <section class="about-quote">
+        <div class="about-quote__inner">
+            <p class="about-quote__text">
+                &ldquo;We believe clothing is a veil between you and the world
+                — a second skin that should protect, not perform.&rdquo;
+            </p>
+        </div>
+    </section>
+
+    <!-- Section 3: Material Obsession -->
+    <section class="about-craft">
+        <div class="about-craft__inner">
+
+            <div class="about-craft__media">
+                <img src="https://images.unsplash.com/photo-1584969404909-266c201ad383?w=600&h=750&fit=crop"
+                     alt="Fabric texture" />
+            </div>
+
+            <div class="about-craft__text">
+                <p class="about-eyebrow">The Craft</p>
+                <h2 class="about-craft__title">Material Obsession</h2>
+                <p class="about-craft__body">
+                    Every textile in our collection is sourced from artisan mills in
+                    Portugal, Japan, and Italy. We test over 150 fabric samples each
+                    season — only the top 8&ndash;10 make it to production.
+                </p>
+                <p class="about-craft__body">
+                    Our proprietary AeroWeave technology combines hollow-core fibers
+                    with a DWR finish, creating fabrics that breathe like cotton but
+                    repel water like technical outerwear. The hand-feel is remarkably
+                    soft — a quality we never compromise on.
+                </p>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Section 4: Team grid -->
+    <section class="about-team">
+        <div class="about-team__inner">
+
+            <p class="about-eyebrow about-team__eyebrow">The People</p>
+            <h2 class="about-team__title">Behind the Veil</h2>
+
+            <div class="about-team__grid">
+                @foreach (var member in Team)
+                {
+                    <div class="about-team__card" @key="member.Name">
+                        <div class="about-team__photo">
+                            <img src="@member.ImageUrl" alt="@member.Name" loading="lazy" />
+                        </div>
+                        <div class="about-team__info">
+                            <h3 class="about-team__name">@member.Name</h3>
+                            <p class="about-team__role">@member.Role</p>
+                        </div>
+                    </div>
+                }
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Section 5: Closing quote -->
+    <section class="about-closing">
+        <div class="about-closing__inner">
+            <p class="about-closing__text">
+                &ldquo;The constraint is the freedom. When you limit yourself to the
+                Sapphire palette and natural silhouettes, you&rsquo;re forced to
+                innovate at the material level. That&rsquo;s where the magic happens.&rdquo;
+            </p>
+            <p class="about-closing__attribution">
+                &mdash; Amina Osman, Head of Textiles
+            </p>
+        </div>
+    </section>
+
+</div>
+
+@code {
+    private record TeamMember(string Name, string Role, string ImageUrl);
+
+    private List<TeamMember> Team => new()
+    {
+        new("Amina Osman", "Head of Textiles",
+            "https://images.unsplash.com/photo-1570410185342-ea1d50289ab4?w=300&h=300&fit=crop&crop=face"),
+        new("Luca Moretti", "Lead Pattern Engineer",
+            "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=300&fit=crop&crop=face"),
+        new("Yuki Tanaka", "Creative Director",
+            "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=300&h=300&fit=crop&crop=face"),
+        new("Marcus Chen", "Sustainability Lead",
+            "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300&h=300&fit=crop&crop=face"),
+    };
+}

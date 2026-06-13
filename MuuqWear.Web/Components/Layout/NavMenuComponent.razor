@@ -1,0 +1,904 @@
+﻿@rendermode InteractiveServer
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+@using Microsoft.AspNetCore.Components.Authorization
+@using MuuqWear.Application.Interfaces
+@using MuuqWear.Application.Services.CartService
+@using MuuqWear.Application.Services.ProductService
+@using MuuqWear.Application.Shared
+@using MuuqWear.Model.Cart
+@using MuuqWear.Model.Products
+@using MuuqWear.Application.Services.AuthService
+@inject CartStateService CartStateService
+@inject IProductService ProductService
+@inject AuthSessionService AuthSession
+@inject AuthenticationStateProvider AuthStateProvider
+@inject CustomAuthenticationStateProvider CustomAuthStateProvider
+@implements IDisposable
+@using MuuqWear.Application.Services.ProfileService
+@inject IProfileService ProfileService
+
+
+<div>
+
+    <header class="mw-header border-bottom" role="banner">
+        <div class="container">
+            <div class="d-flex align-items-center justify-content-between py-3">
+
+                <!-- LOGO -->
+                <a href="/" class="d-flex align-items-center text-decoration-none">
+                    <img src="/images/muuqwearlogo.png"
+                         alt="MuuqWear logo"
+                         class="mw-logo__img img-fluid" />
+                    <span class="mw-logo__text text-uppercase fw-bolder ms-2 d-none d-md-flex">
+                        MuuqWear
+                    </span>
+                </a>
+
+                <!-- RIGHT SIDE -->
+                <div class="d-flex align-items-center gap-3">
+
+                    <!-- DESKTOP NAV -->
+                    <nav class="mw-nav d-none d-md-flex gap-4">
+                        <NavLink class="mw-nav__link" href="/" Match="NavLinkMatch.All">Home</NavLink>
+                        <NavLink class="mw-nav__link" href="/shop/apparel">Apparel</NavLink>
+                        <NavLink class="mw-nav__link" href="/shop/accessories">Accessories</NavLink>
+                        <NavLink class="mw-nav__link" href="/community">Community</NavLink>
+                        <NavLink class="mw-nav__link" href="/journal">Journal</NavLink>
+                    </nav>
+
+                    <!-- ICONS -->
+                    <div class="mw-header__icons d-flex align-items-center gap-2">
+
+                        <button class="mw-icon-btn" aria-label="Search" @onclick="OpenSearch">
+                            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                                <circle cx="10" cy="10" r="7" stroke="#1E2B48" stroke-width="2" />
+                                <path d="M15 15L20 20" stroke="#1E2B48" stroke-width="2" />
+                            </svg>
+                        </button>
+
+                        <button class="mw-icon-btn position-relative"
+                                aria-label="Cart"
+                                @onclick="OpenCart">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path>
+                                <path d="M3 6h18"></path>
+                                <path d="M16 10a4 4 0 0 1-8 0"></path>
+                            </svg>
+                            @* badge  *@
+                            @if (CartStateService.Cart.TotalItems > 0)
+                            {
+                                <span class="mw-cart-badge">
+                                    @CartStateService.Cart.TotalItems
+                                </span>
+                            }
+                        </button>
+                        <div class="mw-profile-dropdown">
+
+                            <AuthorizeView>
+                                <Authorized>
+                                    @if (!isAdmin)
+                                    {
+                                        <button class="mw-icon-btn"
+                                                aria-label="Profile"
+                                                @onclick="ToggleProfile">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                                                <circle cx="12" cy="7" r="4"></circle>
+                                            </svg>
+                                        </button>
+                                        @if (isProfileOpen)
+                                        {
+                                            <div class="mw-profile-overlay" @onclick="CloseProfile"></div>
+                                            <div class="mw-profile-menu">
+                                                <div class="mw-profile-menu__header">
+                                                    <p class="mw-profile-menu__name">@userName</p>
+                                                    <p class="mw-profile-menu__email">@userEmail</p>
+                                                </div>
+                                                <div class="mw-profile-menu__divider"></div>
+                                                <a href="/profile" class="mw-profile-menu__item" @onclick="CloseProfile">
+                                                    <span>My Orders</span>
+                                                </a>
+                                                <a href="/settings" class="mw-profile-menu__item" @onclick="CloseProfile">
+                                                    <span>Settings</span>
+                                                </a>
+                                                <div class="mw-profile-menu__divider"></div>
+                                                <button class="mw-profile-menu__item mw-profile-menu__signout"
+                                                        @onclick="HandleSignOut">
+                                                    <span>Sign Out</span>
+                                                </button>
+                                            </div>
+                                        }
+                                    }
+                                </Authorized>
+                                <NotAuthorized>
+                                    <a href="/login" class="mw-signin-btn">Sign In</a>
+                                </NotAuthorized>
+                            </AuthorizeView>
+                        </div>
+
+                        <button class="mw-icon-btn" aria-label="Location">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                        </button>
+
+                    </div>
+
+                    <!-- HAMBURGER -->
+                    <button class="mw-icon-btn mw-hamburger d-flex d-md-none"
+                            aria-label="Toggle navigation"
+                            aria-expanded="@isMenuOpen"
+                            @onclick="ToggleMenu">
+                        @if (isMenuOpen)
+                        {
+                            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                                <path d="M5 5L17 17" stroke="#1E2B48" stroke-width="2" stroke-linecap="round" />
+                                <path d="M17 5L5 17" stroke="#1E2B48" stroke-width="2" stroke-linecap="round" />
+                            </svg>
+                        }
+                        else
+                        {
+                            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                                <path d="M3 6H19" stroke="#1E2B48" stroke-width="2" stroke-linecap="round" />
+                                <path d="M3 11H19" stroke="#1E2B48" stroke-width="2" stroke-linecap="round" />
+                                <path d="M3 16H19" stroke="#1E2B48" stroke-width="2" stroke-linecap="round" />
+                            </svg>
+                        }
+                    </button>
+
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Search Panel-->
+    <!-- Search Panel-->
+    <div class="mw-search-overlay @(isSearchOpen ? "open" : "")"
+         @onclick="CloseSearch">
+
+        <!-- PANEL -->
+        <div class="mw-search-panel" @onclick:stopPropagation="true">
+
+            <!-- CLOSE BUTTON -->
+            <button class="mw-search-close" @onclick="CloseSearch">
+                ✕
+            </button>
+
+            <!-- CONTENT -->
+            <div class="mw-search-content container">
+
+                <!-- INPUT ROW -->
+                <div class="row">
+                    <div class="col-12 position-relative">
+                        <input class="mw-search-input"
+                               @ref="searchInputRef"
+                               placeholder="Search for 'Hoodie', 'Sapphire'..."
+                               value="@searchQuery"
+                               @oninput="HandleSearchInput"
+                               @onkeydown="HandleSearchKeyDown" />
+
+                        @* clear button shows when typing  *@
+                        @if (!string.IsNullOrEmpty(searchQuery))
+                        {
+                            <button class="mw-search-clear" @onclick="ClearSearch">
+                                ✕
+                            </button>
+                        }
+                    </div>
+                </div>
+
+                <!-- BODY -->
+                @if (!hasSearched || string.IsNullOrEmpty(searchQuery))
+                {
+                    <!-- EMPTY STATE → show tags + popular -->
+                    <div class="row mt-4 justify-content-center text-center">
+
+                        <!-- TAGS -->
+                        <div class="col-12 col-md-6">
+                            <div class="mw-search-tags justify-content-center">
+                                <span @onclick='() => SearchByTag("New Arrivals")'>
+                                    New Arrivals
+                                </span>
+                                <span @onclick='() => SearchByTag("Hoodies")'>
+                                    Hoodies
+                                </span>
+                                <span @onclick='() => SearchByTag("Accessories")'>
+                                    Accessories
+                                </span>
+                                <span @onclick='() => SearchByTag("Sale")'>
+                                    Sale
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- POPULAR SEARCHES -->
+                        <div class="row mt-5">
+                            <div class="col-12 col-md-4 ms-md-auto text-md-end text-start">
+                                <p class="mw-search-label">POPULAR SEARCHES</p>
+                                <ul class="mw-search-list">
+                                    <li @onclick='() => SearchByTag("Sapphire Hoodie")'>
+                                        Sapphire Hoodie
+                                    </li>
+                                    <li @onclick='() => SearchByTag("Cargo Pants")'>
+                                        Cargo Pants
+                                    </li>
+                                    <li @onclick='() => SearchByTag("Veil Crossbody")'>
+                                        Veil Crossbody
+                                    </li>
+                                    <li @onclick='() => SearchByTag("Tech Jacket")'>
+                                        Tech Jacket
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+
+                    </div>
+                }
+                else
+                {
+                    <!-- RESULTS STATE → show products -->
+                    <div class="row mt-4">
+
+                        <div class="col-12">
+                            <p class="mw-search-label mb-3">
+                                @if (isSearching)
+                                {
+                                    <span>SEARCHING...</span>
+                                }
+                                else
+                                {
+                                    <span>RESULTS (@searchResults.Count)</span>
+                                }
+                            </p>
+                        </div>
+
+                        @if (isSearching)
+                        {
+                            <!-- LOADING SKELETONS -->
+                            <div class="mw-search-results">
+                                @for (int i = 0; i < 4; i++)
+                                {
+                                    <div class="mw-search-result-skeleton"></div>
+                                }
+                            </div>
+                        }
+                        else if (!searchResults.Any())
+                        {
+                            <!-- NO RESULTS -->
+                            <div class="col-12 text-center py-4">
+                                <p class="text-muted">
+                                    No products found for
+                                    <strong>"@searchQuery"</strong>
+                                </p>
+                                <button class="mw-link-btn"
+                                        @onclick="ClearSearch">
+                                    Clear search
+                                </button>
+                            </div>
+                        }
+                        else
+                        {
+                            <!-- PRODUCT RESULTS -->
+                            <div class="mw-search-results">
+                                @foreach (var product in searchResults)
+                                {
+                                    <a href="/productdetail/@product.Id"
+                                       class="mw-search-result"
+                                       @onclick="CloseSearch">
+
+                                        <!-- IMAGE -->
+                                        <div class="mw-search-result__img">
+                                            <img src="@product.ImageUrl"
+                                                 loading="lazy"
+                                                 alt="@product.Name" />
+                                        </div>
+
+                                        <!-- INFO -->
+                                        <div class="mw-search-result__info">
+                                            <p class="mw-search-result__name">
+                                                @product.Name
+                                            </p>
+                                            <p class="mw-search-result__price">
+                                                $@product.Price.ToString("F2")
+                                            </p>
+                                        </div>
+
+                                    </a>
+                                }
+                            </div>
+
+                            <!-- VIEW ALL LINK -->
+                            <div class="col-12 text-center mt-3">
+                                <a href="/shop/apparel?search=@Uri.EscapeDataString(searchQuery)"
+                                   class="mw-search-viewall"
+                                   @onclick="CloseSearch">
+                                    View all results for "@searchQuery" →
+                                </a>
+                            </div>
+                        }
+
+                    </div>
+                }
+
+            </div>
+
+        </div>
+    </div>
+
+
+
+    <!-- OVERLAY — sibling to header, both inside the wrapper div -->
+    <div class="mw-mobile-nav d-md-none @(isMenuOpen ? "mw-mobile-nav--open" : "")"
+         @onclick="HandleOverlayClick">
+        <div class="mw-mobile-nav__panel" @onclick:stopPropagation="true">
+
+            <div class="mw-mobile-nav__header text-uppercase fw-bolder">
+                <span>Menu</span>
+                <button class="mw-mobile-nav__close" @onclick="CloseMenu" aria-label="Close menu">
+                    <svg width="18" height="18" viewBox="0 0 22 22" fill="none">
+                        <path d="M5 5L17 17" stroke="#1E2B48" stroke-width="2" stroke-linecap="round" />
+                        <path d="M17 5L5 17" stroke="#1E2B48" stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                </button>
+            </div>
+
+            <nav class="mw-mobile-nav__body text-uppercase">
+                <NavLink class="mw-mobile-nav__link p-2 border-bottom d-flex justify-content-between align-items-center" href="/" Match="NavLinkMatch.All" @onclick="CloseMenu">
+                    <span>Home</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1E2B48" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+                </NavLink>
+                <NavLink class="mw-mobile-nav__link p-2 border-bottom d-flex justify-content-between align-items-center" href="/shop/apparel" @onclick="CloseMenu">
+                    <span>Apparel</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1E2B48" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+                </NavLink>
+                <NavLink class="mw-mobile-nav__link p-2 border-bottom d-flex justify-content-between align-items-center" href="/shop/accessories" @onclick="CloseMenu">
+                    <span>Accessories</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1E2B48" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+                </NavLink>
+                <NavLink class="mw-mobile-nav__link p-2 border-bottom d-flex justify-content-between align-items-center" href="/community" @onclick="CloseMenu">
+                    <span>Community</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1E2B48" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+                </NavLink>
+                <NavLink class="mw-mobile-nav__link p-2 border-bottom d-flex justify-content-between align-items-center" href="/journal" @onclick="CloseMenu">
+                    <span>Journal</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1E2B48" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+                </NavLink>
+            </nav>
+
+        </div>
+    </div>
+
+
+    <div class="mw-cart-overlay @(isCartOpen ? "open" : "")"
+         @onclick="CloseCart">
+
+        <!-- DRAWER -->
+        <div class="mw-cart-drawer" @onclick:stopPropagation="true">
+
+            <!-- HEADER -->
+            <div class="mw-cart-header d-flex justify-content-between align-items-center">
+
+                <div class="d-flex align-items-center gap-2">
+                    <span class="mw-cart-title">Your Bag</span>
+                    @if (CartStateService.Cart.TotalItems > 0)
+                    {
+                        <span class="mw-cart-count">
+                            @CartStateService.Cart.TotalItems
+                        </span>
+                    }
+                </div>
+                <button class="mw-cart-close" @onclick="CloseCart">✕</button>
+            </div>
+
+            <!-- BODY -->
+            <div class="mw-cart-body">
+                @if (CartStateService.Cart.IsEmpty)
+                {
+                    <!-- EMPTY STATE -->
+                    <div class="mw-cart-empty text-center py-5">
+                        <p class="text-muted mb-3">Your bag is empty</p>
+                        <a href="/shop/apparel"
+                           class="mw-btn-primary"
+                           @onclick="CloseCart">
+                            Shop Now
+                        </a>
+                    </div>
+                }
+                else
+                {
+                    @foreach (var item in CartStateService.Cart.Items)
+                    {
+                        <div class="mw-cart-item d-flex gap-3">
+
+                            <!-- IMAGE -->
+                            <div class="mw-cart-img">
+                                <img src="@item.ProductImageUrl"
+                                     loading="lazy"
+                                     alt="@item.ProductName" />
+                            </div>
+
+                            <!-- INFO -->
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between">
+                                    <h6 class="mw-cart-name">@item.ProductName</h6>
+                                    <span class="mw-cart-price">
+                                        $@item.ItemTotal.ToString("F2")
+                                    </span>
+                                </div>
+
+                                <p class="mw-cart-meta">Size: @item.Size</p>
+                                <p class="mw-cart-meta">
+                                    $@item.ProductPrice.ToString("F2") each
+                                </p>
+
+                                <div class="d-flex justify-content-between align-items-center mt-2">
+
+                                    <!-- QTY +/-  -->
+                                    <div class="mw-qty">
+                                        <button @onclick="() => DecreaseQty(item)"
+                                                disabled="@(item.Quantity <= 1)">
+                                            -
+                                        </button>
+                                        <span>@item.Quantity</span>
+                                        <button @onclick="() => IncreaseQty(item)">
+                                            +
+                                        </button>
+                                    </div>
+
+                                    <!-- REMOVE-->
+                                    <button class="mw-cart-del-btn d-flex align-items-center gap-1"
+                                            @onclick="() => RemoveItem(item.Id)">
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             width="12" height="12" viewBox="0 0 24 24"
+                                             fill="none" stroke="currentColor"
+                                             stroke-width="2" stroke-linecap="round"
+                                             stroke-linejoin="round">
+                                            <path d="M3 6h18"></path>
+                                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                                            <line x1="10" x2="10" y1="11" y2="17"></line>
+                                            <line x1="14" x2="14" y1="11" y2="17"></line>
+                                        </svg>
+                                        Remove
+                                    </button>
+
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+
+            <!-- FOOTER -->
+            <!-- FOOTER -->
+            <div class="mw-cart-footer">
+
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Subtotal</span>
+                    <strong>$@CartStateService.Cart.Subtotal.ToString("F2")</strong>
+                </div>
+
+                <div class="d-flex justify-content-between small text-muted mb-2">
+                    <span>Shipping</span>
+                    <span>Free</span>
+                </div>
+
+                <div class="d-flex justify-content-between small text-muted mb-2">
+                    <span>Tax (10%)</span>
+                    <span>$@CartStateService.Cart.Tax.ToString("F2")</span>
+                </div>
+
+                <div class="d-flex justify-content-between fw-bold fs-5 mt-2">
+                    <span>Total</span>
+                    <span>$@CartStateService.Cart.Total.ToString("F2")</span>
+                </div>
+
+                <a href="/checkout"
+                   class="mw-checkout-btn w-100 mt-3 d-block text-center text-decoration-none"
+                   @onclick="CloseCart">
+                    Checkout Securely
+                </a>
+
+                <a href="/cart"
+                   class="mw-view-cart d-block text-center mt-2"
+                   @onclick="CloseCart">
+                    View Cart
+                </a>
+
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+
+@code {
+
+    private ElementReference searchInputRef;
+
+    //Boolean
+    private bool isMenuOpen = false;
+    private bool shouldFocusInput = false;
+    private bool isSearching = false;
+    private bool hasSearched = false;
+    private bool _cartInitialized = false;
+    private bool _redirecting = false;
+    private bool isAdmin = false;
+
+
+    private string? userName;
+    private string? userEmail;
+    private bool isUserAuthenticated;
+    private bool isProfileOpen = false;
+
+
+    //String
+    private string searchQuery = string.Empty;
+
+
+    //List
+    private List<ProductModel> searchResults = new();
+
+    //Object
+    private CancellationTokenSource? _searchCts;
+
+
+    async Task ToggleMenu()
+    {
+        isMenuOpen = !isMenuOpen;
+
+        if (isMenuOpen)
+            await JS.InvokeVoidAsync("disableScroll");
+        else
+            await JS.InvokeVoidAsync("enableScroll");
+    }
+
+    async Task CloseMenu()
+    {
+        isMenuOpen = false;
+        await JS.InvokeVoidAsync("enableScroll");
+    }
+    private void HandleOverlayClick() => isMenuOpen = false;
+    private bool isSearchOpen = false;
+
+    void OpenSearch()
+    {
+        isSearchOpen = true;
+        shouldFocusInput = true;
+    }
+    private bool isCartOpen = false;
+    void CloseSearch()
+    {
+        isSearchOpen = false;
+        ClearSearch(); // reset search when panel closes
+    }
+
+    void OpenCart()
+    {
+        isCartOpen = true;
+        // await JS.InvokeVoidAsync("disableScroll");
+    }
+
+    void CloseCart()
+    {
+        isCartOpen = false;
+        // await JS.InvokeVoidAsync("enableScroll");
+    }
+
+    // private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    // {
+    //     InvokeAsync(async () =>
+    //     {
+    //         isMenuOpen = false;
+    //         isProfileOpen = false;
+
+    //         //  use CustomAuthStateProvider directly
+    //         // it checks _sessionExpired flag first → reliable in SignalR
+    //         var authState = await CustomAuthStateProvider.GetAuthenticationStateAsync();
+    //         var isAuthenticated = authState.User.Identity?.IsAuthenticated == true;
+
+    //         isUserAuthenticated = isAuthenticated;
+    //         userName = isAuthenticated
+    //             ? authState.User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value
+    //             : null;
+    //         userEmail = isAuthenticated
+    //             ? authState.User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+    //             : null;
+
+    //         if (!isAuthenticated && CartStateService.IsAuthenticated)
+    //         {
+    //             await CartStateService.ClearCartState();
+    //             await CartStateService.InitializeAsync(false, null);
+    //         }
+
+    //         StateHasChanged();
+    //     });
+    // }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+
+        //  check on every render if session expired
+        if (AuthSession.IsSessionExpired)
+        {
+
+            AuthSession.Reset(); // ← reset BEFORE redirect to prevent loop
+            await JS.InvokeVoidAsync("eval",
+                "window.location.href='/auth/clear?expired=true'");
+            return;
+        }
+        if (firstRender && !_cartInitialized)
+        {
+            _cartInitialized = true;
+
+            var authState = await AuthStateProvider
+                .GetAuthenticationStateAsync();
+
+            var isAuthenticated = authState.User.Identity?.IsAuthenticated == true;
+            var userId = authState.User.FindFirst("UserId")?.Value;
+            isUserAuthenticated = isAuthenticated;
+            if (isAuthenticated)
+            {
+                var role = authState.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+                isAdmin = role?.ToLower() == "admin";
+                if (!isAdmin)
+                {
+                    var profile = await ProfileService.GetProfile();
+                    if (profile.Success && profile.Data != null)
+                    {
+                        userName = profile.Data.FullName;
+                        userEmail = profile.Data.Email;
+                        // AuthSession.UpdateDisplay(profile.Data.FullName, profile.Data.Email); // ← add
+                    }
+                }
+                var cookieJson = await JS.InvokeAsync<string?>("getCartCookie");
+                var hadGuestCart = !string.IsNullOrEmpty(cookieJson);
+
+                if (hadGuestCart)
+                {
+                    await CartStateService.LoadGuestCartFromCookie();
+
+                    // merge into DB
+                    // MergeGuestCartAsync internally loads DB cart after merge
+                    await CartStateService.MergeGuestCartAsync();
+                }
+                else
+                {
+                    // no guest items → just load DB cart
+                    await CartStateService.InitializeAsync(isAuthenticated, userId);
+                }
+            }
+            else
+            {
+                // guest → load from cookie
+                await CartStateService.InitializeAsync(isAuthenticated, userId);
+            }
+
+            StateHasChanged();
+        }
+
+        if (shouldFocusInput)
+        {
+            shouldFocusInput = false;
+            try
+            {
+                await JS.InvokeVoidAsync("focusElement", searchInputRef);
+            }
+            catch { }
+        }
+    }
+
+    private async Task HandleSearchInput(ChangeEventArgs e)
+    {
+        // update search query as user types
+        searchQuery = e.Value?.ToString() ?? string.Empty;
+
+        // if cleared → reset state
+        if (string.IsNullOrEmpty(searchQuery))
+        {
+            ClearSearch();
+            return;
+        }
+
+        // cancel previous debounce timer
+        // user is still typing
+        _searchCts?.Cancel();
+        _searchCts = new CancellationTokenSource();
+
+        try
+        {
+            // wait 300ms before searching
+            // if user types again → Task.Delay cancelled
+            await Task.Delay(300, _searchCts.Token);
+
+            // 300ms passed → user stopped typing
+            // → search now
+            await PerformSearch();
+        }
+        catch (TaskCanceledException)
+        {
+            // user typed again → debounce cancelled
+            // do nothing → new timer started
+        }
+    }
+
+    private async Task HandleSearchKeyDown(KeyboardEventArgs e)
+    {
+        // only react to Enter key
+        if (e.Key == "Enter" && !string.IsNullOrEmpty(searchQuery))
+        {
+            // cancel debounce → search immediately
+            _searchCts?.Cancel();
+            await PerformSearch();
+        }
+
+        // close on Escape key
+        if (e.Key == "Escape")
+        {
+            CloseSearch();
+        }
+    }
+
+    private void ClearSearch()
+    {
+        // reset all search state
+        searchQuery = string.Empty;
+        searchResults = new();
+        hasSearched = false;
+        isSearching = false;
+        _searchCts?.Cancel();
+        StateHasChanged();
+    }
+
+    private async Task PerformSearch()
+    {
+        // validate — don't search empty or whitespace
+        if (string.IsNullOrWhiteSpace(searchQuery))
+            return;
+
+        try
+        {
+            // show loading state
+            isSearching = true;
+            hasSearched = true;
+            StateHasChanged();
+
+            // build filter — search only
+            // 4 results max
+            // no category/size/price filter needed
+            // just text search
+            var filter = new ProductFilterModel
+            {
+                Page = 1,
+                PageSize = 4,
+                Search = searchQuery.Trim()
+            };
+
+            var result = await ProductService.GetAll(filter);
+
+            if (result.Success && result.Data != null)
+            {
+                searchResults = result.Data.Data;
+            }
+            else
+            {
+                // API failed → empty results
+                searchResults = new();
+            }
+        }
+        catch (Exception ex)
+        {
+            // network error etc → empty results
+            searchResults = new();
+            Console.WriteLine($"Search error: {ex.Message}");
+        }
+        finally
+        {
+            // always hide loading
+            // even if error occurs
+            isSearching = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task SearchByTag(string tag)
+    {
+        // set search query to tag
+        searchQuery = tag;
+        hasSearched = true;
+
+        // cancel any pending debounce
+        _searchCts?.Cancel();
+
+        // search immediately
+        await PerformSearch();
+    }
+    private System.Threading.Timer? _activeCheckTimer;
+
+    // subscribe to cart changes
+    protected override void OnInitialized()
+    {
+        CartStateService.OnCartChanged += OnCartChanged;
+        AuthSession.OnSessionExpired += HandleSessionExpired;
+        AuthSession.OnProfileUpdated += HandleProfileUpdated;
+
+    }
+
+    private void HandleProfileUpdated(string? name, string? email)
+    {
+        userName = name;
+        userEmail = email;
+        InvokeAsync(StateHasChanged);
+    }
+    private void HandleSessionExpired()
+    {
+
+        // Redirect to login
+        NavigationManager.NavigateTo("/login?expired=true", forceLoad: true);
+    }
+
+
+    private void OnCartChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    // qty decrease
+    private async Task DecreaseQty(CartItemModel item)
+    {
+        if (item.Quantity <= 1) return;
+        await CartStateService.UpdateQuantity(
+            item.Id, item.Quantity - 1);
+    }
+
+    // qty increase
+    private async Task IncreaseQty(CartItemModel item)
+    {
+        await CartStateService.UpdateQuantity(
+            item.Id, item.Quantity + 1);
+    }
+
+    // remove item
+    private async Task RemoveItem(Guid cartItemId)
+    {
+        await CartStateService.RemoveItem(cartItemId);
+    }
+
+    // unsubscribe on dispose
+    public void Dispose()
+    {
+        // NavigationManager.LocationChanged -= OnLocationChanged;
+        CartStateService.OnCartChanged -= OnCartChanged;
+        AuthSession.OnProfileUpdated -= HandleProfileUpdated;
+
+        AuthSession.OnSessionExpired -= HandleSessionExpired;  // ← add
+    }
+
+    // toggle profile dropdown
+    private void ToggleProfile()
+    {
+        isProfileOpen = !isProfileOpen;
+    }
+
+    // close profile dropdown
+    private void CloseProfile()
+    {
+        isProfileOpen = false;
+    }
+
+    // sign out
+    private async Task HandleSignOut()
+    {
+        isProfileOpen = false;
+        await CartStateService.ClearCartState();
+        NavigationManager.NavigateTo("/auth/clear", forceLoad: true);
+    }
+}

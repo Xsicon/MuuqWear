@@ -1,0 +1,280 @@
+﻿/* ─── PAGE ─────────────────────────────────────────────────── */
+.ov-page {
+    padding: 16px;
+}
+
+.ov-title {
+    color: #1E2A47;
+    font-size: 21px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    margin-bottom: 21px;
+}
+
+/* ─── STATS GRID ────────────────────────────────────────────── */
+.ov-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 13px;
+    margin-bottom: 21px;
+}
+
+@media (min-width: 1024px) {
+    .ov-stats {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+.ov-stat {
+    background: white;
+    border: 1px solid rgba(169, 183, 204, 0.3);
+    padding: 21px;
+}
+
+.ov-stat__label {
+    color: #4A5C7A;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.ov-stat__value {
+    color: #1E2A47;
+    font-size: 28px;
+    font-weight: 800;
+    margin: 0 0 3px;
+    line-height: 1.1;
+}
+
+.ov-stat__change {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 12px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.ov-stat__change--up {
+    color: #2D9C5A;
+}
+
+.ov-stat__change--down {
+    color: #C44545;
+}
+
+/* ─── TWO COL GRID ──────────────────────────────────────────── */
+.ov-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 13px;
+    margin-bottom: 13px;
+}
+
+@media (min-width: 1024px) {
+    .ov-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* ─── CARD ──────────────────────────────────────────────────── */
+.ov-card {
+    background: white;
+    border: 1px solid rgba(169, 183, 204, 0.3);
+    margin-bottom: 0;
+}
+
+.ov-card--full {
+    margin-bottom: 0;
+}
+
+.ov-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 13px 21px;
+    border-bottom: 1px solid rgba(169, 183, 204, 0.3);
+}
+
+.ov-card__title {
+    color: #1E2A47;
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0;
+}
+
+.ov-card__link {
+    color: #4A5C7A;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-decoration: none;
+    padding: 7px 12px;
+    transition: color 0.2s, background 0.2s;
+}
+
+    .ov-card__link:hover {
+        color: #1E2A47;
+        background: #F4F6F9;
+    }
+
+.ov-card__body {
+    padding: 21px;
+}
+
+/* ─── ORDER ROW ─────────────────────────────────────────────── */
+.ov-order-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(169, 183, 204, 0.2);
+}
+
+    .ov-order-row:last-child {
+        border-bottom: none;
+    }
+
+.ov-order-number {
+    color: #1E2A47;
+    font-size: 13px;
+    font-weight: 700;
+    margin-right: 8px;
+}
+
+.ov-order-amount {
+    color: #4A5C7A;
+    font-size: 12px;
+}
+
+/* ─── TICKET ROW ────────────────────────────────────────────── */
+.ov-ticket-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(169, 183, 204, 0.2);
+    gap: 8px;
+}
+
+    .ov-ticket-row:last-child {
+        border-bottom: none;
+    }
+
+.ov-ticket-name {
+    color: #4A5C7A;
+    font-size: 12px;
+    margin-left: 8px;
+}
+
+/* ─── STATUS BADGES ─────────────────────────────────────────── */
+.ov-status-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.ov-status-badge--pending {
+    background: #FFF3CD;
+    color: #856404;
+}
+
+.ov-status-badge--processing {
+    background: #CCE5FF;
+    color: #004085;
+}
+
+.ov-status-badge--shipped {
+    background: #D4EDDA;
+    color: #155724;
+}
+
+.ov-status-badge--delivered {
+    background: #1E2A47;
+    color: white;
+}
+
+.ov-status-badge--cancelled {
+    background: #F8D7DA;
+    color: #721C24;
+}
+
+/* ─── SYSTEM HEALTH ─────────────────────────────────────────── */
+.ov-health-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 13px;
+}
+
+@media (min-width: 768px) {
+    .ov-health-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .ov-health-grid {
+        grid-template-columns: repeat(5, 1fr);
+    }
+}
+
+.ov-health-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ov-health-item__icon {
+    flex-shrink: 0;
+}
+
+.ov-health-item__label {
+    color: #4A5C7A;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin: 0 0 2px;
+}
+
+.ov-health-item__status {
+    color: #1E2A47;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin: 0;
+}
+
+.ov-health-item__status--plain {
+    color: #1E2A47;
+}
+
+/* ─── EMPTY ─────────────────────────────────────────────────── */
+.ov-empty {
+    color: #4A5C7A;
+    font-size: 14px;
+    text-align: center;
+    padding: 13px 0;
+    margin: 0;
+}
+
+/* ─── DESKTOP ───────────────────────────────────────────────── */
+@media (min-width: 1024px) {
+    .ov-page {
+        padding: 21px;
+    }
+
+    .ov-title {
+        font-size: 28px;
+    }
+}

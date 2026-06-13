@@ -1,0 +1,322 @@
+﻿/* ================================
+   SIZE GUIDE PAGE
+   ================================ */
+
+/* HERO SECTION */
+.mw-sg-hero {
+    padding: 40px 0;
+}
+
+.mw-sg-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #4A5C7A;
+    margin-bottom: 8px;
+}
+
+.mw-sg-title {
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    color: #1E2A47;
+    margin-bottom: 13px;
+}
+
+.mw-sg-desc {
+    font-size: 16px;
+    line-height: 26px;
+    color: #4A5C7A;
+    max-width: 440px;
+    margin-bottom: 21px;
+}
+
+.mw-sg-measure-btn {
+    background: none;
+    border: none;
+    color: #4A5C7A;
+    font-size: 14px;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 0;
+    transition: color 0.2s;
+}
+
+    .mw-sg-measure-btn:hover {
+        color: #1E2A47;
+    }
+
+/* HERO IMAGE */
+.mw-sg-hero-img {
+    width: 100%;
+    aspect-ratio: 3/4;
+    overflow: hidden;
+    border-radius: 4px;
+    background: #E6ECF5;
+}
+
+@media (min-width: 768px) {
+    .mw-sg-hero-img {
+        max-width: 360px;
+        margin-left: auto;
+    }
+}
+
+.mw-sg-hero-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* ================================
+   UNIT TOGGLE
+   ================================ */
+.mw-sg-toggle-section {
+    padding: 24px 0;
+    border-top: 1px solid #f3f4f6;
+    border-bottom: 1px solid #f3f4f6;
+    margin-bottom: 40px;
+}
+
+.mw-sg-toggle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.mw-sg-toggle-label {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #9ca3af;
+    transition: color 0.2s;
+    cursor: pointer;
+}
+
+    .mw-sg-toggle-label.active {
+        color: #1E2A47; /* active unit highlighted  */
+    }
+
+/* toggle switch button */
+.mw-sg-toggle-switch {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    background: #d1d5db;
+    border: none;
+    border-radius: 999px;
+    cursor: pointer;
+    padding: 0;
+    transition: background 0.3s ease;
+}
+
+    .mw-sg-toggle-switch.on {
+        background: #1E2A47; /* navy when cm selected  */
+    }
+
+/* thumb (circle inside toggle) */
+.mw-sg-toggle-thumb {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.3s ease;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.mw-sg-toggle-switch.on .mw-sg-toggle-thumb {
+    transform: translateX(20px); /* slides right when on  */
+}
+
+/* ================================
+   SIZE TABLES
+   ================================ */
+.mw-sg-tables {
+    padding-bottom: 60px;
+}
+
+.mw-sg-table-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
+    height: 100%;
+}
+
+.mw-sg-table-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #6b7280;
+    padding: 16px;
+    margin: 0;
+    border-bottom: 1px solid #e5e7eb;
+    background: #fafafa;
+}
+
+.mw-sg-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+    .mw-sg-table th {
+        padding: 10px 16px;
+        text-align: left;
+        font-size: 12px;
+        font-weight: 600;
+        color: #9ca3af;
+        border-bottom: 1px solid #f3f4f6;
+        white-space: nowrap;
+    }
+
+    .mw-sg-table td {
+        padding: 10px 16px;
+        color: #374151;
+        border-bottom: 1px solid #f3f4f6;
+        font-size: 14px;
+    }
+
+    .mw-sg-table tr:last-child td {
+        border-bottom: none; /* no border on last row  */
+    }
+
+    .mw-sg-table tr:hover td {
+        background: #f9fafb; /* subtle hover  */
+    }
+
+.mw-sg-size-cell {
+    font-weight: 700;
+    color: #1E2A47;
+}
+
+/* mobile table scroll */
+@media (max-width: 767px) {
+    .mw-sg-table-card {
+        overflow-x: auto;
+    }
+
+    .mw-sg-table {
+        min-width: 280px;
+    }
+}
+
+/* ================================
+   MEASUREMENT PANEL
+   ================================ */
+
+/* overlay */
+.mw-sg-panel-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.3);
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+    .mw-sg-panel-overlay.open {
+        opacity: 1;
+        visibility: visible;
+    }
+
+/* panel slides from right */
+.mw-sg-panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    max-width: 420px;
+    background: white;
+    transform: translateX(100%); /* starts off screen right  */
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.mw-sg-panel-overlay.open .mw-sg-panel {
+    transform: translateX(0); /* slides in  */
+}
+
+/* panel header */
+.mw-sg-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px;
+    border-bottom: 1px solid #f3f4f6;
+    flex-shrink: 0;
+}
+
+.mw-sg-panel-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1E2A47;
+    margin: 0;
+}
+
+.mw-sg-panel-close {
+    background: none;
+    border: none;
+    font-size: 18px;
+    color: #6b7280;
+    cursor: pointer;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background 0.2s;
+}
+
+    .mw-sg-panel-close:hover {
+        background: #f3f4f6;
+        color: #1E2A47;
+    }
+
+/* panel body — scrollable  */
+.mw-sg-panel-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+}
+
+/* measurement item */
+.mw-sg-measure-item {
+    padding: 20px 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+    .mw-sg-measure-item:last-child {
+        border-bottom: none; /* no border on last item  */
+    }
+
+.mw-sg-measure-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1E2A47;
+    margin-bottom: 8px;
+}
+
+.mw-sg-measure-desc {
+    font-size: 14px;
+    line-height: 22px;
+    color: #4A5C7A;
+    margin: 0;
+}
+
+/* mobile panel full width */
+@media (max-width: 480px) {
+    .mw-sg-panel {
+        max-width: 100%; /* full width on small mobile  */
+    }
+}

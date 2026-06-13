@@ -1,0 +1,221 @@
+﻿@page "/admin/jobs/{JobId:guid}/applications"
+@layout Layout.AdminLayoutComponent.AdminDashboardLayoutComponent
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using MuuqWear.Application.Services.JobPostingService
+@using MuuqWear.Model.JobApplication
+@using MuuqWear.Model.JobPosting
+@using MuuqWear.Web.Components.Shared
+@inject IJobPostingService JobPostingService
+@inject NavigationManager Navigation
+@attribute [Authorize(Roles = "admin")]
+
+<PageTitle>Applications — Admin</PageTitle>
+
+<SpinnerComponent Show="@isLoading" />
+
+<div class="apps-page">
+
+    <!-- Header with back link + job title -->
+    <div class="apps-page__header">
+        <button class="back-link" @onclick="GoBack">
+            ← Back to Job Postings
+        </button>
+
+        <div class="apps-page__title-row">
+            <div>
+                <h2 class="apps-page__title">
+                    @(job?.Title ?? "Applications")
+                </h2>
+                <p class="apps-page__subtitle">
+                    @applications.Count application@(applications.Count == 1 ? "" : "s")
+                    @if (job is not null)
+                    {
+                        <text> · </text>
+                        <span class="apps-page__job-meta">
+                            @job.Department · @job.Location
+                        </span>
+                    }
+                </p>
+            </div>
+
+            <!-- Status filter -->
+            <select class="form-input apps-filter"
+                    @bind="statusFilter"
+                    @bind:after="ApplyFilter">
+                <option value="all">All statuses</option>
+                <option value="new">New</option>
+                <option value="reviewing">Reviewing</option>
+                <option value="interviewing">Interviewing</option>
+                <option value="rejected">Rejected</option>
+                <option value="hired">Hired</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Applications list -->
+    <div class="apps-list">
+        @if (isLoading)
+        {
+            <p class="apps-empty">Loading...</p>
+        }
+        else if (!filteredApplications.Any())
+        {
+            <p class="apps-empty">
+                @(applications.Count == 0
+                            ? "No applications yet for this position."
+                            : "No applications match this filter.")
+        </p>
+                }
+        else
+        {
+            @foreach (var app in filteredApplications)
+            {
+                <article class="app-card" @onclick="() => OpenDetail(app)">
+
+                    <div class="app-card__info">
+                        <div class="app-card__heading">
+                            <h3 class="app-card__name">@app.Name</h3>
+                            <span class="badge @GetStatusBadgeClass(app.Status)">
+                                @GetStatusLabel(app.Status)
+                            </span>
+                        </div>
+                        <p class="app-card__email">@app.Email</p>
+                        <p class="app-card__meta">
+                            Applied @FormatDate(app.CreatedAt)
+                            @if (!string.IsNullOrWhiteSpace(app.Notes))
+                            {
+                                <span class="app-card__has-notes"> · Has notes</span>
+                            }
+                        </p>
+                    </div>
+
+                    <div class="app-card__actions">
+                        <a href="@app.ResumeUrl"
+                           target="_blank"
+                           class="btn-ghost"
+                           @onclick:stopPropagation="true">
+                            Resume ↗
+                        </a>
+                        @if (!string.IsNullOrWhiteSpace(app.PortfolioUrl))
+                        {
+                            <a href="@app.PortfolioUrl"
+                               target="_blank"
+                               class="btn-ghost"
+                               @onclick:stopPropagation="true">
+                                Portfolio ↗
+                            </a>
+                        }
+                    </div>
+
+                </article>
+            }
+        }
+    </div>
+
+
+    <!-- Detail slide-in panel -->
+    @if (detailApp is not null)
+    {
+        <div class="form-overlay" @onclick="CloseDetail"></div>
+
+        <div class="form-panel" @onclick:stopPropagation="true">
+
+            <div class="form-panel__header">
+                <p class="form-panel__title">@detailApp.Name</p>
+                <button class="form-panel__close" @onclick="CloseDetail">✕</button>
+            </div>
+
+            @if (!string.IsNullOrEmpty(detailError))
+            {
+                <p class="form-error">@detailError</p>
+            }
+
+            <div class="form-fields">
+
+                <!-- Application metadata (read-only) -->
+                <div class="app-detail__meta">
+                    <div class="app-detail__row">
+                        <span class="app-detail__label">Email</span>
+                        <span class="app-detail__value">@detailApp.Email</span>
+                    </div>
+                    <div class="app-detail__row">
+                        <span class="app-detail__label">Applied</span>
+                        <span class="app-detail__value">@FormatDate(detailApp.CreatedAt)</span>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(detailApp.PortfolioUrl))
+                    {
+                        <div class="app-detail__row">
+                            <span class="app-detail__label">Portfolio</span>
+                            <a href="@detailApp.PortfolioUrl"
+                               target="_blank"
+                               class="app-detail__link">@detailApp.PortfolioUrl ↗</a>
+                        </div>
+                    }
+                    <div class="app-detail__row">
+                        <span class="app-detail__label">Resume</span>
+                        <a href="@detailApp.ResumeUrl"
+                           target="_blank"
+                           class="app-detail__link">Download resume ↗</a>
+                    </div>
+                </div>
+
+                <!-- Status dropdown -->
+                <div class="form-field">
+                    <label class="form-label">Status</label>
+                    <select class="form-input" @bind="detailStatus">
+                        <option value="new">New</option>
+                        <option value="reviewing">Reviewing</option>
+                        <option value="interviewing">Interviewing</option>
+                        <option value="rejected">Rejected</option>
+                        <option value="hired">Hired</option>
+                    </select>
+                </div>
+
+                <!-- Notes textarea -->
+                <div class="form-field">
+                    <label class="form-label">Internal notes</label>
+                    <textarea class="form-textarea"
+                              placeholder="Notes about this applicant (only admin sees this)"
+                              rows="6"
+                              @bind="detailNotes"></textarea>
+                </div>
+
+            </div>
+
+            <div class="form-panel__actions">
+                <button class="btn-ghost btn-ghost--danger"
+                        @onclick="OpenDeleteConfirm">
+                    Delete
+                </button>
+                <button class="form-submit"
+                        @onclick="SaveDetail"
+                        disabled="@isSavingDetail">
+                    @(isSavingDetail ? "Saving..." : "Save Changes")
+                </button>
+            </div>
+
+        </div>
+    }
+
+
+    <!-- Delete confirmation modal -->
+    @if (deletingApp is not null)
+    {
+        <div class="form-overlay" @onclick="CancelDelete"></div>
+        <div class="delete-modal" @onclick:stopPropagation="true">
+            <h3 class="delete-modal__title">Delete Application?</h3>
+            <p class="delete-modal__text">
+                Are you sure you want to delete the application from
+                <strong>@deletingApp.Name</strong>? This cannot be undone.
+            </p>
+            <div class="delete-modal__actions">
+                <button class="btn-ghost" @onclick="CancelDelete">Cancel</button>
+                <button class="btn-ghost btn-ghost--danger" @onclick="ConfirmDelete">
+                    Delete
+                </button>
+            </div>
+        </div>
+    }
+
+</div>

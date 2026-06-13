@@ -1,0 +1,1185 @@
+﻿@page "/profile"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@using MuuqWear.Application.Interfaces
+@using MuuqWear.Application.Services.AffiliateService
+@using MuuqWear.Application.Services.AuthService
+@using MuuqWear.Application.Services.CartService
+@using MuuqWear.Application.Services.OrderService
+@using MuuqWear.Application.Shared
+@using MuuqWear.Model.Authentication
+@using Microsoft.AspNetCore.Components.Authorization
+@using MuuqWear.Model.Orders
+@inject IOrderService OrderService
+@inject CustomAuthenticationStateProvider AuthStateProvider
+@inject IAuthService IAuthService
+@inject NavigationManager NavigationManager
+@inject CartStateService CartStateService
+@attribute [Authorize(Roles = "user")]
+@using MuuqWear.Model.Address
+@using MuuqWear.Application.Services.AddressService
+@inject IAddressService AddressService
+@using MuuqWear.Model.Profile
+@using MuuqWear.Application.Services.ProfileService
+@inject IProfileService ProfileService
+@using System.Net.Http
+@using System.Net.Http.Json
+@using MuuqWear.Web.Components.Pages.MileStoneComponent
+@using MuuqWear.Web.Components.Pages.OrderConfirmedComponent
+@using MuuqWear.Web.Components.Pages.PartnerStoreComponent
+@using MuuqWear.Web.Components.Shared
+@inject IHttpClientFactory HttpClientFactory
+@inject AuthSessionService AuthSession
+@inject IAffiliateService AffiliateService
+@inject IJSRuntime JSRuntime
+
+
+<PageTitle>Profile</PageTitle>
+
+<SpinnerComponent Show="@isLoadingOrders" />
+
+<section class="mw-profile container py-4 py-md-5">
+
+    <!-- MOBILE HEADER -->
+    <div class="d-md-none mb-3">
+        <button class="mw-profile-mobile-toggle"
+                @onclick="() => isMobileMenuOpen = !isMobileMenuOpen">
+            <span>@GetActiveTabLabel()</span>
+            <svg xmlns="http://www.w3.org/2000/svg"
+                 width="16"
+                 height="16"
+                 viewBox="0 0 24 24"
+                 fill="none"
+                 stroke="currentColor"
+                 stroke-width="2"
+                 stroke-linecap="round"
+                 stroke-linejoin="round"
+                 style="transform: rotate(@(isMobileMenuOpen ? "180deg" : "0deg")); transition: transform 0.2s">
+                <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+        </button>
+    </div>
+
+
+    @if (isMobileMenuOpen)
+    {
+        <div class="mw-mobile-menu d-md-none mb-3">
+
+            <!-- USER INFO -->
+            <div class="mw-mobile-menu__user">
+                <div class="mw-avatar">SA</div>
+                <div>
+                    <h6 class="mw-user-name">@LoggedInUserName</h6>
+                    <p class="mw-user-meta">Member since October 2024</p>
+                </div>
+            </div>
+
+            <!-- NAV ITEMS -->
+            <nav class="mw-mobile-menu__nav">
+                <button class="mw-mobile-nav-item @(activeTab == "overview" ? "active" : "")"
+                        @onclick='() => SelectTab("overview")'>
+                    Overview
+                </button>
+                <button class="mw-mobile-nav-item @(activeTab == "orders" ? "active" : "")"
+                        @onclick='() => SelectTab("orders")'>
+                    Orders
+                </button>
+                <button class="mw-mobile-nav-item">
+                    Wishlist
+                </button>
+                <button class="mw-mobile-nav-item @(activeTab == "addresses" ? "active" : "")"
+                        @onclick='() => SelectTab("addresses")'>
+                    Addresses
+                </button>
+                <button class="mw-mobile-nav-item @(activeTab == "affiliate" ? "active" : "")"
+                        @onclick='() => SelectTab("affiliate")'>
+                    Affiliate Hub
+                </button>
+                <button class="mw-mobile-nav-item @(activeTab == "settings" ? "active" : "")"
+                        @onclick='() => SelectTab("settings")'>
+                    Settings
+                </button>
+            </nav>
+
+            <!-- AFFILIATE STATUS -->
+            <div class="mw-mobile-menu__affiliate">
+                <p class="mw-affiliate-label">Affiliate Status</p>
+                <p class="mw-affiliate-value">⭐ Silver</p>
+            </div>
+
+            <!-- SIGN OUT -->
+            <button class="mw-mobile-menu__signout" @onclick="HandleSignOut">
+                Sign Out
+            </button>
+
+        </div>
+    }
+
+
+
+    <div class="row g-4">
+
+        <!-- SIDEBAR -->
+        <aside class="col-md-4 col-lg-3 d-none d-md-block">
+
+            <!-- USER INFO -->
+            <div class="mw-profile-user text-md-end">
+                <div class="mw-avatar">SA</div>
+                <h6 class="mw-user-name">@LoggedInUserName</h6>
+                <p class="mw-user-meta">Member since October 2024</p>
+            </div>
+
+            <!-- NAV -->
+            <nav class="mw-profile-nav">
+                <button class="mw-nav-item @(activeTab == "overview" ? "active" : "")"
+                        @onclick='() => activeTab = "overview"'>
+                    Overview
+                </button>
+                <button class="mw-nav-item @(activeTab == "orders" ? "active" : "")"
+                        @onclick='() => activeTab = "orders"'>
+                    Orders
+                </button>
+                <button class="mw-nav-item">Wishlist</button>
+                <button class="mw-nav-item @(activeTab == "addresses" ? "active" : "")"
+                        @onclick='() => activeTab = "addresses"'>
+                    Addresses
+                </button>
+                <button class="mw-nav-item @(activeTab == "affiliate" ? "active" : "")"
+                        @onclick='() => SelectTab("affiliate")'>
+                    Affiliate Hub
+                </button>
+                <button class="mw-nav-item @(activeTab == "settings" ? "active" : "")"
+                        @onclick='() => activeTab = "settings"'>
+                    Settings
+                </button>
+            </nav>
+
+            <!-- AFFILIATE -->
+            <!-- AFFILIATE STATUS -->
+            @if (affiliateStatus != null)
+            {
+                <div class="mw-affiliate">
+                    <p class="mw-affiliate-label">Affiliate Status</p>
+
+                    @if (affiliateStatus.ApplicationStatus == "not_applied")
+                    {
+                        <p class="mw-affiliate-value mw-affiliate-not-applied">
+                            Not Applied
+                        </p>
+                    }
+                    else if (affiliateStatus.ApplicationStatus == "pending")
+                    {
+                        <p class="mw-affiliate-value mw-affiliate-pending">
+                            ⏳ Pending
+                        </p>
+                    }
+                    else if (affiliateStatus.ApplicationStatus == "approved")
+                    {
+                        @if (affiliateStatus.Tier == "bronze")
+                        {
+                            <p class="mw-affiliate-value mw-affiliate-bronze">
+                                🥉 Bronze
+                            </p>
+                        }
+                        else if (affiliateStatus.Tier == "silver")
+                        {
+                            <p class="mw-affiliate-value mw-affiliate-silver">
+                                ⭐ Silver
+                            </p>
+                        }
+                        else if (affiliateStatus.Tier == "gold")
+                        {
+                            <p class="mw-affiliate-value mw-affiliate-gold">
+                                ⭐⭐ Gold
+                            </p>
+                        }
+                    }
+                    else if (affiliateStatus.ApplicationStatus == "rejected")
+                    {
+                        <p class="mw-affiliate-value mw-affiliate-rejected">
+                             Rejected
+                        </p>
+                    }
+                    else if (affiliateStatus.ApplicationStatus == "waitlisted")
+                    {
+                        <p class="mw-affiliate-value mw-affiliate-waitlisted">
+                            📋 Waitlisted
+                        </p>
+                    }
+                </div>
+            }
+            else
+            {
+                <!-- Loading state -->
+                <div class="mw-affiliate">
+                    <p class="mw-affiliate-label">Affiliate Status</p>
+                    <p class="mw-affiliate-value">Loading...</p>
+                </div>
+            }
+
+            <!-- SIGN OUT -->
+            <button class="mw-signout" @onclick="HandleSignOut">Sign Out</button>
+
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <!-- MAIN CONTENT -->
+        <div class="col-12 col-md-8 col-lg-9">
+
+            <!-- WELCOME — always visible -->
+            @if (activeTab == "overview")
+            {
+                <div class="mb-4">
+                    <h2 class="mw-welcome">Welcome back, @LoggedInUserName</h2>
+                    <p class="mw-subtext">Here's your Muuqwear at a glance.</p>
+                </div>
+
+                <!-- STATS -->
+                <div class="row g-3 mb-4">
+                    <!-- ... your stat cards ... -->
+                    <div class="col-6 col-md-3">
+                        <div class="mw-stat-card">
+                            <p class="mw-stat-value">@userOrders.Count</p>
+                            <p class="mw-stat-label">Orders</p>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="mw-stat-card">
+                            <p class="mw-stat-value">4</p>
+                            <p class="mw-stat-label">Wishlist</p>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="mw-stat-card">
+                            <p class="mw-stat-value">@affiliateStatus?.Tier</p>
+                            <p class="mw-stat-label">Affiliate Tier</p>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="mw-stat-card">
+                            <p class="mw-stat-value">$1251</p>
+                            <p class="mw-stat-label">Total Spent</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RECENT ORDERS -->
+                <div class="mw-orders">
+                    <p class="mw-section-title">Recent Orders</p>
+                    <OrdersList Orders="userOrders.Take(3).ToList()" />
+                </div>
+            }
+            else if (activeTab == "orders")
+            {
+                <div class="mw-orders">
+                    <p class="mw-section-title">All Orders</p>
+                    <OrdersList Orders="userOrders" />
+                </div>
+            }
+
+            else if (activeTab == "addresses")
+            {
+                <!-- HEADER -->
+                <div class="d-flex align-items-center justify-content-between mb-4">
+                    <p style="color:#1E2A47;font-size:24px;
+                                                                                                                                                                                                                                                                                                                                                                                          font-family:'Playfair Display',serif;margin:0">
+                        Saved Addresses
+                    </p>
+                    <button @onclick="OpenAddForm" style="display:flex;align-items:center;gap:6px;
+                                                                                                                                                                                                                                                               border:1px solid #1E2A47;color:#1E2A47;
+                                                                                                                                                                                                                                                               padding:8px 16px;font-size:12px;font-weight:700;
+                                                                                                                                                                                                                                                               text-transform:uppercase;letter-spacing:0.5px;
+                                                                                                                                                                                                                                                               background:transparent">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                             viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M5 12h14"></path>
+                            <path d="M12 5v14"></path>
+                        </svg>
+                        Add New
+                    </button>
+                </div>
+
+                <!-- EMPTY STATE -->
+                @if (!addresses.Any())
+                {
+                    <p style="color:#4A5C7A;font-size:14px">
+                        No saved addresses yet. Add one to get started.
+                    </p>
+                }
+                else
+                {
+                    <div class="row g-3">
+                        @foreach (var address in addresses)
+                        {
+                            <div class="col-12 col-md-6">
+                                <div class="h-100"
+                                     style="border:1px solid @(address.IsDefault ? "#1E2A47" : "rgba(169,183,204,0.4)");
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        padding:21px">
+
+                                    <!-- header -->
+                                    <div class="d-flex align-items-center
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            justify-content-between mb-2">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <p style="color:#1E2A47;font-size:14px;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  font-weight:700;margin:0">
+                                                @address.Label
+                                            </p>
+                                            @if (address.IsDefault)
+                                            {
+                                                <span style="font-size:10px;background:#1E2A47;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 color:white;padding:2px 8px;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 text-transform:uppercase;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 font-weight:700;letter-spacing:0.5px">
+                                                    Default
+                                                </span>
+                                            }
+                                        </div>
+                                        <button @onclick="() => EditAddress(address)"
+                                                style="color:#4A5C7A;background:transparent;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   border:none;padding:0">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                 stroke-width="2" stroke-linecap="round"
+                                                 stroke-linejoin="round">
+                                                <path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+
+                                    <!-- address lines -->
+                                    <p style="color:#4A5C7A;font-size:13px;margin:0">
+                                        @address.FullName
+                                    </p>
+                                    <p style="color:#4A5C7A;font-size:13px;margin:0">
+                                        @address.Street1
+                                    </p>
+                                    @if (!string.IsNullOrEmpty(address.Street2))
+                                    {
+                                        <p style="color:#4A5C7A;font-size:13px;margin:0">
+                                            @address.Street2
+                                        </p>
+                                    }
+                        <p style="color:#4A5C7A;font-size:13px;margin:0">
+                            @address.City@(string.IsNullOrEmpty(address.State)
+                                                        ? "" : $", {address.State}") @address.PostalCode
+                        </p>
+
+                                    <!-- set as default -->
+                        @if (!address.IsDefault)
+                                    {
+                                        <button @onclick="() => HandleSetDefault(address.Id)"
+                                                style="margin-top:10px;font-size:12px;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           color:#1E2A47;font-weight:700;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           text-decoration:underline;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           background:transparent;border:none;padding:0">
+                                            Set as Default
+                                        </button>
+                                    }
+
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            }
+
+            else if (activeTab == "affiliate")
+            {
+                <div class="mw-tab-content">
+                    @if (affiliateStatus == null)
+                    {
+                        <p>Loading affiliate status...</p>
+                    }
+                    else if (affiliateStatus.ApplicationStatus == "not_applied")
+                    {
+                        <!-- NOT APPLIED - Show Apply Prompt -->
+                        <div class="affiliate-not-applied">
+                            <h2>Join the MuuqWear Affiliate Program</h2>
+                            <p>Earn commission on every sale you refer!</p>
+                            <button class="btn btn-primary" @onclick='() => NavigationManager.NavigateTo("/affiliate")'>
+                                Apply Now
+                            </button>
+                        </div>
+                    }
+                    else if (affiliateStatus.ApplicationStatus == "pending")
+                    {
+                        <!-- PENDING REVIEW -->
+                        <div class="affiliate-pending-review">
+                            <div class="pending-icon">⏳</div>
+                            <h2>Application Under Review</h2>
+                            <p>Your affiliate application is being reviewed by our team.</p>
+                            <p>We'll notify you via email once a decision has been made.</p>
+                            @if (affiliateStatus.SubmittedAt.HasValue)
+                            {
+                                <p class="submitted-date">
+                                    Submitted on @affiliateStatus.SubmittedAt.Value.ToString("MMMM dd, yyyy")
+                                </p>
+                            }
+                            <div class="pending-next-steps">
+                                <h4>What happens next?</h4>
+                                <ul>
+                                    <li>Our team reviews your application (usually within 2-3 business days)</li>
+                                    <li>We'll check your social media presence and content quality</li>
+                                    <li>You'll receive an email with the decision</li>
+                                    <li>If approved, you'll get access to your affiliate dashboard</li>
+                                </ul>
+                            </div>
+                        </div>
+                    }
+                 else if (affiliateStatus.ApplicationStatus == "approved")
+{
+    <div class="affiliate-dashboard-complete">
+
+        <!-- 1. TOP HEADER (MUST BE HERE - OUTSIDE THE TAB IF BLOCKS) -->
+        <div class="affiliate-dashboard-header">
+          @*   <div class="header-left">
+                <div class="user-avatar">
+                    <span>@GetUserInitials()</span>
+                </div>
+                <div class="user-info">
+                    <h2 class="user-name">@profile?.FullName</h2>
+                    <p class="member-since">Member since @GetMemberDate()</p>
+                </div>
+            </div> *@
+
+            <div class="header-center">
+                <div class="tier-badge-row">
+                    <span class="tier-badge">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="tier-star">
+                            <path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path>
+                        </svg>
+                        @affiliateInfo?.Tier.ToUpper()
+                    </span>
+                    <span class="active-status">
+                        <span class="status-dot"></span>
+                        <span>Active</span>
+                    </span>
+                </div>
+                <p class="commission-info">
+                    @GetCommissionRate()% commission per batch · @GetDiscountRate()% off for your referrals
+                </p>
+            </div>
+
+            <div class="header-right">
+               <p class="total-earnings-amount">$@((affiliateInfo?.CommissionEarned ?? 0).ToString("N2"))</p>
+                <p class="total-earnings-label">LIFETIME COMMISSION EARNED</p>
+            </div>
+        </div>
+
+        <!-- 2. TAB NAVIGATION (MUST BE HERE - OUTSIDE THE TAB IF BLOCKS) -->
+        <div class="affiliate-tabs">
+            <button class="tab-button @(activeAffiliateTab == "dashboard" ? "active" : "")"
+                        @onclick='() => SelectAffiliateTab("dashboard")'>
+                Dashboard
+            </button>
+            <button class="tab-button @(activeAffiliateTab == "partner-store" ? "active" : "")"
+                    @onclick='() => activeAffiliateTab = "partner-store"'>
+                Partner Store
+            </button>
+            <button class="tab-button @(activeAffiliateTab == "milestones" ? "active" : "")"
+                    @onclick='() => activeAffiliateTab = "milestones"'>
+                Milestones
+            </button>
+        </div>
+
+        <!-- 3. NOW YOUR TAB CONTENT -->
+        @if (activeAffiliateTab == "dashboard")
+ {
+     <div class="dashboard-content">
+         @if (affiliateInfo != null)
+         {
+             <!-- 1. AFFILIATE LINK SECTION -->
+             <div class="affiliate-link-section">
+                 <p class="section-label">YOUR UNIQUE AFFILIATE LINK</p>
+                 <div class="link-container">
+                     <div class="link-display">@affiliateInfo.AffiliateLink</div>
+                     <button class="copy-btn" @onclick="CopyLinkToClipboard">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                             <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                             <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+                         </svg>
+                         Copy Link
+                     </button>
+                 </div>
+                 @if (linkCopied)
+                 {
+                     <p class="success-message">✓ Link copied to clipboard!</p>
+                 }
+
+                 <!-- Share Buttons -->
+                 <div class="share-buttons">
+                     <span class="share-label">SHARE:</span>
+                     <button class="share-icon-btn">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                             <rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect>
+                             <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                             <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line>
+                         </svg>
+                     </button>
+                     <button class="share-icon-btn">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                             <path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"></path>
+                             <path d="m21.854 2.147-10.94 10.939"></path>
+                         </svg>
+                     </button>
+                     <button class="share-icon-btn">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                             <rect width="20" height="16" x="2" y="4" rx="2"></rect>
+                             <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+                         </svg>
+                     </button>
+                     <button class="share-icon-btn">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                             <circle cx="18" cy="5" r="3"></circle>
+                             <circle cx="6" cy="12" r="3"></circle>
+                             <circle cx="18" cy="19" r="3"></circle>
+                             <line x1="8.59" x2="15.42" y1="13.51" y2="17.49"></line>
+                             <line x1="15.41" x2="8.59" y1="6.51" y2="10.49"></line>
+                         </svg>
+                     </button>
+                 </div>
+             </div>
+
+             <!-- 2. TIER PROGRESSION & COMMISSION BATCH -->
+             <div class="progress-grid">
+                 <!-- Tier Progression -->
+                 <div class="progress-card">
+                     <p class="section-label">TIER PROGRESSION</p>
+                     <div class="tier-progress-content">
+                         <div class="circular-progress">
+                             <svg viewBox="0 0 100 100" class="progress-ring">
+                                 <circle cx="50" cy="50" r="42" fill="none" stroke="#E6ECF5" stroke-width="6"></circle>
+                                 <circle cx="50" cy="50" r="42" fill="none" stroke="#1E2A47" stroke-width="6"
+                                         stroke-linecap="round"
+                                         stroke-dasharray="@GetProgressDashArray()"
+                                         style="transform: rotate(-90deg); transform-origin: 50% 50%;"></circle>
+                             </svg>
+                             <div class="progress-center">
+                                 <span class="progress-value">@affiliateInfo.ItemsSold</span>
+                                 <span class="progress-label">XP</span>
+                             </div>
+                         </div>
+                         <div class="tier-info">
+                             <p class="tier-text">@affiliateInfo.ItemsSold / @GetNextTierTarget() items sold</p>
+                             <p class="tier-goal">to reach @GetNextTier()</p>
+                             <p class="tier-remaining">@GetItemsToNextTier() items to go</p>
+                         </div>
+                     </div>
+                 </div>
+
+                 <!-- Commission Batch -->
+                 <div class="progress-card">
+                     <p class="section-label">COMMISSION BATCH</p>
+                     <div class="batch-progress">
+                         <div class="batch-header">
+                             <span class="batch-current">@GetCurrentBatchProgress()/10</span>
+                             <span class="batch-remaining">@GetItemsToNextBatch() more to unlock</span>
+                         </div>
+                         <div class="batch-bar">
+                             <div class="batch-fill" style="width: @GetBatchPercentage()%"></div>
+                         </div>
+                     </div>
+                     <div class="batch-info">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="batch-icon">
+                             <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"></path>
+                         </svg>
+                         <p>@GetCommissionRate()% commission on next batch (10 items)</p>
+                     </div>
+                 </div>
+             </div>
+
+             <!-- 3. STATS GRID (4 boxes) -->
+             <div class="stats-grid-4">
+                 <div class="stat-box">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="stat-box-icon">
+                         <path d="M14 4.1 12 6"></path>
+                         <path d="m5.1 8-2.9-.8"></path>
+                         <path d="m6 12-1.9 2"></path>
+                         <path d="M7.2 2.2 8 5.1"></path>
+                         <path d="M9.037 9.69a.498.498 0 0 1 .653-.653l11 4.5a.5.5 0 0 1-.074.949l-4.349 1.041a1 1 0 0 0-.74.739l-1.04 4.35a.5.5 0 0 1-.95.074z"></path>
+                     </svg>
+                     <p class="stat-box-value">@affiliateInfo.TotalClicks.ToString("N0")</p>
+                     <p class="stat-box-label">TOTAL CLICKS</p>
+                 </div>
+
+                 <div class="stat-box">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="stat-box-icon">
+                         <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
+                         <polyline points="16 7 22 7 22 13"></polyline>
+                     </svg>
+                     <p class="stat-box-value">@affiliateInfo.Conversions.ToString("N0")</p>
+                     <p class="stat-box-label">CONVERSIONS</p>
+                 </div>
+
+                 <div class="stat-box">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="stat-box-icon">
+                         <line x1="12" x2="12" y1="2" y2="22"></line>
+                         <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                     </svg>
+                     <p class="stat-box-value">$@affiliateInfo.CommissionThisMonth.ToString("N2")</p>
+                     <p class="stat-box-label">THIS MONTH</p>
+                 </div>
+
+                 <div class="stat-box">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="stat-box-icon">
+                         <circle cx="12" cy="12" r="10"></circle>
+                         <circle cx="12" cy="12" r="6"></circle>
+                         <circle cx="12" cy="12" r="2"></circle>
+                     </svg>
+                     <p class="stat-box-value">$@affiliateInfo.CommissionPending.ToString("N2")</p>
+                     <p class="stat-box-label">PENDING</p>
+                 </div>
+             </div>
+
+             <!-- 4. PERFORMANCE CHART - Placeholder -->
+            <!-- PERFORMANCE CHART -->
+
+
+            <div class="tab-content">
+           <!-- Dashboard content with chart -->
+        <div class="performance-chart-section">
+            <h3>LAST 30 DAYS PERFORMANCE</h3>
+            
+            @if (isLoadingChart)
+            {
+                <p>Loading chart...</p>
+            }
+            else if (chartError != null)
+            {
+                <p class="text-danger">@chartError</p>
+            }
+            
+            <canvas id="performanceChart"></canvas>
+        </div>
+   </div>
+
+             <!-- 5. RECENT REFERRALS TABLE - Placeholder -->
+            <div class="referrals-card">
+    <p class="section-label">RECENT REFERRALS</p>
+    
+    @if (recentReferrals == null || !recentReferrals.Any())
+    {
+        <div class="referrals-placeholder">
+            <p class="recent-referrals-empty">
+                No referrals yet. Share your affiliate link to start earning!
+            </p>
+        </div>
+    }
+    else
+    {
+        <div class="recent-referrals-table-wrapper">
+            <table class="recent-referrals-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Customer</th>
+                        <th>Order Value</th>
+                        <th>Commission</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var referral in recentReferrals)
+                    {
+                        <tr>
+                            <td class="recent-referrals-date">
+                                @referral.FormattedDate
+                            </td>
+                            <td class="recent-referrals-customer">
+                                @referral.MaskedCustomer
+                            </td>
+                            <td class="recent-referrals-order-value">
+                                $@referral.OrderTotal.ToString("F2")
+                            </td>
+                            <td class="recent-referrals-commission">
+                                $@referral.CommissionAmount.ToString("F2")
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+             <!-- 6. EARNINGS & PAYOUT -->
+             <div class="earnings-payout-grid">
+                 <div class="earnings-card">
+                     <p class="section-label">EARNINGS SUMMARY</p>
+                     <div class="earnings-row">
+                         <span>Lifetime Commission</span>
+                         <span class="earnings-value">$@affiliateInfo.CommissionEarned.ToString("N2")</span>
+                     </div>
+                     <div class="earnings-row">
+                         <span>Lifetime Bonuses</span>
+                         <span class="earnings-value">$@affiliateInfo.BonusEarned.ToString("N2")</span>
+                     </div>
+                     <div class="earnings-row">
+                         <span>Pending Payout</span>
+                         <span class="earnings-value">$@affiliateInfo.CommissionPending.ToString("N2")</span>
+                     </div>
+                 </div>
+
+                 <div class="payout-card">
+                     <div>
+                         <p class="section-label">REQUEST PAYOUT</p>
+                         <p class="payout-info">Minimum payout: $50.00. Choose PayPal, bank transfer, or store credit (+5% bonus).</p>
+                     </div>
+                     <button class="payout-btn">Request Payout →</button>
+                 </div>
+             </div>
+         }
+         else if (isLoadingAffiliateInfo)
+         {
+             <p>Loading affiliate dashboard...</p>
+         }
+         else if (!string.IsNullOrEmpty(affiliateInfoError))
+         {
+             <div class="error-message">
+                 <p>@affiliateInfoError</p>
+                 <button class="btn btn-secondary" @onclick="LoadAffiliateInfo">Retry</button>
+             </div>
+         }
+     </div>
+ }
+        else if (activeAffiliateTab == "partner-store")
+        {
+            <div class="partner-store-content">
+                <PartnerStoreComponent />
+            </div>
+        }
+        else if (activeAffiliateTab == "milestones")
+        {
+            <div class="milestones-content">
+                <MileStoneComponent/>
+            </div>
+        }
+
+    </div> <!-- Close affiliate-dashboard-complete -->
+}
+                    else if (affiliateStatus.ApplicationStatus == "rejected")
+                    {
+                        <!-- REJECTED -->
+                        <div class="affiliate-rejected">
+                            <div class="rejected-icon"></div>
+                            <h2>Application Not Approved</h2>
+                            <p>Unfortunately, your affiliate application was not approved at this time.</p>
+                            <p>You may reapply in 30 days.</p>
+                        </div>
+                    }
+                    else if (affiliateStatus.ApplicationStatus == "waitlisted")
+                    {
+                        <!-- WAITLISTED -->
+                        <div class="affiliate-waitlisted">
+                            <div class="waitlist-icon">📋</div>
+                            <h2>You're on the Waitlist!</h2>
+                            <p>We've reached our limit of 500 active affiliates.</p>
+                            <p>We'll notify you via email when a spot opens up.</p>
+                            @if (affiliateStatus.SubmittedAt.HasValue)
+                            {
+                                <p class="submitted-date">
+                                    Added to waitlist on @affiliateStatus.SubmittedAt.Value.ToString("MMMM dd, yyyy")
+                                </p>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+
+            else if (activeTab == "settings")
+            {
+                <div style="display:flex;flex-direction:column;gap:34px">
+
+                    <!-- SECTION 1: PROFILE -->
+                    <div style="border:1px solid rgba(169,183,204,0.4);padding:21px">
+                        <p style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;
+                                                                                                                                                                                                                                              font-weight:700;color:#4A5C7A;margin-bottom:13px">
+                            Profile
+                        </p>
+                        <div class="row g-3">
+                            <div class="col-12 col-md-6">
+                                <label style="font-size:11px;letter-spacing:1.5px;
+                                                                                                                                                                                                                                                          text-transform:uppercase;font-weight:700;
+                                                                                                                                                                                                                                                          color:#4A5C7A;display:block;margin-bottom:5px">
+                                    Full Name
+                                </label>
+                                <input @bind="settingsFullName" style="width:100%;border:1px solid rgba(169,183,204,0.4);
+                                                                                                                                                                                                                                                          padding:10px 13px;font-size:14px;color:#1E2A47;
+                                                                                                                                                                                                                                                          outline:none" />
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label style="font-size:11px;letter-spacing:1.5px;
+                                                                                                                                                                                                                                                          text-transform:uppercase;font-weight:700;
+                                                                                                                                                                                                                                                          color:#4A5C7A;display:block;margin-bottom:5px">
+                                    Email
+                                </label>
+                                <input disabled @bind="settingsEmail" style="width:100%;border:1px solid rgba(169,183,204,0.4);
+                                                                                                                                                                                                                                                          padding:10px 13px;font-size:14px;color:#1E2A47;
+                                                                                                                                                                                                                                                          outline:none" />
+                            </div>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(settingsError))
+                        {
+                            <p style="color:#C44545;font-size:13px;margin-top:12px;margin-bottom:0">
+                                @settingsError
+                            </p>
+                        }
+                        @if (!string.IsNullOrEmpty(settingsSuccess))
+                        {
+                            <p style="color:#1D9E75;font-size:13px;margin-top:12px;margin-bottom:0">
+                                @settingsSuccess
+                            </p>
+                        }
+
+                        <button @onclick="HandleSaveSettings"
+                                disabled="@isSavingSettings"
+                                style="margin-top:16px;background:#1E2A47;color:white;
+                                                                                                                                                                                                                           padding:10px 34px;font-size:13px;font-weight:700;
+                                                                                                                                                                                                                           letter-spacing:0.5px;text-transform:uppercase;border:none;
+                                                                                                                                                                                                                           opacity:@(isSavingSettings ? "0.7" : "1")">
+                            @(isSavingSettings ? "Saving..." : "Save Changes")
+                        </button>
+                    </div>
+
+                    <!-- SECTION 2: NOTIFICATIONS -->
+                    <div style="border:1px solid rgba(169,183,204,0.4);padding:21px">
+                        <p style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;
+                                                                                                                                                                                                                                              font-weight:700;color:#4A5C7A;margin-bottom:13px">
+                            Notifications
+                        </p>
+
+                        <!-- Email Notifications -->
+                        <div style="display:flex;align-items:center;justify-content:space-between;
+                                                                                                                                                                                                                                                padding:13px 0;border-bottom:1px solid rgba(169,183,204,0.1)">
+                            <div>
+                                <p style="color:#1E2A47;font-size:14px;font-weight:600;margin:0">
+                                    Email Notifications
+                                </p>
+                                <p style="color:#4A5C7A;font-size:12px;margin:0">
+                                    Order updates and tracking
+                                </p>
+                            </div>
+                            <div @onclick="() => emailNotifications = !emailNotifications"
+                                 style="width:44px;height:24px;border-radius:999px;cursor:pointer;
+                                                                                                                                                                                                                                                    background:@(emailNotifications ? "#1E2A47" : "#A9B7CC");
+                                                                                                                                                                                                                                                    position:relative;transition:background 0.2s">
+                                <span style="position:absolute;top:2px;
+                                                                                                                                                                                                                                                         left:@(emailNotifications ? "22px" : "2px");
+                                                                                                                                                                                                                                                         width:20px;height:20px;border-radius:50%;
+                                                                                                                                                                                                                                                         background:white;transition:left 0.2s">
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- SMS Notifications -->
+                        <div style="display:flex;align-items:center;justify-content:space-between;
+                                                                                                                                                                                                                                                padding:13px 0;border-bottom:1px solid rgba(169,183,204,0.1)">
+                            <div>
+                                <p style="color:#1E2A47;font-size:14px;font-weight:600;margin:0">
+                                    SMS Notifications
+                                </p>
+                                <p style="color:#4A5C7A;font-size:12px;margin:0">
+                                    Shipping alerts via text
+                                </p>
+                            </div>
+                            <div @onclick="() => smsNotifications = !smsNotifications"
+                                 style="width:44px;height:24px;border-radius:999px;cursor:pointer;
+                                                                                                                                                                                                                                                    background:@(smsNotifications ? "#1E2A47" : "#A9B7CC");
+                                                                                                                                                                                                                                                    position:relative;transition:background 0.2s">
+                                <span style="position:absolute;top:2px;
+                                                                                                                                                                                                                                                         left:@(smsNotifications ? "22px" : "2px");
+                                                                                                                                                                                                                                                         width:20px;height:20px;border-radius:50%;
+                                                                                                                                                                                                                                                         background:white;transition:left 0.2s">
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Promotional Emails -->
+                        <div style="display:flex;align-items:center;justify-content:space-between;
+                                                                                                                                                                                                                                                padding:13px 0">
+                            <div>
+                                <p style="color:#1E2A47;font-size:14px;font-weight:600;margin:0">
+                                    Promotional Emails
+                                </p>
+                                <p style="color:#4A5C7A;font-size:12px;margin:0">
+                                    New drops, sales, and events
+                                </p>
+                            </div>
+                            <div @onclick="() => promotionalEmails = !promotionalEmails"
+                                 style="width:44px;height:24px;border-radius:999px;cursor:pointer;
+                                                                                                                                                                                                                                                    background:@(promotionalEmails ? "#1E2A47" : "#A9B7CC");
+                                                                                                                                                                                                                                                    position:relative;transition:background 0.2s">
+                                <span style="position:absolute;top:2px;
+                                                                                                                                                                                                                                                         left:@(promotionalEmails ? "22px" : "2px");
+                                                                                                                                                                                                                                                         width:20px;height:20px;border-radius:50%;
+                                                                                                                                                                                                                                                         background:white;transition:left 0.2s">
+                                </span>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- SECTION 3: DANGER ZONE -->
+                    <div style="border:1px solid rgba(196,69,69,0.3);padding:21px">
+                        <p style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;
+                                                                                                                              font-weight:700;color:#C44545;margin-bottom:8px">
+                            Danger Zone
+                        </p>
+                        <p style="color:#4A5C7A;font-size:13px;margin-bottom:13px">
+                            Permanently delete your account and all associated data.
+                        </p>
+
+                        @if (!showDeleteConfirm)
+                        {
+                            <!-- initial button -->
+                            <button @onclick="() => showDeleteConfirm = true"
+                                    style="border:1px solid #C44545;color:#C44545;
+                                                                                                                                                                                                                                                       padding:8px 21px;font-size:12px;font-weight:700;
+                                                                                                                                                                                                                                                       text-transform:uppercase;letter-spacing:0.5px;
+                                                                                                                                                                                                                                                       background:transparent">
+                                Delete Account
+                            </button>
+                        }
+                        else
+                        {
+                            <!-- confirmation step -->
+                            <p style="color:#C44545;font-size:13px;font-weight:600;margin-bottom:12px">
+                                Are you sure? This action cannot be undone.
+                            </p>
+
+                            @if (!string.IsNullOrEmpty(deleteError))
+                            {
+                                <p style="color:#C44545;font-size:13px;margin-bottom:12px">
+                                    @deleteError
+                                </p>
+                            }
+
+                            <div class="d-flex gap-2">
+                                <button @onclick="HandleDeleteAccount"
+                                        disabled="@isDeletingAccount"
+                                        style="border:1px solid #C44545;background:#C44545;
+                                                                                                                                                                                                                                                           color:white;padding:8px 21px;font-size:12px;
+                                                                                                                                                                                                                                                           font-weight:700;text-transform:uppercase;
+                                                                                                                                                                                                                                                           letter-spacing:0.5px;
+                                                                                                                                                                                                                                                           opacity:@(isDeletingAccount ? "0.7" : "1")">
+                                    @(isDeletingAccount ? "Deleting..." : "Yes, Delete")
+                                </button>
+
+                                <button @onclick="() => showDeleteConfirm = false"
+                                        style="border:1px solid #1E2A47;color:#1E2A47;
+                                                                                                                                                                                                                                                           padding:8px 21px;font-size:12px;font-weight:700;
+                                                                                                                                                                                                                                                           text-transform:uppercase;letter-spacing:0.5px;
+                                                                                                                                                                                                                                                           background:transparent">
+                                    Cancel
+                                </button>
+                            </div>
+                        }
+                    </div>
+
+                </div>
+            }
+
+
+        </div>
+        <div class="affiliate-section">
+            @if (showAffiliatePrompt)
+            {
+                <!-- User hasn't applied yet - show prompt -->
+                <div class="affiliate-prompt">
+                    <div class="prompt-icon">🎯</div>
+                    <div class="prompt-content">
+                        <h3>Become a MuuqWear Affiliate</h3>
+                        <p>Join our community of content creators and earn commission on every sale. Limited to 500 members!</p>
+                        <button class="btn-apply" @onclick='() => NavigationManager.NavigateTo("/affiliate")'>
+                            Apply Now
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+@if (isAddressFormOpen)
+{
+    <!-- OVERLAY -->
+    <div @onclick="CloseAddressForm"
+         style="position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:1000">
+    </div>
+
+    <!-- SLIDE IN PANEL -->
+    <div style="position:fixed;top:0;right:0;height:100%;width:100%;
+                                                                                                                                                                                                                                                                                                                                                    max-width:480px;background:white;z-index:1001;
+                                                                                                                                                                                                                                                                                                                                                    overflow-y:auto;padding:32px 24px;
+                                                                                                                                                                                                                                                                                                                                                    box-shadow:-4px 0 24px rgba(0,0,0,0.1)">
+
+        <!-- header -->
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <p style="color:#1E2A47;font-size:20px;
+                                                                                                                                                                                                                                                                                                                                                          font-family:'Playfair Display',serif;margin:0">
+                @(isEditMode ? "Edit Address" : "Add New Address")
+            </p>
+            <button @onclick="CloseAddressForm"
+                    style="background:transparent;border:none;
+                                                                                                                                                                                                                                                                                                                                                               color:#4A5C7A;font-size:20px;padding:0">
+                ✕
+            </button>
+        </div>
+
+        <!-- error -->
+        @if (!string.IsNullOrEmpty(addressFormError))
+        {
+            <p style="color:#dc3545;font-size:13px;margin-bottom:16px">
+                @addressFormError
+            </p>
+        }
+
+        <!-- FORM FIELDS -->
+        <div class="d-flex flex-column gap-3">
+
+            <!-- Label -->
+            <div>
+                <label style="color:#1E2A47;font-size:12px;
+                                                                                                                                                                                                                                                                                                font-weight:700;text-transform:uppercase;
+                                                                                                                                                                                                                                                                                                letter-spacing:0.5px">
+                    Label *
+                </label>
+                <div class="d-flex gap-2 mt-1">
+                    @foreach (var label in new[] { "Home", "Office", "Other" })
+                    {
+                        <button @onclick="() => addressForm.Label = label"
+                                style="padding:6px 16px;font-size:12px;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        font-weight:600;border:1px solid;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        background:@(addressForm.Label == label ? "#1E2A47" : "transparent");
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        color:@(addressForm.Label == label ? "white" : "#1E2A47");
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        border-color:#1E2A47">
+                            @label
+                        </button>
+                    }
+                </div>
+            </div>
+
+            <!-- Full Name -->
+            <div>
+                <label style="color:#1E2A47;font-size:12px;font-weight:700;
+                                                                                                                                                                                                                                                                                                                                                                   text-transform:uppercase;letter-spacing:0.5px">
+                    Full Name *
+                </label>
+                <input @bind="addressForm.FullName"
+                       placeholder="John Smith"
+                       style="width:100%;margin-top:4px;padding:10px 12px;
+                                                                                                                                                                                                                                                                                                                                                                  border:1px solid rgba(169,183,204,0.6);
+                                                                                                                                                                                                                                                                                                                                                                  font-size:14px;color:#1E2A47;outline:none" />
+            </div>
+
+            <!-- Street 1 -->
+            <div>
+                <label style="color:#1E2A47;font-size:12px;font-weight:700;
+                                                                                                                                                                                                                                                                                                                                                                   text-transform:uppercase;letter-spacing:0.5px">
+                    Street Address *
+                </label>
+                <input @bind="addressForm.Street1"
+                       placeholder="123 Main Street"
+                       style="width:100%;margin-top:4px;padding:10px 12px;
+                                                                                                                                                                                                                                                                                                                                                                  border:1px solid rgba(169,183,204,0.6);
+                                                                                                                                                                                                                                                                                                                                                                  font-size:14px;color:#1E2A47;outline:none" />
+            </div>
+
+            <!-- Street 2 -->
+            <div>
+                <label style="color:#1E2A47;font-size:12px;font-weight:700;
+                                                                                                                                                                                                                                                                                                                                                                   text-transform:uppercase;letter-spacing:0.5px">
+                    Apt, Suite, etc (optional)
+                </label>
+                <input @bind="addressForm.Street2"
+                       placeholder="Apt 4B"
+                       style="width:100%;margin-top:4px;padding:10px 12px;
+                                                                                                                                                                                                                                                                                                                                                                  border:1px solid rgba(169,183,204,0.6);
+                                                                                                                                                                                                                                                                                                                                                                  font-size:14px;color:#1E2A47;outline:none" />
+            </div>
+
+            <!-- City + State -->
+            <div class="row g-2">
+                <div class="col-7">
+                    <label style="color:#1E2A47;font-size:12px;font-weight:700;
+                                                                                                                                                                                                                                                                                                                                                                       text-transform:uppercase;letter-spacing:0.5px">
+                        City *
+                    </label>
+                    <input @bind="addressForm.City"
+                           placeholder="New York"
+                           style="width:100%;margin-top:4px;padding:10px 12px;
+                                                                                                                                                                                                                                                                                                                                                                      border:1px solid rgba(169,183,204,0.6);
+                                                                                                                                                                                                                                                                                                                                                                      font-size:14px;color:#1E2A47;outline:none" />
+                </div>
+                <div class="col-5">
+                    <label style="color:#1E2A47;font-size:12px;font-weight:700;
+                                                                                                                                                                                                                                                                                                                                                                       text-transform:uppercase;letter-spacing:0.5px">
+                        State
+                    </label>
+                    <input @bind="addressForm.State"
+                           placeholder="NY"
+                           style="width:100%;margin-top:4px;padding:10px 12px;
+                                                                                                                                                                                                                                                                                                                                                                      border:1px solid rgba(169,183,204,0.6);
+                                                                                                                                                                                                                                                                                                                                                                      font-size:14px;color:#1E2A47;outline:none" />
+                </div>
+            </div>
+
+            <!-- Postal Code + Country -->
+            <div class="row g-2">
+                <div class="col-6">
+                    <label style="color:#1E2A47;font-size:12px;font-weight:700;
+                                                                                                                                                                                                                                                                                                                                                                       text-transform:uppercase;letter-spacing:0.5px">
+                        Postal Code *
+                    </label>
+                    <input @bind="addressForm.PostalCode"
+                           placeholder="10001"
+                           style="width:100%;margin-top:4px;padding:10px 12px;
+                                                                                                                                                                                                                                                                                                                                                                      border:1px solid rgba(169,183,204,0.6);
+                                                                                                                                                                                                                                                                                                                                                                      font-size:14px;color:#1E2A47;outline:none" />
+                </div>
+                <div class="col-6">
+                    <label style="color:#1E2A47;font-size:12px;font-weight:700;
+                                                                                                                                                                                                                                                                                                                                                                       text-transform:uppercase;letter-spacing:0.5px">
+                        Country
+                    </label>
+                    <input @bind="addressForm.Country"
+                           placeholder="US"
+                           style="width:100%;margin-top:4px;padding:10px 12px;
+                                                                                                                                                                                                                                                                                                                                                                      border:1px solid rgba(169,183,204,0.6);
+                                                                                                                                                                                                                                                                                                                                                                      font-size:14px;color:#1E2A47;outline:none" />
+                </div>
+            </div>
+
+            <!-- Set as Default -->
+            <div class="d-flex align-items-center gap-2">
+                <input type="checkbox" id="isDefault"
+                       @bind="addressForm.IsDefault"
+                       style="width:16px;height:16px;accent-color:#1E2A47" />
+                <label for="isDefault"
+                       style="color:#1E2A47;font-size:14px;margin:0;cursor:pointer">
+                    Set as default address
+                </label>
+            </div>
+
+        </div>
+
+        <!-- SAVE BUTTON -->
+        <button @onclick="HandleSaveAddress"
+                disabled="@isSavingAddress"
+                style="width:100%;margin-top:32px;padding:14px;
+                                                                                                                                                                                                                                                                                                                                                           background:#1E2A47;color:white;border:none;
+                                                                                                                                                                                                                                                                                                                                                           font-size:14px;font-weight:700;
+                                                                                                                                                                                                                                                                                                                                                           text-transform:uppercase;letter-spacing:0.5px;
+                                                                                                                                                                                                                                                                                                                                                           opacity:@(isSavingAddress ? "0.7" : "1")">
+            @(isSavingAddress ? "Saving..." : (isEditMode ? "Save Changes" : "Add Address"))
+        </button>
+
+    </div>
+}
+
+
+
+
+

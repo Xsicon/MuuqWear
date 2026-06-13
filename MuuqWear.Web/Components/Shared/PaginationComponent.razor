@@ -1,0 +1,125 @@
+﻿@typeparam TItem
+
+<div class="mw-pagination">
+
+    <div class="mw-pagination__size">
+        <span>Show</span>
+        <select class="mw-pagination__select"
+                @bind="CurrentPageSize"
+                @bind:after="HandlePageSizeChange">
+            @foreach (var size in PageSizes)
+            {
+            <option value="@size">@size</option>
+            }
+        </select>
+        <span>per page</span>
+        <span class="mw-pagination__info">
+            Showing @StartItem - @EndItem of @TotalCount items
+        </span>
+    </div>
+
+    <div class="mw-pagination__controls">
+
+        <button class="mw-pagination__btn"
+                disabled="@(CurrentPage == 1)"
+                @onclick="GoToFirstPage">
+            «
+        </button>
+
+        <button class="mw-pagination__btn"
+                disabled="@(CurrentPage == 1)"
+                @onclick="GoToPreviousPage">
+            ‹
+        </button>
+
+        @foreach (var pageNumber in VisiblePages)
+        {
+        <button class="mw-pagination__btn @(pageNumber == CurrentPage ? " active" : "" )"
+                @onclick="() => GoToPage(pageNumber)">
+            @pageNumber
+        </button>
+        }
+
+        <button class="mw-pagination__btn"
+                disabled="@(CurrentPage == TotalPages)"
+                @onclick="GoToNextPage">
+            ›
+        </button>
+
+        <button class="mw-pagination__btn"
+                disabled="@(CurrentPage == TotalPages)"
+                @onclick="GoToLastPage">
+            »
+        </button>
+
+    </div>
+
+</div>
+
+@code {
+
+    [Parameter]
+    public int TotalCount { get; set; }
+
+    [Parameter]
+    public int CurrentPage { get; set; } = 1;
+
+    [Parameter]
+    public int PageSize { get; set; } = 10;
+
+    [Parameter]
+    public EventCallback<(int Page, int PageSize)>
+    OnPageChanged { get; set; }
+
+    private int[] PageSizes = new[] { 5, 10, 20, 50 };
+
+    private int CurrentPageSize { get; set; }
+
+    protected override void OnParametersSet()
+    {
+    CurrentPageSize = PageSize;
+    }
+
+    private int TotalPages =>
+    PageSize > 0
+    ? (int)Math.Ceiling((double)TotalCount / PageSize)
+    : 1;
+
+    private bool HasPreviousPage => CurrentPage > 1;
+    private bool HasNextPage => CurrentPage < TotalPages;
+
+    private int StartItem =>
+    TotalCount == 0 ? 0 : (CurrentPage - 1) * CurrentPageSize + 1;
+
+    private int EndItem =>
+    Math.Min(CurrentPage * CurrentPageSize, TotalCount);
+
+    private IEnumerable<int>
+        VisiblePages
+        {
+        get
+        {
+        int maxVisible = 5;
+        int startPage = Math.Max(1, CurrentPage - maxVisible / 2);
+        int endPage = Math.Min(TotalPages, startPage + maxVisible - 1);
+        startPage = Math.Max(1, endPage - maxVisible + 1);
+        return Enumerable.Range(startPage, endPage - startPage + 1);
+        }
+        }
+
+        private async Task GoToPage(int page)
+        {
+        if (page < 1 || page > TotalPages) return;
+        await OnPageChanged.InvokeAsync((page, CurrentPageSize));
+        }
+
+        private async Task GoToFirstPage() => await GoToPage(1);
+        private async Task GoToPreviousPage() => await GoToPage(CurrentPage - 1);
+        private async Task GoToNextPage() => await GoToPage(CurrentPage + 1);
+        private async Task GoToLastPage() => await GoToPage(TotalPages);
+
+        private async Task HandlePageSizeChange()
+        {
+        await OnPageChanged.InvokeAsync((1, CurrentPageSize));
+        }
+        }

@@ -1,0 +1,352 @@
+﻿@page "/productdetail/{Id}"
+@rendermode InteractiveServer
+@inject IJSRuntime JS
+@inject IProductService ProductService
+@inject NavigationManager NavigationManager
+@inject CartStateService CartStateService
+@using MuuqWear.Application.Services.CartService
+@using MuuqWear.Application.Services.ProductService
+@using MuuqWear.Model.Cart
+@using MuuqWear.Model.Products
+@using MuuqWear.Web.Components.Shared
+
+<PageTitle>@(product?.Name ?? "Product")</PageTitle>
+
+<SpinnerComponent Show="@isLoading" />
+
+@if (product == null)
+{
+    <div class="container py-5 text-center">
+        <p>Product not found.</p>
+    </div>
+}
+else
+{
+    <section class="mw-product container py-4">
+
+        <!-- BREADCRUMB -->
+        <div class="mw-breadcrumb mb-3">
+            <a href="/">Home</a>
+            <span>›</span>
+            <a href="/shop">Shop</a>
+            <span>›</span>
+            <span class="active">@product.Name</span>
+        </div>
+
+        <!-- MAIN -->
+        <div class="mw-product-card row g-4 mt-0">
+
+            <!-- LEFT: IMAGES -->
+            <div class="col-12 col-lg-7">
+
+                <!-- MAIN IMAGE -->
+                <div class="mw-product-img mb-2">
+                    @if (!string.IsNullOrEmpty(SelectedImage))
+                    {
+                        <img src="@SelectedImage" alt="@product.Name" />
+                    }
+                    else
+                    {
+                        <div class="mw-product-img-placeholder">
+                            <span>No image available</span>
+                        </div>
+                    }
+                </div>
+
+                <!-- THUMBNAILS -->
+                @if (product.AllImageUrls.Count > 1)
+                {
+                    <div class="mw-thumbs">
+                        @foreach (var img in product.AllImageUrls)
+                        {
+                            <button class="mw-thumb @(SelectedImage == img ? "active" : "")"
+                                    @onclick="() => SelectedImage = img">
+                                <img src="@img" alt="@product.Name" />
+                            </button>
+                        }
+                    </div>
+                }
+
+            </div>
+
+            <!-- RIGHT: DETAILS -->
+            <div class="col-12 col-lg-5">
+                <div class="mw-product-info">
+
+                    <!-- BADGE -->
+                    @if (!string.IsNullOrEmpty(product.Badge))
+                    {
+                        <span class="mw-badge mb-2">@product.Badge</span>
+                    }
+
+                    <!-- NAME -->
+                    <h1 class="mw-product-title">@product.Name</h1>
+
+                    <!-- PRICE -->
+                    <p class="mw-product-price">$@product.Price.ToString("F2")</p>
+
+                    <!-- STOCK STATUS -->
+                    <p class="mw-stock @(product.Stock > 0 ? "in" : "out") mb-3">
+                        @(product.Stock > 0 ? $"In Stock ({product.Stock} available)" : "Out of Stock")
+                    </p>
+
+                    <!-- DESCRIPTION -->
+                    @if (!string.IsNullOrEmpty(product.Description))
+                    {
+                        <div class="mb-3">
+                            <h6 class="mw-label">Description</h6>
+                            <p class="mw-desc">@product.Description</p>
+                        </div>
+                    }
+
+                    <!-- SIZE -->
+                    @if (product.SizeList.Any())
+                    {
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between">
+                                <h6 class="mw-label">Select Size</h6>
+                                <a href="/size-guide" class="mw-link">Size Guide</a>
+                            </div>
+                            <div class="d-flex gap-2 flex-wrap">
+                                @foreach (var size in product.SizeList)
+                                {
+                                    <button class="mw-size @(SelectedSize == size ? "active" : "")"
+                                            @onclick="() => SelectedSize = size">
+                                        @size
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    <!--  ADD COLOR SELECTOR -->
+                    @if (product.ColorOptions.Any())
+                    {
+                        <div class="mb-3">
+                            <h6 class="mw-label">Select Color</h6>
+                            <div class="d-flex gap-2 flex-wrap">
+                                @foreach (var color in product.ColorOptions)
+                                {
+                                    <button class="mw-color-btn @(SelectedColor == color ? "active" : "")"
+                                            style="background-color: @color"
+                                            @onclick="() => SelectedColor = color">
+                                        @if (SelectedColor == color)
+                                        {
+                                            <span class="mw-color-check">✓</span>
+                                        }
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    }
+
+
+                    <!-- GENDER -->
+                    @if (!string.IsNullOrEmpty(product.Gender))
+                    {
+                        <div class="mb-3">
+                            <h6 class="mw-label">Gender</h6>
+                            <p class="mw-desc">@product.Gender</p>
+                        </div>
+                    }
+
+                    <!-- ADD TO CART -->
+                    <button class="mw-btn-primary w-100 mb-2"
+                            disabled="@(product.Stock == 0 || isAddingToCart)"
+                            @onclick="HandleAddToCart">
+                        @if (isAddingToCart)
+                        {
+                            <span class="mw-btn-spinner"></span>
+                            <span>Adding...</span>
+                        }
+                        else
+                        {
+                            <span>@(product.Stock > 0 ? "Add to Bag" : "Out of Stock")</span>
+                        }
+                    </button>
+
+                    @* message shown when no size selected  *@
+                    @if (!string.IsNullOrEmpty(addToCartMessage))
+                    {
+                        <div class="mt-2 @addToCartMessageCss small">
+                            @addToCartMessage
+                        </div>
+                    }
+
+                    <!-- BENEFITS -->
+                    <div class="mw-benefits">
+                        <span>🚚 Free Shipping</span>
+                        <span>↩ 30-Day Returns</span>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- RELATED PRODUCTS -->
+    @if (RelatedProducts.Any())
+    {
+        <section class="mw-related container mt-5">
+
+            <div class="d-flex justify-content-between align-items-end mb-4">
+                <h2 class="mw-related-title">Complete the Look</h2>
+            </div>
+
+            <div class="row g-4">
+                @foreach (var item in RelatedProducts)
+                {
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <a href="/productdetail/@item.Id" class="mw-related-card">
+                            <div class="mw-related-img">
+                                <img src="@item.ImageUrl" alt="@item.Name" />
+                            </div>
+                            <h6>@item.Name</h6>
+                            <p>$@item.Price.ToString("F2")</p>
+                        </a>
+                    </div>
+                }
+            </div>
+
+        </section>
+    }
+}
+
+@code {
+
+    [Parameter]
+    public string? Id { get; set; }
+
+    private ProductDetailModel? product;
+    private string SelectedImage = "";
+    private string SelectedSize = "";
+    private string SelectedColor = "";
+    private List<ProductModel> RelatedProducts = new();
+    private bool isLoading = false;
+
+
+    private bool isAddingToCart = false;
+    private string addToCartMessage = string.Empty;
+    private string addToCartMessageCss = string.Empty;
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+        if (string.IsNullOrEmpty(Id) || !Guid.TryParse(Id, out Guid productId))
+        {
+            NavigationManager.NavigateTo("/");
+            return;
+        }
+
+        await LoadProduct(productId);
+        isLoading = false;
+    }
+
+    private async Task LoadProduct(Guid productId)
+    {
+        var result = await ProductService.GetById(productId);
+
+        if (!result.Success || result.Data == null)
+        {
+            NavigationManager.NavigateTo("/");
+            return;
+        }
+
+        product = new ProductDetailModel
+        {
+            Id = result.Data.Id,
+            Name = result.Data.Name,
+            Price = result.Data.Price,
+            Description = result.Data.Description,
+            Badge = result.Data.Badge,
+            ImageUrl = result.Data.ImageUrl,
+            Stock = result.Data.Stock,
+            IsActive = result.Data.IsActive,
+            Gender = result.Data.Gender,
+            CategoryId = result.Data.CategoryId,
+            SizeStock = result.Data.SizeStock // ← add
+          .Select(s => new SizeStockModel
+          {
+              Id = s.Id,
+              Size = s.Size,
+              Quantity = s.Quantity
+          }).ToList(),
+            Images = result.Data.Images
+          .Select(i => new ProductImageModel
+          {
+              Id = i.Id,
+              ProductId = i.ProductId,
+              ImageUrl = i.ImageUrl,
+              SortOrder = i.SortOrder
+          }).ToList(),
+            ColorOptions = result.Data.ColorOptions
+        };
+
+        SelectedImage = product.AllImageUrls.FirstOrDefault() ?? "";
+        SelectedSize = product.SizeList.FirstOrDefault() ?? "";
+        SelectedColor = product.ColorOptions.FirstOrDefault() ?? ""; // ← ADD
+
+
+        await LoadRelated(productId);
+    }
+
+    private async Task LoadRelated(Guid productId)
+    {
+        var result = await ProductService.GetRelated(productId);
+        if (result.Success && result.Data != null)
+            RelatedProducts = result.Data;
+    }
+
+    private async Task HandleAddToCart()
+    {
+        // validate size selected
+        if (string.IsNullOrEmpty(SelectedSize))
+        {
+            addToCartMessage = "Please select a size";
+            addToCartMessageCss = "text-danger";
+            return;
+        }
+        if (product!.ColorOptions.Any() && string.IsNullOrEmpty(SelectedColor))
+        {
+            addToCartMessage = "Please select a color";
+            addToCartMessageCss = "text-danger";
+            return;
+        }
+
+
+        isAddingToCart = true;
+        addToCartMessage = string.Empty;
+        StateHasChanged();
+
+        var success = await CartStateService.AddItem(new AddCartItemModel
+        {
+            ProductId = product!.Id,
+            Size = SelectedSize,
+            Quantity = 1,
+            ProductName = product.Name,
+            ProductImageUrl = product.AllImageUrls.FirstOrDefault() ?? product.ImageUrl,
+            ProductPrice = product.Price,
+            Color = SelectedColor
+        });
+
+        if (success)
+        {
+            addToCartMessage = "Added to bag! ✓";
+            addToCartMessageCss = "text-success";
+        }
+        else
+        {
+            addToCartMessage = "Failed to add. Please try again.";
+            addToCartMessageCss = "text-danger";
+        }
+
+        isAddingToCart = false;
+        StateHasChanged();
+
+        // clear message after
+        await Task.Delay(3000);
+        addToCartMessage = string.Empty;
+        StateHasChanged();
+    }
+}

@@ -1,0 +1,1003 @@
+﻿@page "/muuqsimo"
+@using MuuqWear.Application.Services.CartService
+@using MuuqWear.Application.Services.ProductService
+@using MuuqWear.Model.Cart
+@using MuuqWear.Model.Products
+@rendermode InteractiveServer
+@inject IProductService ProductService
+@inject IJSRuntime JS
+@inject CartStateService CartStateService
+
+<PageTitle>Muuqsimo 2025 — Muuqwear</PageTitle>
+
+<link rel="stylesheet" href="lib/swiper/swiper-bundle.min.css" />
+
+<div class="ms">
+
+    <!-- Section 1: Hero with carousel -->
+    <section class="ms-hero">
+
+        <!-- Background carousel (Swiper) -->
+        <div class="swiper ms-hero__carousel">
+            <div class="swiper-wrapper">
+                @foreach (var slide in HeroSlides)
+                {
+                    <div class="swiper-slide ms-hero__slide">
+                        <img src="@slide.ImageUrl"
+                             alt="@slide.Alt"
+                             class="ms-hero__slide-img" />
+                        <div class="ms-hero__slide-overlay"></div>
+                    </div>
+                }
+            </div>
+            <div class="swiper-pagination ms-hero__pagination"></div>
+        </div>
+
+        <!-- Hero content (bottom-left) -->
+        <div class="ms-hero__content-wrap">
+            <div class="ms-hero__content">
+                <p class="ms-hero__eyebrow">The Annual Flagship Gala</p>
+                <h1 class="ms-hero__title">Muuqsimo 2025</h1>
+                <p class="ms-hero__tagline">Where Fashion Meets Legacy</p>
+                <p class="ms-hero__meta">
+                    September 5&ndash;7, 2025 · The Shed, New York City
+                </p>
+                <div class="ms-hero__ctas">
+                    <a href="/muuqsimo#tickets" class="ms-hero__cta ms-hero__cta--solid">
+                        Get Tickets →
+                    </a>
+                    <a href="/muuqsimo#schedule" class="ms-hero__cta ms-hero__cta--outline">
+                        View Schedule
+                    </a>
+                </div>
+
+            </div>
+        </div>
+
+    </section>
+    <!-- Section 2: Date + Countdown band -->
+    <section class="ms-countdown">
+        <div class="ms-countdown__inner">
+
+            <!-- LEFT: eyebrow + date -->
+            <div class="ms-countdown__info">
+                <p class="ms-countdown__eyebrow">The Veil Has Risen</p>
+                <p class="ms-countdown__date">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                         class="ms-countdown__date-icon">
+                        <path d="M8 2v4"></path>
+                        <path d="M16 2v4"></path>
+                        <rect width="18" height="18" x="3" y="4" rx="2"></rect>
+                        <path d="M3 10h18"></path>
+                    </svg>
+                    September 5, 2025 at 6:00 PM ET
+                </p>
+            </div>
+
+            <!-- RIGHT: countdown tiles -->
+            <div class="ms-countdown__tiles">
+                <div class="ms-countdown__tile">
+                    <div class="ms-countdown__tile-num" data-ms-cd="days">00</div>
+                    <span class="ms-countdown__tile-label">Days</span>
+                </div>
+                <div class="ms-countdown__tile">
+                    <div class="ms-countdown__tile-num" data-ms-cd="hours">00</div>
+                    <span class="ms-countdown__tile-label">Hours</span>
+                </div>
+                <div class="ms-countdown__tile">
+                    <div class="ms-countdown__tile-num" data-ms-cd="minutes">00</div>
+                    <span class="ms-countdown__tile-label">Minutes</span>
+                </div>
+                <div class="ms-countdown__tile">
+                    <div class="ms-countdown__tile-num" data-ms-cd="seconds">00</div>
+                    <span class="ms-countdown__tile-label">Seconds</span>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Section 3: The Experience -->
+    <section class="ms-experience">
+        <div class="ms-experience__inner">
+
+            <!-- LEFT: copy -->
+            <div class="ms-experience__copy">
+                <p class="ms-experience__eyebrow">The Experience</p>
+                <h2 class="ms-experience__title">
+                    A Night Where the Brand&rsquo;s Most Loyal Converge
+                </h2>
+                <p class="ms-experience__body">
+                    Muuqsimo is more than an event &mdash; it&rsquo;s a pilgrimage
+                    for the Muuqwear community. Top affiliates, industry press,
+                    and fashion elite gather under sapphire-lit vaults to celebrate
+                    the year&rsquo;s achievements and witness the unveiling of
+                    tomorrow&rsquo;s collection.
+                </p>
+            </div>
+
+            <!-- RIGHT: 2x2 image grid -->
+            <div class="ms-experience__grid">
+                @foreach (var card in ExperienceCards)
+                {
+                    <a class="ms-experience__card" href="#">
+                        <img src="@card.ImageUrl"
+                             alt="@card.Title"
+                             class="ms-experience__card-img"
+                             loading="lazy" />
+                        <div class="ms-experience__card-overlay"></div>
+                        <p class="ms-experience__card-label">@card.Title</p>
+                    </a>
+                }
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Section 4: The Blue Veil Walk (dark) -->
+    <section class="ms-veil">
+        <div class="ms-veil__inner">
+
+            <!-- LEFT: copy + specs -->
+            <div class="ms-veil__copy">
+                <p class="ms-veil__eyebrow">The Arrival</p>
+                <h2 class="ms-veil__title">The Blue Veil Walk</h2>
+                <p class="ms-veil__body">
+                    Every guest walks a 50-foot royal blue velvet runner, lined
+                    with soft ambient lighting, as professional photographers
+                    capture the moment. This is not just an entrance &mdash;
+                    it&rsquo;s a statement. An orchestral soundscape swells as
+                    you cross the threshold into Muuqsimo.
+                </p>
+
+                <!-- Specs grid -->
+                <div class="ms-veil__specs">
+                    @foreach (var spec in VeilSpecs)
+                    {
+                        <div class="ms-veil__spec">
+                            <p class="ms-veil__spec-label">@spec.Label</p>
+                            <p class="ms-veil__spec-value">@spec.Value</p>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- RIGHT: image -->
+            <div class="ms-veil__media">
+                <img src="https://images.unsplash.com/photo-1724183555880-f59c7d37dac4?w=600&h=800&fit=crop"
+                     alt="Blue Veil Walk" />
+                <div class="ms-veil__media-overlay"></div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Section 5: Schedule -->
+    <section id="schedule" class="ms-schedule">
+        <div class="ms-schedule__inner">
+
+            <!-- LEFT: copy + info cards -->
+            <div class="ms-schedule__copy">
+                <p class="ms-schedule__eyebrow">Event Schedule</p>
+                <h2 class="ms-schedule__title">An Evening Choreographed to Perfection</h2>
+
+                <!-- Venue info card -->
+                <div class="ms-schedule__info">
+                    <p class="ms-schedule__info-label">Venue</p>
+                    <p class="ms-schedule__info-name">The Shed</p>
+                    <p class="ms-schedule__info-sub">
+                        545 West 30th Street, New York, NY 10001
+                    </p>
+                    <div class="ms-schedule__info-details">
+                        <p>
+                            <span class="ms-schedule__info-key">Accessibility:</span>
+                            Fully ADA compliant
+                        </p>
+                        <p>
+                            <span class="ms-schedule__info-key">Transit:</span>
+                            7 Train to Hudson Yards
+                        </p>
+                        <p>
+                            <span class="ms-schedule__info-key">Parking:</span>
+                            Valet available
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Dress code info card -->
+                <div class="ms-schedule__info ms-schedule__info--secondary">
+                    <p class="ms-schedule__info-label">Dress Code</p>
+                    <p class="ms-schedule__info-name">&ldquo;Sapphire Veil Elegance&rdquo;</p>
+                    <p class="ms-schedule__info-sub">
+                        Formal attire with blue, silver, or black accents. Guests
+                        wearing Muuqwear receive a complimentary welcome gift.
+                    </p>
+                </div>
+            </div>
+
+            <!-- RIGHT: timeline of entries -->
+            <div class="ms-schedule__timeline">
+                @foreach (var entry in Schedule)
+                {
+                    <article class="ms-schedule__entry">
+                        <div class="ms-schedule__entry-icon">
+                            @RenderIcon(entry.Icon)
+                        </div>
+                        <div class="ms-schedule__entry-body">
+                            <div class="ms-schedule__entry-header">
+                                <p class="ms-schedule__entry-title">@entry.Title</p>
+                                <span class="ms-schedule__entry-time">@entry.Time</span>
+                            </div>
+                            <p class="ms-schedule__entry-location">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+                                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                     class="ms-schedule__entry-pin">
+                                    <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path>
+                                    <circle cx="12" cy="10" r="3"></circle>
+                                </svg>
+                                @entry.Location
+                            </p>
+                            <p class="ms-schedule__entry-desc">@entry.Description</p>
+                        </div>
+                    </article>
+                }
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Section 6: The Runway Show / Sapphire Prophecy -->
+    <section class="ms-runway">
+        <div class="ms-runway__inner">
+
+            <!-- Centered header -->
+            <header class="ms-runway__header">
+                <p class="ms-runway__eyebrow">The Runway Show</p>
+                <h2 class="ms-runway__title">
+                    &ldquo;The Sapphire Prophecy&rdquo;
+                </h2>
+                <p class="ms-runway__sub">
+                    25 never-before-seen looks across four collections, presented
+                    by an international cast of diverse models.
+                </p>
+            </header>
+
+            <!-- 4 collection cards -->
+            <div class="ms-runway__collections">
+                @foreach (var c in Collections)
+                {
+                    <article class="ms-runway__collection">
+                        <div class="ms-runway__collection-num">@c.Number</div>
+                        <p class="ms-runway__collection-title">@c.Title</p>
+                        <p class="ms-runway__collection-desc">@c.Description</p>
+                    </article>
+                }
+            </div>
+
+            <!-- Two-column details panel -->
+            <div class="ms-runway__details">
+
+                <!-- LEFT: Featured Models -->
+                <div class="ms-runway__panel">
+                    <p class="ms-runway__panel-label">Featured Models</p>
+                    <ul class="ms-runway__models">
+                        @foreach (var m in Models)
+                        {
+                            <li class="ms-runway__model">
+                                <div class="ms-runway__model-left">
+                                    <div class="ms-runway__model-avatar">
+                                        @m.Initials
+                                    </div>
+                                    <p class="ms-runway__model-name">@m.Name</p>
+                                </div>
+                                <p class="ms-runway__model-credit">@m.Credit</p>
+                            </li>
+                        }
+                    </ul>
+                    <p class="ms-runway__models-extra">
+                        + 20 additional diverse models
+                    </p>
+                </div>
+
+                <!-- RIGHT: Music & Lighting -->
+                <div class="ms-runway__panel">
+                    <p class="ms-runway__panel-label">Music &amp; Lighting</p>
+                    <div class="ms-runway__music">
+                        @foreach (var ml in MusicLighting)
+                        {
+                            <div class="ms-runway__music-item">
+                                <div class="ms-runway__music-icon">
+                                    @RenderIcon(ml.Icon)
+                                </div>
+                                <div>
+                                    <p class="ms-runway__music-title">@ml.Title</p>
+                                    <p class="ms-runway__music-desc">@ml.Description</p>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Production sub-grid -->
+                    <div class="ms-runway__production">
+                        <p class="ms-runway__panel-label">Production</p>
+                        <div class="ms-runway__production-grid">
+                            @foreach (var p in Production)
+                            {
+                                <p class="ms-runway__production-item">
+                                    <span class="ms-runway__production-key">@p.Role:</span>
+                                    @p.Provider
+                                </p>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Section 7: The Muuqsimo Awards -->
+    <section class="ms-awards">
+        <div class="ms-awards__inner">
+
+            <!-- LEFT: copy + award list -->
+            <div class="ms-awards__copy">
+                <p class="ms-awards__eyebrow">The Muuqsimo Awards</p>
+                <h2 class="ms-awards__title">Celebrating Excellence</h2>
+
+                <div class="ms-awards__list">
+                    @foreach (var a in Awards)
+                    {
+                        <article class="ms-awards__item">
+                            <div class="ms-awards__item-icon">
+                                @RenderIcon(a.Icon)
+                            </div>
+                            <div class="ms-awards__item-body">
+                                <p class="ms-awards__item-title">@a.Title</p>
+                                <p class="ms-awards__item-prize">@a.Prize</p>
+                            </div>
+                        </article>
+                    }
+                </div>
+            </div>
+
+            <!-- RIGHT: image + caption + attribution -->
+            <div class="ms-awards__side">
+                <div class="ms-awards__photo">
+                    <img src="https://images.unsplash.com/photo-1632679090212-612ac1f4d76f?w=600&h=800&fit=crop"
+                         alt="Muuqsimo Awards" />
+                    <div class="ms-awards__photo-overlay"></div>
+                    <p class="ms-awards__photo-caption">Custom Crystal Trophy</p>
+                </div>
+                <div class="ms-awards__credit">
+                    <p class="ms-awards__credit-sub">
+                        Presented by Muuqwear founders &amp; industry icons
+                    </p>
+                    <p class="ms-awards__credit-main">
+                        Celebrity Emcee · Sapphire-Lit Pedestal
+                    </p>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Section 8: Tickets -->
+    <section id="tickets" class="ms-tickets">
+        <div class="ms-tickets__inner">
+
+            <!-- Centered header -->
+            <header class="ms-tickets__header">
+                <p class="ms-tickets__eyebrow">Limited to 500 Attendees</p>
+                <h2 class="ms-tickets__title">Secure Your Place</h2>
+                <p class="ms-tickets__sub">
+                    All tickets include runway show, awards ceremony &amp; cocktail reception.
+                </p>
+            </header>
+
+            <!-- 3 ticket tier cards -->
+            <div class="ms-tickets__tiers">
+                @foreach (var t in TicketTiers)
+                {
+                    // Try to find the matching product row from the database.
+                    // If it doesn't exist, skip this tier entirely.
+                    if (!ticketProducts.TryGetValue(t.ProductId, out var product))
+                        continue;
+
+                    <article class="ms-ticket @(t.IsHighlighted ? "ms-ticket--highlighted" : "")">
+                        @if (t.Badge is not null)
+                        {
+                            <span class="ms-ticket__badge">@t.Badge</span>
+                        }
+
+                        <p class="ms-ticket__name">@product.Name</p>
+                        <p class="ms-ticket__price">$@product.Price.ToString("N2")</p>
+                        <p class="ms-ticket__availability">@t.Availability</p>
+
+                        <ul class="ms-ticket__perks">
+                            @foreach (var perk in t.Perks)
+                            {
+                                <li class="ms-ticket__perk">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                         class="ms-ticket__perk-check">
+                                        <path d="M20 6 9 17l-5-5"></path>
+                                    </svg>
+                                    <span>@perk</span>
+                                </li>
+                            }
+                        </ul>
+
+                        <button type="button"
+                                class="ms-ticket__cta"
+                                @onclick="() => HandleTicketPurchase(t, product)"
+                                disabled="@(processingTicketId == t.ProductId)">
+                            @if (processingTicketId == t.ProductId)
+                            {
+                                <span>Adding…</span>
+                            }
+                            else
+                            {
+                                <span>Purchase Ticket →</span>
+                            }
+                        </button>
+
+                        @if (lastMessageTicketId == t.ProductId && !string.IsNullOrEmpty(addToCartMessage))
+                        {
+                            <p class="ms-ticket__message @addToCartMessageCss">@addToCartMessage</p>
+                        }
+                    </article>
+                }
+
+            </div>
+
+            <!-- 2-column info row -->
+            <div class="ms-tickets__info-row">
+
+                <!-- Affiliate Partner -->
+                <div class="ms-tickets__info-card">
+                    <div class="ms-tickets__info-header">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                             viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                             class="ms-tickets__info-icon ms-tickets__info-icon--gold">
+                            <path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path>
+                        </svg>
+                        <p class="ms-tickets__info-title">Affiliate Partner</p>
+                    </div>
+                    <p class="ms-tickets__info-body">
+                        Complimentary for approved affiliates. Gold affiliates
+                        receive all-expenses-paid trips.
+                    </p>
+                    <div class="ms-tickets__tiers-line">
+                        <span class="ms-tickets__tier-bronze">Bronze: 25% off</span>
+                        <span class="ms-tickets__tier-silver">Silver: Free ticket</span>
+                        <span class="ms-tickets__tier-gold">Gold: Full VIP</span>
+                    </div>
+                </div>
+
+                <!-- Press & Media -->
+                <div class="ms-tickets__info-card">
+                    <div class="ms-tickets__info-header">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                             viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                             class="ms-tickets__info-icon">
+                            <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path>
+                            <circle cx="12" cy="13" r="3"></circle>
+                        </svg>
+                        <p class="ms-tickets__info-title">Press &amp; Media</p>
+                    </div>
+                    <p class="ms-tickets__info-body">
+                        Credentialed media receive complimentary access, interview
+                        time, and runway photo pit.
+                    </p>
+                    <p class="ms-tickets__info-contact">
+                        Contact: <span class="ms-tickets__info-email">press@muuqwear.com</span>
+                    </p>
+                </div>
+
+            </div>
+
+        </div>
+    </section>
+
+
+    <!-- Section 9: Affiliate CTA -->
+    <section class="ms-affiliate">
+        <div class="ms-affiliate__inner">
+
+            <!-- LEFT: copy + CTA -->
+            <div class="ms-affiliate__copy">
+                <p class="ms-affiliate__eyebrow">
+                    ✨ Become a Muuqwear Affiliate
+                </p>
+                <h2 class="ms-affiliate__title">Join the Inner Circle</h2>
+                <p class="ms-affiliate__body">
+                    Limited to 500 members worldwide. Earn commissions, unlock
+                    exclusive discounts, and Gold affiliates receive all-expenses-paid
+                    trips to Muuqsimo. Apply now to join the inner circle.
+                </p>
+                <button type="button" class="ms-affiliate__cta">
+                    Apply Today →
+                </button>
+            </div>
+
+            <!-- RIGHT: benefits card -->
+            <div class="ms-affiliate__benefits">
+                <p class="ms-affiliate__benefits-label">Affiliate Event Benefits</p>
+                @foreach (var t in AffiliateTierBenefits)
+                {
+                    <div class="ms-affiliate__tier">
+                        <span class="ms-affiliate__tier-dot"
+                              style="background: @t.DotColor;"></span>
+                        <div>
+                            <p class="ms-affiliate__tier-name">@t.Name</p>
+                            <p class="ms-affiliate__tier-benefit">@t.Benefit</p>
+                        </div>
+                    </div>
+                }
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Section 10: Team & Sponsors -->
+    <section class="ms-credits">
+        <div class="ms-credits__inner">
+
+            <!-- LEFT: Team -->
+            <div class="ms-credits__column">
+                <p class="ms-credits__eyebrow">The Team</p>
+                <h2 class="ms-credits__title">The Visionaries Behind Muuqsimo</h2>
+
+                <ul class="ms-credits__list">
+                    @foreach (var m in Team)
+                    {
+                        <li class="ms-credits__row">
+                            <p class="ms-credits__row-name">@m.Name</p>
+                            <p class="ms-credits__row-role">@m.Role</p>
+                        </li>
+                    }
+                </ul>
+            </div>
+
+            <!-- RIGHT: Sponsors -->
+            <div class="ms-credits__column">
+                <p class="ms-credits__eyebrow">Sponsors &amp; Partners</p>
+                <h2 class="ms-credits__title">Supporting the Vision</h2>
+
+                <div class="ms-credits__sponsors">
+                    @foreach (var s in Sponsors)
+                    {
+                        <div class="ms-credits__sponsor">
+                            <p class="ms-credits__sponsor-role">@s.Role</p>
+                            <p class="ms-credits__sponsor-name">@s.Name</p>
+                        </div>
+                    }
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Section 11: Closing CTA banner -->
+    <section class="ms-closing">
+        <img src="https://images.unsplash.com/photo-1619439443981-2f7607f6c346?w=1400&h=800&fit=crop"
+             alt="New York City"
+             class="ms-closing__img"
+             loading="lazy" />
+        <div class="ms-closing__overlay"></div>
+        <div class="ms-closing__content">
+            <p class="ms-closing__eyebrow">
+                New York City · September 2025
+            </p>
+            <p class="ms-closing__title">The Veil Rises</p>
+            <a href="/muuqsimo#tickets" class="ms-closing__cta">
+                Get Your Tickets →
+            </a>
+        </div>
+    </section>
+
+
+</div>
+
+<!-- Init Swiper after content renders -->
+<script src="lib/swiper/swiper-bundle.min.js"></script>
+<script>
+    (function () {
+        // Wait for DOM and library
+        function initMsHero() {
+            if (typeof Swiper === 'undefined') {
+                setTimeout(initMsHero, 50);
+                return;
+            }
+            new Swiper('.ms-hero__carousel', {
+                loop: true,
+                effect: 'fade',
+                fadeEffect: { crossFade: true },
+                autoplay: { delay: 5000, disableOnInteraction: false },
+                pagination: { el: '.ms-hero__pagination', clickable: true },
+            });
+        }
+        initMsHero();
+    })();
+</script>
+
+@code {
+
+    private Guid? processingTicketId = null;
+    private string addToCartMessage = string.Empty;
+    private string addToCartMessageCss = string.Empty;
+    private Guid? lastMessageTicketId = null;
+
+    private bool isTicketsLoading = true;
+    private Dictionary<Guid, ProductModel> ticketProducts = new();
+
+    private record HeroSlide(string ImageUrl, string Alt);
+
+    private List<HeroSlide> HeroSlides => new()
+    {
+        new("https://images.unsplash.com/photo-1700936655679-83f4b37d7d74?w=1400&h=800&fit=crop",
+            "Muuqsimo Gala 1"),
+        new("https://images.unsplash.com/photo-1574320567434-08788f5cc928?w=1400&h=800&fit=crop",
+            "Muuqsimo Gala 2"),
+        new("https://images.unsplash.com/photo-1724183555880-f59c7d37dac4?w=1400&h=800&fit=crop",
+            "Muuqsimo Gala 3"),
+    };
+    private static readonly DateTime EventDateUtc =
+    new DateTime(2025, 9, 5, 22, 0, 0, DateTimeKind.Utc);
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JS.InvokeVoidAsync(
+                "mwMuuqsimoCountdown.start",
+                EventDateUtc.ToString("o"));   // ISO 8601 with timezone
+        }
+    }
+
+    private record ExperienceCard(string Title, string ImageUrl);
+
+    private List<ExperienceCard> ExperienceCards => new()
+{
+    new("The Runway",
+        "https://images.unsplash.com/photo-1574320567434-08788f5cc928?w=600&h=400&fit=crop"),
+    new("The Reception",
+        "https://images.unsplash.com/photo-1767050362923-79ff3b7971dc?w=600&h=400&fit=crop"),
+    new("The Awards",
+        "https://images.unsplash.com/photo-1632679090212-612ac1f4d76f?w=600&h=400&fit=crop"),
+    new("The After-Party",
+        "https://images.unsplash.com/photo-1750763537578-6e592eabf730?w=600&h=400&fit=crop"),
+};
+
+    private record VeilSpec(string Label, string Value);
+
+    private List<VeilSpec> VeilSpecs => new()
+{
+    new("Material",     "Plush Sapphire Velvet"),
+    new("Length",       "50 Feet"),
+    new("Photography",  "Getty Images Exclusive"),
+    new("Gallery",      "Private Upload Within 48h"),
+};
+
+
+    private RenderFragment RenderIcon(string icon) => __builder =>
+    {
+        switch (icon)
+        {
+            case "sparkles":
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"></path>
+                    <path d="M20 3v4"></path>
+                    <path d="M22 5h-4"></path>
+                    <path d="M4 17v2"></path>
+                    <path d="M5 18H3"></path>
+                </svg>
+                break;
+            case "shirt":
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"></path>
+                </svg>
+                break;
+            case "trophy":
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
+                    <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
+                    <path d="M4 22h16"></path>
+                    <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path>
+                    <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path>
+                    <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path>
+                </svg>
+                break;
+            case "wine":
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M8 22h8"></path>
+                    <path d="M7 10h10"></path>
+                    <path d="M12 15v7"></path>
+                    <path d="M12 15a5 5 0 0 0 5-5c0-2-.5-4-2-8H9c-1.5 4-2 6-2 8a5 5 0 0 0 5 5Z"></path>
+                </svg>
+                break;
+            case "music":
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 18V5l12-2v13"></path>
+                    <circle cx="6" cy="18" r="3"></circle>
+                    <circle cx="18" cy="16" r="3"></circle>
+                </svg>
+                break;
+            case "play":
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="6 3 20 12 6 21 6 3"></polygon>
+                </svg>
+                break;
+        }
+    };
+
+    private record ScheduleEntry(
+    string Icon,
+    string Title,
+    string Time,
+    string Location,
+    string Description
+);
+
+    private List<ScheduleEntry> Schedule => new()
+{
+    new("sparkles", "Blue Veil Arrivals", "6:00 PM", "Entrance Hall",
+        "Walk the iconic 50-foot royal blue velvet runner as photographers capture your arrival."),
+    new("shirt", "Runway Show: \"The Sapphire Prophecy\"", "7:00 PM", "Main Hall",
+        "25 never-before-seen looks unveiled across four breathtaking collections."),
+    new("trophy", "Awards Ceremony", "8:30 PM", "Main Hall",
+        "Celebrating the year's top affiliates, designers, and community champions."),
+    new("wine", "Cocktail Reception", "9:30 PM", "Sky Lounge",
+        "Open bar, hors d'oeuvres, and networking with the Muuqwear team high above the city."),
+    new("music", "After-Party (Invite Only)", "11:00 PM", "Underground Studio",
+        "An exclusive late-night celebration with live music and a world-class DJ set."),
+};
+
+    // Collection cards
+    private record CollectionItem(string Number, string Title, string Description);
+
+    private List<CollectionItem> Collections => new()
+{
+    new("01", "The Essentials Collection",
+        "Core basics elevated with luxurious cuts and materials."),
+    new("02", "The Technical Series",
+        "Performance wear with a luxury finish for the modern voyager."),
+    new("03", "The Veil Capsule",
+        "Limited edition sapphire-dyed pieces — the crown jewels of the collection."),
+    new("04", "The Collaboration Drop",
+        "A surprise guest designer unveils an exclusive co-created line."),
+};
+
+    // Featured models
+    private record FeaturedModel(string Initials, string Name, string Credit);
+
+    private List<FeaturedModel> Models => new()
+{
+    new("AO", "Amara Okonkwo",  "Face of Muuqwear SS24"),
+    new("LP", "Liam Park",       "International Runway (Balmain, Off-White)"),
+    new("ZA", "Zara Ahmed",      "Vogue Arabia Cover Star"),
+    new("CR", "Caleb Rivera",    "Muuqwear Discovery Program"),
+};
+
+    // Music & Lighting items
+    private record MusicLightingItem(string Icon, string Title, string Description);
+
+    private List<MusicLightingItem> MusicLighting => new()
+{
+    new("music", "Live Orchestra",
+        "String quartet for the first half; electronic ambient for the second."),
+    new("sparkles", "Dynamic Lighting",
+        "Sapphire and silver lighting that shifts with each collection segment."),
+    new("play", "Walk Style",
+        "Slow, deliberate, geometric pacing — emphasizing garment structure."),
+};
+
+    // Production crew (2x2 grid)
+    private record ProductionCredit(string Role, string Provider);
+
+    private List<ProductionCredit> Production => new()
+{
+    new("Sound",     "LMG Productions"),
+    new("Venue",     "The Shed"),
+    new("Catering",  "Union Square Events"),
+    new("Photo",     "Getty Images"),
+};
+    private record AwardItem(string Icon, string Title, string Prize);
+
+    private List<AwardItem> Awards => new()
+{
+    new("gem",    "Best New Innovation Outfit",       "$10,000 + Featured in Next Campaign"),
+    new("crown",  "Affiliate of the Year (Gold)",     "$25,000 + Paris Fashion Week Trip"),
+    new("award",  "Affiliate of the Year (Silver)",   "$10,000 + Luxury Gift Package"),
+    new("trophy", "Affiliate of the Year (Bronze)",   "$5,000 + Muuqwear Wardrobe"),
+    new("star",   "Rising Star Award",                "$2,500 + Founder Mentorship"),
+    new("users",  "Community Choice Award",           "$5,000 + Custom Design Collab"),
+    new("shield", "Lifetime Achievement",             "Custom Trophy + Lifetime VIP"),
+    new("camera", "Best Styling (Social Media)",      "$1,500 + Homepage Feature"),
+};
+
+    // Ticket tiers
+    private record TicketTier(
+        Guid ProductId,
+        string Availability,
+        List<string> Perks,
+        bool IsHighlighted,
+        string? Badge
+    );
+
+    private List<TicketTier> TicketTiers => new()
+{
+    new(
+        ProductId: Guid.Parse("11111111-1111-1111-1111-111111111111"),
+        Availability: "87 of 250 remaining",
+        Perks: new()
+        {
+            "Standard admission",
+            "Open bar & hors d'oeuvres",
+            "Runway show & awards ceremony"
+        },
+        IsHighlighted: false,
+        Badge: null
+    ),
+    new(
+        ProductId: Guid.Parse("22222222-2222-2222-2222-222222222222"),
+        Availability: "42 of 150 remaining",
+        Perks: new()
+        {
+            "Priority front-section seating",
+            "Welcome gift bag",
+            "After-party access",
+            "All Veil Access perks"
+        },
+        IsHighlighted: true,
+        Badge: "Most Popular"
+    ),
+    new(
+        ProductId: Guid.Parse("33333333-3333-3333-3333-333333333333"),
+        Availability: "11 of 75 remaining",
+        Perks: new()
+        {
+            "Front row seating",
+            "VIP lounge access",
+            "Meet-and-greet with designers",
+            "After-party VIP section",
+            "Luxury hotel room upgrade",
+            "All Sapphire Circle perks"
+        },
+        IsHighlighted: false,
+        Badge: null
+    )
+};
+
+    private record AffiliateTierBenefit(string Name, string Benefit, string DotColor);
+
+    private List<AffiliateTierBenefit> AffiliateTierBenefits => new()
+{
+    new("Bronze", "25% off Veil Access ticket", "#CD7F32"),
+    new("Silver", "Complimentary Sapphire Circle ticket", "#A9B7CC"),
+    new("Gold",   "All-expenses-paid VIP trip (flights, luxury hotel, VIP access)", "#D4A843"),
+};
+
+    // Team members
+    private record TeamMember(string Name, string Role);
+
+    private List<TeamMember> Team => new()
+{
+    new("Jordan Muuq",    "Founder & Creative Director"),
+    new("Elena Veil",     "Co-Founder & Creative Director"),
+    new("Marcus Chen",    "Head of Design"),
+    new("Sophia Laurent", "Event Director"),
+    new("David Okafor",   "Affiliate Program Manager"),
+    new("Kaito Tanaka",   "Runway Producer"),
+};
+
+    // Sponsors
+    private record Sponsor(string Role, string Name);
+
+    private List<Sponsor> Sponsors => new()
+{
+    new("Presenting Sponsor",   "Maison Luxe"),
+    new("Runway Sponsor",       "Atelier Collective"),
+    new("Hospitality Sponsor",  "The Sapphire Group"),
+    new("Gift Bag Sponsor",     "Noir Beauty"),
+};
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTickets();
+    }
+
+    private async Task LoadTickets()
+    {
+        isTicketsLoading = true;
+
+        var filter = new ProductFilterModel
+        {
+            Page = 1,
+            PageSize = 100,
+            IncludeTickets = true
+        };
+
+        var result = await ProductService.GetAll(filter);
+
+        if (result.Success && result.Data?.Data != null)
+        {
+            var ticketIds = TicketTiers.Select(t => t.ProductId).ToHashSet();
+            ticketProducts = result.Data.Data
+                .Where(p => ticketIds.Contains(p.Id))
+                .ToDictionary(p => p.Id);
+        }
+
+        isTicketsLoading = false;
+        StateHasChanged();   // ← force re-render
+    }
+
+
+    private async Task HandleTicketPurchase(TicketTier tier, ProductModel product)
+    {
+        processingTicketId = tier.ProductId;
+        addToCartMessage = string.Empty;
+        lastMessageTicketId = null;
+        StateHasChanged();
+
+        var success = await CartStateService.AddItem(new AddCartItemModel
+        {
+            ProductId = product.Id,
+            Size = "One Size",
+            Color = "Sapphire",
+            Quantity = 1,
+            ProductName = product.Name,
+            ProductImageUrl = product.ImageUrl ?? "/images/muuqsimo-tickets.jpg",
+            ProductPrice = product.Price
+        });
+
+        if (success)
+        {
+            addToCartMessage = "Added to bag! ✓";
+            addToCartMessageCss = "text-success";
+        }
+        else
+        {
+            addToCartMessage = "Failed to add. Please try again.";
+            addToCartMessageCss = "text-danger";
+        }
+
+        lastMessageTicketId = tier.ProductId;
+        processingTicketId = null;
+        StateHasChanged();
+
+        // Clear message after 3 seconds, but only if it still belongs to this ticket
+        await Task.Delay(3000);
+        if (lastMessageTicketId == tier.ProductId)
+        {
+            addToCartMessage = string.Empty;
+            lastMessageTicketId = null;
+            StateHasChanged();
+        }
+
+
+
+    }
+
+
+}

@@ -1,0 +1,245 @@
+﻿/*.mw-admin {
+    display: flex;
+    min-height: 100vh;
+    background: #F5F6F8;
+}*/
+
+/* Sidebar */
+/*.mw-admin-sidebar {
+    width: 240px;
+    background: #1E2A47;
+    color: white;
+    padding: 20px;
+}*/
+/* ── Desktop Sidebar ── */
+/*.mw-admin-sidebar {
+    width: 240px;
+    min-height: 100vh;
+    background: #1E2A47;
+    color: white;
+    padding: 20px;
+    flex-direction: column;
+    flex-shrink: 0;
+}*/
+
+/* ── Mobile Sidebar ── */
+/*.mw-mobile-sidebar {
+    position: fixed;
+    top: 0;*/ /* anchored to top, not bottom */
+    /*width: 80%;
+    max-width: 280px;
+    height: 100vh;*/ /* full height */
+    /*background: #1E2A47;
+    color: white;
+    z-index: 99999;*/ /* very high to beat everything */
+    /*overflow-y: auto;
+    transition: left 0.3s ease;*/
+    /* left value is controlled by inline style in razor */
+/*}*/
+
+/* Logo */
+/*.mw-admin-logo {
+    font-weight: 800;
+    font-size: 18px;
+    margin-bottom: 30px;
+}*/
+
+/* Nav */
+/*.mw-admin-link ::deep {
+    display: block;
+    padding: 10px 12px;
+    margin-bottom: 6px;
+    color: #d7dbe5;
+    text-decoration: none;
+    border-radius: 6px;
+}*/
+
+
+/* Main */
+/*.mw-admin-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}*/
+
+/* ── Main ── */
+/*.mw-admin-main {
+    margin-left: 260px;
+    flex: 1;
+    background: #F4F6F9;
+    display: flex;
+    min-width: 0;
+}*/
+
+/*  mobile — no offset */
+/*@media (max-width: 767px) {
+    .mw-admin-main {
+        margin-left: 0;
+    }
+
+    .an-sidebar {
+        display: none;
+    }
+}*/
+/* Topbar */
+/*.mw-admin-topbar {
+    height: 60px;
+    background: white;
+    border-bottom: 1px solid rgba(169,183,204,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+}
+*/
+
+/*.mw-admin-topbar {
+    height: 60px;
+    background: white;
+    border-bottom: 1px solid rgba(169,183,204,0.3);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 20px;
+}*/
+
+/* Content */
+/*.mw-admin-content {
+    padding: 20px;
+}*/
+
+/* Card */
+/*.mw-admin-card {
+    background: white;
+    border: 1px solid rgba(169,183,204,0.3);
+    padding: 20px;
+}*/
+
+/* Table */
+/*.mw-admin-table th {
+    font-size: 12px;
+    text-transform: uppercase;
+    color: #4A5C7A;
+}
+
+.mw-admin-table td {
+    font-weight: 500;
+}*/
+
+/* Inputs */
+/*.mw-admin-input,
+.mw-admin-search {
+    border: 1px solid #A9B7CC;
+    padding: 8px 10px;
+    font-size: 14px;
+}*/
+
+/* Button (reuse frontend) */
+/*.mw-btn-primary {
+    background: #1E2A47;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    font-weight: 700;
+}*/
+
+/* Mobile */
+/*@media (max-width: 768px) {
+    .mw-admin {
+        flex-direction: column;
+    }
+
+    .mw-admin-sidebar {
+        width: 100%;
+    }
+}*/
+
+/* Admin Nav Styling */
+
+/*::deep .mw-admin-nav .mw-admin-link {
+    display: block;
+    padding: 10px 12px;
+    color: #d7dbe5;
+    text-decoration: none !important;
+    border-radius: 6px;
+    font-size: 14px;
+    margin-bottom: 4px;
+    transition: background 0.15s ease;
+}
+
+::deep .mw-admin-link.active {
+    background: rgba(255,255,255,0.15);
+    color: white;
+}
+
+::deep .mw-admin-link:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+.offcanvas {
+    background: #1E2A47;
+    color: white;
+    z-index: 9999 !important;
+}*/
+
+/* Visible state */
+/*.mw-mobile-sidebar.open {
+    transform: translateY(0);
+}
+
+.mw-mobile-sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    font-weight: 700;
+    font-size: 15px;
+}
+
+.mw-mobile-sidebar-body {
+    padding: 12px 8px 24px;
+}*/
+
+/* ── Backdrop ── */
+/*.mw-sidebar-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 99998;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.mw-admin-title {
+    font-weight: 700;
+    font-size: 16px;
+    color: #1E2A47;
+}
+
+
+
+.an-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 260px;
+    background: white;
+    border-right: 1px solid rgba(169, 183, 204, 0.3);
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}*/

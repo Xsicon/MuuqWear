@@ -1,0 +1,39 @@
+﻿@inherits LayoutComponentBase
+
+<div class="mw-admin">
+
+    <!--  overlay — always in DOM, CSS controls visibility -->
+    <div class="an-overlay" onclick="window.adminSidebar.close()"></div>
+
+    <!--  sidebar — always in DOM, CSS controls position -->
+    <aside class="an-sidebar">
+        <AdminNavMenuComponent />
+    </aside>
+
+    <div class="mw-admin-main">
+
+        <AdminTopBarComponent />
+        <div class="mw-admin-content">
+            @Body
+        </div>
+
+    </div>
+</div>
+
+<script>
+    window.adminSidebar = {
+        toggle: function () {
+            var sidebar = document.querySelector('.an-sidebar');
+            var overlay = document.querySelector('.an-overlay');
+            if (sidebar) sidebar.classList.toggle('an-sidebar--open');
+            if (overlay) overlay.classList.toggle('an-overlay--visible');
+        },
+        close: function () {
+            var sidebar = document.querySelector('.an-sidebar');
+            var overlay = document.querySelector('.an-overlay');
+            if (sidebar) sidebar.classList.remove('an-sidebar--open');
+            if (overlay) overlay.classList.remove('an-overlay--visible');
+        }
+    };
+</script>
+@code { }

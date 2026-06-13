@@ -1,0 +1,150 @@
+﻿@page "/partner-store"
+@using MuuqWear.Application.Services.AffiliateService
+@using MuuqWear.Web.Components.Shared
+@using MuuqWear.Application.Services.CartService
+@inject IAffiliateService AffiliateService
+@using MuuqWear.Model.PartnerStoreProduct
+@inject CartStateService CartStateService
+
+<div class="partner-store-container">
+
+    @if (isLoading)
+    {
+        <div class="loading-state">
+            <p>Loading partner store...</p>
+        </div>
+    }
+    else if (limitStatus?.LimitReached == true)
+    {
+        <div class="limit-reached-banner">
+            <p> You've reached your 20 item limit for this month</p>
+            <p>Resets on @limitStatus.NextResetDate.ToString("MMMM 1, yyyy")</p>
+        </div>
+    }
+    else
+    {
+        <!-- Limit Info Banner -->
+        @if (limitStatus != null)
+        {
+            <div class="limit-info-banner">
+                <p>
+                    As an active affiliate, enjoy 25% off all personal purchases.
+                    Limit: @limitStatus.ItemsRemaining items remaining this month.
+                </p>
+            </div>
+        }
+
+        <!-- Products Grid -->
+        @if (products != null && products.Any())
+        {
+            <div class="products-grid">
+                @foreach (var product in products)
+                {
+                    <div class="product-card">
+                        <!-- Product Image -->
+                        <div class="product-image">
+                            @if (!string.IsNullOrEmpty(product.ImageUrl))
+                            {
+                                <img src="@product.ImageUrl" alt="@product.Name" />
+                            }
+                            else
+                            {
+                                <div class="image-placeholder"></div>
+                            }
+                        </div>
+
+                        <!-- Product Info -->
+                        <div class="product-info">
+                            <p class="product-name">@product.Name</p>
+
+                            <div class="product-prices">
+                                <span class="original-price">$@product.OriginalPrice.ToString("N2")</span>
+                                <span class="discounted-price">$@product.DiscountedPrice.ToString("N2")</span>
+                            </div>
+
+                            @if (product.InStock)
+                            {
+                                @if (selectedProductId == product.Id)
+                                {
+                                    <div class="size-selector">
+                                        <p class="size-label">Select Size:</p>
+                                        <div class="size-buttons">
+                                            @foreach (var sizeStock in product.SizeStock.Where(s => s.Quantity > 0))
+                                            {
+                                                <button class="size-btn @(selectedSize == sizeStock.Size ? "selected" : "")"
+                                                        @onclick="() => SelectSize(sizeStock.Size)">
+                                                    @sizeStock.Size
+                                                </button>
+                                            }
+                                        </div>
+
+                                        @if (!string.IsNullOrEmpty(selectedSize))
+                                        {
+                                            <button class="confirm-btn" @onclick="() => ConfirmAddToBag(product)" disabled="@isAddingToCart">
+                                                Add to Bag
+                                            </button>
+
+                                            @if (isAddingToCart && selectedProductId == product.Id)
+                                            {
+                                                <span>Adding...</span>
+                                            }
+                                            else
+                                            {
+                                                <span>Add to Bag</span>
+                                            }
+                                        }
+                                        @if (addToCartError?.ProductId == product.Id)
+                                        {
+                                            <div class="add-to-cart-error">
+                                                @addToCartError.Value.Message
+                                            </div>
+                                        }
+
+                                        <button class="cancel-btn" @onclick="CancelSizeSelection">
+                                            Cancel
+                                        </button>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <button class="add-to-bag-btn" @onclick="() => OpenSizeSelector(product.Id)">
+                                        Add to Bag
+                                    </button>
+                                }
+                            }
+                            else
+                            {
+                                <button class="add-to-bag-btn out-of-stock" disabled>
+                                    Out of Stock
+                                </button>
+                            }
+                        </div>
+
+
+                    </div>
+                }
+
+            </div>
+            <PaginationComponent TItem="PartnerStoreProductModel"
+                                 TotalCount="@totalCount"
+                                 CurrentPage="@currentPage"
+                                 PageSize="@pageSize"
+                                 OnPageChanged="HandlePageChanged" />
+
+
+        }
+        else
+        {
+            <div class="empty-state">
+                <p>No products available</p>
+            </div>
+        }
+    }
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="error-message">
+            <p>@errorMessage</p>
+        </div>
+    }
+</div>

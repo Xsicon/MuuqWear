@@ -1,0 +1,170 @@
+﻿@page "/shop/accessories"
+@rendermode InteractiveServer
+@inject IProductService ProductService
+@inject ICategoryService CategoryService
+@inject NavigationManager NavigationManager
+@using MuuqWear.Application.Services.ProductService
+@using MuuqWear.Application.Services.CategoryService
+@using MuuqWear.Model.Products
+
+<PageTitle>Accessories</PageTitle>
+
+<section class="acc-page">
+
+    <!-- HERO (Step 3) -->
+    <!-- HERO -->
+    <section class="acc-hero">
+        <div class="acc-hero__bg"></div>
+        <div class="acc-hero__overlay"></div>
+        <div class="acc-hero__inner">
+            <h1 class="acc-hero__title">Accessories</h1>
+            <p class="acc-hero__sub">
+                Complete your look with minimalist essentials
+            </p>
+        </div>
+    </section>
+
+    <!-- FILTER ROW (Step 4) -->
+    <!-- FILTER ROW -->
+    <section class="acc-filter-row">
+        <div class="acc-filter-row__inner">
+            <button class="acc-pill acc-pill--active" type="button">
+                All
+            </button>
+            <button class="acc-pill" type="button" disabled title="Coming soon">
+                Bags
+            </button>
+            <button class="acc-pill" type="button" disabled title="Coming soon">
+                Footwear
+            </button>
+            <button class="acc-pill" type="button" disabled title="Coming soon">
+                Other
+            </button>
+        </div>
+    </section>
+
+    <!-- GRID (Step 5) -->
+    <section class="acc-grid-wrapper">
+        <div class="acc-grid-inner">
+
+            @if (isInitError)
+            {
+                <p class="acc-empty">Couldn't load the Accessories category.</p>
+            }
+            else if (isLoading)
+            {
+                <!-- skeletons -->
+                <div class="acc-grid">
+                    @for (var i = 0; i < 8; i++)
+                    {
+                        <div class="acc-card acc-card--skeleton">
+                            <div class="acc-card__media"></div>
+                            <div class="acc-card__skel-line acc-card__skel-line--sm"></div>
+                            <div class="acc-card__skel-line"></div>
+                            <div class="acc-card__skel-line acc-card__skel-line--xs"></div>
+                        </div>
+                    }
+                </div>
+            }
+            else if (Products.Count == 0)
+            {
+                <p class="acc-empty">No accessories yet. Check back soon.</p>
+            }
+            else
+            {
+                <div class="acc-grid">
+                    @foreach (var item in Products)
+                    {
+                        <a class="acc-card" href="@($"/productdetail/{item.Id}")">
+                            <div class="acc-card__media">
+                                <img src="@item.ImageUrl"
+                                     alt="@item.Name"
+                                     loading="lazy" />
+                                <div class="acc-card__media-overlay"></div>
+                            </div>
+                            <div class="acc-card__body">
+                                <p class="acc-card__eyebrow">Accessories</p>
+                                <h3 class="acc-card__name">@item.Name</h3>
+                                @if (!string.IsNullOrWhiteSpace(item.Description))
+                                {
+                                    <p class="acc-card__desc">@item.Description</p>
+                                }
+                                <p class="acc-card__price">$@item.Price.ToString("F2")</p>
+                            </div>
+                        </a>
+                    }
+                </div>
+            }
+
+        </div>
+    </section>
+    <!-- CTA (Step 7) -->
+    <!-- CTA -->
+    <section class="acc-cta">
+        <div class="acc-cta__inner">
+            <h2 class="acc-cta__title">Complete Your Collection</h2>
+            <p class="acc-cta__sub">
+                Explore our full range of minimalist apparel and accessories
+            </p>
+            <a class="acc-cta__btn" href="/shop/apparel">
+                Shop All Products
+            </a>
+        </div>
+    </section>
+
+</section>
+
+@code {
+    // State
+    private ShopFilterModel filter = new();
+    private List<ProductModel> Products = new();
+    private Guid? accessoriesCategoryId;
+    private int totalCount = 0;
+    private bool isLoading = true;
+    private bool isInitError = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // STEP 1: find the Accessories category id
+        var categoryResult = await CategoryService.GetAll();
+        if (!categoryResult.Success || categoryResult.Data == null)
+        {
+            isInitError = true;
+            isLoading = false;
+            return;
+        }
+
+        var accessories = categoryResult.Data
+            .FirstOrDefault(c => c.Name!.Equals("Accessories",
+                StringComparison.OrdinalIgnoreCase));
+
+        if (accessories == null)
+        {
+            // Category doesn't exist in DB — bail gracefully
+            isInitError = true;
+            isLoading = false;
+            return;
+        }
+
+        accessoriesCategoryId = accessories.Id;
+        filter.CategoryId = accessoriesCategoryId;
+
+        await LoadProducts();
+    }
+
+    private async Task LoadProducts()
+    {
+        isLoading = true;
+
+        var result = await ProductService.GetAll(filter.ToFilterModel());
+
+        if (result.Success && result.Data != null)
+        {
+            Products = result.Data.Data;
+            totalCount = result.Data.TotalCount;
+            filter.Page = result.Data.Page;
+        }
+
+        isLoading = false;
+    }
+}

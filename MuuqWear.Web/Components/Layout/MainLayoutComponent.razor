@@ -1,0 +1,59 @@
+﻿@using MuuqWear.Application.Shared
+@inherits LayoutComponentBase
+@inject AuthSessionService AuthSession
+@inject NavigationManager NavigationManager
+@implements IDisposable
+
+<div class="page">
+    <NavMenuComponent />
+    <main>
+        <article>
+            @Body
+        </article>
+        <FooterMenuComponent />
+    </main>
+</div>
+
+@if (showSessionExpiredModal)
+{
+    <div class="mw-modal-overlay" @onclick="HandleModalClose">
+        <div class="mw-modal-session" @onclick:stopPropagation="true">
+            <h5 class="mw-modal-title">Session Expired</h5>
+            <p class="mw-modal-text">Your session has expired. Please login again to continue.</p>
+            <button class="mw-btn-primary" @onclick="HandleModalClose">
+                Login
+            </button>
+        </div>
+    </div>
+}
+
+@code {
+    private bool showSessionExpiredModal = false;
+
+    protected override void OnInitialized()
+    {
+        AuthSession.OnSessionExpired += HandleSessionExpired;
+    }
+
+    private void HandleSessionExpired()
+    {
+
+        //  Use InvokeAsync to switch to UI thread
+        InvokeAsync(() =>
+        {
+            showSessionExpiredModal = true;
+            StateHasChanged();
+        });
+    }
+
+    private void HandleModalClose()
+    {
+        showSessionExpiredModal = false;
+        NavigationManager.NavigateTo("/login?expired=true", forceLoad: true);
+    }
+
+    public void Dispose()
+    {
+        AuthSession.OnSessionExpired -= HandleSessionExpired;
+    }
+}

@@ -1,0 +1,60 @@
+﻿.mw-btn-primary {
+    background: #1E2A47;
+    color: white;
+    border: none;
+    padding: 12px;
+    font-weight: 600;
+    transition: 0.2s;
+}
+
+    .mw-btn-primary:hover {
+        background: #162033;
+    }
+
+
+/* SOCIAL BUTTONS */
+.mw-social-buttons {
+    display: flex;
+    gap: 12px;
+}
+
+.mw-social-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 8px;
+    background: white;
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+    cursor: not-allowed;
+    opacity: 0.7;
+    transition: all 0.2s;
+}
+
+    .mw-social-btn:not(:disabled) {
+        cursor: pointer;
+        opacity: 1;
+    }
+
+        .mw-social-btn:not(:disabled):hover {
+            border-color: #1E2A47;
+            background: #f9fafb;
+        }
+
+/* FORGOT PASSWORD LINK */
+.mw-forgot-link {
+    font-size: 13px;
+    color: #1E2A47;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+    .mw-forgot-link:hover {
+        text-decoration: underline;
+        color: #1E2A47;
+    }

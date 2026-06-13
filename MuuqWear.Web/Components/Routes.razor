@@ -1,0 +1,29 @@
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@using MuuqWear.Web.Components.Shared
+@inject NavigationManager NavigationManager
+
+@* remove <AuthInitializer /> *@
+<Router AppAssembly="typeof(Program).Assembly">
+    <Found Context="routeData">
+        <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayoutComponent)">
+            <NotAuthorized>
+                @if (NavigationManager.Uri.Contains("/admin"))
+                {
+                    <RedirectToNotFound />
+                }
+                else
+                {
+                    <RedirectToRegister />
+                }
+            </NotAuthorized>
+            <Authorizing>
+            </Authorizing>
+        </AuthorizeRouteView>
+    </Found>
+    <NotFound>
+        <PageTitle>404 - Not Found</PageTitle>
+        <LayoutView Layout="typeof(Layout.MainLayoutComponent)">
+            <RedirectToNotFound />
+        </LayoutView>
+    </NotFound>
+</Router>

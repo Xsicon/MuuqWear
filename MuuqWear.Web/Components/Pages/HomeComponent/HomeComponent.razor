@@ -1,0 +1,432 @@
+﻿@page "/"
+@rendermode InteractiveServer
+@inject IJSRuntime JS
+@using MuuqWear.Application.Services.CategoryService
+@using MuuqWear.Application.Services.JobPostingService
+@using MuuqWear.Application.Services.ProductService
+@using MuuqWear.Model.Products
+@using MuuqWear.Web.Components.Shared
+@inject IProductService ProductService
+@inject ICategoryService CategoryService
+
+
+<PageTitle>Home</PageTitle>
+
+<link rel="stylesheet" href="lib/swiper/swiper-bundle.min.css" />
+
+<!-- Hero Section -->
+<SpinnerComponent Show="@isLoading" />
+<div class="swiper mw-hero">
+    <div class="swiper-wrapper">
+        <div class="swiper-slide mw-slide">
+            <img src="https://images.unsplash.com/photo-1756361771567-e276865b77cb?w=1400&h=700&fit=crop" class="mw-slide__img" />
+            <div class="mw-slide__overlay"></div>
+            <div class="mw-slide__content container">
+                <div class="row">
+                    <div class="col-12 col-md-8 col-lg-6">
+                        <p class="mw-slide__label">Limited Release</p>
+                        <h1 class="mw-slide__title">The Sapphire Veil Collection</h1>
+                        <a href="/shop/apparel" class="mw-slide__cta">Explore the Collection →</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="swiper-slide mw-slide">
+            <img src="https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=1600&h=900&fit=crop" class="mw-slide__img" />
+            <div class="mw-slide__overlay"></div>
+            <div class="mw-slide__content container">
+                <div class="row">
+                    <div class="col-12 col-md-8 col-lg-6">
+
+                        <p class="mw-slide__label">New Arrivals</p>
+                        <h1 class="mw-slide__title">Modern Modest Essentials</h1>
+                        <a href="/shop/apparel" class="mw-slide__cta">Shop Now →</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="swiper-slide mw-slide">
+            <img src="https://images.unsplash.com/photo-1761957375235-46acb4862151?w=1400&h=700&fit=crop" class="mw-slide__img" />
+            <div class="mw-slide__overlay"></div>
+            <div class="mw-slide__content container">
+                <div class="row">
+                    <div class="col-12 col-md-8 col-lg-6">
+
+                        <p class="mw-slide__label">Limited Release</p>
+                        <h1 class="mw-slide__title">Built by Community</h1>
+                        <a href="/shop/accessories" class="mw-slide__cta">Discover More →</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="swiper-button-prev"></div>
+    <div class="swiper-button-next"></div>
+    <div class="swiper-pagination"></div>
+</div>
+
+<!-- Shopping Category Section -->
+
+<section class="mw-category mt-2">
+
+    <div class="container">
+
+        <!-- Header -->
+        <div class="mw-category__header">
+            <div>
+                <h2 class="mw-category__title">Shop by Category</h2>
+                <div class="mw-category__underline"></div>
+            </div>
+
+            <div class="mw-carousel_nav">
+                <button @onclick="() => ScrollLeft(categoryRef)" class="d-flex align-items-center">
+                    <!-- LEFT -->
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m15 18-6-6 6-6"></path>
+                    </svg>
+                </button>
+                <button @onclick="() => ScrollRight(categoryRef)" class="d-flex align-items-center">
+                    <!-- RIGHT -->
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m9 18 6-6-6-6"></path>
+                    </svg>
+
+                </button>
+            </div>
+        </div>
+
+        <!-- Carousel -->
+        <div class="mw-carousel__track overflow-hidden" @ref="categoryRef">
+
+            <div class="row flex-nowrap gx-3">
+
+                @foreach (var (item, idx) in Categories.Select((c, i) => (c, i)))
+                {
+                    <div class="col-12 col-sm-6 col-md-6 col-lg-4 mw-categorycarousel-item">
+
+                        <a href="@item.Link" class="mw-category__card">
+                            <img src="@item.Image" loading="@(idx < 4 ? null : "lazy")" />
+
+                            <div class="mw-category__overlay"></div>
+
+                            <div class="mw-category__content">
+                                <h3>@item.Name</h3>
+                                <span>Shop Now →</span>
+                            </div>
+                        </a>
+
+                    </div>
+                }
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+<!-- New Arrival Section -->
+
+<section class="mw-arrivals">
+
+    <div class="container">
+
+        <!-- Header -->
+        <div class="mw-arrivals__header">
+            <div>
+                <h2 class="mw-arrivals__title">New Arrivals</h2>
+                <div class="mw-arrivals__underline"></div>
+            </div>
+
+            <div class="mw-carousel_nav">
+                <button @onclick="() => ScrollLeft(newArrivalRef)" class="d-flex align-items-center">
+                    <!-- LEFT -->
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m15 18-6-6 6-6"></path>
+                    </svg>
+                </button>
+                <button @onclick="() => ScrollRight(newArrivalRef)" class="d-flex align-items-center">
+                    <!-- RIGHT -->
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m9 18 6-6-6-6"></path>
+                    </svg>
+
+                </button>
+            </div>
+        </div>
+        <!-- Carousel -->
+        <div class="carousel__track overflow-hidden" @ref="newArrivalRef">
+
+            <div class="d-flex gap-3">
+
+                @foreach (var (item, idx) in NewArrivals.Select((p, i) => (p, i)))
+                {
+                    <div class="col-12 col-sm-6 col-md-4 col-lg-3 mw-newarrivalcarousel-item">
+
+                        @* wrap card in link → navigates to product detail  *@
+                        <a href="/productdetail/@item.Id" class="mw-arrivals__card-link">
+                            <div class="mw-arrivals__card">
+                                <div class="mw-arrivals__image">
+                                    <img src="@item.ImageUrl" alt="@item.Name" loading="@(idx < 4 ? null : "lazy")" />
+                                    <div class="mw-arrivals__badge">NEW</div>
+                                </div>
+                                <h3>@item.Name</h3>
+                                <p>$@item.Price</p>
+                            </div>
+                        </a>
+
+                    </div>
+                }
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+<!-- Featured Section Starts Here -->
+
+<section class="mw-featured">
+
+    <div class="container">
+
+        <!-- Header -->
+        <div class="mw-featured__header">
+            <div>
+                <h2 class="mw-featured__title">Featured Collections</h2>
+                <div class="mw-featured__underline"></div>
+            </div>
+
+            <div class="mw-carousel_nav">
+                <button @onclick="() => ScrollLeft(featuredRef)" class="d-flex align-items-center">
+                    <!-- LEFT -->
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m15 18-6-6 6-6"></path>
+                    </svg>
+                </button>
+                <button @onclick="() => ScrollRight(featuredRef)" class="d-flex align-items-center">
+                    <!-- RIGHT -->
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m9 18 6-6-6-6"></path>
+                    </svg>
+
+                </button>
+            </div>
+        </div>
+
+        <!-- Grid -->
+        <div class="carousel__track overflow-hidden" @ref="featuredRef">
+
+            <div class="d-flex gap-3">
+
+                @foreach (var (item, idx) in FeaturedProducts.Select((p, i) => (p, i)))
+                {
+                    <div class="col-12 col-md-6">
+
+                        @* wrap in link  *@
+                        <a href="/productdetail/@item.Id" class="mw-featured__card-link">
+                            <div class="mw-featured__card">
+                                <div class="mw-featured__img-wrap">
+                                    <img src="@item.ImageUrl" alt="@item.Name" loading="@(idx < 2 ? null : "lazy")" />
+                                </div>
+                                <div class="mw-featured__content">
+                                    <h3>@item.Name</h3>
+                                    <p>$@item.Price</p>
+                                    <span>Shop Collection →</span>
+                                </div>
+                            </div>
+                        </a>
+
+                    </div>
+                }
+            </div>
+        </div>
+
+    </div>
+
+</section>
+
+<!-- Benifits Section -->
+<section class="mw-benefits">
+
+    <div class="mw-container">
+
+        <div class="row gy-3">
+
+            <!-- Item 1 -->
+            <div class="col-12 col-sm-6 col-lg-4">
+                <div class="mw-benefits__item">
+
+                    <div class="mw-benefits__icon">
+                        <!-- Truck -->
+                        <svg width="24" height="24" fill="none" stroke="#1E2A47" stroke-width="2">
+                            <path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"></path>
+                            <path d="M15 18H9"></path>
+                            <path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"></path>
+                            <circle cx="17" cy="18" r="2"></circle>
+                            <circle cx="7" cy="18" r="2"></circle>
+                        </svg>
+                    </div>
+
+                    <div>
+                        <h3>Free Shipping</h3>
+                        <p>Complimentary on orders over $150</p>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Item 2 -->
+            <div class="col-12 col-sm-6 col-lg-4">
+                <div class="mw-benefits__item">
+
+                    <div class="mw-benefits__icon">
+                        <!-- Rotate -->
+                        <svg width="24" height="24" fill="none" stroke="#1E2A47" stroke-width="2">
+                            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                            <path d="M3 3v5h5"></path>
+                        </svg>
+                    </div>
+
+                    <div>
+                        <h3>30-Day Returns</h3>
+                        <p>Hassle-free exchange policy</p>
+                    </div>
+
+                </div>
+            </div>
+            <!-- Item 3 -->
+            <div class="col-12 col-sm-6 col-lg-4">
+
+                <div class="mw-benefits__item">
+
+                    <div class="mw-benefits__icon">
+                        <!-- Shield -->
+                        <svg width="24" height="24" fill="none" stroke="#1E2A47" stroke-width="2">
+                            <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path>
+                        </svg>
+                    </div>
+
+                    <div>
+                        <h3>Secure Checkout</h3>
+                        <p>AES-256 encrypted payments</p>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</section>
+
+<!-- Best Sellers Section -->
+<section class="mw-bestsellers">
+
+    <div class="mw-container">
+
+        <!-- Header -->
+        <div class="mw-bestsellers__header">
+            <div>
+                <h2 class="mw-bestsellers__title">BestSellers</h2>
+                <div class="mw-bestsellers__underline"></div>
+            </div>
+
+            <div class="mw-carousel_nav">
+                <button @onclick="() => ScrollLeft(bestSellersRef)" class="d-flex align-items-center">
+                    <!-- LEFT -->
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m15 18-6-6 6-6"></path>
+                    </svg>
+                </button>
+                <button @onclick="() => ScrollRight(bestSellersRef)" class="d-flex align-items-center">
+                    <!-- RIGHT -->
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m9 18 6-6-6-6"></path>
+                    </svg>
+
+                </button>
+            </div>
+        </div>
+
+        <!-- Swiper -->
+        <div class="carousel__track overflow-hidden" @ref="bestSellersRef">
+            <div class="d-flex gap-3">
+
+                @foreach (var (item, idx) in BestSellerProducts.Select((p, i) => (p, i)))
+                {
+                    <div class="bestsellers-slide">
+
+                        @* already has anchor tag — update href  *@
+                        <a href="/productdetail/@item.Id" class="mw-bestsellers__card">
+                            <div class="mw-bestsellers__image">
+                                <img src="@item.ImageUrl" alt="@item.Name" loading="@(idx < 4 ? null : "lazy")" />
+                                @if (!string.IsNullOrEmpty(item.Badge))
+                                {
+                                    <div class="mw-bestsellers__badge">@item.Badge</div>
+                                }
+                            </div>
+                            <h3>@item.Name</h3>
+                            <p>$@item.Price</p>
+                        </a>
+
+                    </div>
+                }
+            </div>
+
+        </div>
+    </div>
+
+</section>
+
+
+<script src="lib/swiper/swiper-bundle.min.js"></script>
+<script>
+       new Swiper('.mw-hero', {
+        loop: true,
+        effect: 'fade',
+        fadeEffect: { crossFade: true },
+        autoplay: { delay: 5500, disableOnInteraction: false },
+        navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' },
+        pagination: { el: '.swiper-pagination', clickable: true },
+    });
+                       new Swiper('.mw-featured-swiper', {
+        slidesPerView: 2,
+        spaceBetween: 20,
+    loop: true,
+          autoplay: {
+              delay: 3000,
+              disableOnInteraction: false
+          },
+        navigation: {
+            nextEl: '.mw-featured-next',
+            prevEl: '.mw-featured-prev'
+        },
+
+        breakpoints: {
+            768: { slidesPerView: 2 },
+            1024: { slidesPerView: 2 }         }
+    });
+
+</script>
+
+

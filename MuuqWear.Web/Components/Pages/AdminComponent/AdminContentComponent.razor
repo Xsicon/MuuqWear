@@ -1,0 +1,391 @@
+﻿@page "/admin/content"
+@layout Layout.AdminLayoutComponent.AdminDashboardLayoutComponent
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using MuuqWear.Application.Interfaces
+@using MuuqWear.Application.Services.ContentService
+@using MuuqWear.Model.ContentItem
+@using MuuqWear.Web.Components.Shared
+@inject IContentService ContentService
+
+@attribute [Authorize(Roles = "admin")]
+
+<PageTitle>Content Management</PageTitle>
+
+
+<SpinnerComponent Show="@isLoading" />
+
+<div class="content-page">
+
+    <h1 class="content-title">Content Management</h1>
+
+    <!-- TAB BAR -->
+    <div class="content-tabs">
+        @foreach (var tab in Tabs)
+        {
+            <button class="content-tab @(activeTab == tab ? "active" : "")"
+                    @onclick="() => OnTabChanged(tab)">
+                @GetTabLabel(tab)
+            </button>
+        }
+    </div>
+
+    <!-- CONTENT TABLE -->
+    <div class="content-table">
+
+        <div class="content-table__header">
+            <h3 class="content-table__title">@GetTabLabel(activeTab)</h3>
+            <button class="btn-create" @onclick="OpenForm">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 12h14"></path>
+                    <path d="M12 5v14"></path>
+                </svg>
+                Create New
+            </button>
+        </div>
+
+        <div class="content-table__body">
+            @if (isLoading)
+            {
+                <p class="content-empty">Loading...</p>
+            }
+            else if (!items.Any())
+            {
+                <p class="content-empty">No items found.</p>
+            }
+            else
+            {
+                @foreach (var item in items)
+                {
+                    <div class="content-item">
+
+                        <div class="content-item__info">
+                            <p class="content-item__title">@item.Title</p>
+                            <p class="content-item__meta">
+                                <span class="badge @(item.IsPublished ? "badge--published" : "badge--draft")">
+                                    @(item.IsPublished ? "Published" : "Draft")
+                                </span>
+                                @item.CreatedAt?.ToString("MMM dd, yyyy")
+                                @if (item.IsPublished && item.Views > 0)
+                                {
+                                    <span>· @item.Views.ToString("N0") views</span>
+                                }
+                            </p>
+                        </div>
+
+                        <div class="content-item__actions">
+                            @if (item.IsPublished)
+                            {
+                                <button class="btn-edit"
+                                        @onclick="() => OpenEditForm(item)">
+                                    Edit
+                                </button>
+                                <button class="btn-ghost"
+                                        @onclick="() => HandleUnpublish(item.Id)">
+                                    Unpublish
+                                </button>
+                            }
+                            else
+                            {
+                                <button class="btn-edit"
+                                        @onclick="() => OpenEditForm(item)">
+                                    Edit Draft
+                                </button>
+                                <button class="btn-publish"
+                                        @onclick="() => HandlePublish(item.Id)">
+                                    Publish
+                                </button>
+                            }
+                        </div>
+
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    @if (isFormOpen)
+    {
+        <div class="form-overlay" @onclick="CloseForm"></div>
+
+        <div class="form-panel">
+
+            <div class="form-panel__header">
+                <p class="form-panel__title">
+                    @(isEditMode ? "Edit" : "Create") @GetTabLabel(activeTab)
+                </p>
+                <button class="form-panel__close" @onclick="CloseForm">✕</button>
+            </div>
+
+            @if (!string.IsNullOrEmpty(formError))
+            {
+                <p class="form-error">@formError</p>
+            }
+
+            <div class="form-fields">
+
+                <!-- Title — all types -->
+                <div class="form-field">
+                    <label class="form-label">Title *</label>
+                    <input @bind="form.Title"
+                           placeholder="Enter title"
+                           class="form-input" />
+                </div>
+
+                <!-- Category — Journal Articles only -->
+                @if (activeTab == ContentCategory.JournalArticles)
+                {
+                    <div class="form-field">
+                        <label class="form-label">Category</label>
+                        <select @bind="form.Category" class="form-input">
+                            <option value="">Select category</option>
+                            <option value="Design">Design</option>
+                            <option value="Innovation">Innovation</option>
+                            <option value="Lifestyle">Lifestyle</option>
+                            <option value="Tech">Tech</option>
+                        </select>
+                    </div>
+
+                    <!-- IMAGE TABS -->
+                    <div class="form-field">
+                        <label class="form-label">Image</label>
+
+                        <div style="display:flex;gap:8px;margin-bottom:10px">
+                            <button type="button"
+                                    class="content-tab @(imageTab == "url" ? "active" : "")"
+                                    @onclick='() => imageTab = "url"'>
+                                URL
+                            </button>
+                            <button type="button"
+                                    class="content-tab @(imageTab == "upload" ? "active" : "")"
+                                    @onclick='() => imageTab = "upload"'>
+                                Upload
+                            </button>
+                        </div>
+
+                        @if (imageTab == "url")
+                        {
+                            <input @bind="form.ImageUrl"
+                                   placeholder="https://..."
+                                   class="form-input" />
+                        }
+                        else
+                        {
+                            <InputFile OnChange="HandleImageUpload"
+                                       accept="image/*"
+                                       class="form-input" />
+
+                            @if (isUploading)
+                            {
+                                <p style="color:#4A5C7A;font-size:13px;margin-top:6px">
+                                    Uploading...
+                                </p>
+                            }
+
+                            @if (!string.IsNullOrEmpty(formError))
+                            {
+                                <p style="color:#C44545;font-size:13px;margin-top:6px">
+                                    @formError
+                                </p>
+                            }
+                        }
+
+                        <!-- preview -->
+                        @if (!string.IsNullOrEmpty(form.ImageUrl))
+                        {
+                            <img src="@form.ImageUrl"
+                                 alt="preview"
+                                 style="width:100%;height:160px;object-fit:cover;margin-top:10px" />
+                        }
+                    </div>
+                }
+
+                <!-- Design History specific fields -->
+                @if (activeTab == ContentCategory.DesignHistory)
+                {
+                    <!-- Designer -->
+                    <div class="form-field">
+                        <label class="form-label">Designer</label>
+                        <input @bind="form.Designer"
+                               placeholder="e.g. Marcus Chen"
+                               class="form-input" />
+                    </div>
+
+                    <!-- Year + Collection (side by side) -->
+                    <div class="form-field-row">
+                        <div class="form-field">
+                            <label class="form-label">Year</label>
+                            <input @bind="form.Year"
+                                   placeholder="e.g. 2024"
+                                   class="form-input" />
+                        </div>
+
+                        <div class="form-field">
+                            <label class="form-label">Collection</label>
+                            <select @bind="form.Collection" class="form-input">
+                                <option value="">Select collection</option>
+                                <option value="The Essentials Collection">The Essentials Collection</option>
+                                <option value="The Technical Series">The Technical Series</option>
+                                <option value="The Veil Capsule">The Veil Capsule</option>
+                                <option value="Cultural Collaborations">Cultural Collaborations</option>
+                                <option value="Limited Editions">Limited Editions</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Inspiration -->
+                    <div class="form-field">
+                        <label class="form-label">Inspiration</label>
+                        <input @bind="form.Inspiration"
+                               placeholder="e.g. Japanese Kimono silhouette"
+                               class="form-input" />
+                    </div>
+
+                    <!-- Main image (URL/Upload tabs) -->
+                    <div class="form-field">
+                        <label class="form-label">Main Image</label>
+
+                        <div style="display:flex;gap:8px;margin-bottom:10px">
+                            <button type="button"
+                                    class="content-tab @(imageTab == "url" ? "active" : "")"
+                                    @onclick='() => imageTab = "url"'>
+                                URL
+                            </button>
+                            <button type="button"
+                                    class="content-tab @(imageTab == "upload" ? "active" : "")"
+                                    @onclick='() => imageTab = "upload"'>
+                                Upload
+                            </button>
+                        </div>
+
+                        @if (imageTab == "url")
+                        {
+                            <input @bind="form.ImageUrl"
+                                   placeholder="https://..."
+                                   class="form-input" />
+                        }
+                        else
+                        {
+                            <InputFile OnChange="HandleImageUpload"
+                                       accept="image/*"
+                                       class="form-input" />
+
+                            @if (isUploading)
+                            {
+                                <p style="color:#4A5C7A;font-size:13px;margin-top:6px">
+                                    Uploading...
+                                </p>
+                            }
+                        }
+
+                        @if (!string.IsNullOrEmpty(form.ImageUrl))
+                        {
+                            <img src="@form.ImageUrl"
+                                 alt="preview"
+                                 style="width:100%;height:160px;object-fit:cover;margin-top:10px" />
+                        }
+                    </div>
+
+                    <!-- Second image (URL/Upload tabs) -->
+                    <div class="form-field">
+                        <label class="form-label">Second Image (for story panel)</label>
+
+                        <div style="display:flex;gap:8px;margin-bottom:10px">
+                            <button type="button"
+                                    class="content-tab @(secondImageTab == "url" ? "active" : "")"
+                                    @onclick='() => secondImageTab = "url"'>
+                                URL
+                            </button>
+                            <button type="button"
+                                    class="content-tab @(secondImageTab == "upload" ? "active" : "")"
+                                    @onclick='() => secondImageTab = "upload"'>
+                                Upload
+                            </button>
+                        </div>
+
+                        @if (secondImageTab == "url")
+                        {
+                            <input @bind="form.SecondImageUrl"
+                                   placeholder="https://..."
+                                   class="form-input" />
+                        }
+                        else
+                        {
+                            <InputFile OnChange="HandleSecondImageUpload"
+                                       accept="image/*"
+                                       class="form-input" />
+
+                            @if (isSecondImageUploading)
+                            {
+                                <p style="color:#4A5C7A;font-size:13px;margin-top:6px">
+                                    Uploading...
+                                </p>
+                            }
+                        }
+
+                        @if (!string.IsNullOrEmpty(form.SecondImageUrl))
+                        {
+                            <img src="@form.SecondImageUrl"
+                                 alt="preview"
+                                 style="width:100%;height:160px;object-fit:cover;margin-top:10px" />
+                        }
+                    </div>
+
+                    <!-- Technical details (4 fields) -->
+                    <div class="form-section-divider">
+                        <p class="form-section-label">Technical Details</p>
+                    </div>
+
+                    <div class="form-field">
+                        <label class="form-label">Fabric</label>
+                        <input @bind="form.TechnicalFabric"
+                               placeholder="e.g. 100% Supima cotton, 200 GSM"
+                               class="form-input" />
+                    </div>
+
+                    <div class="form-field">
+                        <label class="form-label">Techniques</label>
+                        <input @bind="form.TechnicalTechniques"
+                               placeholder="e.g. Four-seam construction, raw-edge finishing"
+                               class="form-input" />
+                    </div>
+
+                    <div class="form-field">
+                        <label class="form-label">Production</label>
+                        <input @bind="form.TechnicalProduction"
+                               placeholder="e.g. Single-source cotton farm, California"
+                               class="form-input" />
+                    </div>
+
+                    <div class="form-field">
+                        <label class="form-label">Availability</label>
+                        <input @bind="form.TechnicalAvailability"
+                               placeholder="e.g. Core collection, always available"
+                               class="form-input" />
+                    </div>
+                }
+
+
+                <!-- Content — all types -->
+                <div class="form-field">
+                    <label class="form-label">Content</label>
+                    <textarea @bind="form.Content"
+                              placeholder="Enter content"
+                              rows="8"
+                              class="form-textarea"></textarea>
+                </div>
+
+            </div>
+
+            <button class="form-submit"
+                    @onclick="@(isEditMode? HandleEdit : HandleCreate)"
+                    disabled="@isSaving">
+                @(isSaving ? "Saving..." : isEditMode ? "Save Changes" : "Save as Draft")
+            </button>
+
+        </div>
+    }
+</div>
+

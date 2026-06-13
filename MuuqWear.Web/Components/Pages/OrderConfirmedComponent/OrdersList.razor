@@ -1,0 +1,99 @@
+﻿@using MuuqWear.Model.Orders
+
+<div>
+    @if (!Orders.Any())
+    {
+        <p style="color:#4A5C7A;font-size:14px;padding:16px 0">No orders yet.</p>
+    }
+    else
+    {
+        @foreach (var order in Orders)
+        {
+            <div style="border:1px solid rgba(169,183,204,0.4);margin-bottom:8px"
+                 class="mw-orders-list-item">
+                <div class="d-flex align-items-center justify-content-between p-3">
+
+                    <!-- LEFT: icon + order info -->
+                    <div class="d-flex align-items-center gap-3">
+
+                        <!-- status icon -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                             viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                             class="@GetStatusIconColor(order.Status)">
+                            @((MarkupString)GetStatusIconPath(order.Status))
+                        </svg>
+
+                        <!-- order number + date -->
+                        <div>
+                            <p style="color:#1E2A47;font-size:14px;font-weight:600;margin:0">
+                                @order.OrderNumber
+                            </p>
+                            <p style="color:#4A5C7A;font-size:12px;margin:0">
+                                @order.CreatedAt?.ToString("MMM dd, yyyy")
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT: price + status + chevron -->
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="text-end">
+                            <p style="color:#1E2A47;font-size:14px;font-weight:600;margin:0">
+                                $@order.Total.ToString("F2")
+                            </p>
+                            <p style="font-size:12px;font-weight:600;margin:0"
+                               class="@GetStatusTextColor(order.Status)">
+                                @order.Status
+                            </p>
+                        </div>
+
+                        <!-- chevron -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                             viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                             style="color:#A9B7CC;flex-shrink:0">
+                            <path d="m9 18 6-6-6-6"></path>
+                        </svg>
+                    </div>
+
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    [Parameter] public List<OrderModel> Orders { get; set; } = new();
+
+    private string GetStatusIconPath(string? status) => status?.ToLower() switch
+    {
+        "delivered" =>
+            "<path d='M21.801 10A10 10 0 1 1 17 3.335'></path><path d='m9 11 3 3L22 4'></path>",
+        "in transit" or "transit" =>
+            "<path d='M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2'></path><path d='M15 18H9'></path><path d='M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14'></path><circle cx='17' cy='18' r='2'></circle><circle cx='7' cy='18' r='2'></circle>",
+        "pending" =>
+            "<circle cx='12' cy='12' r='10'></circle><polyline points='12 6 12 12 16 14'></polyline>",
+        "cancelled" =>
+            "<circle cx='12' cy='12' r='10'></circle><path d='m15 9-6 6'></path><path d='m9 9 6 6'></path>",
+        _ =>
+            "<circle cx='12' cy='12' r='10'></circle>"
+    };
+
+    private string GetStatusIconColor(string? status) => status?.ToLower() switch
+    {
+        "delivered" => "text-success",
+        "in transit" or "transit" => "text-warning",
+        "pending" => "text-primary",
+        "cancelled" => "text-danger",
+        _ => "text-secondary"
+    };
+
+    private string GetStatusTextColor(string? status) => status?.ToLower() switch
+    {
+        "delivered" => "text-success",
+        "in transit" or "transit" => "text-warning",
+        "pending" => "text-primary",
+        "cancelled" => "text-danger",
+        _ => "text-secondary"
+    };
+}

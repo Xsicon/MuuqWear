@@ -1,0 +1,125 @@
+﻿@page "/auth/magic-link-callback"
+@rendermode InteractiveServer
+@inject IJSRuntime JS
+@inject NavigationManager NavigationManager
+@inject IAuthService IAuthService
+@inject AuthStateService AuthStateService
+@inject CartStateService CartStateService
+@using MuuqWear.Application.Services.AuthService
+@using MuuqWear.Application.Services.CartService
+@using MuuqWear.Application.Shared
+@using MuuqWear.Model.Authentication
+
+<PageTitle>Verifying...</PageTitle>
+
+<div class="container py-5 text-center">
+    @if (isVerifying)
+    {
+        <p>Verifying your magic link...</p>
+    }
+    else if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <p class="text-danger">@errorMessage</p>
+        <a href="/login" class="mw-btn-primary mt-3">
+            Back to Login
+        </a>
+    }
+</div>
+
+@code {
+
+    private bool isVerifying = true;
+    private string errorMessage = string.Empty;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        try
+        {
+            // read URL fragment via JS
+            // fragment = everything after # in URL
+            // e.g. #access_token=xxx&refresh_token=yyy&type=magiclink
+            var fragment = await JS.InvokeAsync<string>(
+                "eval", "window.location.hash");
+
+            if (string.IsNullOrEmpty(fragment))
+            {
+                errorMessage = "Invalid magic link. Please request a new one.";
+                isVerifying = false;
+                StateHasChanged();
+                return;
+            }
+
+            // parse fragment into key-value pairs
+            // remove leading # first
+            // e.g. "access_token=xxx&refresh_token=yyy&type=magiclink"
+            var parameters = fragment
+                .TrimStart('#')
+                .Split('&')
+                .Select(p => p.Split('='))
+                .Where(p => p.Length == 2)
+                .ToDictionary(
+                    p => p[0],
+                    p => Uri.UnescapeDataString(p[1]));
+
+            // check type is magiclink
+            if (!parameters.TryGetValue("type", out var type)
+                || type != "magiclink")
+            {
+                errorMessage = "Invalid magic link type.";
+                isVerifying = false;
+                StateHasChanged();
+                return;
+            }
+
+            // get access token
+            if (!parameters.TryGetValue("access_token", out var accessToken)
+                || string.IsNullOrEmpty(accessToken))
+            {
+                errorMessage = "Invalid magic link. Token missing.";
+                isVerifying = false;
+                StateHasChanged();
+                return;
+            }
+
+            // get refresh token
+            parameters.TryGetValue("refresh_token", out var refreshToken);
+
+            // verify token with backend
+            var result = await IAuthService.VerifyMagicLink(
+                new MagicLinkVerifyModel
+                {
+                    AccessToken = accessToken,
+                    RefreshToken = refreshToken ?? ""
+                });
+
+            if (result.Success && result.Data != null)
+            {
+                // store pending email for auth flow
+                await AuthStateService.SetPendingEmailAsync(
+                    result.Data.Email ?? "");
+
+
+                // navigate to set cookie
+                await AuthNavigationHelper.PrepareAndNavigateAsync(
+                    result.Data,
+                    NavigationManager,
+                    "/profile");
+            }
+            else
+            {
+                errorMessage = result.Message ?? "Verification failed.";
+                isVerifying = false;
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Something went wrong. Please try again.";
+            isVerifying = false;
+            StateHasChanged();
+            Console.WriteLine(ex.Message);
+        }
+    }
+}

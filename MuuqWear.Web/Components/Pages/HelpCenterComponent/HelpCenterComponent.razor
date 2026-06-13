@@ -1,0 +1,731 @@
+﻿@page "/help"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Components.Authorization
+@using MuuqWear.Application.Interfaces
+@using MuuqWear.Application.Services.ChatService
+@using MuuqWear.Application.Services.HelpCenterService
+@using MuuqWear.Model.Chat
+@using MuuqWear.Model.HelpCenter
+@inject IHelpCenterService HelpCenterService
+@inject IChatService ChatService
+@inject IJSRuntime JS
+@implements IDisposable
+
+<PageTitle>Help Center — MuuqWear</PageTitle>
+
+<!-- ─── HERO ─────────────────────────────────────────────── -->
+<section class="hc-hero">
+    <div class="hc-hero__inner">
+        <h1 class="hc-hero__title">How can we help you?</h1>
+        <p class="hc-hero__sub">
+            Find answers to common questions or reach out to our team directly.
+        </p>
+    </div>
+</section>
+
+<section class="hc-topics">
+    <div class="hc-topics__inner">
+
+        <div class="hc-topics__header">
+            <h2 class="hc-topics__title">Browse Topics</h2>
+            <div class="hc-topics__nav">
+                <button class="hc-topics__arrow" @onclick="ScrollTopicsLeft">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m15 18-6-6 6-6"></path>
+                    </svg>
+                </button>
+                <button class="hc-topics__arrow" @onclick="ScrollTopicsRight">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m9 18 6-6-6-6"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- CAROUSEL -->
+        <div class="hc-topics__track" @ref="topicsTrackRef">
+            @foreach (var topic in Topics)
+            {
+                <button class="hc-topic-card @(activeTopic == topic.Key ? "hc-topic-card--active" : "")"
+                        @onclick="() => SelectTopic(topic.Key)"
+                        @key="topic.Key">
+
+                    <div class="hc-topic-card__icon">
+                        @GetTopicIcon(topic.Key)
+                    </div>
+
+                    <h3 class="hc-topic-card__title">@topic.Title</h3>
+                    <p class="hc-topic-card__desc">@topic.Description</p>
+                </button>
+            }
+        </div>
+
+    </div>
+</section>
+
+<!-- ─── FAQ SECTION ──────────────────────────────────────── -->
+@if (!string.IsNullOrEmpty(activeTopic) && FaqData.ContainsKey(activeTopic))
+{
+    <section class="hc-faq" @ref="faqRef">
+        <div class="hc-faq__inner">
+            <h2 class="hc-faq__title">@activeTopic FAQ</h2>
+
+            @foreach (var faq in FaqData[activeTopic])
+            {
+                <div class="hc-faq__item @(expandedFaq == faq.Question ? "hc-faq__item--open" : "")"
+                     @key="faq.Question">
+                    <button class="hc-faq__question"
+                            @onclick="() => ToggleFaq(faq.Question)">
+                        <span>@faq.Question</span>
+                        <svg class="hc-faq__chevron"
+                             xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                             viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m6 9 6 6 6-6"></path>
+                        </svg>
+                    </button>
+                    @if (expandedFaq == faq.Question)
+                    {
+                        <div class="hc-faq__answer">
+                            <p>@faq.Answer</p>
+                        </div>
+                    }
+                </div>
+            }
+
+        </div>
+    </section>
+}
+
+<!-- ─── FIXED CHAT BUTTON ────────────────────────────────── -->
+<button class="hc-chat-fab" @onclick="OpenChatWidget" aria-label="Chat">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"></path>
+    </svg>
+</button>
+
+<!-- ─── CHAT WIDGET ───────────────────────────────────────── -->
+@if (isChatOpen)
+{
+    <div class="hc-widget">
+
+        <!-- WIDGET HEADER -->
+        <div class="hc-widget__header">
+            <span class="hc-widget__heading">Chat with Muuqwear</span>
+            <button class="hc-widget__close" @onclick="CloseChatWidget">✕</button>
+        </div>
+
+        @if (widgetState == "menu")
+        {
+            <div class="hc-widget__menu">
+                <button class="hc-widget__option" @onclick='() => widgetState = "ticket"'>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path>
+                        <path d="M14 2v4a2 2 0 0 0 2 2h4"></path>
+                    </svg>
+                    Submit a Support Ticket
+                </button>
+                <button class="hc-widget__option hc-widget__option--dark"
+                        @onclick='() => widgetState = "chat"'>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"></path>
+                    </svg>
+                    Chat with a Representative
+                </button>
+            </div>
+        }
+
+        else if (widgetState == "ticket")
+        {
+            @if (ticketSubmitted)
+            {
+                <div class="hc-widget__success">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"
+                         viewBox="0 0 24 24" fill="none" stroke="#2D9C5A"
+                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
+                        <path d="m9 11 3 3L22 4"></path>
+                    </svg>
+                    <p class="hc-widget__success-title">Ticket Submitted!</p>
+                    <p class="hc-widget__success-sub">
+                        We'll get back to you within 24 hours.
+                        Your ticket number is <strong>@submittedTicketNumber</strong>.
+                    </p>
+                    <button class="hc-widget__back"
+                            @onclick="ResetTicketForm">
+                        Submit Another
+                    </button>
+                </div>
+            }
+            else
+            {
+                <div class="hc-widget__form">
+
+                    <button class="hc-widget__back-link"
+                            @onclick='() => widgetState = "menu"'>
+                        ← Back
+                    </button>
+
+                    @if (!string.IsNullOrEmpty(ticketError))
+                    {
+                        <p class="hc-widget__error">@ticketError</p>
+                    }
+
+                    <div class="hc-widget__field">
+                        <input @bind="ticketForm.Name"
+                               placeholder="Your name"
+                               class="hc-widget__input" />
+                    </div>
+
+                    <div class="hc-widget__field">
+                        <input @bind="ticketForm.Email"
+                               type="email"
+                               placeholder="Email address"
+                               class="hc-widget__input" />
+                    </div>
+
+                    <div class="hc-widget__field">
+                        <select @bind="ticketForm.Category"
+                                class="hc-widget__input">
+                            <option value="">Select category</option>
+                            <option value="Orders">Orders</option>
+                            <option value="Shipping">Shipping</option>
+                            <option value="Returns">Returns</option>
+                            <option value="Payments">Payments</option>
+                            <option value="Account">Account</option>
+                            <option value="Product Info">Product Info</option>
+                        </select>
+                    </div>
+
+                    <div class="hc-widget__field">
+                        <input @bind="ticketForm.Subject"
+                               placeholder="Subject"
+                               class="hc-widget__input" />
+                    </div>
+
+                    <div class="hc-widget__field">
+                        <textarea @bind="ticketForm.Message"
+                                  placeholder="Describe your issue..."
+                                  rows="4"
+                                  class="hc-widget__input hc-widget__textarea">
+                                                                                                                                                                                                                                                                                                                                                                                                                    </textarea>
+                    </div>
+
+                    <button class="hc-widget__submit"
+                            @onclick="HandleSubmitTicket"
+                            disabled="@isSubmitting">
+                        @(isSubmitting ? "Submitting..." : "Submit Ticket")
+                    </button>
+
+                </div>
+            }
+        }
+
+        else if (widgetState == "chat")
+        {
+            <div class="hc-widget__chat">
+
+                <button class="hc-widget__back-link" @onclick='() => widgetState = "menu"'>
+                    ← Back
+                </button>
+
+                @if (isLoadingHistory)
+                {
+                    <div class="hc-widget__chat-loading">Loading…</div>
+                }
+
+                @* GUEST FORM — shown before first message when not logged in *@
+                @if (showGuestForm)
+                {
+                    <div class="hc-widget__guest-form">
+                        <p class="hc-widget__guest-title">Tell us who you are to start:</p>
+                        <input @bind="guestName"
+                               placeholder="Your name"
+                               class="hc-widget__input" />
+                        <input @bind="guestEmail"
+                               type="email"
+                               placeholder="Email address"
+                               class="hc-widget__input" />
+                        <button class="hc-widget__submit"
+                                @onclick="SubmitGuestInfo"
+                                disabled="@isSendingMessage">
+                            Start Chat
+                        </button>
+                    </div>
+                }
+
+                @* MESSAGES *@
+                <div class="hc-widget__chat-messages">
+
+                    @if (chatMessages.Count == 0 && !isLoadingHistory && !showGuestForm)
+                    {
+                        <div class="hc-widget__chat-bubble hc-widget__chat-bubble--admin">
+                            Hi! Welcome to Muuqwear support. How can I help you today?
+                        </div>
+                    }
+
+                    @foreach (var msg in chatMessages)
+                    {
+                        <div class="hc-widget__chat-bubble hc-widget__chat-bubble--@msg.SenderType">
+                            <span class="hc-widget__chat-sender">@msg.SenderName</span>
+                            <p class="hc-widget__chat-text">@msg.Message</p>
+                            <span class="hc-widget__chat-time">
+                                @msg.CreatedAt.ToLocalTime().ToString("h:mm tt")
+                            </span>
+                        </div>
+                    }
+                </div>
+
+                @if (!string.IsNullOrEmpty(chatErrorMessage))
+                {
+                    <p class="hc-widget__chat-error">@chatErrorMessage</p>
+                }
+
+                @* CLOSED STATE *@
+                @if (isChatClosed)
+                {
+                    <div class="hc-widget__chat-closed">
+                        <p>This chat has been closed.</p>
+                        <button class="hc-widget__submit" @onclick="StartNewChat">
+                            Start New Chat
+                        </button>
+                    </div>
+                }
+
+                @* INPUT — hidden while guest form is up or chat closed *@
+                @if (!showGuestForm && !isChatClosed)
+                {
+                    <div class="hc-widget__chat-input-row">
+                        <input @bind="messageInput"
+                               @bind:event="oninput"
+                               @onkeydown="HandleKeyDown"
+                               placeholder="Type a message..."
+                               class="hc-widget__chat-input"
+                               disabled="@isSendingMessage" />
+                        <button class="hc-widget__chat-send"
+                                @onclick="SendMessage"
+                                disabled="@(isSendingMessage || string.IsNullOrWhiteSpace(messageInput))">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="m22 2-7 20-4-9-9-4Z"></path>
+                                <path d="M22 2 11 13"></path>
+                            </svg>
+                        </button>
+                    </div>
+                }
+
+            </div>
+        }
+
+    </div>
+}
+
+@code {
+
+    // ─── REFS ─────────────────────────────────────────────────
+    private ElementReference topicsTrackRef;
+    private ElementReference faqRef;
+
+
+    // ─── CHAT: POLLING ────────────────────────────────────────
+    private System.Timers.Timer? pollTimer;
+    private bool isPolling = false;   // guards against overlapping polls
+    // ─── TOPIC STATE ──────────────────────────────────────────
+    private string activeTopic = string.Empty;
+    private string expandedFaq = string.Empty;
+
+    // ─── CHAT WIDGET STATE ────────────────────────────────────
+    private bool isChatOpen = false;
+    private string widgetState = "menu"; // menu | ticket | chat
+
+    // ─── TICKET FORM STATE ────────────────────────────────────
+    private SubmitTicketModel ticketForm = new();
+    private bool isSubmitting = false;
+    private bool ticketSubmitted = false;
+    private string ticketError = string.Empty;
+    private string submittedTicketNumber = string.Empty;
+
+    // ─── TOPIC DATA ───────────────────────────────────────────
+
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthStateTask { get; set; }
+
+    private Guid? chatSessionId = null;
+    private List<ChatMessageModel> chatMessages = new();
+    private string messageInput = string.Empty;
+
+    private string? guestName = null;
+    private string? guestEmail = null;
+    private bool showGuestForm = false;
+
+    private bool isSendingMessage = false;
+    private bool isLoadingHistory = false;
+    private string? chatErrorMessage = null;
+    private bool isChatClosed = false;
+
+    // ─── TOPIC DATA ───────────────────────────────────────────
+    private record TopicItem(string Key, string Title, string Description);
+
+    private List<TopicItem> Topics => new()
+{
+    new("Orders",       "Orders",       "Track, cancel, or manage your orders."),
+    new("Shipping",     "Shipping",     "Delivery times, tracking, and international options."),
+    new("Returns",      "Returns",      "Start a return, exchange, or refund."),
+    new("Payments",     "Payments",     "Billing issues, payment methods, and gift cards."),
+    new("Account",      "Account",      "Profile settings, password, and preferences."),
+    new("Product Info", "Product Info", "Sizing, materials, and care instructions.")
+};
+    // ─── FAQ DATA ─────────────────────────────────────────────
+    private record FaqItem(string Question, string Answer);
+
+    private Dictionary<string, List<FaqItem>> FaqData => new()
+    {
+        ["Orders"] = new()
+        {
+            new("How do I track my order?",
+                "Once shipped, you'll receive an email with your tracking number. You can also check order status in your account dashboard."),
+            new("Can I cancel my order?",
+                "Orders can be cancelled within 1 hour of placement. After that, we begin processing immediately."),
+            new("How long does processing take?",
+                "Most orders are processed and shipped within 24 hours during business days.")
+        },
+        ["Shipping"] = new()
+        {
+            new("How long does shipping take?",
+                "Standard shipping takes 3-5 business days. Express shipping takes 1-2 business days."),
+            new("Do you ship internationally?",
+                "Yes, we ship to over 50 countries. International shipping takes 7-14 business days."),
+            new("Is free shipping available?",
+                "We offer free standard shipping on all orders over $75.")
+        },
+        ["Returns"] = new()
+        {
+            new("What is your return policy?",
+                "We accept returns within 30 days of delivery. Items must be unworn and in original condition."),
+            new("How do I start a return?",
+                "Visit our Shipping & Returns page and fill out the return form with your order number and email."),
+            new("When will I receive my refund?",
+                "Refunds are processed within 5-7 business days after we receive your return.")
+        },
+        ["Payments"] = new()
+        {
+            new("What payment methods do you accept?",
+                "We accept all major credit cards, PayPal, Apple Pay, and Google Pay."),
+            new("Is my payment information secure?",
+                "Yes, all payments are processed through Stripe with industry-standard encryption."),
+            new("Can I use multiple payment methods?",
+                "Currently we support one payment method per order.")
+        },
+        ["Account"] = new()
+        {
+            new("How do I reset my password?",
+                "Click 'Forgot Password' on the login page. You'll receive a reset link via email within a few minutes."),
+            new("Can I change my email address?",
+                "Yes, you can update your email in your account settings under Profile."),
+            new("How do I delete my account?",
+                "To delete your account, please contact our support team. We'll process your request within 48 hours.")
+        },
+        ["Product Info"] = new()
+        {
+            new("How do I find my size?",
+                "Check our size guide available on each product page. We recommend measuring yourself and comparing to our size chart."),
+            new("What materials do you use?",
+                "We use sustainable, high-quality materials. Full fabric composition is listed on each product page."),
+            new("How do I care for my MuuqWear items?",
+                "Most items are machine washable on cold. Specific care instructions are on the product label and product page.")
+        }
+    };
+
+    // ─── TOPIC METHODS ────────────────────────────────────────
+    private async Task SelectTopic(string topic)
+    {
+        activeTopic = topic;
+        expandedFaq = string.Empty;
+        StateHasChanged();
+
+        //  scroll to FAQ section smoothly
+        await Task.Delay(50);
+        // JS scroll handled via CSS scroll-margin-top
+    }
+
+    private void ToggleFaq(string question)
+    {
+        expandedFaq = expandedFaq == question
+            ? string.Empty
+            : question;
+    }
+
+    // ─── CAROUSEL SCROLL ──────────────────────────────────────
+
+    private async Task ScrollTopicsLeft()
+    {
+        await JS.InvokeVoidAsync("eval",
+            "document.querySelector('.hc-topics__track').scrollBy({left:-300,behavior:'smooth'})");
+    }
+
+    private async Task ScrollTopicsRight()
+    {
+        await JS.InvokeVoidAsync("eval",
+            "document.querySelector('.hc-topics__track').scrollBy({left:300,behavior:'smooth'})");
+    }
+
+    // ─── CHAT WIDGET ──────────────────────────────────────────
+    private void OpenChatWidget()
+    {
+        isChatOpen = true;
+        widgetState = "menu";
+    }
+
+    private void CloseChatWidget()
+    {
+        isChatOpen = false;
+        StopPolling();
+        ResetTicketForm();
+    }
+
+    // ─── TICKET FORM ──────────────────────────────────────────
+    private async Task HandleSubmitTicket()
+    {
+        ticketError = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(ticketForm.Name) ||
+            string.IsNullOrWhiteSpace(ticketForm.Email) ||
+            string.IsNullOrWhiteSpace(ticketForm.Category) ||
+            string.IsNullOrWhiteSpace(ticketForm.Subject) ||
+            string.IsNullOrWhiteSpace(ticketForm.Message))
+        {
+            ticketError = "Please fill in all fields.";
+            return;
+        }
+
+        isSubmitting = true;
+        StateHasChanged();
+
+        var result = await HelpCenterService.SubmitTicket(ticketForm);
+
+        if (result.Success)
+        {
+            ticketSubmitted = true;
+            submittedTicketNumber = result.Data?.TicketNumber
+                                    ?? string.Empty;
+        }
+        else
+        {
+            ticketError = result.Message
+                          ?? "Failed to submit ticket. Please try again.";
+        }
+
+        isSubmitting = false;
+        StateHasChanged();
+    }
+
+    private void ResetTicketForm()
+    {
+        ticketForm = new();
+        ticketSubmitted = false;
+        ticketError = string.Empty;
+        submittedTicketNumber = string.Empty;
+        widgetState = "menu";
+    }
+
+    private RenderFragment GetTopicIcon(string key) => key switch
+    {
+        "Orders" => @<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"></path><path d="M12 22V12"></path><polyline points="3.29 7 12 12 20.71 7"></polyline><path d="m7.5 4.27 9 5.15"></path></svg>,
+
+    "Shipping" => @<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"></path><path d="M15 18H9"></path><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"></path><circle cx="17" cy="18" r="2"></circle><circle cx="7" cy="18" r="2"></circle></svg>,
+
+    "Returns" => @<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>,
+
+    "Payments" => @<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"></rect><line x1="2" x2="22" y1="10" y2="10"></line></svg>,
+
+    "Account" => @<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>,
+
+    _ => @<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><path d="M12 17h.01"></path></svg>
+};
+
+    // ─── CHAT: SEND ───────────────────────────────────────────
+    private async Task SendMessage()
+    {
+        if (string.IsNullOrWhiteSpace(messageInput))
+        {
+            chatErrorMessage = "Message cannot be empty";
+            return;
+        }
+
+        try
+        {
+            isSendingMessage = true;
+            chatErrorMessage = null;
+            StateHasChanged();
+
+            // Are we logged in?
+            var isAuthenticated = false;
+            if (AuthStateTask != null)
+            {
+                var authState = await AuthStateTask;
+                isAuthenticated = authState.User.Identity?.IsAuthenticated ?? false;
+            }
+
+            // First message from a guest → need name first
+            if (!chatSessionId.HasValue && !isAuthenticated &&
+                string.IsNullOrWhiteSpace(guestName))
+            {
+                showGuestForm = true;
+                isSendingMessage = false;
+                StateHasChanged();
+                return;
+            }
+
+            var request = new SendMessageRequest
+            {
+                SessionId = chatSessionId,                                // null on first message
+                Message = messageInput,
+                GuestName = isAuthenticated ? null : guestName,
+                GuestEmail = isAuthenticated ? null : guestEmail
+            };
+
+            var result = await ChatService.SendMessage(request);
+
+            if (result.Success && result.Data != null)
+            {
+                // Capture the session id returned on the first message
+                if (!chatSessionId.HasValue)
+                {
+                    chatSessionId = result.Data.SessionId;
+                    StartPolling();
+                }
+                chatMessages.Add(result.Data);
+                messageInput = string.Empty;
+                showGuestForm = false;
+            }
+            else
+            {
+                chatErrorMessage = result.Message ?? "Failed to send message";
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[HelpCenter] SendMessage error: {ex.Message}");
+            chatErrorMessage = "Failed to send message. Please try again.";
+        }
+        finally
+        {
+            isSendingMessage = false;
+            StateHasChanged();
+        }
+    }
+
+    // ─── CHAT: GUEST INFO ─────────────────────────────────────
+    private async Task SubmitGuestInfo()
+    {
+        if (string.IsNullOrWhiteSpace(guestName))
+        {
+            chatErrorMessage = "Please enter your name";
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(guestEmail) || !guestEmail.Contains("@"))
+        {
+            chatErrorMessage = "Please enter a valid email";
+            return;
+        }
+
+        chatErrorMessage = null;
+        showGuestForm = false;
+        await SendMessage();   // now guestName is set, so it proceeds
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !isSendingMessage &&
+            !string.IsNullOrWhiteSpace(messageInput))
+        {
+            await SendMessage();
+        }
+    }
+
+    private void StartNewChat()
+    {
+        StopPolling();
+        chatSessionId = null;
+        chatMessages.Clear();
+        messageInput = string.Empty;
+        isChatClosed = false;
+        chatErrorMessage = null;
+        showGuestForm = false;
+        StateHasChanged();
+    }
+
+    private void StartPolling()
+    {
+        if (pollTimer != null) return;
+
+        pollTimer = new System.Timers.Timer(3000);
+        pollTimer.Elapsed += async (_, _) => await PollMessages();
+        pollTimer.AutoReset = true;
+        pollTimer.Start();
+    }
+
+    private void StopPolling()
+    {
+        pollTimer?.Stop();
+        pollTimer?.Dispose();
+        pollTimer = null;
+    }
+    public void Dispose()
+    {
+        StopPolling();
+    }
+
+    private async Task PollMessages()
+    {
+        if (!chatSessionId.HasValue || isPolling) return;
+
+        try
+        {
+            isPolling = true;
+
+            // Fetch both in parallel — same poll cycle, no extra latency
+            var messagesTask = ChatService.GetMessages(chatSessionId.Value);
+            var statusTask = ChatService.GetSessionStatus(chatSessionId.Value);
+            await Task.WhenAll(messagesTask, statusTask);
+
+            var messagesResult = await messagesTask;
+            var statusResult = await statusTask;
+
+            // Detect closure
+            if (statusResult.Success && statusResult.Data == "closed" && !isChatClosed)
+            {
+                isChatClosed = true;
+                StopPolling();
+                await InvokeAsync(StateHasChanged);
+                return;
+            }
+
+            if (messagesResult.Success && messagesResult.Data != null &&
+                messagesResult.Data.Count != chatMessages.Count)
+            {
+                chatMessages = messagesResult.Data;
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[HelpCenter] Poll error: {ex.Message}");
+        }
+        finally
+        {
+            isPolling = false;
+        }
+    }
+}

@@ -1,0 +1,375 @@
+﻿@page "/admin/live-chat"
+@layout Layout.AdminLayoutComponent.AdminDashboardLayoutComponent
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using MuuqWear.Application.Services.ChatService
+@using MuuqWear.Model.Chat
+@using MuuqWear.Web.Components.Shared
+@attribute [Authorize(Roles = "admin")]
+@implements IDisposable
+@inject IChatService ChatService
+
+
+<SpinnerComponent Show="@isLoading" />
+
+<div class="mw-livechat">
+
+    <h1 class="mw-livechat-title">Live Chat & Support</h1>
+
+    <div class="mw-livechat-panels">
+
+        <!-- LEFT PANE: ACTIVE CONVERSATIONS -->
+        <aside class="mw-livechat-sessions">
+            <h2 class="mw-livechat-sessions-title">ACTIVE CONVERSATIONS</h2>
+
+            @if (sessions.Count == 0)
+            {
+                <p class="mw-livechat-muted">No active conversations.</p>
+            }
+            else
+            {
+                @foreach (var s in sessions)
+                {
+                    <button class="mw-session @(selectedSessionId == s.Id ? "mw-session-active" : "")"
+                            @onclick="() => SelectSession(s.Id)"
+                            @key="s.Id">
+                        <div class="mw-session-row">
+                            <span class="mw-session-name">@s.CustomerName</span>
+                            <span class="mw-session-dot"></span>
+                        </div>
+                        <div class="mw-session-meta">
+                            @GetRelativeTime(s.LastActivity)
+                            @if (!string.IsNullOrEmpty(s.LastMessagePreview))
+                            {
+                                <span> · @s.LastMessagePreview</span>
+                            }
+                        </div>
+                    </button>
+                }
+            }
+        </aside>
+
+        <!-- RIGHT PANE: CHAT (Step 11 fills this in) -->
+        <section class="mw-livechat-chat">
+
+            @if (!selectedSessionId.HasValue)
+            {
+                <p class="mw-livechat-muted">Select a conversation to begin.</p>
+            }
+            else
+            {
+                <header class="mw-chat-header">
+                    <div class="mw-chat-header-left">
+                        <span class="mw-chat-customer">@selectedSession?.CustomerName</span>
+                        @if (selectedSession?.Status == "closed")
+                        {
+                            <span class="mw-chat-status-pill">CLOSED</span>
+                        }
+                    </div>
+
+                    @if (selectedSession?.Status == "active")
+                    {
+                        <button class="mw-chat__close-btn"
+                                @onclick="CloseSelectedSession"
+                                disabled="@isClosingSession">
+                            @(isClosingSession ? "CLOSING…" : "CLOSE CHAT")
+                        </button>
+                    }
+                </header>
+
+                <!-- MESSAGES -->
+                <div class="mw-chat-messages">
+                    @if (isLoadingMessages)
+                    {
+                        <p class="mw-livechat-muted">Loading messages…</p>
+                    }
+                    else if (messages.Count == 0)
+                    {
+                        <p class="mw-livechat-muted">No messages yet.</p>
+                    }
+                    else
+                    {
+                        @foreach (var m in messages)
+                        {
+                            <div class="mw-chat-bubble mw-chat-bubble-@m.SenderType">
+                                <p class="mw-chat-text">@m.Message</p>
+                                <span class="mw-chat-time">
+                                    @m.CreatedAt.ToLocalTime().ToString("h:mm tt")
+                                </span>
+                            </div>
+                        }
+
+                    }
+                </div>
+
+                <!-- INPUT (Step 12 wires this up) -->
+                <div class="mw-chat__input-row">
+                    <input class="mw-chat__input"
+                           @bind="adminMessageInput"
+                           @bind:event="oninput"
+                           @onkeydown="HandleAdminKeyDown"
+                           placeholder="Type your message..."
+                           disabled="@(selectedSession?.Status == "closed" || isSendingAdminMessage)" />
+                    <button class="mw-chat__send"
+                            @onclick="SendAdminMessage"
+                            disabled="@(selectedSession?.Status == "closed"
+                                                                                                                                                                                                                            || isSendingAdminMessage
+                                                                                                                                                                                                                            || string.IsNullOrWhiteSpace(adminMessageInput))">
+                    SEND
+                </button>
+            </div>
+                        }
+
+        </section>
+
+    </div>
+</div>
+
+@code {
+
+    // ─── ADMIN INPUT ──────────────────────────────────────────
+    private string adminMessageInput = string.Empty;
+    private bool isSendingAdminMessage = false;
+
+
+    // ─── STATE ────────────────────────────────────────────────
+    private List<ChatSessionModel> sessions = new();
+    private Guid? selectedSessionId;
+    private bool isLoading = false;
+    private string? errorMessage;
+
+    private System.Timers.Timer? sessionsTimer;
+    private bool isPollingSessions = false;
+
+
+    // ─── MESSAGES (right pane) ────────────────────────────────
+    private List<ChatMessageModel> messages = new();
+    private ChatSessionModel? selectedSession;
+    private bool isLoadingMessages = false;
+
+    private System.Timers.Timer? messagesTimer;
+    private bool isPollingMessages = false;
+
+    // ─── LIFECYCLE ────────────────────────────────────────────
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+        await LoadSessions();
+        StartSessionsPolling();
+        isLoading = false;
+    }
+
+    public void Dispose()
+    {
+        StopSessionsPolling();
+        StopMessagesPolling();
+    }
+
+    // ─── SESSIONS LIST ────────────────────────────────────────
+    private async Task LoadSessions()
+    {
+        if (isPollingSessions) return;
+
+        try
+        {
+            isPollingSessions = true;
+            var result = await ChatService.GetActiveSessions();
+
+            if (result.Success && result.Data != null)
+            {
+                sessions = result.Data;
+                errorMessage = null;
+            }
+            else
+            {
+                errorMessage = result.Message;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AdminLiveChat] LoadSessions error: {ex.Message}");
+            errorMessage = "Failed to load conversations";
+        }
+        finally
+        {
+            isPollingSessions = false;
+        }
+    }
+
+    private void StartSessionsPolling()
+    {
+        if (sessionsTimer != null) return;
+
+        sessionsTimer = new System.Timers.Timer(3000);
+        sessionsTimer.Elapsed += async (_, _) =>
+        {
+            await LoadSessions();
+            await InvokeAsync(StateHasChanged);
+        };
+        sessionsTimer.AutoReset = true;
+        sessionsTimer.Start();
+    }
+
+    private void StopSessionsPolling()
+    {
+        sessionsTimer?.Stop();
+        sessionsTimer?.Dispose();
+        sessionsTimer = null;
+    }
+
+    private async Task LoadMessages()
+    {
+        if (!selectedSessionId.HasValue || isPollingMessages) return;
+
+        try
+        {
+            isPollingMessages = true;
+            isLoadingMessages = messages.Count == 0;   // only show "Loading…" on first load
+
+            var result = await ChatService.GetMessages(selectedSessionId.Value);
+
+            if (result.Success && result.Data != null)
+            {
+                // Only swap if the count actually changed (avoid re-render flicker)
+                if (result.Data.Count != messages.Count)
+                    messages = result.Data;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AdminLiveChat] LoadMessages error: {ex.Message}");
+        }
+        finally
+        {
+            isPollingMessages = false;
+            isLoadingMessages = false;
+        }
+    }
+
+    private void StartMessagesPolling()
+    {
+        if (messagesTimer != null) return;
+
+        messagesTimer = new System.Timers.Timer(3000);
+        messagesTimer.Elapsed += async (_, _) =>
+        {
+            await LoadMessages();
+            await InvokeAsync(StateHasChanged);
+        };
+        messagesTimer.AutoReset = true;
+        messagesTimer.Start();
+    }
+
+    private void StopMessagesPolling()
+    {
+        messagesTimer?.Stop();
+        messagesTimer?.Dispose();
+        messagesTimer = null;
+    }
+
+    // ─── SELECTION ────────────────────────────────────────────
+    private async Task SelectSession(Guid sessionId)
+    {
+        // Stop the previous session's polling, if any
+        StopMessagesPolling();
+
+        selectedSessionId = sessionId;
+        selectedSession = sessions.FirstOrDefault(s => s.Id == sessionId);
+        messages.Clear();
+
+        await LoadMessages();
+        StartMessagesPolling();
+    }
+    // ─── HELPERS ──────────────────────────────────────────────
+    private static string GetRelativeTime(DateTime utc)
+    {
+        var diff = DateTime.UtcNow - utc;
+        if (diff.TotalSeconds < 60) return "just now";
+        if (diff.TotalMinutes < 60) return $"{(int)diff.TotalMinutes} min";
+        if (diff.TotalHours < 24) return $"{(int)diff.TotalHours} h";
+        return utc.ToLocalTime().ToString("MMM d");
+    }
+
+    private async Task SendAdminMessage()
+    {
+        if (!selectedSessionId.HasValue ||
+            string.IsNullOrWhiteSpace(adminMessageInput) ||
+            isSendingAdminMessage)
+            return;
+
+        try
+        {
+            isSendingAdminMessage = true;
+
+            var request = new SendMessageRequest
+            {
+                SessionId = selectedSessionId.Value,
+                Message = adminMessageInput
+            };
+
+            var result = await ChatService.SendMessage(request);
+
+            if (result.Success && result.Data != null)
+            {
+                // Show our own message immediately (don't wait for the next poll)
+                messages.Add(result.Data);
+                adminMessageInput = string.Empty;
+            }
+            else
+            {
+                Console.WriteLine($"[AdminLiveChat] Send failed: {result.Message}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AdminLiveChat] SendAdminMessage error: {ex.Message}");
+        }
+        finally
+        {
+            isSendingAdminMessage = false;
+        }
+    }
+
+    private async Task HandleAdminKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !isSendingAdminMessage &&
+            !string.IsNullOrWhiteSpace(adminMessageInput))
+        {
+            await SendAdminMessage();
+        }
+    }
+
+    private bool isClosingSession = false;
+
+    private async Task CloseSelectedSession()
+    {
+        if (!selectedSessionId.HasValue || isClosingSession) return;
+
+        try
+        {
+            isClosingSession = true;
+            var result = await ChatService.CloseSession(selectedSessionId.Value);
+
+            if (result.Success)
+            {
+                // Update local UI immediately
+                if (selectedSession != null) selectedSession.Status = "closed";
+
+                // Drop it from the active list (next poll would do this anyway,
+                // but doing it now feels snappier)
+                sessions.RemoveAll(s => s.Id == selectedSessionId.Value);
+
+                // Stop polling messages — session is done
+                StopMessagesPolling();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AdminLiveChat] CloseSession error: {ex.Message}");
+        }
+        finally
+        {
+            isClosingSession = false;
+        }
+    }
+}

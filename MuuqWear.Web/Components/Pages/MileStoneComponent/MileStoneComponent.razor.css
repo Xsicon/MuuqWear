@@ -1,0 +1,154 @@
+﻿/* =============================================
+   MILESTONES TAB
+   ============================================= */
+
+/* Header section */
+.milestones-header {
+    color: #4A5C7A;
+    font-size: 13px;
+    margin-bottom: 21px;
+}
+
+/* Milestone card container */
+.milestone-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 13px;
+}
+
+/* Individual milestone card */
+.milestone-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    border: 1px solid;
+    transition: all 0.2s;
+}
+
+    /* Achieved state */
+    .milestone-card.achieved {
+        border-color: #1E2A47;
+        background-color: #F4F6F9;
+    }
+
+    /* Not achieved state */
+    .milestone-card.not-achieved {
+        border-color: rgba(169, 183, 204, 0.4);
+        background-color: transparent;
+    }
+
+/* Left side (icon + text) */
+.milestone-left {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+}
+
+/* Icon container */
+.milestone-icon {
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+    .milestone-icon.achieved {
+        background-color: #1E2A47;
+        color: white;
+    }
+
+    .milestone-icon.not-achieved {
+        background-color: #E6ECF5;
+        color: #A9B7CC;
+    }
+
+/* Text section */
+.milestone-title {
+    color: #1E2A47;
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.milestone-status {
+    color: #4A5C7A;
+    font-size: 12px;
+    margin: 0;
+}
+
+/* Bonus amount (right side) */
+.milestone-bonus {
+    font-size: 18px;
+    font-weight: 300;
+    letter-spacing: -0.5px;
+}
+
+    .milestone-bonus.achieved {
+        color: #1E2A47;
+    }
+
+    .milestone-bonus.not-achieved {
+        color: #A9B7CC;
+    }
+
+/* =============================================
+   TIER BENEFITS SECTION
+   ============================================= */
+
+.tier-benefits-section {
+    margin-top: 34px;
+}
+
+.tier-benefits-title {
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: #4A5C7A;
+    margin-bottom: 13px;
+}
+
+.tier-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.tier-card {
+    border: 1px solid;
+    padding: 16px;
+    text-align: center;
+}
+
+    /* Inactive tier */
+    .tier-card.inactive {
+        border-color: rgba(169, 183, 204, 0.4);
+        background-color: transparent;
+    }
+
+    /* Active/current tier */
+    .tier-card.active {
+        border-color: #1E2A47;
+        background-color: #F4F6F9;
+    }
+
+.tier-icon {
+    width: 24px;
+    height: 24px;
+    margin: 0 auto 8px auto;
+}
+
+.tier-name {
+    color: #1E2A47;
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.tier-detail {
+    color: #4A5C7A;
+    font-size: 11px;
+    margin: 0;
+}
