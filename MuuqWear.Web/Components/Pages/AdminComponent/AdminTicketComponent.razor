@@ -11,7 +11,10 @@
 
 <PageTitle>Support Tickets</PageTitle>
 
-<SpinnerComponent Show="@isLoading" />
+@if (isLoading)
+{
+    <p class="mw-section-loading">Loading tickets...</p>
+}
 
 <div class="at-page">
 

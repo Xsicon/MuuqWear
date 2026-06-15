@@ -12,9 +12,13 @@
 
 <PageTitle>@(product?.Name ?? "Product")</PageTitle>
 
-<SpinnerComponent Show="@isLoading" />
-
-@if (product == null)
+@if (isLoading)
+{
+    <div class="container py-5">
+        <div class="mw-product-detail-skeleton"></div>
+    </div>
+}
+else if (product == null)
 {
     <div class="container py-5 text-center">
         <p>Product not found.</p>
@@ -225,22 +229,31 @@ else
     private string SelectedColor = "";
     private List<ProductModel> RelatedProducts = new();
     private bool isLoading = false;
-
+    private Guid? _loadedProductId;
 
     private bool isAddingToCart = false;
     private string addToCartMessage = string.Empty;
     private string addToCartMessageCss = string.Empty;
-    protected override async Task OnInitializedAsync()
+
+    protected override async Task OnParametersSetAsync()
     {
-        isLoading = true;
         if (string.IsNullOrEmpty(Id) || !Guid.TryParse(Id, out Guid productId))
         {
             NavigationManager.NavigateTo("/");
             return;
         }
 
+        if (_loadedProductId == productId)
+            return;
+
+        _loadedProductId = productId;
+        isLoading = true;
+        RelatedProducts = new();
+
         await LoadProduct(productId);
         isLoading = false;
+
+        _ = LoadRelatedAsync(productId);
     }
 
     private async Task LoadProduct(Guid productId)
@@ -285,17 +298,17 @@ else
 
         SelectedImage = product.AllImageUrls.FirstOrDefault() ?? "";
         SelectedSize = product.SizeList.FirstOrDefault() ?? "";
-        SelectedColor = product.ColorOptions.FirstOrDefault() ?? ""; // ← ADD
-
-
-        await LoadRelated(productId);
+        SelectedColor = product.ColorOptions.FirstOrDefault() ?? "";
     }
 
-    private async Task LoadRelated(Guid productId)
+    private async Task LoadRelatedAsync(Guid productId)
     {
         var result = await ProductService.GetRelated(productId);
         if (result.Success && result.Data != null)
+        {
             RelatedProducts = result.Data;
+            await InvokeAsync(StateHasChanged);
+        }
     }
 
     private async Task HandleAddToCart()

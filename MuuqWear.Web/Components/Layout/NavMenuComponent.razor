@@ -15,8 +15,7 @@
 @inject AuthenticationStateProvider AuthStateProvider
 @inject CustomAuthenticationStateProvider CustomAuthStateProvider
 @implements IDisposable
-@using MuuqWear.Application.Services.ProfileService
-@inject IProfileService ProfileService
+@using System.Security.Claims
 
 
 <div>
@@ -647,18 +646,14 @@
             isUserAuthenticated = isAuthenticated;
             if (isAuthenticated)
             {
-                var role = authState.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+                var role = authState.User.FindFirst(ClaimTypes.Role)?.Value;
                 isAdmin = role?.ToLower() == "admin";
                 if (!isAdmin)
                 {
-                    var profile = await ProfileService.GetProfile();
-                    if (profile.Success && profile.Data != null)
-                    {
-                        userName = profile.Data.FullName;
-                        userEmail = profile.Data.Email;
-                        // AuthSession.UpdateDisplay(profile.Data.FullName, profile.Data.Email); // ← add
-                    }
+                    userName = authState.User.FindFirst(ClaimTypes.Name)?.Value;
+                    userEmail = authState.User.FindFirst(ClaimTypes.Email)?.Value;
                 }
+
                 var cookieJson = await JS.InvokeAsync<string?>("getCartCookie");
                 var hadGuestCart = !string.IsNullOrEmpty(cookieJson);
 

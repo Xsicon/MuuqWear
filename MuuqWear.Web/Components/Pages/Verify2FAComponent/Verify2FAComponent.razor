@@ -6,6 +6,8 @@
 @inject IAuthService IAuthService;
 @inject NavigationManager NavigationManager;
 @inject AuthStateService AuthStateService
+@inject CustomAuthenticationStateProvider CustomAuthStateProvider
+@inject IJSRuntime JS
 
 
 @using MuuqWear.Application.Shared
@@ -101,9 +103,11 @@
             var data = result.Data;
 
             await AuthNavigationHelper.PrepareAndNavigateAsync(
-          result.Data,
-          NavigationManager,
-          "/profile");
+                result.Data,
+                NavigationManager,
+                CustomAuthStateProvider,
+                JS,
+                "/profile");
         }
         else
         {

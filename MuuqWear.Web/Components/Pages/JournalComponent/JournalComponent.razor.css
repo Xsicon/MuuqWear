@@ -346,3 +346,26 @@
         flex: 0 0 calc((100% - 24px) / 3);
     }
 }
+
+.mw-journal-hero__card--loading {
+    min-height: 280px;
+    border-radius: 8px;
+    background: linear-gradient(90deg, #E6ECF5 25%, #f5f7fa 50%, #E6ECF5 75%);
+    background-size: 200% 100%;
+    animation: mw-journal-shimmer 1.2s ease-in-out infinite;
+}
+
+.mw-articles-loading {
+    color: #4A5C7A;
+    padding: 24px 0;
+}
+
+@keyframes mw-journal-shimmer {
+    0% {
+        background-position: 100% 0;
+    }
+
+    100% {
+        background-position: -100% 0;
+    }
+}

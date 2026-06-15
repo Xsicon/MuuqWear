@@ -12,7 +12,10 @@
 @attribute [Authorize(Roles = "admin")]
 
 <PageTitle>Orders & Returns</PageTitle>
-<SpinnerComponent Show="@isLoading" />
+@if (isLoading)
+{
+    <p class="mw-section-loading">Loading orders...</p>
+}
 
 <div class="orders-page">
 

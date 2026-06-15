@@ -1,9 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
+using MuuqWear.Application.Services.AuthService;
 using MuuqWear.Model.Authentication;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
@@ -11,51 +12,41 @@ using System.Net.Http.Json;
 using System.Security.Claims;
 
 namespace MuuqWear.Application.Shared;
+
 public class AuthenticatedHttpHandler : DelegatingHandler
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly CustomAuthenticationStateProvider _authStateProvider;
     private readonly IConfiguration _configuration;
     private readonly IMemoryCache _cache;
-    private readonly NavigationManager _navigationManager;
     private readonly AuthSessionService _authSession;
-
-
 
     public AuthenticatedHttpHandler(
         IHttpContextAccessor httpContextAccessor,
+        CustomAuthenticationStateProvider authStateProvider,
         IConfiguration configuration,
-        IMemoryCache cache, NavigationManager navigationManager, AuthSessionService authSession)
+        IMemoryCache cache,
+        AuthSessionService authSession)
     {
         _httpContextAccessor = httpContextAccessor;
+        _authStateProvider = authStateProvider;
         _configuration = configuration;
         _cache = cache;
         _authSession = authSession;
-        _navigationManager = navigationManager;
-
-
     }
 
     protected override async Task<HttpResponseMessage> SendAsync(
-    HttpRequestMessage request,
-    CancellationToken cancellationToken)
+        HttpRequestMessage request,
+        CancellationToken cancellationToken)
     {
         var context = _httpContextAccessor.HttpContext;
-        var token = GetToken(context);
+        var token = await GetTokenAsync(context);
 
-        //  ADD: Check if token is expired BEFORE sending
         if (!string.IsNullOrEmpty(token) && IsTokenExpired(token))
         {
-
             var newToken = await TryRefreshAsync(context);
             if (newToken != null)
-            {
                 token = newToken;
-            }
-            else
-            {
-                await HandleSignOut(context);
-                return new HttpResponseMessage(System.Net.HttpStatusCode.Unauthorized);
-            }
         }
 
         if (!string.IsNullOrEmpty(token))
@@ -64,11 +55,9 @@ public class AuthenticatedHttpHandler : DelegatingHandler
 
         var response = await base.SendAsync(request, cancellationToken);
 
-        //  ADD: Handle both 401 AND 400
-        if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized ||
-            response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+        if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized &&
+            !string.IsNullOrEmpty(token))
         {
-
             var newToken = await TryRefreshAsync(context);
             if (newToken != null)
             {
@@ -78,18 +67,14 @@ public class AuthenticatedHttpHandler : DelegatingHandler
                 return await base.SendAsync(retryRequest, cancellationToken);
             }
 
-            // Refresh failed → sign out
             await HandleSignOut(context);
         }
 
         return response;
     }
 
-    //  ADD: Centralized sign out logic
     private async Task HandleSignOut(HttpContext? context)
     {
-
-        // Notify Blazor (will be marshaled to UI thread by InvokeAsync)
         _authSession.MarkExpired();
 
         if (context != null && !context.Response.HasStarted)
@@ -99,44 +84,68 @@ public class AuthenticatedHttpHandler : DelegatingHandler
             context.Response.Redirect("/login?expired=true");
         }
     }
-    //  ADD: Token expiry check
+
     private bool IsTokenExpired(string token)
     {
         try
         {
             var handler = new JwtSecurityTokenHandler();
             var jwt = handler.ReadJwtToken(token);
-            return jwt.ValidTo < DateTime.UtcNow;
+            return jwt.ValidTo < DateTime.UtcNow.AddSeconds(30);
         }
         catch
         {
-            return true; // Invalid token = treat as expired
+            return false;
         }
     }
-    private string? GetToken(HttpContext? context)
+
+    private async Task<string?> GetTokenAsync(HttpContext? context)
     {
-        if (context == null) return null;
-        var userId = context.User.FindFirst("UserId")?.Value;
+        var user = await ResolveUserAsync(context);
+        if (user?.Identity?.IsAuthenticated != true)
+            return null;
+
+        var userId = user.FindFirst("UserId")?.Value;
 
         if (!string.IsNullOrEmpty(userId) &&
             _cache.TryGetValue($"access_token_{userId}", out string? cached))
             return cached;
 
-        return context.User.FindFirst("AccessToken")?.Value;
+        return user.FindFirst("AccessToken")?.Value;
+    }
+
+    private async Task<ClaimsPrincipal?> ResolveUserAsync(HttpContext? context)
+    {
+        if (context?.User?.Identity?.IsAuthenticated == true)
+            return context.User;
+
+        var cached = await _authStateProvider.GetAuthenticationStateAsync();
+        if (cached.User.Identity?.IsAuthenticated == true)
+            return cached.User;
+
+        if (!string.IsNullOrEmpty(_authStateProvider.CurrentUser.AccessToken))
+        {
+            return (await _authStateProvider.GetAuthenticationStateAsync()).User;
+        }
+
+        return null;
     }
 
     private async Task<string?> TryRefreshAsync(HttpContext? context)
     {
-        if (context == null) return null;
+        var user = await ResolveUserAsync(context);
+        if (user?.Identity?.IsAuthenticated != true)
+            return null;
 
-        var refreshToken = context.User.FindFirst("RefreshToken")?.Value;
-        var userId = context.User.FindFirst("UserId")?.Value;
+        var refreshToken = user.FindFirst("RefreshToken")?.Value;
+        var userId = user.FindFirst("UserId")?.Value;
 
-        if (string.IsNullOrEmpty(refreshToken)) return null;
+        if (string.IsNullOrEmpty(refreshToken))
+            return null;
 
-        // check cache first — maybe middleware already refreshed
         if (!string.IsNullOrEmpty(userId) &&
-            _cache.TryGetValue($"access_token_{userId}", out string? cached))
+            _cache.TryGetValue($"access_token_{userId}", out string? cached) &&
+            !IsTokenExpired(cached!))
             return cached;
 
         try
@@ -148,24 +157,28 @@ public class AuthenticatedHttpHandler : DelegatingHandler
                 $"{apiBaseUrl}api/Auth/refresh-token",
                 new { refreshToken });
 
-            if (!result.IsSuccessStatusCode) return null;
+            if (!result.IsSuccessStatusCode)
+                return null;
 
             var response = await result.Content
                 .ReadFromJsonAsync<Response<AuthResponseModel>>();
 
-            if (response?.Success != true || response.Data == null) return null;
+            if (response?.Success != true || response.Data == null)
+                return null;
 
-            // cache new token
             _cache.Set($"access_token_{userId}",
                 response.Data.AccessToken,
                 TimeSpan.FromMinutes(1.5));
 
-            // update cookie for next requests
-            await UpdateCookieAsync(context, response.Data);
+            if (context != null)
+                await UpdateCookieAsync(context, response.Data);
 
             return response.Data.AccessToken;
         }
-        catch { return null; }
+        catch
+        {
+            return null;
+        }
     }
 
     private async Task UpdateCookieAsync(HttpContext context, AuthResponseModel data)

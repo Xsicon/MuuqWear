@@ -319,8 +319,7 @@
             filter.CategoryId = categoryId;
         }
 
-        await LoadProducts();
-        await LoadCategories();
+        await Task.WhenAll(LoadProducts(), LoadCategories());
     }
 
 

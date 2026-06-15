@@ -13,7 +13,10 @@
 <PageTitle>Content Management</PageTitle>
 
 
-<SpinnerComponent Show="@isLoading" />
+@if (isLoading)
+{
+    <p class="mw-section-loading">Loading content...</p>
+}
 
 <div class="content-page">
 

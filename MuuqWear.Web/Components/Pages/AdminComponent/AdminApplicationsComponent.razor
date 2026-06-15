@@ -12,7 +12,10 @@
 
 <PageTitle>Applications — Admin</PageTitle>
 
-<SpinnerComponent Show="@isLoading" />
+@if (isLoading)
+{
+    <p class="mw-section-loading">Loading applications...</p>
+}
 
 <div class="apps-page">
 

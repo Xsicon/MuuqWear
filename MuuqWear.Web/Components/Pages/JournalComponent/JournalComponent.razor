@@ -5,17 +5,18 @@
 @using MuuqWear.Application.Interfaces
 @using MuuqWear.Application.Services.JournalService
 @using MuuqWear.Model.ContentItem
-@using MuuqWear.Web.Components.Shared
 
 <PageTitle>Journal</PageTitle>
 
 <!-- Journal Hero Section -->
 
-<SpinnerComponent Show="@isLoading" />
-
 <section class="mw-journal-hero">
     <div class="mw-journal-hero__container">
-        @if (heroArticle != null)
+        @if (isLoading && heroArticle == null)
+        {
+            <div class="mw-journal-hero__card mw-journal-hero__card--loading"></div>
+        }
+        else if (heroArticle != null)
         {
             <div class="mw-journal-hero__card">
                 <div class="mw-journal-hero__content">
@@ -93,8 +94,13 @@
             </div>
         </div>
 
-        <p style="color:#4A5C7A">Loading articles...</p>
-        <div class="mw-carousel__track" @ref="articleRef">
+        @if (isLoading && !filteredArticles.Any())
+        {
+            <div class="mw-articles-loading">Loading articles...</div>
+        }
+        else
+        {
+            <div class="mw-carousel__track" @ref="articleRef">
             <div class="mw-carousel-inner">
                 @foreach (var item in filteredArticles)
                 {
@@ -122,6 +128,7 @@
                 }
             </div>
         </div>
+        }
         <!--  only one, in the right place, with conditions -->
         @if (hasMore)
         {
@@ -246,22 +253,25 @@
 
     protected override async Task OnInitializedAsync()
     {
-        //  fetch hero — always latest article (page 1, size 1, no filter)
-        var heroResult = await JournalService.GetPublished(1, 1);
-        if (heroResult.Success && heroResult.Data?.Data.Any() == true)
-            heroArticle = heroResult.Data.Data.First();
+        isLoading = true;
 
-        //  fetch categories — get all to build filter tabs
-        var allResult = await JournalService.GetPublished(1, 100);
-        if (allResult.Success && allResult.Data != null)
-            categories = allResult.Data.Data
-                .Where(x => !string.IsNullOrEmpty(x.Category))
-                .Select(x => x.Category!)
-                .Distinct()
-                .ToList();
+        var result = await JournalService.GetPublished(1, PageSize);
 
-        //  fetch first page of articles
-        await LoadArticles(reset: true);
+        if (result.Success && result.Data != null)
+        {
+            var items = result.Data.Data;
+
+            if (items.Any())
+            {
+                heroArticle = items.First();
+                articles = items.Skip(1).ToList();
+            }
+
+            hasMore = result.Data.HasMore;
+            MergeCategories(items);
+        }
+
+        isLoading = false;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -289,12 +299,26 @@
 
         if (result.Success && result.Data != null)
         {
-            articles.AddRange(result.Data.Data); // ← append, not replace
+            articles.AddRange(result.Data.Data);
             hasMore = result.Data.HasMore;
+            MergeCategories(result.Data.Data);
         }
 
         isLoading = false;
         StateHasChanged();
+    }
+
+    private void MergeCategories(IEnumerable<ContentItemModel> items)
+    {
+        var merged = categories.ToList();
+
+        foreach (var item in items)
+        {
+            if (!string.IsNullOrEmpty(item.Category) && !merged.Contains(item.Category))
+                merged.Add(item.Category);
+        }
+
+        categories = merged.OrderBy(c => c).ToList();
     }
 
     private async Task SetFilter(string filter)

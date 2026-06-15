@@ -1,10 +1,12 @@
 ﻿@using MuuqWear.Application.Shared
+@using MuuqWear.Web.Components.Shared
 @inherits LayoutComponentBase
 @inject AuthSessionService AuthSession
 @inject NavigationManager NavigationManager
 @implements IDisposable
 
 <div class="page">
+    <NavigationProgressComponent />
     <NavMenuComponent />
     <main>
         <article>

@@ -11,7 +11,10 @@
 
 <PageTitle>Job Postings — Admin</PageTitle>
 
-<SpinnerComponent Show="@isLoading" />
+@if (isLoading)
+{
+    <p class="mw-section-loading">Loading jobs...</p>
+}
 
 <div class="jobs-page">
 

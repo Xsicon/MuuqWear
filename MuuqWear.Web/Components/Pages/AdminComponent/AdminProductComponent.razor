@@ -11,7 +11,10 @@
 @attribute [Authorize(Roles = "admin")]
 
 
-<SpinnerComponent Show="@isLoading" />
+@if (isLoading)
+{
+    <p class="mw-section-loading">Loading products...</p>
+}
 
 @if (!isFormOpen)
 {

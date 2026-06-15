@@ -5,7 +5,6 @@
 @using MuuqWear.Application.Services.JobPostingService
 @using MuuqWear.Application.Services.ProductService
 @using MuuqWear.Model.Products
-@using MuuqWear.Web.Components.Shared
 @inject IProductService ProductService
 @inject ICategoryService CategoryService
 
@@ -15,7 +14,6 @@
 <link rel="stylesheet" href="lib/swiper/swiper-bundle.min.css" />
 
 <!-- Hero Section -->
-<SpinnerComponent Show="@isLoading" />
 <div class="swiper mw-hero">
     <div class="swiper-wrapper">
         <div class="swiper-slide mw-slide">

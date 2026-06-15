@@ -69,9 +69,9 @@ public partial class CommunityVoteComponent
             LoadActiveItems(),
             LoadFinishedItems(),
             LoadStats());
-        //  subscribe after data loaded
-        await SubscribeToVoteUpdates();
+
         isLoading = false;
+        _ = SubscribeToVoteUpdates();
     }
 
     // ─── LOAD ─────────────────────────────────────────────────

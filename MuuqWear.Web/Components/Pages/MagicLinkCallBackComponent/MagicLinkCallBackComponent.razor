@@ -4,6 +4,7 @@
 @inject NavigationManager NavigationManager
 @inject IAuthService IAuthService
 @inject AuthStateService AuthStateService
+@inject CustomAuthenticationStateProvider CustomAuthStateProvider
 @inject CartStateService CartStateService
 @using MuuqWear.Application.Services.AuthService
 @using MuuqWear.Application.Services.CartService
@@ -105,6 +106,8 @@
                 await AuthNavigationHelper.PrepareAndNavigateAsync(
                     result.Data,
                     NavigationManager,
+                    CustomAuthStateProvider,
+                    JS,
                     "/profile");
             }
             else
