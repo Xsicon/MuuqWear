@@ -3,32 +3,34 @@ using Microsoft.JSInterop;
 using MuuqWear.Application.Services.JobPostingService;
 namespace MuuqWear.Web.Components.Pages.HomeComponent;
 
-public partial class HomeComponent
+public partial class HomeComponent : IAsyncDisposable
 {
-    //Slider References
-    // private ElementReference finishedRef;
-    private ElementReference categoryRef;
-    private ElementReference newArrivalRef;
-    private ElementReference bestSellersRef;
-    private ElementReference featuredRef;
+    private const int HeroAutoplayMs = 5500;
 
-    //For Scrolling Manually By Clicking Buttons
+    private record HeroSlide(string Image, string Eyebrow, string Headline, string Cta, string Link);
 
-    private async Task ScrollRight(ElementReference el)
+    private List<HeroSlide> HeroSlides { get; } = new()
     {
-        await JS.InvokeVoidAsync("mwScrollRight", el, ".mw-categorycarousel-item");
-        await JS.InvokeVoidAsync("mwScrollRight", el, ".mw-newarrivalcarousel-item");
-        await JS.InvokeVoidAsync("mwScrollRight", el, ".bestsellers-slide");
-        await JS.InvokeVoidAsync("mwScrollRight", el, ".mw-featured__card");
-    }
+        new(
+            "https://images.unsplash.com/photo-1756361771567-e276865b77cb?w=1400&h=700&fit=crop",
+            "Limited Release",
+            "The Sapphire Veil Collection",
+            "Explore the Collection",
+            "/shop/apparel"),
+        new(
+            "https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=1600&h=900&fit=crop",
+            "New Arrivals",
+            "Modern Modest Essentials",
+            "Shop Now",
+            "/shop/apparel"),
+        new(
+            "https://images.unsplash.com/photo-1761957375235-46acb4862151?w=1400&h=700&fit=crop",
+            "Limited Release",
+            "Built by Community",
+            "Discover More",
+            "/shop/accessories")
+    };
 
-    private async Task ScrollLeft(ElementReference el)
-    {
-        await JS.InvokeVoidAsync("mwScrollLeft", el, ".mw-categorycarousel-item");
-        await JS.InvokeVoidAsync("mwScrollLeft", el, ".mw-newarrivalcarousel-item");
-        await JS.InvokeVoidAsync("mwScrollLeft", el, ".bestsellers-slide");
-        await JS.InvokeVoidAsync("mwScrollLeft", el, ".mw-featured__card");
-    }
     private List<CategoryCard> Categories = new();
 
     private record CategoryCard(string Name, string Image, string Link);
@@ -42,53 +44,57 @@ public partial class HomeComponent
         { "Outerwear", "https://images.unsplash.com/photo-1704716720991-cf3197cfb190?w=600" }
     };
 
-
-    private record ProductCard(string Name, string Price, string Image, string Link);
-
-
-    private record BestSellerCard(string Name, string Price, string Image, string Link);
-
-
-
     private List<MuuqWear.Model.Products.ProductModel> NewArrivals = new();
     private List<MuuqWear.Model.Products.ProductModel> FeaturedProducts = new();
     private List<MuuqWear.Model.Products.ProductModel> BestSellerProducts = new();
-
-
-
-    // For scrolling by dragging and autosliding images in the Carousel
+    private bool _homeCarouselsReady;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
+            try
+            {
+                await JS.InvokeVoidAsync("mwInitHeroCarousel", HeroAutoplayMs);
+            }
+            catch (JSDisconnectedException) { }
+            catch (InvalidOperationException) { }
 
-            // check if recovery token in URL fragment
             var fragment = await JS.InvokeAsync<string>(
                 "eval", "window.location.hash");
 
             if (!string.IsNullOrEmpty(fragment) &&
                 fragment.Contains("type=recovery"))
             {
-                // redirect to reset password page with fragment
                 await JS.InvokeVoidAsync("eval",
                     $"window.location.href = '/auth/reset-password' + window.location.hash");
                 return;
             }
-
-            // For AutoSliding Images in carousel
-            await JS.InvokeVoidAsync("mwStartAutoSlide", categoryRef, ".mw-categorycarousel-item", 3000);
-            await JS.InvokeVoidAsync("mwStartAutoSlide", newArrivalRef, ".mw-newarrivalcarousel-item", 3000);
-            await JS.InvokeVoidAsync("mwStartAutoSlide", bestSellersRef, ".bestsellers-slide", 3000);
-            await JS.InvokeVoidAsync("mwStartAutoSlide", featuredRef, ".mw-featured__card", 3000);
-
-            //For Sliding Images by dragging and scrolling
-            await JS.InvokeVoidAsync("enableDragScroll", categoryRef);
-            await JS.InvokeVoidAsync("enableDragScroll", newArrivalRef);
-            await JS.InvokeVoidAsync("enableDragScroll", bestSellersRef);
-            await JS.InvokeVoidAsync("enableDragScroll", featuredRef);
-
         }
+
+        if (!_homeCarouselsReady &&
+            (Categories.Count > 0 || NewArrivals.Count > 0 || FeaturedProducts.Count > 0 || BestSellerProducts.Count > 0))
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("mwDestroyHomeCarousels");
+                await JS.InvokeVoidAsync("mwInitHomeCarousels");
+                _homeCarouselsReady = true;
+            }
+            catch (JSDisconnectedException) { }
+            catch (InvalidOperationException) { }
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("mwDestroyHeroCarousel");
+            await JS.InvokeVoidAsync("mwDestroyHomeCarousels");
+        }
+        catch (JSDisconnectedException) { }
+        catch (InvalidOperationException) { }
     }
 
     protected override async Task OnInitializedAsync()
@@ -107,6 +113,7 @@ public partial class HomeComponent
             BestSellerProducts = result.Data.BestSellers;
         }
     }
+
     private async Task LoadCategories()
     {
         var result = await CategoryService.GetAll();
@@ -116,12 +123,11 @@ public partial class HomeComponent
             Categories = result.Data
                 .Select(c => new CategoryCard(
                     Name: c.Name!,
-                    Image: CategoryImages!.GetValueOrDefault(c.Name,
+                    Image: CategoryImages.GetValueOrDefault(c.Name!,
                         "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=600"),
-                    Link: $"/shop/apparel?categoryId={c.Id}" // FIXED
+                    Link: $"/shop/apparel?categoryId={c.Id}"
                 ))
                 .ToList();
         }
     }
-
 }
