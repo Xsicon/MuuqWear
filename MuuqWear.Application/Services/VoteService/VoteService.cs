@@ -96,13 +96,19 @@ public class VoteService : IVoteService
     // =============================================
     // CAST VOTE
     // =============================================
-    public async Task<Response<VoteItemModel>> CastVote(Guid voteItemId)
+    public async Task<Response<VoteItemModel>> CastVote(
+        Guid voteItemId,
+        string? preferredColor = null)
     {
         try
         {
             var result = await _http.PostAsJsonAsync(
                 "api/Vote/cast",
-                new CastVoteModel { VoteItemId = voteItemId });
+                new CastVoteModel
+                {
+                    VoteItemId = voteItemId,
+                    PreferredColor = preferredColor
+                });
 
             var response = await result.Content
                 .ReadFromJsonAsync<Response<VoteItemModel>>();

@@ -11,39 +11,30 @@
 
 <section class="acc-page">
 
-    <!-- HERO (Step 3) -->
-    <!-- HERO -->
-    <section class="acc-hero">
-        <div class="acc-hero__bg"></div>
-        <div class="acc-hero__overlay"></div>
+    <section class="acc-hero" aria-labelledby="acc-hero-title">
+        <div class="acc-hero__bg" aria-hidden="true"></div>
         <div class="acc-hero__inner">
-            <h1 class="acc-hero__title">Accessories</h1>
+            <h1 id="acc-hero-title" class="acc-hero__title">Accessories</h1>
             <p class="acc-hero__sub">
                 Complete your look with minimalist essentials
             </p>
         </div>
     </section>
 
-    <!-- FILTER ROW (Step 4) -->
-    <!-- FILTER ROW -->
-    <section class="acc-filter-row">
+    <section class="acc-filter-row" aria-label="Product categories">
         <div class="acc-filter-row__inner">
-            <button class="acc-pill acc-pill--active" type="button">
-                All
-            </button>
-            <button class="acc-pill" type="button" disabled title="Coming soon">
-                Bags
-            </button>
-            <button class="acc-pill" type="button" disabled title="Coming soon">
-                Footwear
-            </button>
-            <button class="acc-pill" type="button" disabled title="Coming soon">
-                Other
-            </button>
+            @foreach (var subcategory in SubcategoryFilters)
+            {
+                <button type="button"
+                        class="acc-pill @(selectedSubcategory == subcategory ? "acc-pill--selected" : "")"
+                        aria-pressed="@(selectedSubcategory == subcategory)"
+                        @onclick="() => SelectSubcategory(subcategory)">
+                    @subcategory
+                </button>
+            }
         </div>
     </section>
 
-    <!-- GRID (Step 5) -->
     <section class="acc-grid-wrapper">
         <div class="acc-grid-inner">
 
@@ -53,7 +44,6 @@
             }
             else if (isLoading)
             {
-                <!-- skeletons -->
                 <div class="acc-grid">
                     @for (var i = 0; i < 8; i++)
                     {
@@ -66,24 +56,30 @@
                     }
                 </div>
             }
-            else if (Products.Count == 0)
+            else if (allProducts.Count == 0)
             {
                 <p class="acc-empty">No accessories yet. Check back soon.</p>
+            }
+            else if (!FilteredProducts.Any())
+            {
+                <p class="acc-empty">No products in this category yet.</p>
             }
             else
             {
                 <div class="acc-grid">
-                    @foreach (var item in Products)
+                    @foreach (var item in FilteredProducts)
                     {
                         <a class="acc-card" href="@($"/productdetail/{item.Id}")">
                             <div class="acc-card__media">
                                 <img src="@item.ImageUrl"
                                      alt="@item.Name"
                                      loading="lazy" />
-                                <div class="acc-card__media-overlay"></div>
+                                <div class="acc-card__media-overlay" aria-hidden="true"></div>
                             </div>
                             <div class="acc-card__body">
-                                <p class="acc-card__eyebrow">Accessories</p>
+                                <p class="acc-card__eyebrow">
+                                    @GetProductSubcategory(item)
+                                </p>
                                 <h3 class="acc-card__name">@item.Name</h3>
                                 @if (!string.IsNullOrWhiteSpace(item.Description))
                                 {
@@ -98,8 +94,7 @@
 
         </div>
     </section>
-    <!-- CTA (Step 7) -->
-    <!-- CTA -->
+
     <section class="acc-cta">
         <div class="acc-cta__inner">
             <h2 class="acc-cta__title">Complete Your Collection</h2>
@@ -117,11 +112,35 @@
 @code {
     // State
     private ShopFilterModel filter = new();
-    private List<ProductModel> Products = new();
+    private List<ProductModel> allProducts = new();
     private Guid? accessoriesCategoryId;
     private int totalCount = 0;
     private bool isLoading = true;
     private bool isInitError = false;
+    private string selectedSubcategory = "All";
+
+    private static readonly string[] SubcategoryFilters =
+    {
+        "All", "Bags", "Footwear", "Accessories"
+    };
+
+    private IEnumerable<ProductModel> FilteredProducts =>
+        selectedSubcategory == "All"
+            ? allProducts
+            : allProducts.Where(p => string.Equals(
+                GetProductSubcategory(p),
+                selectedSubcategory,
+                StringComparison.OrdinalIgnoreCase));
+
+    private static string GetProductSubcategory(ProductModel product) =>
+        string.IsNullOrWhiteSpace(product.Category)
+            ? "Accessories"
+            : product.Category!;
+
+    private void SelectSubcategory(string subcategory)
+    {
+        selectedSubcategory = subcategory;
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -148,6 +167,7 @@
 
         accessoriesCategoryId = accessories.Id;
         filter.CategoryId = accessoriesCategoryId;
+        filter.PageSize = 100;
 
         await LoadProducts();
     }
@@ -160,7 +180,7 @@
 
         if (result.Success && result.Data != null)
         {
-            Products = result.Data.Data;
+            allProducts = result.Data.Data;
             totalCount = result.Data.TotalCount;
             filter.Page = result.Data.Page;
         }
