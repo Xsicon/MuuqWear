@@ -5,12 +5,14 @@
 @using MuuqWear.Application.Interfaces
 @using MuuqWear.Application.Services.CartService
 @using MuuqWear.Application.Services.ProductService
+@using MuuqWear.Application.Services.CategoryService
 @using MuuqWear.Application.Shared
 @using MuuqWear.Model.Cart
 @using MuuqWear.Model.Products
 @using MuuqWear.Application.Services.AuthService
 @inject CartStateService CartStateService
 @inject IProductService ProductService
+@inject ICategoryService CategoryService
 @inject AuthSessionService AuthSession
 @inject AuthenticationStateProvider AuthStateProvider
 @inject CustomAuthenticationStateProvider CustomAuthStateProvider
@@ -20,25 +22,21 @@
 
 <div>
 
-    <header class="mw-header border-bottom" role="banner">
-        <div class="container">
-            <div class="d-flex align-items-center justify-content-between py-3">
+    <header class="mw-header" role="banner">
+        <div class="mw-header__bar">
+            <div class="mw-header__inner">
 
                 <!-- LOGO -->
-                <a href="/" class="d-flex align-items-center text-decoration-none">
+                <a href="/" class="mw-logo text-decoration-none">
                     <img src="/images/muuqwearlogo.png"
                          alt="MuuqWear logo"
                          class="mw-logo__img img-fluid" />
-                    <span class="mw-logo__text text-uppercase fw-bolder ms-2 d-none d-md-flex">
-                        MuuqWear
-                    </span>
+                    <span class="mw-logo__text text-uppercase fw-bolder ms-2 d-none d-md-flex">MuuqWear</span>
                 </a>
 
-                <!-- RIGHT SIDE -->
-                <div class="d-flex align-items-center gap-3">
-
-                    <!-- DESKTOP NAV -->
-                    <nav class="mw-nav d-none d-md-flex gap-4">
+                <!-- DESKTOP: nav + actions -->
+                <div class="mw-header__desktop d-none d-md-flex">
+                    <nav class="mw-nav">
                         <NavLink class="mw-nav__link" href="/" Match="NavLinkMatch.All">Home</NavLink>
                         <NavLink class="mw-nav__link" href="/shop/apparel">Apparel</NavLink>
                         <NavLink class="mw-nav__link" href="/shop/accessories">Accessories</NavLink>
@@ -46,19 +44,15 @@
                         <NavLink class="mw-nav__link" href="/journal">Journal</NavLink>
                     </nav>
 
-                    <!-- ICONS -->
-                    <div class="mw-header__icons d-flex align-items-center gap-2">
-
+                    <div class="mw-header__icons">
                         <button class="mw-icon-btn" aria-label="Search" @onclick="OpenSearch">
-                            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-                                <circle cx="10" cy="10" r="7" stroke="#1E2B48" stroke-width="2" />
-                                <path d="M15 15L20 20" stroke="#1E2B48" stroke-width="2" />
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="8" />
+                                <path d="m21 21-4.3-4.3" />
                             </svg>
                         </button>
 
-                        <button class="mw-icon-btn position-relative"
-                                aria-label="Cart"
-                                @onclick="OpenCart">
+                        <button class="mw-icon-btn mw-icon-btn--cart" aria-label="Cart" @onclick="OpenCart">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
                                  viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -66,23 +60,18 @@
                                 <path d="M3 6h18"></path>
                                 <path d="M16 10a4 4 0 0 1-8 0"></path>
                             </svg>
-                            @* badge  *@
                             @if (CartStateService.Cart.TotalItems > 0)
                             {
-                                <span class="mw-cart-badge">
-                                    @CartStateService.Cart.TotalItems
-                                </span>
+                                <span class="mw-cart-badge">@CartStateService.Cart.TotalItems</span>
                             }
                         </button>
-                        <div class="mw-profile-dropdown">
 
+                        <div class="mw-profile-dropdown">
                             <AuthorizeView>
                                 <Authorized>
                                     @if (!isAdmin)
                                     {
-                                        <button class="mw-icon-btn"
-                                                aria-label="Profile"
-                                                @onclick="ToggleProfile">
+                                        <button class="mw-icon-btn" aria-label="Profile" @onclick="ToggleProfile">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
                                                  viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -98,16 +87,17 @@
                                                     <p class="mw-profile-menu__name">@userName</p>
                                                     <p class="mw-profile-menu__email">@userEmail</p>
                                                 </div>
-                                                <div class="mw-profile-menu__divider"></div>
                                                 <a href="/profile" class="mw-profile-menu__item" @onclick="CloseProfile">
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
                                                     <span>My Orders</span>
                                                 </a>
                                                 <a href="/settings" class="mw-profile-menu__item" @onclick="CloseProfile">
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
                                                     <span>Settings</span>
                                                 </a>
                                                 <div class="mw-profile-menu__divider"></div>
-                                                <button class="mw-profile-menu__item mw-profile-menu__signout"
-                                                        @onclick="HandleSignOut">
+                                                <button class="mw-profile-menu__item mw-profile-menu__signout" @onclick="HandleSignOut">
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
                                                     <span>Sign Out</span>
                                                 </button>
                                             </div>
@@ -119,41 +109,77 @@
                                 </NotAuthorized>
                             </AuthorizeView>
                         </div>
-
-                        <button class="mw-icon-btn" aria-label="Location">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
-                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path>
-                                <circle cx="12" cy="10" r="3"></circle>
-                            </svg>
-                        </button>
-
                     </div>
+                </div>
 
-                    <!-- HAMBURGER -->
-                    <button class="mw-icon-btn mw-hamburger d-flex d-md-none"
-                            aria-label="Toggle navigation"
+                <!-- MOBILE: compact action row -->
+                <div class="mw-header__mobile d-flex d-md-none">
+                    <button class="mw-icon-btn mw-icon-btn--mobile" aria-label="Search" @onclick="OpenSearch">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8" />
+                            <path d="m21 21-4.3-4.3" />
+                        </svg>
+                    </button>
+
+                    <button class="mw-icon-btn mw-icon-btn--mobile mw-icon-btn--cart" aria-label="Cart" @onclick="OpenCart">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22"
+                             viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path>
+                            <path d="M3 6h18"></path>
+                            <path d="M16 10a4 4 0 0 1-8 0"></path>
+                        </svg>
+                        @if (CartStateService.Cart.TotalItems > 0)
+                        {
+                            <span class="mw-cart-badge mw-cart-badge--mobile">@CartStateService.Cart.TotalItems</span>
+                        }
+                    </button>
+
+                    <AuthorizeView>
+                        <Authorized>
+                            @if (!isAdmin)
+                            {
+                                <a href="/profile" class="mw-icon-btn mw-icon-btn--mobile" aria-label="Profile">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22"
+                                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="12" cy="7" r="4"></circle>
+                                    </svg>
+                                </a>
+                            }
+                        </Authorized>
+                        <NotAuthorized>
+                            <a href="/login" class="mw-icon-btn mw-icon-btn--mobile" aria-label="Sign in">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22"
+                                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                            </a>
+                        </NotAuthorized>
+                    </AuthorizeView>
+
+                    <button class="mw-icon-btn mw-hamburger mw-icon-btn--mobile"
+                            aria-label="@(isMenuOpen ? "Close menu" : "Open menu")"
                             aria-expanded="@isMenuOpen"
                             @onclick="ToggleMenu">
                         @if (isMenuOpen)
                         {
-                            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-                                <path d="M5 5L17 17" stroke="#1E2B48" stroke-width="2" stroke-linecap="round" />
-                                <path d="M17 5L5 17" stroke="#1E2B48" stroke-width="2" stroke-linecap="round" />
+                            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M18 6 6 18" /><path d="m6 6 12 12" />
                             </svg>
                         }
                         else
                         {
-                            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-                                <path d="M3 6H19" stroke="#1E2B48" stroke-width="2" stroke-linecap="round" />
-                                <path d="M3 11H19" stroke="#1E2B48" stroke-width="2" stroke-linecap="round" />
-                                <path d="M3 16H19" stroke="#1E2B48" stroke-width="2" stroke-linecap="round" />
+                            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="4" x2="20" y1="12" y2="12" /><line x1="4" x2="20" y1="6" y2="6" /><line x1="4" x2="20" y1="18" y2="18" />
                             </svg>
                         }
                     </button>
-
                 </div>
+
             </div>
         </div>
     </header>
@@ -167,78 +193,80 @@
         <div class="mw-search-panel" @onclick:stopPropagation="true">
 
             <!-- CLOSE BUTTON -->
-            <button class="mw-search-close" @onclick="CloseSearch">
-                ✕
+            <button class="mw-search-close" @onclick="CloseSearch" aria-label="Close search">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 6 6 18" /><path d="m6 6 12 12" />
+                </svg>
             </button>
 
             <!-- CONTENT -->
-            <div class="mw-search-content container">
+            <div class="mw-search-content">
 
                 <!-- INPUT ROW -->
-                <div class="row">
-                    <div class="col-12 position-relative">
-                        <input class="mw-search-input"
-                               @ref="searchInputRef"
-                               placeholder="Search for 'Hoodie', 'Sapphire'..."
-                               value="@searchQuery"
-                               @oninput="HandleSearchInput"
-                               @onkeydown="HandleSearchKeyDown" />
+                <div class="mw-search-input-wrap">
+                    <input class="mw-search-input"
+                           @ref="searchInputRef"
+                           placeholder="@SearchInputPlaceholder"
+                           value="@searchQuery"
+                           @oninput="HandleSearchInput"
+                           @onkeydown="HandleSearchKeyDown" />
 
-                        @* clear button shows when typing  *@
-                        @if (!string.IsNullOrEmpty(searchQuery))
-                        {
-                            <button class="mw-search-clear" @onclick="ClearSearch">
-                                ✕
-                            </button>
-                        }
-                    </div>
+                    @if (!string.IsNullOrEmpty(searchQuery))
+                    {
+                        <button class="mw-search-clear" @onclick="ClearSearch" aria-label="Clear search">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M18 6 6 18" /><path d="m6 6 12 12" />
+                            </svg>
+                        </button>
+                    }
                 </div>
 
                 <!-- BODY -->
                 @if (!hasSearched || string.IsNullOrEmpty(searchQuery))
                 {
-                    <!-- EMPTY STATE → show tags + popular -->
-                    <div class="row mt-4 justify-content-center text-center">
-
-                        <!-- TAGS -->
-                        <div class="col-12 col-md-6">
-                            <div class="mw-search-tags justify-content-center">
-                                <span @onclick='() => SearchByTag("New Arrivals")'>
-                                    New Arrivals
-                                </span>
-                                <span @onclick='() => SearchByTag("Hoodies")'>
-                                    Hoodies
-                                </span>
-                                <span @onclick='() => SearchByTag("Accessories")'>
-                                    Accessories
-                                </span>
-                                <span @onclick='() => SearchByTag("Sale")'>
-                                    Sale
-                                </span>
-                            </div>
+                    <div class="mw-search-empty">
+                        <div class="mw-search-tags">
+                            @if (isLoadingSearchSuggestions)
+                            {
+                                @for (int i = 0; i < 4; i++)
+                                {
+                                    <span class="mw-search-tag-skeleton"></span>
+                                }
+                            }
+                            else
+                            {
+                                @foreach (var category in searchCategories)
+                                {
+                                    <button type="button"
+                                            class="mw-search-tag"
+                                            @onclick="() => SearchByCategory(category)">
+                                        @category.Name
+                                    </button>
+                                }
+                            }
                         </div>
 
-                        <!-- POPULAR SEARCHES -->
-                        <div class="row mt-5">
-                            <div class="col-12 col-md-4 ms-md-auto text-md-end text-start">
-                                <p class="mw-search-label">POPULAR SEARCHES</p>
+                        <div class="mw-search-popular">
+                            <p class="mw-search-label">POPULAR SEARCHES</p>
+                            @if (isLoadingSearchSuggestions)
+                            {
                                 <ul class="mw-search-list">
-                                    <li @onclick='() => SearchByTag("Sapphire Hoodie")'>
-                                        Sapphire Hoodie
-                                    </li>
-                                    <li @onclick='() => SearchByTag("Cargo Pants")'>
-                                        Cargo Pants
-                                    </li>
-                                    <li @onclick='() => SearchByTag("Veil Crossbody")'>
-                                        Veil Crossbody
-                                    </li>
-                                    <li @onclick='() => SearchByTag("Tech Jacket")'>
-                                        Tech Jacket
-                                    </li>
+                                    @for (int i = 0; i < 4; i++)
+                                    {
+                                        <li><span class="mw-search-popular-skeleton"></span></li>
+                                    }
                                 </ul>
-                            </div>
+                            }
+                            else if (popularSearches.Any())
+                            {
+                                <ul class="mw-search-list">
+                                    @foreach (var term in popularSearches)
+                                    {
+                                        <li @onclick="() => SearchByTag(term)">@term</li>
+                                    }
+                                </ul>
+                            }
                         </div>
-
                     </div>
                 }
                 else
@@ -316,7 +344,7 @@
 
                             <!-- VIEW ALL LINK -->
                             <div class="col-12 text-center mt-3">
-                                <a href="/shop/apparel?search=@Uri.EscapeDataString(searchQuery)"
+                                <a href="@GetViewAllHref()"
                                    class="mw-search-viewall"
                                    @onclick="CloseSearch">
                                     View all results for "@searchQuery" →
@@ -339,38 +367,61 @@
          @onclick="HandleOverlayClick">
         <div class="mw-mobile-nav__panel" @onclick:stopPropagation="true">
 
-            <div class="mw-mobile-nav__header text-uppercase fw-bolder">
-                <span>Menu</span>
+            <div class="mw-mobile-nav__header">
+                <span class="mw-mobile-nav__title">Menu</span>
                 <button class="mw-mobile-nav__close" @onclick="CloseMenu" aria-label="Close menu">
-                    <svg width="18" height="18" viewBox="0 0 22 22" fill="none">
-                        <path d="M5 5L17 17" stroke="#1E2B48" stroke-width="2" stroke-linecap="round" />
-                        <path d="M17 5L5 17" stroke="#1E2B48" stroke-width="2" stroke-linecap="round" />
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6 6 18" /><path d="m6 6 12 12" />
                     </svg>
                 </button>
             </div>
 
-            <nav class="mw-mobile-nav__body text-uppercase">
-                <NavLink class="mw-mobile-nav__link p-2 border-bottom d-flex justify-content-between align-items-center" href="/" Match="NavLinkMatch.All" @onclick="CloseMenu">
-                    <span>Home</span>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1E2B48" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
-                </NavLink>
-                <NavLink class="mw-mobile-nav__link p-2 border-bottom d-flex justify-content-between align-items-center" href="/shop/apparel" @onclick="CloseMenu">
-                    <span>Apparel</span>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1E2B48" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
-                </NavLink>
-                <NavLink class="mw-mobile-nav__link p-2 border-bottom d-flex justify-content-between align-items-center" href="/shop/accessories" @onclick="CloseMenu">
-                    <span>Accessories</span>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1E2B48" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
-                </NavLink>
-                <NavLink class="mw-mobile-nav__link p-2 border-bottom d-flex justify-content-between align-items-center" href="/community" @onclick="CloseMenu">
-                    <span>Community</span>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1E2B48" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
-                </NavLink>
-                <NavLink class="mw-mobile-nav__link p-2 border-bottom d-flex justify-content-between align-items-center" href="/journal" @onclick="CloseMenu">
-                    <span>Journal</span>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1E2B48" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" /></svg>
-                </NavLink>
-            </nav>
+            <div class="mw-mobile-nav__scroll">
+                @if (isUserAuthenticated && !isAdmin)
+                {
+                    <div class="mw-mobile-nav__user">
+                        <p class="mw-mobile-nav__user-name">@(userName ?? "My Account")</p>
+                        @if (!string.IsNullOrEmpty(userEmail))
+                        {
+                            <p class="mw-mobile-nav__user-email">@userEmail</p>
+                        }
+                        <button type="button" class="mw-mobile-nav__signout" @onclick="HandleSignOut">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+                            <span>Sign Out</span>
+                        </button>
+                    </div>
+                }
+                else if (!isUserAuthenticated)
+                {
+                    <div class="mw-mobile-nav__auth">
+                        <a href="/login" class="mw-mobile-nav__auth-btn mw-mobile-nav__auth-btn--outline" @onclick="CloseMenu">Sign In</a>
+                        <a href="/register" class="mw-mobile-nav__auth-btn mw-mobile-nav__auth-btn--solid" @onclick="CloseMenu">Sign Up</a>
+                    </div>
+                }
+
+                <nav class="mw-mobile-nav__body">
+                    <NavLink class="mw-mobile-nav__link" href="/" Match="NavLinkMatch.All" @onclick="CloseMenu">
+                        <span>Home</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
+                    </NavLink>
+                    <NavLink class="mw-mobile-nav__link" href="/shop/apparel" @onclick="CloseMenu">
+                        <span>Apparel</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
+                    </NavLink>
+                    <NavLink class="mw-mobile-nav__link" href="/shop/accessories" @onclick="CloseMenu">
+                        <span>Accessories</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
+                    </NavLink>
+                    <NavLink class="mw-mobile-nav__link" href="/community" @onclick="CloseMenu">
+                        <span>Community</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
+                    </NavLink>
+                    <NavLink class="mw-mobile-nav__link" href="/journal" @onclick="CloseMenu">
+                        <span>Journal</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
+                    </NavLink>
+                </nav>
+            </div>
 
         </div>
     </div>
@@ -529,6 +580,8 @@
     private bool shouldFocusInput = false;
     private bool isSearching = false;
     private bool hasSearched = false;
+    private bool isLoadingSearchSuggestions = false;
+    private bool searchSuggestionsLoaded = false;
     private bool _cartInitialized = false;
     private bool _redirecting = false;
     private bool isAdmin = false;
@@ -542,10 +595,13 @@
 
     //String
     private string searchQuery = string.Empty;
+    private Guid? activeSearchCategoryId;
 
 
     //List
     private List<ProductModel> searchResults = new();
+    private List<CategoryModel> searchCategories = new();
+    private List<string> popularSearches = new();
 
     //Object
     private CancellationTokenSource? _searchCts;
@@ -553,6 +609,9 @@
 
     async Task ToggleMenu()
     {
+        if (!isMenuOpen)
+            await SyncAuthStateAsync();
+
         isMenuOpen = !isMenuOpen;
 
         if (isMenuOpen)
@@ -566,13 +625,20 @@
         isMenuOpen = false;
         await JS.InvokeVoidAsync("enableScroll");
     }
-    private void HandleOverlayClick() => isMenuOpen = false;
+
+    async Task HandleOverlayClick()
+    {
+        await CloseMenu();
+    }
     private bool isSearchOpen = false;
 
-    void OpenSearch()
+    async Task OpenSearch()
     {
         isSearchOpen = true;
         shouldFocusInput = true;
+
+        if (!searchSuggestionsLoaded && !isLoadingSearchSuggestions)
+            await LoadSearchSuggestions();
     }
     private bool isCartOpen = false;
     void CloseSearch()
@@ -622,6 +688,38 @@
     //         StateHasChanged();
     //     });
     // }
+    protected override async Task OnInitializedAsync()
+    {
+        await SyncAuthStateAsync();
+    }
+
+    private async Task SyncAuthStateAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var isAuthenticated = authState.User.Identity?.IsAuthenticated == true;
+
+        isUserAuthenticated = isAuthenticated;
+
+        if (isAuthenticated)
+        {
+            var role = authState.User.FindFirst(ClaimTypes.Role)?.Value;
+            isAdmin = role?.ToLower() == "admin";
+
+            if (!isAdmin)
+            {
+                userName = authState.User.FindFirst(ClaimTypes.Name)?.Value
+                    ?? authState.User.Identity?.Name;
+                userEmail = authState.User.FindFirst(ClaimTypes.Email)?.Value;
+            }
+        }
+        else
+        {
+            isAdmin = false;
+            userName = null;
+            userEmail = null;
+        }
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
 
@@ -650,10 +748,20 @@
                 isAdmin = role?.ToLower() == "admin";
                 if (!isAdmin)
                 {
-                    userName = authState.User.FindFirst(ClaimTypes.Name)?.Value;
+                    userName = authState.User.FindFirst(ClaimTypes.Name)?.Value
+                        ?? authState.User.Identity?.Name;
                     userEmail = authState.User.FindFirst(ClaimTypes.Email)?.Value;
                 }
+            }
+            else
+            {
+                isAdmin = false;
+                userName = null;
+                userEmail = null;
+            }
 
+            if (isAuthenticated)
+            {
                 var cookieJson = await JS.InvokeAsync<string?>("getCartCookie");
                 var hadGuestCart = !string.IsNullOrEmpty(cookieJson);
 
@@ -695,6 +803,7 @@
     {
         // update search query as user types
         searchQuery = e.Value?.ToString() ?? string.Empty;
+        activeSearchCategoryId = null;
 
         // if cleared → reset state
         if (string.IsNullOrEmpty(searchQuery))
@@ -746,6 +855,7 @@
     {
         // reset all search state
         searchQuery = string.Empty;
+        activeSearchCategoryId = null;
         searchResults = new();
         hasSearched = false;
         isSearching = false;
@@ -755,8 +865,8 @@
 
     private async Task PerformSearch()
     {
-        // validate — don't search empty or whitespace
-        if (string.IsNullOrWhiteSpace(searchQuery))
+        // validate — need text or a category filter
+        if (string.IsNullOrWhiteSpace(searchQuery) && !activeSearchCategoryId.HasValue)
             return;
 
         try
@@ -766,15 +876,14 @@
             hasSearched = true;
             StateHasChanged();
 
-            // build filter — search only
-            // 4 results max
-            // no category/size/price filter needed
-            // just text search
             var filter = new ProductFilterModel
             {
                 Page = 1,
                 PageSize = 4,
-                Search = searchQuery.Trim()
+                CategoryId = activeSearchCategoryId,
+                Search = activeSearchCategoryId.HasValue
+                    ? null
+                    : searchQuery.Trim()
             };
 
             var result = await ProductService.GetAll(filter);
@@ -806,8 +915,8 @@
 
     private async Task SearchByTag(string tag)
     {
-        // set search query to tag
         searchQuery = tag;
+        activeSearchCategoryId = null;
         hasSearched = true;
 
         // cancel any pending debounce
@@ -815,6 +924,97 @@
 
         // search immediately
         await PerformSearch();
+    }
+
+    private async Task SearchByCategory(CategoryModel category)
+    {
+        searchQuery = category.Name ?? string.Empty;
+        activeSearchCategoryId = category.Id;
+        hasSearched = true;
+
+        _searchCts?.Cancel();
+        await PerformSearch();
+    }
+
+    private string GetViewAllHref()
+    {
+        if (activeSearchCategoryId.HasValue)
+            return $"/shop/apparel?categoryId={activeSearchCategoryId.Value}";
+
+        return $"/shop/apparel?search={Uri.EscapeDataString(searchQuery)}";
+    }
+
+    private string SearchInputPlaceholder
+    {
+        get
+        {
+            var hints = new List<string>();
+
+            if (searchCategories.Count > 0 && !string.IsNullOrWhiteSpace(searchCategories[0].Name))
+                hints.Add(searchCategories[0].Name!);
+
+            if (popularSearches.Count > 0)
+            {
+                var productHint = popularSearches[0].Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+                if (!string.IsNullOrWhiteSpace(productHint) &&
+                    !hints.Contains(productHint, StringComparer.OrdinalIgnoreCase))
+                {
+                    hints.Add(productHint);
+                }
+            }
+
+            if (hints.Count == 0)
+                return "Search products...";
+
+            return $"Search for '{string.Join("', '", hints.Take(2))}'...";
+        }
+    }
+
+    private async Task LoadSearchSuggestions()
+    {
+        isLoadingSearchSuggestions = true;
+        StateHasChanged();
+
+        try
+        {
+            var categoriesTask = CategoryService.GetAll();
+            var homeTask = ProductService.GetHomeProducts();
+
+            await Task.WhenAll(categoriesTask, homeTask);
+
+            var categoriesResult = await categoriesTask;
+            var homeResult = await homeTask;
+
+            if (categoriesResult.Success && categoriesResult.Data != null)
+            {
+                searchCategories = categoriesResult.Data
+                    .Where(c => !string.IsNullOrWhiteSpace(c.Name))
+                    .Take(4)
+                    .ToList();
+            }
+
+            if (homeResult.Success && homeResult.Data != null)
+            {
+                popularSearches = homeResult.Data.BestSellers
+                    .Concat(homeResult.Data.Featured)
+                    .Concat(homeResult.Data.NewArrivals)
+                    .Where(p => !string.IsNullOrWhiteSpace(p.Name))
+                    .Select(p => p.Name!)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .Take(4)
+                    .ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Search suggestions error: {ex.Message}");
+        }
+        finally
+        {
+            isLoadingSearchSuggestions = false;
+            searchSuggestionsLoaded = true;
+            StateHasChanged();
+        }
     }
     private System.Threading.Timer? _activeCheckTimer;
 
