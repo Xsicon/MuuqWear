@@ -749,10 +749,6 @@
         flex: 1 1 auto;
         min-width: 0;
     }
-
-    .mw-home-swiper {
-        margin: 0 -4px;
-    }
 }
 
 @media (max-width: 575px) {

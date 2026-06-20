@@ -89,28 +89,25 @@ window.mwInitHomeCarousels = function () {
 
     var presets = {
         category: {
-            slidesPerView: 1.05,
+            slidesPerView: 1,
             spaceBetween: 16,
             breakpoints: {
-                576: { slidesPerView: 1.15, spaceBetween: 20 },
                 768: { slidesPerView: 2, spaceBetween: 26 },
                 1024: { slidesPerView: 3, spaceBetween: 26 }
             }
         },
         product: {
-            slidesPerView: 1.2,
+            slidesPerView: 1,
             spaceBetween: 16,
             breakpoints: {
-                576: { slidesPerView: 1.5, spaceBetween: 20 },
                 768: { slidesPerView: 2.2, spaceBetween: 26 },
                 1024: { slidesPerView: 4, spaceBetween: 26 }
             }
         },
         collection: {
-            slidesPerView: 1.05,
+            slidesPerView: 1,
             spaceBetween: 16,
             breakpoints: {
-                576: { slidesPerView: 1.15, spaceBetween: 20 },
                 768: { slidesPerView: 1.5, spaceBetween: 26 },
                 1024: { slidesPerView: 2, spaceBetween: 26 }
             }
@@ -141,7 +138,14 @@ window.mwInitHomeCarousels = function () {
             speed: 600,
             grabCursor: true,
             touchRatio: 1,
-            watchOverflow: slideCount <= 1
+            watchOverflow: slideCount <= 1,
+            observer: true,
+            observeParents: true,
+            resizeObserver: true
+        });
+
+        requestAnimationFrame(function () {
+            if (!swiper.destroyed) swiper.update();
         });
 
         if (canWrap) {

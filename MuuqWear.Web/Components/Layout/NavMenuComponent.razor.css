@@ -137,14 +137,6 @@ body {
     transform: scale(1.05);
 }
 
-.mw-icon-btn--locale {
-    color: var(--mw-slate);
-}
-
-.mw-icon-btn--locale:hover {
-    color: var(--mw-navy);
-}
-
 .mw-hamburger {
     width: auto;
     height: auto;
@@ -597,7 +589,7 @@ button.mw-search-close:hover {
     font-size: 20px;
     font-weight: 300;
     letter-spacing: -0.5px;
-    padding: 0 0 13px;
+    padding: 0 36px 13px 0;
     outline: none;
     transition: border-color 0.2s ease;
 }
@@ -629,6 +621,22 @@ button.mw-search-close:hover {
     display: flex;
     align-items: center;
     transition: color 0.2s ease;
+}
+
+@media (max-width: 767px) {
+    .mw-search-content {
+        padding-top: 28px;
+        padding-right: 52px;
+    }
+
+    button.mw-search-close {
+        top: 12px;
+        right: 12px;
+    }
+
+    .mw-search-clear {
+        padding: 8px;
+    }
 }
 
 .mw-search-clear:hover {
