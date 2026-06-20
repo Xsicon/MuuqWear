@@ -159,14 +159,6 @@
             @FilterPanelContent("m_cat")
         </div>
 
-        <div class="mw-shop-filter-drawer__footer">
-            <button type="button"
-                    class="mw-shop__btn-primary"
-                    @onclick="ApplyFilters">
-                Apply Filters (@totalCount products)
-            </button>
-        </div>
-
     </div>
 </div>
 
@@ -215,10 +207,28 @@
         filter.SelectedSizes.Count +
         (filter.MinPrice.HasValue || filter.MaxPrice.HasValue ? 1 : 0);
 
-    private string PriceSliderLabel =>
-        priceSliderValue >= PriceCeiling && !filter.MaxPrice.HasValue
-            ? "$500+"
-            : $"${priceSliderValue}";
+    private string PriceRangeLowLabel => "$0";
+
+    private string PriceRangeHighLabel
+    {
+        get
+        {
+            if (!IsPriceSliderDirty && filter.MaxPrice.HasValue)
+            {
+                var appliedMax = (int)Math.Clamp(filter.MaxPrice.Value, PriceFloor, PriceCeiling);
+                return appliedMax >= PriceCeiling ? "$500+" : $"${appliedMax}";
+            }
+
+            return priceSliderValue >= PriceCeiling ? "$500+" : $"${priceSliderValue}";
+        }
+    }
+
+    private bool HasAppliedPriceFilter => filter.MaxPrice.HasValue;
+
+    private bool IsPriceSliderDirty =>
+        filter.MaxPrice.HasValue
+            ? priceSliderValue != (int)Math.Clamp(filter.MaxPrice.Value, PriceFloor, PriceCeiling)
+            : priceSliderValue < PriceCeiling;
 
     protected override void OnInitialized()
     {
@@ -351,23 +361,30 @@
 
             <div class="mw-shop-filters__section mw-shop-filters__section--price">
                 <h4 class="mw-shop-filters__label">Price Range</h4>
+                @if (HasAppliedPriceFilter)
+                {
+                    <p class="mw-shop-filters__applied">
+                        Applied: up to @PriceRangeHighLabel
+                    </p>
+                }
                 <div class="mw-shop-filters__range-labels">
-                    <span>@PriceSliderLabel</span>
-                    <span>$500+</span>
+                    <span>@PriceRangeLowLabel</span>
+                    <span>@PriceRangeHighLabel</span>
                 </div>
                 <input type="range"
                        class="mw-shop-filters__range-slider"
                        min="@PriceFloor"
                        max="@PriceCeiling"
                        step="1"
-                       value="@priceSliderValue"
-                       @oninput="OnPriceSlider"
-                       aria-label="Price range"
+                       @bind="priceSliderValue"
+                       @bind:event="oninput"
+                       aria-label="Maximum price"
                        aria-valuemin="@PriceFloor"
                        aria-valuemax="@PriceCeiling"
                        aria-valuenow="@priceSliderValue" />
                 <button type="button"
-                        class="mw-shop__btn-primary mw-shop-filters__apply-price"
+                        class="mw-shop__btn-primary mw-shop-filters__apply-price @(IsPriceSliderDirty ? "" : "mw-shop-filters__apply-price--muted")"
+                        disabled="@(!IsPriceSliderDirty)"
                         @onclick="ApplyFilters">
                     Apply
                 </button>
@@ -444,12 +461,6 @@
     {
         filter.MinPrice = null;
         filter.MaxPrice = priceSliderValue < PriceCeiling ? priceSliderValue : null;
-    }
-
-    private void OnPriceSlider(ChangeEventArgs e)
-    {
-        if (int.TryParse(e.Value?.ToString(), out var val))
-            priceSliderValue = Math.Clamp(val, PriceFloor, PriceCeiling);
     }
 
     // apply price filters
@@ -539,5 +550,9 @@
         isFilterOpen = true;
     }
 
-    void CloseFilters() => isFilterOpen = false;
+    void CloseFilters()
+    {
+        SyncSlidersFromFilter();
+        isFilterOpen = false;
+    }
 }

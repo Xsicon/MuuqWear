@@ -421,6 +421,19 @@ button.mw-shop__btn-primary.mw-shop-filters__apply-price:hover {
     margin-top: 21px;
 }
 
+button.mw-shop__btn-primary.mw-shop-filters__apply-price:disabled,
+button.mw-shop__btn-primary.mw-shop-filters__apply-price--muted:disabled {
+    background-color: #E6ECF5;
+    color: #A9B7CC;
+    cursor: default;
+}
+
+button.mw-shop__btn-primary.mw-shop-filters__apply-price:disabled:hover,
+button.mw-shop__btn-primary.mw-shop-filters__apply-price--muted:disabled:hover {
+    background-color: #E6ECF5;
+    color: #A9B7CC;
+}
+
 /* Filters panel (shared desktop + drawer body) */
 .mw-shop-filters__head {
     display: flex;
@@ -519,6 +532,13 @@ button.mw-shop-filters__size.mw-shop-filters__size--selected:hover {
 
 .mw-shop-filters__section--price {
     margin-bottom: 0;
+}
+
+.mw-shop-filters__applied {
+    margin: 0 0 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--mw-navy);
 }
 
 .mw-shop-filters__range-labels {
@@ -740,12 +760,6 @@ button.mw-shop-filter-drawer__close:hover {
     flex: 1;
     overflow-y: auto;
     padding: 21px;
-}
-
-.mw-shop-filter-drawer__footer {
-    border-top: 1px solid var(--mw-border);
-    padding: 16px 21px;
-    flex-shrink: 0;
 }
 
 @media (min-width: 992px) {
