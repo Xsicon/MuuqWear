@@ -1,10 +1,5 @@
 ﻿@page "/shop/accessories"
 @rendermode InteractiveServer
-@inject IProductService ProductService
-@inject ICategoryService CategoryService
-@inject NavigationManager NavigationManager
-@using MuuqWear.Application.Services.ProductService
-@using MuuqWear.Application.Services.CategoryService
 @using MuuqWear.Model.Products
 
 <PageTitle>Accessories</PageTitle>
@@ -15,9 +10,7 @@
         <div class="acc-hero__bg" aria-hidden="true"></div>
         <div class="acc-hero__inner">
             <h1 id="acc-hero-title" class="acc-hero__title">Accessories</h1>
-            <p class="acc-hero__sub">
-                Complete your look with minimalist essentials
-            </p>
+            <p class="acc-hero__sub">Minimalist essentials, meticulously considered</p>
         </div>
     </section>
 
@@ -35,156 +28,316 @@
         </div>
     </section>
 
-    <section class="acc-grid-wrapper">
-        <div class="acc-grid-inner">
-
-            @if (isInitError)
-            {
-                <p class="acc-empty">Couldn't load the Accessories category.</p>
-            }
-            else if (isLoading)
-            {
-                <div class="acc-grid">
-                    @for (var i = 0; i < 8; i++)
+    @if (isInitError)
+    {
+        <p class="acc-empty">Couldn't load the Accessories category.</p>
+    }
+    else if (isLoading)
+    {
+        <div class="acc-carousel-section">
+            <div class="acc-carousel-section__inner">
+                <div class="acc-skeleton-header"></div>
+                <div class="acc-skeleton-row">
+                    @for (var i = 0; i < 4; i++)
                     {
                         <div class="acc-card acc-card--skeleton">
                             <div class="acc-card__media"></div>
                             <div class="acc-card__skel-line acc-card__skel-line--sm"></div>
                             <div class="acc-card__skel-line"></div>
-                            <div class="acc-card__skel-line acc-card__skel-line--xs"></div>
                         </div>
                     }
                 </div>
-            }
-            else if (allProducts.Count == 0)
-            {
-                <p class="acc-empty">No accessories yet. Check back soon.</p>
-            }
-            else if (!FilteredProducts.Any())
-            {
-                <p class="acc-empty">No products in this category yet.</p>
-            }
-            else
-            {
-                <div class="acc-grid">
-                    @foreach (var item in FilteredProducts)
-                    {
-                        <a class="acc-card" href="@($"/productdetail/{item.Id}")">
-                            <div class="acc-card__media">
-                                <img src="@item.ImageUrl"
-                                     alt="@item.Name"
-                                     loading="lazy" />
-                                <div class="acc-card__media-overlay" aria-hidden="true"></div>
-                            </div>
-                            <div class="acc-card__body">
-                                <p class="acc-card__eyebrow">
-                                    @GetProductSubcategory(item)
-                                </p>
-                                <h3 class="acc-card__name">@item.Name</h3>
-                                @if (!string.IsNullOrWhiteSpace(item.Description))
-                                {
-                                    <p class="acc-card__desc">@item.Description</p>
-                                }
-                                <p class="acc-card__price">$@item.Price.ToString("F2")</p>
-                            </div>
-                        </a>
-                    }
-                </div>
-            }
-
+            </div>
         </div>
-    </section>
+    }
+    else if (allProducts.Count == 0)
+    {
+        <p class="acc-empty">No accessories yet. Check back soon.</p>
+    }
+    else
+    {
+        <div class="acc-carousel-section acc-carousel-section--bordered">
+            <div class="acc-carousel-section__inner">
+                <div class="acc-carousel-section__header">
+                    <div>
+                        <p class="acc-carousel-section__eyebrow">Editor's Selection</p>
+                        <h2 class="acc-carousel-section__title">Featured Accessories</h2>
+                    </div>
+                    <div class="acc-carousel-section__nav">
+                        <button type="button" class="acc-carousel-section__nav-btn" data-carousel-prev disabled aria-label="Previous featured accessories" @onclick="() => ScrollLeft(featuredRef)">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                                <path d="m15 18-6-6 6-6" />
+                            </svg>
+                        </button>
+                        <button type="button" class="acc-carousel-section__nav-btn" data-carousel-next aria-label="Next featured accessories" @onclick="() => ScrollRight(featuredRef)">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                                <path d="m9 18 6-6-6-6" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                @if (!FeaturedProducts.Any())
+                {
+                    <p class="acc-empty acc-empty--inline">No products in this category yet.</p>
+                }
+                else
+                {
+                    <div class="acc-carousel-section__track" @ref="featuredRef">
+                        <div class="acc-carousel-section__row">
+                            @foreach (var item in FeaturedProducts)
+                            {
+                                @RenderProductCard(item)
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="acc-carousel-section acc-carousel-section--muted">
+            <div class="acc-carousel-section__inner">
+                <div class="acc-carousel-section__header">
+                    <div>
+                        <p class="acc-carousel-section__eyebrow">Most Loved</p>
+                        <h2 class="acc-carousel-section__title">Best Sellers</h2>
+                    </div>
+                    <div class="acc-carousel-section__nav">
+                        <button type="button" class="acc-carousel-section__nav-btn" data-carousel-prev disabled aria-label="Previous best sellers" @onclick="() => ScrollLeft(bestSellersRef)">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                                <path d="m15 18-6-6 6-6" />
+                            </svg>
+                        </button>
+                        <button type="button" class="acc-carousel-section__nav-btn" data-carousel-next aria-label="Next best sellers" @onclick="() => ScrollRight(bestSellersRef)">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                                <path d="m9 18 6-6-6-6" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                @if (!BestSellerProducts.Any())
+                {
+                    <p class="acc-empty acc-empty--inline">No products in this category yet.</p>
+                }
+                else
+                {
+                    <div class="acc-carousel-section__track" @ref="bestSellersRef">
+                        <div class="acc-carousel-section__row">
+                            @foreach (var item in BestSellerProducts)
+                            {
+                                @RenderProductCard(item)
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="acc-carousel-section acc-carousel-section--bordered">
+            <div class="acc-carousel-section__inner">
+                <div class="acc-carousel-section__header">
+                    <div>
+                        <p class="acc-carousel-section__eyebrow">Just In</p>
+                        <h2 class="acc-carousel-section__title">New Arrivals</h2>
+                    </div>
+                    <div class="acc-carousel-section__nav">
+                        <button type="button" class="acc-carousel-section__nav-btn" data-carousel-prev disabled aria-label="Previous new arrivals" @onclick="() => ScrollLeft(newArrivalsRef)">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                                <path d="m15 18-6-6 6-6" />
+                            </svg>
+                        </button>
+                        <button type="button" class="acc-carousel-section__nav-btn" data-carousel-next aria-label="Next new arrivals" @onclick="() => ScrollRight(newArrivalsRef)">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                                <path d="m9 18 6-6-6-6" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                @if (!NewArrivalProducts.Any())
+                {
+                    <p class="acc-empty acc-empty--inline">No products in this category yet.</p>
+                }
+                else
+                {
+                    <div class="acc-carousel-section__track" @ref="newArrivalsRef">
+                        <div class="acc-carousel-section__row">
+                            @foreach (var item in NewArrivalProducts)
+                            {
+                                @RenderProductCard(item)
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    @if (selectedProduct != null)
+    {
+        <div class="acc-modal-backdrop" @onclick="CloseProduct">
+            <div class="acc-modal" @onclick:stopPropagation="true" role="dialog" aria-modal="true" aria-labelledby="acc-modal-title">
+                <div class="acc-modal__grid">
+                    <div class="acc-modal__media">
+                        <img src="@selectedProduct.ImageUrl" alt="@selectedProduct.Name" />
+                    </div>
+                    <div class="acc-modal__body">
+                        <div class="acc-modal__close-wrap">
+                            <button type="button" class="acc-modal__close" aria-label="Close" @onclick="CloseProduct">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                                    <path d="M18 6 6 18" /><path d="m6 6 12 12" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div>
+                            <p class="acc-modal__eyebrow">@GetProductSubcategory(selectedProduct)</p>
+                            <h2 id="acc-modal-title" class="acc-modal__title">@selectedProduct.Name</h2>
+                            <p class="acc-modal__price">$@selectedProduct.Price.ToString("F2")</p>
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(selectedProduct.Description))
+                        {
+                            <p class="acc-modal__desc">@selectedProduct.Description</p>
+                        }
+
+                        @if (selectedProduct.ColorOptions.Any())
+                        {
+                            <div>
+                                <h3 class="acc-modal__label">
+                                    Color — <span class="acc-modal__label-muted">@selectedColor</span>
+                                </h3>
+                                <div class="acc-modal__colors">
+                                    @foreach (var color in selectedProduct.ColorOptions)
+                                    {
+                                        <button type="button"
+                                                class="acc-modal__color @(selectedColor == color ? "acc-modal__color--selected" : "")"
+                                                @onclick="() => SelectColor(color)">
+                                            @color
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        <ul class="acc-modal__features">
+                            @foreach (var feature in ModalFeatures)
+                            {
+                                <li>@feature</li>
+                            }
+                        </ul>
+
+                        <button type="button"
+                                class="acc-modal__add"
+                                disabled="@(isAddingToCart || selectedProduct.Stock == 0)"
+                                @onclick="HandleAddToCart">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
+                                <path d="M3 6h18" />
+                                <path d="M16 10a4 4 0 0 1-8 0" />
+                            </svg>
+                            @(isAddingToCart ? "Adding..." : selectedProduct.Stock > 0 ? "Add to Bag" : "Out of Stock")
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
 
     <section class="acc-cta">
         <div class="acc-cta__inner">
-            <h2 class="acc-cta__title">Complete Your Collection</h2>
-            <p class="acc-cta__sub">
-                Explore our full range of minimalist apparel and accessories
-            </p>
-            <a class="acc-cta__btn" href="/shop/apparel">
-                Shop All Products
-            </a>
+            <p class="acc-cta__eyebrow">The Full Picture</p>
+            <h2 class="acc-cta__title">Complete Your Look</h2>
+            <p class="acc-cta__sub">Explore our full range of minimalist apparel and accessories</p>
+            <a class="acc-cta__btn" href="/shop/apparel">Shop All Products</a>
+        </div>
+    </section>
+
+    <section class="acc-outfits">
+        <div class="acc-carousel-section__inner">
+            <div class="acc-carousel-section__header">
+                <div>
+                    <p class="acc-carousel-section__eyebrow">Styling Inspiration</p>
+                    <h2 class="acc-carousel-section__title">Outfits That Pair Well</h2>
+                </div>
+                <div class="acc-carousel-section__nav">
+                    <button type="button" class="acc-carousel-section__nav-btn" data-carousel-prev disabled aria-label="Previous outfits" @onclick="() => ScrollLeft(outfitRef)">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                            <path d="m15 18-6-6 6-6" />
+                        </svg>
+                    </button>
+                    <button type="button" class="acc-carousel-section__nav-btn" data-carousel-next aria-label="Next outfits" @onclick="() => ScrollRight(outfitRef)">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                            <path d="m9 18 6-6-6-6" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="acc-carousel-section__track acc-carousel-section__track--outfits" @ref="outfitRef">
+                <div class="acc-carousel-section__row">
+                    @foreach (var outfit in OutfitPairings)
+                    {
+                        <div class="acc-carousel-item acc-carousel-item--outfit">
+                            <article class="acc-outfit-card">
+                                <div class="acc-outfit-card__media">
+                                    <img src="@outfit.ImageUrl" alt="@outfit.Title" loading="lazy" />
+                                    <div class="acc-outfit-card__overlay">
+                                        <div class="acc-outfit-card__tags">
+                                            @foreach (var tag in outfit.Tags)
+                                            {
+                                                <span class="acc-outfit-card__tag">@tag</span>
+                                            }
+                                        </div>
+                                        <h3 class="acc-outfit-card__title">@outfit.Title</h3>
+                                        <p class="acc-outfit-card__desc">@outfit.Description</p>
+                                    </div>
+                                </div>
+                                <p class="acc-outfit-card__pairs">
+                                    Pairs with <strong>@outfit.PairsWith</strong>
+                                </p>
+                            </article>
+                        </div>
+                    }
+                </div>
+            </div>
         </div>
     </section>
 
 </section>
 
 @code {
-    // State
-    private ShopFilterModel filter = new();
-    private List<ProductModel> allProducts = new();
-    private Guid? accessoriesCategoryId;
-    private int totalCount = 0;
-    private bool isLoading = true;
-    private bool isInitError = false;
-    private string selectedSubcategory = "All";
-
-    private static readonly string[] SubcategoryFilters =
+    private RenderFragment RenderProductCard(ProductModel item) => __builder =>
     {
-        "All", "Bags", "Footwear", "Accessories"
+        <div class="acc-carousel-item" @key="item.Id">
+            <article class="acc-card" @onclick="() => OpenProduct(item)">
+                <div class="acc-card__media">
+                    <img src="@item.ImageUrl" alt="@item.Name" loading="lazy" />
+                    <div class="acc-card__media-overlay" aria-hidden="true"></div>
+                    @if (!string.IsNullOrWhiteSpace(item.Badge))
+                    {
+                        <span class="acc-card__badge @GetBadgeClass(item.Badge)">@item.Badge</span>
+                    }
+                    <button type="button"
+                            class="acc-card__quick-add"
+                            aria-label="@($"Quick add {item.Name}")"
+                            @onclick:stopPropagation="true"
+                            @onclick="() => OpenProduct(item)">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
+                            <path d="M3 6h18" />
+                            <path d="M16 10a4 4 0 0 1-8 0" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="acc-card__body">
+                    <p class="acc-card__eyebrow">@GetProductSubcategory(item)</p>
+                    <h3 class="acc-card__name">@item.Name</h3>
+                    @if (!string.IsNullOrWhiteSpace(item.Description))
+                    {
+                        <p class="acc-card__desc">@item.Description</p>
+                    }
+                    <p class="acc-card__price">$@item.Price.ToString("F2")</p>
+                </div>
+            </article>
+        </div>
     };
-
-    private IEnumerable<ProductModel> FilteredProducts =>
-        selectedSubcategory == "All"
-            ? allProducts
-            : allProducts.Where(p => string.Equals(
-                GetProductSubcategory(p),
-                selectedSubcategory,
-                StringComparison.OrdinalIgnoreCase));
-
-    private static string GetProductSubcategory(ProductModel product) =>
-        string.IsNullOrWhiteSpace(product.Category)
-            ? "Accessories"
-            : product.Category!;
-
-    private void SelectSubcategory(string subcategory)
-    {
-        selectedSubcategory = subcategory;
-    }
-
-    protected override async Task OnInitializedAsync()
-    {
-        // STEP 1: find the Accessories category id
-        var categoryResult = await CategoryService.GetAll();
-        if (!categoryResult.Success || categoryResult.Data == null)
-        {
-            isInitError = true;
-            isLoading = false;
-            return;
-        }
-
-        var accessories = categoryResult.Data
-            .FirstOrDefault(c => c.Name!.Equals("Accessories",
-                StringComparison.OrdinalIgnoreCase));
-
-        if (accessories == null)
-        {
-            // Category doesn't exist in DB — bail gracefully
-            isInitError = true;
-            isLoading = false;
-            return;
-        }
-
-        accessoriesCategoryId = accessories.Id;
-        filter.CategoryId = accessoriesCategoryId;
-        filter.PageSize = 100;
-
-        await LoadProducts();
-    }
-
-    private async Task LoadProducts()
-    {
-        isLoading = true;
-
-        var result = await ProductService.GetAll(filter.ToFilterModel());
-
-        if (result.Success && result.Data != null)
-        {
-            allProducts = result.Data.Data;
-            totalCount = result.Data.TotalCount;
-            filter.Page = result.Data.Page;
-        }
-
-        isLoading = false;
-    }
 }
