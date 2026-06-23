@@ -257,7 +257,7 @@ button.acc-carousel-section__nav-btn:focus-visible {
     container-type: inline-size;
     overscroll-behavior-x: contain;
     scroll-snap-type: x proximity;
-    touch-action: pan-x;
+    touch-action: manipulation;
     scroll-behavior: auto;
 }
 
