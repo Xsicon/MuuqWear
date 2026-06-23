@@ -49,7 +49,7 @@
 <!-- Journal Filters Section -->
 <section class="mw-journal-filters mb-3">
     <div class="mw-journal-hero__container">
-        <div class="d-flex flex-nowrap gap-2 overflow-auto mw-tabs-scroll">
+        <div class="mw-journal-filters__row mw-tabs-scroll">
             <!-- filters -->
             <button class="mw-filter-tab @(activeFilter == "All" ? "active" : "")"
                     @onclick='() => SetFilter("All")'>

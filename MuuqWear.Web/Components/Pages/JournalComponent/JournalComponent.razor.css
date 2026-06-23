@@ -143,6 +143,21 @@
     scrollbar-width: none;
 }
 
+/* Filters row (responsive) */
+.mw-journal-filters__row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+    .mw-journal-filters__row .mw-filter-tab {
+        flex: 1 1 calc(50% - 8px);
+        text-align: center;
+        padding: 10px 12px;
+    }
+}
+
 /* Tab */
 .mw-filter-tab {
     padding: 8px 20px;
