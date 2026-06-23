@@ -107,11 +107,8 @@ public partial class AccessoriesComponent : IAsyncDisposable
         _carouselsReady = true;
     }
 
-    private async Task InitCarousel(ElementReference trackRef)
-    {
-        await EnableDragScroll(trackRef);
-        await JS.InvokeVoidAsync("mwInitCarouselNav", trackRef, ".acc-carousel-item");
-    }
+    private Task InitCarousel(ElementReference trackRef) =>
+        JS.InvokeVoidAsync("mwInitAccessoryCarousel", trackRef, ".acc-carousel-item").AsTask();
 
     private async Task LoadProducts()
     {
@@ -210,9 +207,6 @@ public partial class AccessoriesComponent : IAsyncDisposable
 
     private Task ScrollRight(ElementReference el) =>
         JS.InvokeVoidAsync("mwScrollRight", el, ".acc-carousel-item").AsTask();
-
-    private Task EnableDragScroll(ElementReference el) =>
-        JS.InvokeVoidAsync("enableDragScroll", el).AsTask();
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 

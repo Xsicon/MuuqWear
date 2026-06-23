@@ -80,8 +80,17 @@
     padding: 20px 24px;
     display: flex;
     gap: 12px;
-    flex-wrap: wrap;
-    overflow-x: hidden;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+    touch-action: pan-x;
+}
+
+.acc-filter-row__inner::-webkit-scrollbar {
+    display: none;
 }
 
 @media (min-width: 1024px) {
@@ -116,9 +125,7 @@ button.acc-pill {
 
 @media (max-width: 480px) {
     button.acc-pill {
-        flex: 1 1 calc(50% - 10px);
-        padding: 10px 12px;
-        text-align: center;
+        padding: 10px 16px;
         font-size: 11px;
         letter-spacing: 0.10em;
     }
@@ -250,12 +257,25 @@ button.acc-carousel-section__nav-btn:focus-visible {
     container-type: inline-size;
     overscroll-behavior-x: contain;
     scroll-snap-type: x proximity;
+    touch-action: pan-x;
+    scroll-behavior: auto;
 }
 
 .acc-carousel-section__track.dragging {
     cursor: grabbing;
     user-select: none;
     scroll-snap-type: none;
+}
+
+@media (max-width: 1023px) {
+    .acc-carousel-section__track {
+        cursor: default;
+        scroll-snap-type: x mandatory;
+    }
+
+    .acc-carousel-item {
+        scroll-snap-stop: always;
+    }
 }
 
 .acc-carousel-section__track::-webkit-scrollbar {

@@ -133,33 +133,36 @@
 
 
 
-/* Article Links Section*/
-/* Hide scrollbar (optional but clean) */
-.mw-tabs-scroll::-webkit-scrollbar {
-    display: none;
+/* Journal Filters */
+.mw-journal-filters {
+    padding-inline: 16px;
 }
 
-.mw-tabs-scroll {
-    scrollbar-width: none;
+@media (min-width: 768px) {
+    .mw-journal-filters {
+        padding-inline: 34px;
+    }
 }
 
-/* Filters row (responsive) */
 .mw-journal-filters__row {
     display: flex;
     gap: 8px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+    touch-action: pan-x;
 }
 
-@media (max-width: 640px) {
-    .mw-journal-filters__row .mw-filter-tab {
-        flex: 1 1 calc(50% - 8px);
-        text-align: center;
-        padding: 10px 12px;
-    }
+.mw-journal-filters__row::-webkit-scrollbar {
+    display: none;
 }
 
 /* Tab */
 .mw-filter-tab {
+    flex-shrink: 0;
     padding: 8px 20px;
     font-size: 13px;
     font-weight: 600;

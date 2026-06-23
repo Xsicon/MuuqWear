@@ -9,25 +9,33 @@
     return card.getBoundingClientRect().width + gap;
 }
 
+function mwIsSingleSlideView(el, itemSelector) {
+    const first = el.querySelector(itemSelector || el?._mwItemSelector);
+    if (!first) return false;
+    return first.getBoundingClientRect().width >= el.clientWidth * 0.85;
+}
+
 function mwGetMaxScroll(el, itemSelector) {
     const selector = itemSelector || el?._mwItemSelector;
     if (!selector) {
         return Math.max(0, el.scrollWidth - el.clientWidth);
     }
 
-    const items = el.querySelectorAll(selector);
-    if (!items || items.length === 0) {
-        return 0;
-    }
+    const items = mwGetCarouselItems(el, itemSelector);
+    if (!items.length) return 0;
 
     const last = items[items.length - 1];
+    const lastOffset = mwGetItemScrollLeft(last);
     const trackRect = el.getBoundingClientRect();
     const lastRect = last.getBoundingClientRect();
-
-    // lastRight in track's scroll coordinate space
     const lastRight = (lastRect.right - trackRect.left) + el.scrollLeft;
-    const max = lastRight - el.clientWidth;
-    return Math.max(0, Math.ceil(max));
+    const geometricMax = lastRight - el.clientWidth;
+
+    if (mwIsSingleSlideView(el, itemSelector)) {
+        return Math.max(0, lastOffset);
+    }
+
+    return Math.max(0, geometricMax);
 }
 
 function mwClampHorizontalScroll(el, itemSelector) {
@@ -37,37 +45,117 @@ function mwClampHorizontalScroll(el, itemSelector) {
 }
 
 window.mwScrollRight = (el, itemSelector) => {
-    const step = mwGetCarouselStep(el, itemSelector);
-    if (!step) return;
-
     mwClampHorizontalScroll(el, itemSelector);
 
     const maxScroll = mwGetMaxScroll(el, itemSelector);
     if (maxScroll <= 0 || el.scrollLeft >= maxScroll - 5) return;
 
-    const index = Math.round(el.scrollLeft / step);
+    const index = mwGetScrollIndex(el, itemSelector);
+    const maxIndex = mwGetMaxScrollIndex(el, itemSelector);
+    if (index >= maxIndex) return;
 
-    el.scrollTo({
-        left: Math.min((index + 1) * step, maxScroll),
-        behavior: "smooth"
-    });
+    mwScrollToIndex(el, itemSelector, index + 1);
 };
 
 window.mwScrollLeft = (el, itemSelector) => {
-    const step = mwGetCarouselStep(el, itemSelector);
-    if (!step) return;
-
     mwClampHorizontalScroll(el, itemSelector);
 
     if (el.scrollLeft <= 5) return;
 
-    const index = Math.round(el.scrollLeft / step);
+    const index = mwGetScrollIndex(el, itemSelector);
+    if (index <= 0) return;
 
-    el.scrollTo({
-        left: Math.max((index - 1) * step, 0),
-        behavior: "smooth"
-    });
+    mwScrollToIndex(el, itemSelector, index - 1);
 };
+
+function mwGetCarouselItems(el, itemSelector) {
+    const selector = itemSelector || el?._mwItemSelector;
+    if (!selector) return [];
+    return Array.from(el.querySelectorAll(selector));
+}
+
+function mwGetItemScrollLeft(item) {
+    return item?.offsetLeft ?? 0;
+}
+
+function mwGetScrollIndex(el, itemSelector) {
+    const items = mwGetCarouselItems(el, itemSelector);
+    if (!items.length) return 0;
+
+    const scrollLeft = el.scrollLeft;
+    let best = 0;
+    let bestDist = Infinity;
+
+    for (let i = 0; i < items.length; i++) {
+        const dist = Math.abs(mwGetItemScrollLeft(items[i]) - scrollLeft);
+        if (dist < bestDist) {
+            bestDist = dist;
+            best = i;
+        }
+    }
+
+    return best;
+}
+
+function mwGetMaxScrollIndex(el, itemSelector) {
+    const items = mwGetCarouselItems(el, itemSelector);
+    if (!items.length) return 0;
+
+    if (mwIsSingleSlideView(el, itemSelector)) {
+        return items.length - 1;
+    }
+
+    const max = mwGetMaxScroll(el, itemSelector);
+    let maxIndex = 0;
+
+    for (let i = 0; i < items.length; i++) {
+        if (mwGetItemScrollLeft(items[i]) <= max + 2) {
+            maxIndex = i;
+        }
+    }
+
+    return maxIndex;
+}
+
+function mwScrollToIndex(el, itemSelector, index, behavior = "smooth") {
+    const items = mwGetCarouselItems(el, itemSelector);
+    if (!items.length) return;
+
+    const maxIndex = mwGetMaxScrollIndex(el, itemSelector);
+    const targetIndex = Math.max(0, Math.min(index, maxIndex));
+    const item = items[targetIndex];
+    if (!item) return;
+
+    const target = mwGetItemScrollLeft(item);
+
+    if (Math.abs(el.scrollLeft - target) <= 2) {
+        el.scrollLeft = target;
+        return;
+    }
+
+    el.scrollTo({ left: target, behavior });
+}
+
+function mwSnapTouchCarousel(trackEl, itemSelector) {
+    const startIndex = trackEl._mwTouchStartIndex ?? mwGetScrollIndex(trackEl, itemSelector);
+    const currentIndex = mwGetScrollIndex(trackEl, itemSelector);
+    const delta = currentIndex - startIndex;
+
+    let targetIndex;
+    if (Math.abs(delta) <= 1) {
+        targetIndex = currentIndex;
+    } else {
+        targetIndex = startIndex + (delta > 0 ? 1 : -1);
+    }
+
+    mwScrollToIndex(trackEl, itemSelector, targetIndex);
+    mwClampHorizontalScroll(trackEl, itemSelector);
+    delete trackEl._mwTouchStartIndex;
+}
+
+function mwIsTouchDevice() {
+    return window.matchMedia("(hover: none) and (pointer: coarse)").matches;
+}
 
 window.mwInitCarouselNav = (trackEl, itemSelector) => {
     if (!trackEl) return;
@@ -80,12 +168,17 @@ window.mwInitCarouselNav = (trackEl, itemSelector) => {
     if (trackEl._mwNavScrollHandler) {
         trackEl.removeEventListener("scroll", trackEl._mwNavScrollHandler);
     }
+    if (trackEl._mwNavScrollEndHandler) {
+        trackEl.removeEventListener("scrollend", trackEl._mwNavScrollEndHandler);
+    }
     if (trackEl._mwNavResizeHandler) {
         window.removeEventListener("resize", trackEl._mwNavResizeHandler);
     }
+    if (trackEl._mwNavScrollEndTimer) {
+        clearTimeout(trackEl._mwNavScrollEndTimer);
+    }
 
-    function update() {
-        mwClampHorizontalScroll(trackEl, itemSelector);
+    function updateButtons() {
         const max = mwGetMaxScroll(trackEl, itemSelector);
         const atStart = trackEl.scrollLeft <= 5;
         const atEnd = max <= 5 || trackEl.scrollLeft >= max - 5;
@@ -93,12 +186,94 @@ window.mwInitCarouselNav = (trackEl, itemSelector) => {
         if (nextBtn) nextBtn.disabled = atEnd;
     }
 
-    trackEl._mwNavScrollHandler = update;
-    trackEl._mwNavResizeHandler = update;
-    trackEl.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("resize", update);
+    function clampAfterScroll() {
+        mwClampHorizontalScroll(trackEl, itemSelector);
+        updateButtons();
+    }
+
+    trackEl._mwNavScrollHandler = () => {
+        updateButtons();
+        if (mwIsTouchDevice()) return;
+        if (trackEl._mwNavScrollEndTimer) {
+            clearTimeout(trackEl._mwNavScrollEndTimer);
+        }
+        trackEl._mwNavScrollEndTimer = setTimeout(clampAfterScroll, 120);
+    };
+
+    trackEl._mwNavScrollEndHandler = clampAfterScroll;
+    trackEl._mwNavResizeHandler = () => {
+        clampAfterScroll();
+    };
+
+    trackEl.addEventListener("scroll", trackEl._mwNavScrollHandler, { passive: true });
+    trackEl.addEventListener("scrollend", trackEl._mwNavScrollEndHandler, { passive: true });
+    window.addEventListener("resize", trackEl._mwNavResizeHandler);
     trackEl.scrollLeft = 0;
-    update();
+    clampAfterScroll();
+};
+
+window.mwInitAccessoryCarousel = (trackEl, itemSelector) => {
+    mwInitCarouselNav(trackEl, itemSelector);
+
+    if (trackEl._mwTouchStartHandler) {
+        trackEl.removeEventListener("touchstart", trackEl._mwTouchStartHandler);
+    }
+
+    if (trackEl._mwNavScrollEndHandler) {
+        trackEl.removeEventListener("scrollend", trackEl._mwNavScrollEndHandler);
+    }
+    if (trackEl._mwNavScrollHandler) {
+        trackEl.removeEventListener("scroll", trackEl._mwNavScrollHandler);
+    }
+
+    function updateNavButtons() {
+        const inner = trackEl.closest(".acc-carousel-section__inner");
+        const prevBtn = inner?.querySelector("[data-carousel-prev]");
+        const nextBtn = inner?.querySelector("[data-carousel-next]");
+        const max = mwGetMaxScroll(trackEl, itemSelector);
+        const atStart = trackEl.scrollLeft <= 5;
+        const atEnd = max <= 5 || trackEl.scrollLeft >= max - 5;
+        if (prevBtn) prevBtn.disabled = atStart;
+        if (nextBtn) nextBtn.disabled = atEnd;
+    }
+
+    trackEl._mwNavScrollHandler = () => {
+        const max = mwGetMaxScroll(trackEl, itemSelector);
+        if (trackEl.scrollLeft > max + 1) {
+            trackEl.scrollLeft = max;
+        } else if (trackEl.scrollLeft < 0) {
+            trackEl.scrollLeft = 0;
+        }
+        updateNavButtons();
+    };
+    trackEl.addEventListener("scroll", trackEl._mwNavScrollHandler, { passive: true });
+
+    function finishScroll() {
+        if (mwIsTouchDevice()) {
+            mwSnapTouchCarousel(trackEl, itemSelector);
+        } else {
+            mwClampHorizontalScroll(trackEl, itemSelector);
+            const index = mwGetScrollIndex(trackEl, itemSelector);
+            mwScrollToIndex(trackEl, itemSelector, index, "auto");
+        }
+
+        mwClampHorizontalScroll(trackEl, itemSelector);
+        updateNavButtons();
+    }
+
+    trackEl._mwNavScrollEndHandler = finishScroll;
+    trackEl.addEventListener("scrollend", trackEl._mwNavScrollEndHandler, { passive: true });
+
+    if (mwIsTouchDevice()) {
+        trackEl._mwTouchStartHandler = () => {
+            trackEl._mwTouchStartIndex = mwGetScrollIndex(trackEl, itemSelector);
+        };
+        trackEl.addEventListener("touchstart", trackEl._mwTouchStartHandler, { passive: true });
+    } else {
+        enableDragScroll(trackEl);
+    }
+
+    finishScroll();
 };
 
 window.mwAutoSlideMap = new Map();
@@ -129,6 +304,8 @@ window.mwStartAutoSlide = (el, itemSelector, interval = 3000) => {
 
 
 window.enableDragScroll = (element) => {
+    if (!element || element._mwDragScrollInit) return;
+    element._mwDragScrollInit = true;
 
     let isDown = false;
     let startX = 0;
@@ -197,39 +374,7 @@ window.enableDragScroll = (element) => {
         }
     }, true);
 
-    // ======================
-    // TOUCH SUPPORT (MOBILE)
-    // ======================
-
-    element.addEventListener('touchstart', (e) => {
-        startX = e.touches[0].clientX;
-        scrollLeft = element.scrollLeft;
-        isDragging = false;
-
-    });
-
-    element.addEventListener('touchmove', (e) => {
-        const delta = e.touches[0].clientX - startX;
-
-        if (Math.abs(delta) > 5) {
-            isDragging = true;
-        }
-
-        if (!isDragging) return;
-
-        const max = mwGetMaxScroll(element);
-        element.scrollLeft = Math.max(0, Math.min(scrollLeft - delta, max));
-
-    });
-
-    element.addEventListener('touchend', () => {
-        mwClampHorizontalScroll(element);
-
-        setTimeout(() => {
-            isDragging = false;
-        }, 50);
-
-    });
+    // Touch: use native momentum scrolling (custom touch handlers cause mobile jank).
 };
 
 // Journal overlay helpers (avoid eval usage)
