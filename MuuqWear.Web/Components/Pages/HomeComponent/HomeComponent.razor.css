@@ -455,9 +455,27 @@
 
 .mw-product-card {
     display: block;
+    color: inherit;
+}
+
+.mw-product-card__media-link {
+    display: block;
+    width: 100%;
+    height: 100%;
     text-decoration: none;
     color: inherit;
 }
+
+.mw-product-card__body {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+}
+
+    .mw-product-card__body:hover {
+        text-decoration: none;
+        color: inherit;
+    }
 
 .mw-product-card__image {
     position: relative;

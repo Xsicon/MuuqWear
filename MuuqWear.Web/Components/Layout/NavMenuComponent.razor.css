@@ -1,4 +1,4 @@
-﻿/* Design tokens — match Figma header */
+/* Design tokens — match Figma header */
 :host {
     --mw-navy: #1E2A47;
     --mw-navy-dark: #0B1A33;
@@ -145,23 +145,31 @@ body {
 /* ── Cart badge ──────────────────────────── */
 .mw-cart-badge {
     position: absolute;
-    top: -2px;
-    right: -2px;
-    background: var(--mw-navy);
+    top: 0;
+    right: 0;
+    transform: translate(35%, -35%);
+    background: #1E2A47;
     color: #fff;
     font-size: 10px;
     font-weight: 700;
-    width: 18px;
+    line-height: 1;
+    min-width: 18px;
     height: 18px;
+    padding: 0 5px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 50%;
+    border-radius: 999px;
+    border: 2px solid #fff;
+    box-sizing: border-box;
+    pointer-events: none;
+    z-index: 1;
 }
 
 .mw-cart-badge--mobile {
     top: 2px;
-    right: 2px;
+    right: 0;
+    transform: translate(25%, -25%);
 }
 
 /* ── Sign in ─────────────────────────────── */

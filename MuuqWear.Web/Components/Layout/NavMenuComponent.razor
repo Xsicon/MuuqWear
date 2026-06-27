@@ -10,7 +10,9 @@
 @using MuuqWear.Model.Cart
 @using MuuqWear.Model.Products
 @using MuuqWear.Application.Services.AuthService
+@using MuuqWear.Application.Services.WishlistService
 @inject CartStateService CartStateService
+@inject WishlistStateService WishlistStateService
 @inject IProductService ProductService
 @inject ICategoryService CategoryService
 @inject AuthSessionService AuthSession
@@ -52,17 +54,19 @@
                             </svg>
                         </button>
 
-                        <button class="mw-icon-btn mw-icon-btn--cart" aria-label="Cart" @onclick="OpenCart">
+                        <button class="mw-icon-btn mw-icon-btn--cart"
+                                aria-label="@CartAriaLabel"
+                                @onclick="OpenCart">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
                                  viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path>
-                                <path d="M3 6h18"></path>
-                                <path d="M16 10a4 4 0 0 1-8 0"></path>
+                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="8" cy="21" r="1" />
+                                <circle cx="19" cy="21" r="1" />
+                                <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
                             </svg>
-                            @if (CartStateService.Cart.TotalItems > 0)
+                            @if (CartItemCount > 0)
                             {
-                                <span class="mw-cart-badge">@CartStateService.Cart.TotalItems</span>
+                                <span class="mw-cart-badge" aria-hidden="true">@CartItemCount</span>
                             }
                         </button>
 
@@ -121,17 +125,19 @@
                         </svg>
                     </button>
 
-                    <button class="mw-icon-btn mw-icon-btn--mobile mw-icon-btn--cart" aria-label="Cart" @onclick="OpenCart">
+                    <button class="mw-icon-btn mw-icon-btn--mobile mw-icon-btn--cart"
+                            aria-label="@CartAriaLabel"
+                            @onclick="OpenCart">
                         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22"
                              viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path>
-                            <path d="M3 6h18"></path>
-                            <path d="M16 10a4 4 0 0 1-8 0"></path>
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <circle cx="8" cy="21" r="1" />
+                            <circle cx="19" cy="21" r="1" />
+                            <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
                         </svg>
-                        @if (CartStateService.Cart.TotalItems > 0)
+                        @if (CartItemCount > 0)
                         {
-                            <span class="mw-cart-badge mw-cart-badge--mobile">@CartStateService.Cart.TotalItems</span>
+                            <span class="mw-cart-badge mw-cart-badge--mobile" aria-hidden="true">@CartItemCount</span>
                         }
                     </button>
 
@@ -438,10 +444,10 @@
 
                 <div class="d-flex align-items-center gap-2">
                     <span class="mw-cart-title">Your Bag</span>
-                    @if (CartStateService.Cart.TotalItems > 0)
+                    @if (CartItemCount > 0)
                     {
                         <span class="mw-cart-count">
-                            @CartStateService.Cart.TotalItems
+                            @CartItemCount
                         </span>
                     }
                 </div>
@@ -585,6 +591,9 @@
     private bool _cartInitialized = false;
     private bool _redirecting = false;
     private bool isAdmin = false;
+
+    private int CartItemCount => CartStateService.Cart.TotalItems;
+    private string CartAriaLabel => CartItemCount > 0 ? $"Cart, {CartItemCount} items" : "Cart";
 
 
     private string? userName;
@@ -768,21 +777,30 @@
                 if (hadGuestCart)
                 {
                     await CartStateService.LoadGuestCartFromCookie();
-
-                    // merge into DB
-                    // MergeGuestCartAsync internally loads DB cart after merge
                     await CartStateService.MergeGuestCartAsync();
                 }
                 else
                 {
-                    // no guest items → just load DB cart
                     await CartStateService.InitializeAsync(isAuthenticated, userId);
+                }
+
+                var wishlistCookieJson = await JS.InvokeAsync<string?>("getWishlistCookie");
+                var hadGuestWishlist = !string.IsNullOrEmpty(wishlistCookieJson);
+
+                if (hadGuestWishlist)
+                {
+                    await WishlistStateService.LoadGuestWishlistFromCookie();
+                    await WishlistStateService.MergeGuestWishlistAsync();
+                }
+                else
+                {
+                    await WishlistStateService.InitializeAsync(isAuthenticated, userId);
                 }
             }
             else
             {
-                // guest → load from cookie
                 await CartStateService.InitializeAsync(isAuthenticated, userId);
+                await WishlistStateService.InitializeAsync(isAuthenticated, userId);
             }
 
             StateHasChanged();
@@ -1094,6 +1112,7 @@
     {
         isProfileOpen = false;
         await CartStateService.ClearCartState();
+        await WishlistStateService.ClearWishlistState();
         NavigationManager.NavigateTo("/auth/clear", forceLoad: true);
     }
 }

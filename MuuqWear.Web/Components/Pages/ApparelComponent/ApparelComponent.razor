@@ -8,6 +8,7 @@
 @using MuuqWear.Application.Services.ProductService
 @using MuuqWear.Application.Services.CategoryService
 @using MuuqWear.Model.Products
+@using MuuqWear.Application.Services.WishlistService
 @using MuuqWear.Web.Components.Shared
 
 <PageTitle>Apparel</PageTitle>
@@ -106,22 +107,32 @@
                     <div class="mw-shop__grid">
                         @foreach (var item in Products)
                         {
-                            <a href="/productdetail/@item.Id" class="mw-shop-product">
+                            <div class="mw-shop-product">
                                 <div class="mw-shop-product__image">
-                                    <img src="@item.ImageUrl"
-                                         loading="lazy"
-                                         alt="@item.Name" />
-                                    @if (!string.IsNullOrEmpty(item.Badge))
-                                    {
-                                        <span class="mw-shop-product__badge">@item.Badge</span>
-                                    }
+                                    <a href="/productdetail/@item.Id" class="mw-shop-product__media-link">
+                                        <img src="@item.ImageUrl"
+                                             loading="lazy"
+                                             alt="@item.Name" />
+                                        @if (!string.IsNullOrEmpty(item.Badge))
+                                        {
+                                            <span class="mw-shop-product__badge">@item.Badge</span>
+                                        }
+                                    </a>
+                                    <WishlistButtonComponent ProductId="@item.Id"
+                                                             ProductName="@item.Name"
+                                                             ProductImageUrl="@item.ImageUrl"
+                                                             ProductPrice="@item.Price"
+                                                             CssClass="mw-wishlist-btn--overlay"
+                                                             Size="16" />
                                 </div>
-                                <p class="mw-shop-product__category">
-                                    @(Categories.FirstOrDefault(c => c.Id == item.CategoryId)?.Name ?? "")
-                                </p>
-                                <h3 class="mw-shop-product__name">@item.Name</h3>
-                                <p class="mw-shop-product__price">$@item.Price.ToString("F2")</p>
-                            </a>
+                                <a href="/productdetail/@item.Id" class="mw-shop-product__body">
+                                    <p class="mw-shop-product__category">
+                                        @(Categories.FirstOrDefault(c => c.Id == item.CategoryId)?.Name ?? "")
+                                    </p>
+                                    <h3 class="mw-shop-product__name">@item.Name</h3>
+                                    <p class="mw-shop-product__price">$@item.Price.ToString("F2")</p>
+                                </a>
+                            </div>
                         }
                     </div>
 

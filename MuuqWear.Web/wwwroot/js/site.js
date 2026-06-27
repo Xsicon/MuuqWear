@@ -368,6 +368,61 @@ window.clearCartCookie = function () {
     }
 };
 
+// =============================================
+// WISHLIST COOKIE FUNCTIONS
+// =============================================
+
+window.getWishlistCookie = function () {
+    try {
+        var cookies = document.cookie.split(';');
+
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = cookies[i].trim();
+
+            if (cookie.startsWith('muuqwear_wishlist=')) {
+                var value = cookie.substring('muuqwear_wishlist='.length);
+                return decodeURIComponent(value);
+            }
+        }
+
+        return null;
+    }
+    catch (e) {
+        console.error('getWishlistCookie error:', e);
+        return null;
+    }
+};
+
+window.setWishlistCookie = function (json, days) {
+    try {
+        var expires = new Date();
+        expires.setDate(expires.getDate() + (days || 30));
+        var encoded = encodeURIComponent(json);
+
+        document.cookie =
+            'muuqwear_wishlist=' + encoded +
+            '; expires=' + expires.toUTCString() +
+            '; path=/' +
+            '; SameSite=Lax';
+    }
+    catch (e) {
+        console.error('setWishlistCookie error:', e);
+    }
+};
+
+window.clearWishlistCookie = function () {
+    try {
+        document.cookie =
+            'muuqwear_wishlist=' +
+            '; expires=Thu, 01 Jan 1970 00:00:00 UTC' +
+            '; path=/' +
+            '; SameSite=Lax';
+    }
+    catch (e) {
+        console.error('clearWishlistCookie error:', e);
+    }
+};
+
 // Sign in via single POST — no cache key round-trip (avoids json=1 fetch race).
 window.mwSignIn = function (session) {
     return fetch("/auth/sign-in", {

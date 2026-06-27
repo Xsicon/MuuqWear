@@ -1,0 +1,89 @@
+@page "/privacy"
+@rendermode InteractiveServer
+@inject IJSRuntime JS
+
+<PageTitle>Privacy Policy — Muuqwear</PageTitle>
+
+<div class="mw-privacy">
+    <div class="mw-privacy__container">
+        <div class="mw-privacy__layout">
+
+            <!-- Table of Contents -->
+            <aside class="mw-privacy__toc">
+                <h2 class="mw-privacy__toc-title">Contents</h2>
+                <nav class="mw-privacy__toc-nav">
+                    @foreach (var item in Sections)
+                    {
+                        <button type="button"
+                                class="mw-privacy__toc-link"
+                                @onclick="() => ScrollTo(item.Id)">
+                            @item.Title
+                        </button>
+                    }
+                </nav>
+            </aside>
+
+            <!-- Content -->
+            <div class="mw-privacy__content">
+                <p class="mw-privacy__eyebrow">Legal</p>
+                <h1 class="mw-privacy__title">Privacy Policy</h1>
+                <p class="mw-privacy__updated">Last updated: March 1, 2026. Muuqwear International.</p>
+
+                <div class="mw-privacy__sections">
+                    @foreach (var item in Sections)
+                    {
+                        <section id="@item.Id" class="mw-privacy__section">
+                            <h2 class="mw-privacy__section-title">@item.Title</h2>
+                            <div class="mw-privacy__section-body">@item.Body</div>
+                        </section>
+                    }
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@code {
+    private sealed record PolicySection(string Id, string Title, string Body);
+
+    private async Task ScrollTo(string id) =>
+        await JS.InvokeVoidAsync("mwScrollToElement", id);
+
+    private static readonly PolicySection[] Sections =
+    {
+        new("collect", "Information We Collect",
+            "When you visit Muuqwear.com or make a purchase, we collect certain information to provide you with the best possible experience. This includes:\n\n" +
+            "• Account information (name, email, shipping address) provided when you create an account or place an order.\n" +
+            "• Payment information processed securely through Stripe — we never store your full card number on our servers.\n" +
+            "• Device and browsing information (IP address, browser type, pages visited) collected automatically through cookies and similar technologies.\n" +
+            "• Communications you send to our support team.\n\n" +
+            "We collect only what is necessary to fulfill your orders and improve our services."),
+
+        new("use", "How We Use Your Information",
+            "We use the information we collect to:\n\n" +
+            "• Process and fulfill your orders, including shipping and returns.\n" +
+            "• Send you order confirmations, shipping updates, and customer service communications.\n" +
+            "• Improve our website, products, and services based on aggregate usage patterns.\n" +
+            "• Send marketing communications (only with your explicit consent, and you can opt out at any time).\n" +
+            "• Detect and prevent fraud or unauthorized transactions.\n\n" +
+            "We do not sell your personal information to third parties under any circumstances."),
+
+        new("security", "Data Security",
+            "We take the security of your data seriously. All payment processing is handled by Stripe, which maintains PCI DSS Level 1 certification — the highest level of security certification in the payments industry.\n\n" +
+            "Our website uses TLS 1.3 encryption for all data in transit. Customer data at rest is encrypted using AES-256 encryption. We conduct regular security audits and maintain strict access controls for our team."),
+
+        new("rights", "Your Rights",
+            "Depending on your jurisdiction, you may have the following rights regarding your personal data:\n\n" +
+            "• Right to access — request a copy of the data we hold about you.\n" +
+            "• Right to rectification — correct any inaccurate information.\n" +
+            "• Right to erasure — request deletion of your personal data.\n" +
+            "• Right to portability — receive your data in a machine-readable format.\n" +
+            "• Right to withdraw consent — opt out of marketing communications at any time.\n\n" +
+            "To exercise any of these rights, please contact privacy@muuqwear.com. We will respond within 30 days."),
+
+        new("cookies", "Cookies",
+            "We use cookies and similar tracking technologies to provide core site functionality and analyze usage patterns. Essential cookies are required for the site to function (shopping cart, authentication). Analytics cookies help us understand how visitors interact with our site.\n\n" +
+            "You can manage your cookie preferences at any time through your browser settings. Please note that disabling essential cookies may impact your ability to use certain features of our site."),
+    };
+}

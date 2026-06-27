@@ -1,4 +1,4 @@
-﻿@page "/cart"
+@page "/cart"
 @rendermode InteractiveServer
 @using MuuqWear.Application.Services.CartService
 @using MuuqWear.Model.Cart
@@ -8,169 +8,163 @@
 
 <PageTitle>Your Bag — MuuqWear</PageTitle>
 
-<section class="mw-cart-page container py-5">
+<div class="mw-cartp">
+    <div class="mw-cartp__container">
 
-    <!-- HEADER -->
-    <div class="d-flex align-items-center justify-content-between mb-4">
-        <h1 class="mw-cart-page__title">
-            Your Bag
-            @if (CartStateService.Cart.TotalItems > 0)
-            {
-                <span class="mw-cart-count ms-2">
-                    @CartStateService.Cart.TotalItems
-                </span>
-            }
-        </h1>
-        <a href="/shop/apparel" class="mw-link">
-            Continue Shopping
-        </a>
-    </div>
+        <!-- BREADCRUMB -->
+        <div class="mw-cartp__breadcrumb">
+            <a href="/">Home</a>
+            <span>&gt;</span>
+            <span class="mw-cartp__breadcrumb-active">Your Bag</span>
+        </div>
 
-    @if (CartStateService.Cart.IsEmpty)
-    {
-        <!-- EMPTY STATE -->
-        <div class="mw-cart-page__empty text-center py-5">
-            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"
-                 viewBox="0 0 24 24" fill="none" stroke="#d1d5db"
-                 stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path>
-                <path d="M3 6h18"></path>
-                <path d="M16 10a4 4 0 0 1-8 0"></path>
-            </svg>
-            <p class="text-muted mt-3 mb-4">Your bag is empty</p>
-            <a href="/shop/apparel" class="mw-btn-primary">
-                Shop Now
+        <!-- HEADER -->
+        <div class="mw-cartp__head">
+            <h1 class="mw-cartp__title">
+                Your Bag
+                @if (CartStateService.Cart.TotalItems > 0)
+                {
+                    <span class="mw-cartp__count">@CartStateService.Cart.TotalItems</span>
+                }
+            </h1>
+            <a href="/shop/apparel" class="mw-cartp__continue">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m15 18-6-6 6-6" />
+                </svg>
+                Continue Shopping
             </a>
         </div>
-    }
-    else
-    {
-        <div class="row g-5">
 
-            <!-- LEFT: CART ITEMS -->
-            <div class="col-12 col-lg-8">
+        @if (CartStateService.Cart.IsEmpty)
+        {
+            <!-- EMPTY STATE -->
+            <div class="mw-cartp__empty">
+                <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56"
+                     viewBox="0 0 24 24" fill="none" stroke="#A9B7CC"
+                     stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="8" cy="21" r="1" />
+                    <circle cx="19" cy="21" r="1" />
+                    <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
+                </svg>
+                <p class="mw-cartp__empty-text">Your bag is empty</p>
+                <a href="/shop/apparel" class="mw-cartp__shop-btn">Shop Now</a>
+            </div>
+        }
+        else
+        {
+            <div class="mw-cartp__grid">
 
-                @foreach (var item in CartStateService.Cart.Items)
-                {
-                    <div class="mw-cart-page__item d-flex gap-4">
+                <!-- LEFT: CART ITEMS -->
+                <div class="mw-cartp__items">
 
-                        <!-- IMAGE -->
-                        <a href="/productdetail/@item.ProductId"
-                           class="mw-cart-page__img">
-                            <img src="@item.ProductImageUrl"
-                                 alt="@item.ProductName"
-                                 loading="lazy" />
-                        </a>
+                    @foreach (var item in CartStateService.Cart.Items)
+                    {
+                        <div class="mw-cartp__item">
 
-                        <!-- INFO -->
-                        <div class="flex-grow-1">
+                            <!-- IMAGE -->
+                            <a href="/productdetail/@item.ProductId" class="mw-cartp__img">
+                                <img src="@item.ProductImageUrl" alt="@item.ProductName" loading="lazy" />
+                            </a>
 
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <a href="/productdetail/@item.ProductId"
-                                       class="mw-cart-page__name text-decoration-none">
-                                        @item.ProductName
-                                    </a>
-                                    <p class="mw-cart-meta mt-1">Size: @item.Size</p>
-                                    <p class="mw-cart-meta">
-                                        $@item.ProductPrice.ToString("F2") each
-                                    </p>
-                                </div>
-                                <span class="mw-cart-page__price">
-                                    $@item.ItemTotal.ToString("F2")
-                                </span>
-                            </div>
+                            <!-- INFO -->
+                            <div class="mw-cartp__info">
 
-                            <div class="d-flex align-items-center justify-content-between mt-3">
-
-                                <!-- QTY -->
-                                <div class="mw-qty">
-                                    <button @onclick="() => DecreaseQty(item)"
-                                            disabled="@(item.Quantity <= 1)">
-                                        -
-                                    </button>
-                                    <span>@item.Quantity</span>
-                                    <button @onclick="() => IncreaseQty(item)">
-                                        +
-                                    </button>
+                                <div class="mw-cartp__info-top">
+                                    <div>
+                                        <a href="/productdetail/@item.ProductId" class="mw-cartp__name">
+                                            @item.ProductName
+                                        </a>
+                                        <p class="mw-cartp__meta">Size: @item.Size</p>
+                                        @if (!string.IsNullOrEmpty(item.Color))
+                                        {
+                                            <p class="mw-cartp__meta">Color: @item.Color</p>
+                                        }
+                                        <p class="mw-cartp__meta">$@item.ProductPrice.ToString("F2") each</p>
+                                    </div>
+                                    <span class="mw-cartp__price">$@item.ItemTotal.ToString("F2")</span>
                                 </div>
 
-                                <!-- REMOVE -->
-                                <button class="mw-cart-del-btn d-flex align-items-center gap-1"
-                                        @onclick="() => RemoveItem(item.Id)">
-                                    <svg xmlns="http://www.w3.org/2000/svg"
-                                         width="12" height="12" viewBox="0 0 24 24"
-                                         fill="none" stroke="currentColor"
-                                         stroke-width="2" stroke-linecap="round"
-                                         stroke-linejoin="round">
-                                        <path d="M3 6h18"></path>
-                                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
-                                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
-                                        <line x1="10" x2="10" y1="11" y2="17"></line>
-                                        <line x1="14" x2="14" y1="11" y2="17"></line>
-                                    </svg>
-                                    Remove
-                                </button>
+                                <div class="mw-cartp__controls">
+
+                                    <!-- QTY -->
+                                    <div class="mw-cartp__qty">
+                                        <button @onclick="() => DecreaseQty(item)" disabled="@(item.Quantity <= 1)" aria-label="Decrease quantity">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /></svg>
+                                        </button>
+                                        <span>@item.Quantity</span>
+                                        <button @onclick="() => IncreaseQty(item)" aria-label="Increase quantity">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /><path d="M12 5v14" /></svg>
+                                        </button>
+                                    </div>
+
+                                    <!-- REMOVE -->
+                                    <button class="mw-cartp__remove" @onclick="() => RemoveItem(item.Id)">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M3 6h18"></path>
+                                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                                            <line x1="10" x2="10" y1="11" y2="17"></line>
+                                            <line x1="14" x2="14" y1="11" y2="17"></line>
+                                        </svg>
+                                        Remove
+                                    </button>
+
+                                </div>
 
                             </div>
 
                         </div>
-
-                    </div>
-
-                    <hr class="mw-cart-page__divider" />
-                }
-
-            </div>
-
-            <!-- RIGHT: ORDER SUMMARY -->
-            <div class="col-12 col-lg-4">
-                <div class="mw-cart-page__summary">
-
-                    <h5 class="mw-cart-page__summary-title mb-4">
-                        Order Summary
-                    </h5>
-
-                    <div class="d-flex justify-content-between mb-3">
-                        <span class="text-muted">Subtotal</span>
-                        <span>$@CartStateService.Cart.Subtotal.ToString("F2")</span>
-                    </div>
-
-                    <div class="d-flex justify-content-between mb-3">
-                        <span class="text-muted">Shipping</span>
-                        <span class="text-success">Free</span>
-                    </div>
-
-                    <div class="d-flex justify-content-between mb-3">
-                        <span class="text-muted">Tax (10%)</span>
-                        <span>$@CartStateService.Cart.Tax.ToString("F2")</span>
-                    </div>
-
-                    <hr />
-
-                    <div class="d-flex justify-content-between mb-4">
-                        <span class="fw-bold fs-5">Total</span>
-                        <span class="fw-bold fs-5">
-                            $@CartStateService.Cart.Total.ToString("F2")
-                        </span>
-                    </div>
-
-                    <a href="/checkout"
-                       class="mw-checkout-btn w-100 d-block text-center text-decoration-none">
-                        Checkout Securely
-                    </a>
-
-                    <p class="text-center text-muted small mt-3">
-                        🔒 Secure checkout
-                    </p>
+                    }
 
                 </div>
+
+                <!-- RIGHT: ORDER SUMMARY -->
+                <div class="mw-cartp__summary-wrap">
+                    <div class="mw-cartp__summary">
+
+                        <h2 class="mw-cartp__summary-title">Order Summary</h2>
+
+                        <div class="mw-cartp__row">
+                            <span>Subtotal</span>
+                            <span>$@CartStateService.Cart.Subtotal.ToString("F2")</span>
+                        </div>
+
+                        <div class="mw-cartp__row">
+                            <span>Shipping</span>
+                            <span class="mw-cartp__free">Free</span>
+                        </div>
+
+                        <div class="mw-cartp__row">
+                            <span>Tax (10%)</span>
+                            <span>$@CartStateService.Cart.Tax.ToString("F2")</span>
+                        </div>
+
+                        <div class="mw-cartp__divider"></div>
+
+                        <div class="mw-cartp__row mw-cartp__row--total">
+                            <span>Total</span>
+                            <span>$@CartStateService.Cart.Total.ToString("F2")</span>
+                        </div>
+
+                        <a href="/checkout" class="mw-cartp__checkout">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                            </svg>
+                            Checkout Securely
+                        </a>
+
+                        <p class="mw-cartp__secure">Secure checkout · SSL encrypted</p>
+
+                    </div>
+                </div>
+
             </div>
+        }
 
-        </div>
-    }
-
-</section>
+    </div>
+</div>
 
 @code {
 

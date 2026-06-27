@@ -4,7 +4,9 @@
 @inject IProductService ProductService
 @inject NavigationManager NavigationManager
 @inject CartStateService CartStateService
+@inject WishlistStateService WishlistStateService
 @using MuuqWear.Application.Services.CartService
+@using MuuqWear.Application.Services.WishlistService
 @using MuuqWear.Application.Services.ProductService
 @using MuuqWear.Model.Cart
 @using MuuqWear.Model.Products
@@ -26,95 +28,98 @@ else if (product == null)
 }
 else
 {
-    <section class="mw-product container py-4">
+    <div class="mw-pd">
+        <div class="mw-pd__container">
 
-        <!-- BREADCRUMB -->
-        <div class="mw-breadcrumb mb-3">
-            <a href="/">Home</a>
-            <span>›</span>
-            <a href="/shop">Shop</a>
-            <span>›</span>
-            <span class="active">@product.Name</span>
-        </div>
+            <!-- BREADCRUMB -->
+            <div class="mw-pd__breadcrumb">
+                <a href="/">Home</a>
+                <span>&gt;</span>
+                <a href="/shop">Apparel</a>
+                <span>&gt;</span>
+                <span class="mw-pd__breadcrumb-active">@product.Name</span>
+            </div>
 
-        <!-- MAIN -->
-        <div class="mw-product-card row g-4 mt-0">
+            <!-- PRODUCT SECTION -->
+            <div class="mw-pd__product">
 
-            <!-- LEFT: IMAGES -->
-            <div class="col-12 col-lg-7">
+                <!-- IMAGES -->
+                <div class="mw-pd__images">
+                    <div class="mw-pd__main-img">
+                        @if (product.AllImageUrls.Any())
+                        {
+                            @* Stack every image and toggle visibility via CSS instead of
+                               swapping the src on one element (which aborts in-flight loads). *@
+                            @foreach (var img in product.AllImageUrls)
+                            {
+                                <img src="@img" alt="@product.Name"
+                                     class="mw-pd__main-stack @(SelectedImage == img ? "is-visible" : "")" />
+                            }
+                        }
+                        else
+                        {
+                            <div class="mw-pd__img-placeholder">
+                                <span>No image available</span>
+                            </div>
+                        }
+                    </div>
 
-                <!-- MAIN IMAGE -->
-                <div class="mw-product-img mb-2">
-                    @if (!string.IsNullOrEmpty(SelectedImage))
+                    @if (ThumbnailImages.Any())
                     {
-                        <img src="@SelectedImage" alt="@product.Name" />
-                    }
-                    else
-                    {
-                        <div class="mw-product-img-placeholder">
-                            <span>No image available</span>
+                        <div class="mw-pd__thumbs">
+                            @for (var i = 0; i < ThumbnailImages.Count; i++)
+                            {
+                                var index = i;
+                                var img = ThumbnailImages[i];
+                                <button class="mw-pd__thumb @(selectedThumbIndex == index ? "is-active" : "")"
+                                        @onclick="() => SelectThumb(index)">
+                                    <img src="@img" alt="@product.Name" />
+                                </button>
+                            }
                         </div>
                     }
                 </div>
 
-                <!-- THUMBNAILS -->
-                @if (product.AllImageUrls.Count > 1)
-                {
-                    <div class="mw-thumbs">
-                        @foreach (var img in product.AllImageUrls)
-                        {
-                            <button class="mw-thumb @(SelectedImage == img ? "active" : "")"
-                                    @onclick="() => SelectedImage = img">
-                                <img src="@img" alt="@product.Name" />
-                            </button>
-                        }
+                <!-- DETAILS -->
+                <div class="mw-pd__details">
+
+                    <p class="mw-pd__eyebrow">@(string.IsNullOrEmpty(product.Badge) ? "Premium Essentials" : product.Badge)</p>
+
+                    <div class="mw-pd__title-row">
+                        <h1 class="mw-pd__title">@product.Name</h1>
+                        <WishlistButtonComponent ProductId="@product.Id"
+                                                 ProductName="@product.Name"
+                                                 ProductImageUrl="@(product.AllImageUrls.FirstOrDefault() ?? product.ImageUrl)"
+                                                 ProductPrice="@product.Price"
+                                                 CssClass="mw-wishlist-btn--inline"
+                                                 Size="20" />
                     </div>
-                }
 
-            </div>
+                    <p class="mw-pd__price">$@product.Price.ToString("F2")</p>
 
-            <!-- RIGHT: DETAILS -->
-            <div class="col-12 col-lg-5">
-                <div class="mw-product-info">
-
-                    <!-- BADGE -->
-                    @if (!string.IsNullOrEmpty(product.Badge))
-                    {
-                        <span class="mw-badge mb-2">@product.Badge</span>
-                    }
-
-                    <!-- NAME -->
-                    <h1 class="mw-product-title">@product.Name</h1>
-
-                    <!-- PRICE -->
-                    <p class="mw-product-price">$@product.Price.ToString("F2")</p>
-
-                    <!-- STOCK STATUS -->
-                    <p class="mw-stock @(product.Stock > 0 ? "in" : "out") mb-3">
+                    <p class="mw-pd__stock @(product.Stock > 0 ? "in" : "out")">
                         @(product.Stock > 0 ? $"In Stock ({product.Stock} available)" : "Out of Stock")
                     </p>
 
-                    <!-- DESCRIPTION -->
                     @if (!string.IsNullOrEmpty(product.Description))
                     {
-                        <div class="mb-3">
-                            <h6 class="mw-label">Description</h6>
-                            <p class="mw-desc">@product.Description</p>
+                        <div class="mw-pd__block">
+                            <h3 class="mw-pd__label">Description</h3>
+                            <p class="mw-pd__desc">@product.Description</p>
                         </div>
                     }
 
-                    <!-- SIZE -->
                     @if (product.SizeList.Any())
                     {
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between">
-                                <h6 class="mw-label">Select Size</h6>
-                                <a href="/size-guide" class="mw-link">Size Guide</a>
+                        <div class="mw-pd__block">
+                            <div class="mw-pd__block-head">
+                                <h3 class="mw-pd__label">Select Size</h3>
+                                <a href="/size-guide" class="mw-pd__sizeguide">Size Guide</a>
                             </div>
-                            <div class="d-flex gap-2 flex-wrap">
+                            <div class="mw-pd__sizes">
                                 @foreach (var size in product.SizeList)
                                 {
-                                    <button class="mw-size @(SelectedSize == size ? "active" : "")"
+                                    <button class="mw-pd__size @(SelectedSize == size ? "is-active" : "")"
                                             @onclick="() => SelectedSize = size">
                                         @size
                                     </button>
@@ -123,39 +128,31 @@ else
                         </div>
                     }
 
-                    <!--  ADD COLOR SELECTOR -->
                     @if (product.ColorOptions.Any())
                     {
-                        <div class="mb-3">
-                            <h6 class="mw-label">Select Color</h6>
-                            <div class="d-flex gap-2 flex-wrap">
+                        <div class="mw-pd__block">
+                            <h3 class="mw-pd__label">Color: <span class="mw-pd__color-name">@SelectedColor</span></h3>
+                            <div class="mw-pd__colors">
                                 @foreach (var color in product.ColorOptions)
                                 {
-                                    <button class="mw-color-btn @(SelectedColor == color ? "active" : "")"
-                                            style="background-color: @color"
-                                            @onclick="() => SelectedColor = color">
-                                        @if (SelectedColor == color)
-                                        {
-                                            <span class="mw-color-check">✓</span>
-                                        }
-                                    </button>
+                                    <button class="mw-pd__color @(SelectedColor == color ? "is-active" : "")"
+                                            style="background-color:@color"
+                                            aria-label="@color"
+                                            @onclick="() => SelectedColor = color"></button>
                                 }
                             </div>
                         </div>
                     }
 
-
-                    <!-- GENDER -->
                     @if (!string.IsNullOrEmpty(product.Gender))
                     {
-                        <div class="mb-3">
-                            <h6 class="mw-label">Gender</h6>
-                            <p class="mw-desc">@product.Gender</p>
+                        <div class="mw-pd__block">
+                            <h3 class="mw-pd__label">Gender</h3>
+                            <p class="mw-pd__desc">@product.Gender</p>
                         </div>
                     }
 
-                    <!-- ADD TO CART -->
-                    <button class="mw-btn-primary w-100 mb-2"
+                    <button class="mw-pd__add"
                             disabled="@(product.Stock == 0 || isAddingToCart)"
                             @onclick="HandleAddToCart">
                         @if (isAddingToCart)
@@ -165,57 +162,86 @@ else
                         }
                         else
                         {
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="8" cy="21" r="1" />
+                                <circle cx="19" cy="21" r="1" />
+                                <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
+                            </svg>
                             <span>@(product.Stock > 0 ? "Add to Bag" : "Out of Stock")</span>
                         }
                     </button>
 
-                    @* message shown when no size selected  *@
                     @if (!string.IsNullOrEmpty(addToCartMessage))
                     {
-                        <div class="mt-2 @addToCartMessageCss small">
+                        <div class="mw-pd__msg @addToCartMessageCss">
                             @addToCartMessage
                         </div>
                     }
 
-                    <!-- BENEFITS -->
-                    <div class="mw-benefits">
-                        <span>🚚 Free Shipping</span>
-                        <span>↩ 30-Day Returns</span>
+                    <div class="mw-pd__benefits">
+                        <span>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2" />
+                                <path d="M15 18H9" />
+                                <path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14" />
+                                <circle cx="17" cy="18" r="2" />
+                                <circle cx="7" cy="18" r="2" />
+                            </svg>
+                            Free Shipping
+                        </span>
+                        <span>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                                <path d="M3 3v5h5" />
+                            </svg>
+                            30-Day Returns
+                        </span>
                     </div>
 
                 </div>
             </div>
 
-        </div>
-
-    </section>
-
-    <!-- RELATED PRODUCTS -->
-    @if (RelatedProducts.Any())
-    {
-        <section class="mw-related container mt-5">
-
-            <div class="d-flex justify-content-between align-items-end mb-4">
-                <h2 class="mw-related-title">Complete the Look</h2>
-            </div>
-
-            <div class="row g-4">
-                @foreach (var item in RelatedProducts)
-                {
-                    <div class="col-6 col-md-4 col-lg-3">
-                        <a href="/productdetail/@item.Id" class="mw-related-card">
-                            <div class="mw-related-img">
-                                <img src="@item.ImageUrl" alt="@item.Name" />
-                            </div>
-                            <h6>@item.Name</h6>
-                            <p>$@item.Price.ToString("F2")</p>
-                        </a>
+            <!-- COMPLETE THE LOOK -->
+            @if (RelatedProducts.Any())
+            {
+                <div class="mw-pd__ctl">
+                    <div class="mw-pd__ctl-head">
+                        <h2 class="mw-pd__ctl-title">Complete the Look</h2>
+                        <div class="mw-pd__ctl-nav">
+                            <button class="mw-pd__ctl-btn" @onclick="ScrollCtlLeft" aria-label="Previous">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="m15 18-6-6 6-6" />
+                                </svg>
+                            </button>
+                            <button class="mw-pd__ctl-btn" @onclick="ScrollCtlRight" aria-label="Next">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="m9 18 6-6-6-6" />
+                                </svg>
+                            </button>
+                        </div>
                     </div>
-                }
-            </div>
 
-        </section>
-    }
+                    <div class="mw-pd__ctl-track" @ref="completeLookRef">
+                        <div class="mw-pd__ctl-row">
+                            @foreach (var item in RelatedProducts)
+                            {
+                                <div class="mw-ctl-item">
+                                    <a href="/productdetail/@item.Id" class="mw-pd__ctl-card">
+                                        <div class="mw-pd__ctl-img">
+                                            <img src="@item.ImageUrl" alt="@item.Name" loading="lazy" />
+                                        </div>
+                                        <h3 class="mw-pd__ctl-name">@item.Name</h3>
+                                        <p class="mw-pd__ctl-price">$@item.Price.ToString("F2")</p>
+                                    </a>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+
+        </div>
+    </div>
 }
 
 @code {
@@ -225,6 +251,7 @@ else
 
     private ProductDetailModel? product;
     private string SelectedImage = "";
+    private int selectedThumbIndex;
     private string SelectedSize = "";
     private string SelectedColor = "";
     private List<ProductModel> RelatedProducts = new();
@@ -234,6 +261,35 @@ else
     private bool isAddingToCart = false;
     private string addToCartMessage = string.Empty;
     private string addToCartMessageCss = string.Empty;
+
+    private ElementReference completeLookRef;
+    private bool _carouselInited;
+    private const string CtlItemSelector = ".mw-ctl-item";
+    private const int MinThumbnailCount = 3;
+
+    private List<string> ThumbnailImages
+    {
+        get
+        {
+            if (product == null)
+                return new();
+
+            var urls = product.AllImageUrls;
+            if (urls.Count == 0)
+                return new();
+
+            if (urls.Count > 1)
+                return urls;
+
+            return Enumerable.Repeat(urls[0], MinThumbnailCount).ToList();
+        }
+    }
+
+    private void SelectThumb(int index)
+    {
+        selectedThumbIndex = index;
+        SelectedImage = ThumbnailImages[index];
+    }
 
     protected override async Task OnParametersSetAsync()
     {
@@ -249,12 +305,28 @@ else
         _loadedProductId = productId;
         isLoading = true;
         RelatedProducts = new();
+        _carouselInited = false;
 
         await LoadProduct(productId);
         isLoading = false;
 
         _ = LoadRelatedAsync(productId);
     }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_carouselInited && RelatedProducts.Any())
+        {
+            _carouselInited = true;
+            await JS.InvokeVoidAsync("mwInitAccessoryCarousel", completeLookRef, CtlItemSelector);
+        }
+    }
+
+    private async Task ScrollCtlLeft() =>
+        await JS.InvokeVoidAsync("mwScrollLeft", completeLookRef, CtlItemSelector);
+
+    private async Task ScrollCtlRight() =>
+        await JS.InvokeVoidAsync("mwScrollRight", completeLookRef, CtlItemSelector);
 
     private async Task LoadProduct(Guid productId)
     {
@@ -297,6 +369,7 @@ else
         };
 
         SelectedImage = product.AllImageUrls.FirstOrDefault() ?? "";
+        selectedThumbIndex = 0;
         SelectedSize = product.SizeList.FirstOrDefault() ?? "";
         SelectedColor = product.ColorOptions.FirstOrDefault() ?? "";
     }

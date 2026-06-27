@@ -1,0 +1,55 @@
+@using MuuqWear.Application.Services.WishlistService
+@using MuuqWear.Model.Wishlist
+@inject WishlistStateService WishlistStateService
+@implements IDisposable
+
+<button type="button"
+        class="mw-wishlist-btn @(IsActive ? "is-active" : "") @CssClass"
+        aria-label="@(IsActive ? "Remove from wishlist" : "Add to wishlist")"
+        aria-pressed="@IsActive"
+        @onclick="HandleClick"
+        @onclick:stopPropagation="true"
+        @onmousedown:stopPropagation="true"
+        @ontouchstart:stopPropagation="true"
+        @onclick:preventDefault="true">
+    <svg width="@Size" height="@Size" viewBox="0 0 24 24"
+         fill="@(IsActive ? "currentColor" : "none")"
+         stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+    </svg>
+</button>
+
+@code {
+    [Parameter, EditorRequired] public Guid ProductId { get; set; }
+    [Parameter] public string? ProductName { get; set; }
+    [Parameter] public string? ProductImageUrl { get; set; }
+    [Parameter] public decimal ProductPrice { get; set; }
+    [Parameter] public string CssClass { get; set; } = "";
+    [Parameter] public int Size { get; set; } = 18;
+
+    private bool IsActive => WishlistStateService.IsWishlisted(ProductId);
+
+    protected override void OnInitialized()
+    {
+        WishlistStateService.OnWishlistChanged += OnWishlistChanged;
+    }
+
+    private void OnWishlistChanged() => InvokeAsync(StateHasChanged);
+
+    private async Task HandleClick()
+    {
+        await WishlistStateService.ToggleAsync(new WishlistItemModel
+        {
+            ProductId = ProductId,
+            ProductName = ProductName,
+            ProductImageUrl = ProductImageUrl,
+            ProductPrice = ProductPrice
+        });
+    }
+
+    public void Dispose()
+    {
+        WishlistStateService.OnWishlistChanged -= OnWishlistChanged;
+    }
+}

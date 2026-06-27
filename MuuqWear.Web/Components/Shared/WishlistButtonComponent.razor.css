@@ -1,0 +1,46 @@
+.mw-wishlist-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: 1px solid rgba(169, 183, 204, 0.5);
+    background: rgba(255, 255, 255, 0.92);
+    color: #4A5C7A;
+    cursor: pointer;
+    transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+    padding: 0;
+}
+
+    .mw-wishlist-btn:hover {
+        color: #1E2A47;
+        border-color: #1E2A47;
+        transform: scale(1.05);
+    }
+
+    .mw-wishlist-btn.is-active {
+        color: #C44545;
+        border-color: #C44545;
+        background: #fff;
+    }
+
+.mw-wishlist-btn--overlay {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 5;
+    pointer-events: auto;
+}
+
+.acc-card__wishlist {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 5;
+}
+
+.mw-wishlist-btn--inline {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+}

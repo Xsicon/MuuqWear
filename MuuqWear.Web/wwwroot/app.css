@@ -1,4 +1,4 @@
-﻿/*html, body {
+/*html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }*/
 
@@ -10,6 +10,19 @@
    NAVBAR (FIGMA STYLE)
 ========================= */
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,800;1,400;1,700;1,800&display=swap');
+
+/* Design tokens — global so scoped components can resolve var(--mw-*).
+   (Blazor scoped CSS does not apply :host, so these must live in :root.) */
+:root {
+    --mw-navy: #1E2A47;
+    --mw-navy-dark: #0B1A33;
+    --mw-slate: #4A5C7A;
+    --mw-border: rgba(169, 183, 204, 0.4);
+    --mw-border-light: rgba(169, 183, 204, 0.2);
+    --mw-hover: #E6ECF5;
+    --mw-danger: #C44545;
+    --mw-muted: #A9B7CC;
+}
 
 
 body.no-scroll {

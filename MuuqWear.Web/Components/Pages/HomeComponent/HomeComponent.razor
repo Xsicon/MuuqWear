@@ -5,6 +5,7 @@
 @using MuuqWear.Application.Services.JobPostingService
 @using MuuqWear.Application.Services.ProductService
 @using MuuqWear.Model.Products
+@using MuuqWear.Web.Components.Shared
 @inject IProductService ProductService
 @inject ICategoryService CategoryService
 
@@ -137,14 +138,24 @@
                     @foreach (var (item, idx) in NewArrivals.Select((p, i) => (p, i)))
                     {
                         <div class="swiper-slide">
-                            <a href="/productdetail/@item.Id" class="mw-product-card">
+                            <div class="mw-product-card">
                                 <div class="mw-product-card__image">
-                                    <img src="@item.ImageUrl" alt="@item.Name" loading="@(idx < 4 ? null : "lazy")" />
-                                    <div class="mw-product-card__badge">NEW</div>
+                                    <a href="/productdetail/@item.Id" class="mw-product-card__media-link">
+                                        <img src="@item.ImageUrl" alt="@item.Name" loading="@(idx < 4 ? null : "lazy")" />
+                                        <div class="mw-product-card__badge">NEW</div>
+                                    </a>
+                                    <WishlistButtonComponent ProductId="@item.Id"
+                                                             ProductName="@item.Name"
+                                                             ProductImageUrl="@item.ImageUrl"
+                                                             ProductPrice="@item.Price"
+                                                             CssClass="mw-wishlist-btn--overlay"
+                                                             Size="16" />
                                 </div>
-                                <h3 class="mw-product-card__name">@item.Name</h3>
-                                <p class="mw-product-card__price">$@item.Price.ToString("F2")</p>
-                            </a>
+                                <a href="/productdetail/@item.Id" class="mw-product-card__body">
+                                    <h3 class="mw-product-card__name">@item.Name</h3>
+                                    <p class="mw-product-card__price">$@item.Price.ToString("F2")</p>
+                                </a>
+                            </div>
                         </div>
                     }
                 </div>
@@ -284,17 +295,27 @@
                     @foreach (var (item, idx) in BestSellerProducts.Select((p, i) => (p, i)))
                     {
                         <div class="swiper-slide">
-                            <a href="/productdetail/@item.Id" class="mw-product-card">
+                            <div class="mw-product-card">
                                 <div class="mw-product-card__image">
-                                    <img src="@item.ImageUrl" alt="@item.Name" loading="@(idx < 4 ? null : "lazy")" />
-                                    @if (!string.IsNullOrEmpty(item.Badge))
-                                    {
-                                        <div class="mw-product-card__badge">@item.Badge</div>
-                                    }
+                                    <a href="/productdetail/@item.Id" class="mw-product-card__media-link">
+                                        <img src="@item.ImageUrl" alt="@item.Name" loading="@(idx < 4 ? null : "lazy")" />
+                                        @if (!string.IsNullOrEmpty(item.Badge))
+                                        {
+                                            <div class="mw-product-card__badge">@item.Badge</div>
+                                        }
+                                    </a>
+                                    <WishlistButtonComponent ProductId="@item.Id"
+                                                             ProductName="@item.Name"
+                                                             ProductImageUrl="@item.ImageUrl"
+                                                             ProductPrice="@item.Price"
+                                                             CssClass="mw-wishlist-btn--overlay"
+                                                             Size="16" />
                                 </div>
-                                <h3 class="mw-product-card__name">@item.Name</h3>
-                                <p class="mw-product-card__price">$@item.Price.ToString("F2")</p>
-                            </a>
+                                <a href="/productdetail/@item.Id" class="mw-product-card__body">
+                                    <h3 class="mw-product-card__name">@item.Name</h3>
+                                    <p class="mw-product-card__price">$@item.Price.ToString("F2")</p>
+                                </a>
+                            </div>
                         </div>
                     }
                 </div>

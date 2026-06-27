@@ -1,6 +1,7 @@
 ﻿@page "/shop/accessories"
 @rendermode InteractiveServer
 @using MuuqWear.Model.Products
+@using MuuqWear.Web.Components.Shared
 
 <PageTitle>Accessories</PageTitle>
 
@@ -316,6 +317,16 @@
                     {
                         <span class="acc-card__badge @GetBadgeClass(item.Badge)">@item.Badge</span>
                     }
+                    <div class="acc-card__wishlist"
+                         @onclick:stopPropagation="true"
+                         @onmousedown:stopPropagation="true"
+                         @ontouchstart:stopPropagation="true">
+                        <WishlistButtonComponent ProductId="@item.Id"
+                                                 ProductName="@item.Name"
+                                                 ProductImageUrl="@item.ImageUrl"
+                                                 ProductPrice="@item.Price"
+                                                 Size="16" />
+                    </div>
                     <button type="button"
                             class="acc-card__quick-add"
                             aria-label="@($"Quick add {item.Name}")"

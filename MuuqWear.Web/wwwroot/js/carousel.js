@@ -1,4 +1,4 @@
-﻿function mwGetCarouselStep(el, itemSelector) {
+function mwGetCarouselStep(el, itemSelector) {
     const card = el.querySelector(itemSelector);
     if (!card) return null;
 
@@ -375,6 +375,14 @@ window.enableDragScroll = (element) => {
     }, true);
 
     // Touch: use native momentum scrolling (custom touch handlers cause mobile jank).
+};
+
+// Smooth-scroll to an element by id (used by static content pages)
+window.mwScrollToElement = (id) => {
+    const el = document.getElementById(id);
+    if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
 };
 
 // Journal overlay helpers (avoid eval usage)
