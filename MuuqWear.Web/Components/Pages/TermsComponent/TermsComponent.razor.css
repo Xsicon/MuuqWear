@@ -1,0 +1,136 @@
+.mw-terms {
+    font-family: 'Manrope', sans-serif;
+    background: #fff;
+}
+
+.mw-terms__container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 34px 16px;
+}
+
+@media (min-width: 768px) {
+    .mw-terms__container {
+        padding: 55px 34px;
+    }
+}
+
+.mw-terms__layout {
+    display: flex;
+    flex-direction: column;
+    gap: 34px;
+}
+
+@media (min-width: 768px) {
+    .mw-terms__layout {
+        display: grid;
+        grid-template-columns: 200px minmax(0, 700px);
+        grid-template-rows: auto 1fr;
+        column-gap: 55px;
+        row-gap: 55px;
+    }
+
+    .mw-terms__header {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .mw-terms__toc {
+        grid-column: 1;
+        grid-row: 1 / -1;
+        position: sticky;
+        top: 34px;
+        align-self: start;
+    }
+
+    .mw-terms__sections {
+        grid-column: 2;
+        grid-row: 2;
+    }
+}
+
+/* Table of contents */
+.mw-terms__toc {
+    flex-shrink: 0;
+}
+
+.mw-terms__toc-title {
+    color: #1E2A47;
+    font-size: 12px;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin: 0 0 21px;
+}
+
+.mw-terms__toc-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 13px;
+}
+
+.mw-terms__toc-link {
+    display: block;
+    text-align: left;
+    border: none;
+    background: none;
+    padding: 0;
+    cursor: pointer;
+    color: #4A5C7A;
+    font-family: inherit;
+    font-size: 14px;
+    transition: color 0.2s ease;
+}
+
+.mw-terms__toc-link:hover {
+    color: #1E2A47;
+}
+
+.mw-terms__eyebrow {
+    color: #4A5C7A;
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin: 0 0 8px;
+}
+
+.mw-terms__title {
+    color: #1E2A47;
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    margin: 0 0 13px;
+}
+
+.mw-terms__updated {
+    color: #4A5C7A;
+    font-size: 14px;
+    margin: 0;
+}
+
+.mw-terms__sections {
+    display: flex;
+    flex-direction: column;
+    gap: 55px;
+}
+
+.mw-terms__section {
+    scroll-margin-top: 24px;
+}
+
+.mw-terms__section-title {
+    color: #1E2A47;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    margin: 0 0 21px;
+}
+
+.mw-terms__section-body {
+    color: #4A5C7A;
+    font-size: 15px;
+    line-height: 28px;
+    font-family: 'Georgia', serif;
+    white-space: pre-line;
+}

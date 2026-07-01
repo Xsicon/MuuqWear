@@ -19,13 +19,24 @@ public class CategoryService : ICategoryService
 
     public async Task<Response<List<CategoryModel>>> GetAll()
     {
-        var result = await _http
-            .GetFromJsonAsync<Response<List<CategoryModel>>>("api/Category/all");
-        return result ?? new Response<List<CategoryModel>>
+        try
         {
-            Success = false,
-            Message = "Empty response from server"
-        };
+            var result = await _http
+                .GetFromJsonAsync<Response<List<CategoryModel>>>("api/Category/all");
+            return result ?? new Response<List<CategoryModel>>
+            {
+                Success = false,
+                Message = "Empty response from server"
+            };
+        }
+        catch (Exception ex)
+        {
+            return new Response<List<CategoryModel>>
+            {
+                Success = false,
+                Message = "Error: " + ex.Message
+            };
+        }
     }
 
     public async Task<Response<CategoryModel>> Add(AddCategoryModel request)

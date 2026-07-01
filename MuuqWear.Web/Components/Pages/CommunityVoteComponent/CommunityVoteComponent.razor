@@ -1,4 +1,4 @@
-﻿@page "/community"
+@page "/community"
 @rendermode InteractiveServer
 @inject IJSRuntime JS
 @inject IVoteService VoteService
@@ -13,299 +13,361 @@
 
 <PageTitle>Community Vote</PageTitle>
 
-<!-- ─── VOTE HERO ────────────────────────────────────────── -->
-<section class="mw-vote">
-    <div class="mw-vote__container">
-        <div class="mw-vote__content">
-            <h1 class="mw-vote__title">You Vote. We Make.</h1>
-            <p class="mw-vote__description">
-                Browse upcoming designs, vote for your favorites, pick the
-                winning colors, and be the first to secure your pre-order.
-            </p>
-        </div>
-        <div class="mw-vote__image-wrapper">
-            <img src="https://images.unsplash.com/photo-1762232975039-7b36432bcac6?w=500&h=400&fit=crop"
-                 alt="Vote hero"
-                 class="mw-vote__image"
-                 loading="lazy" />
-        </div>
-    </div>
-</section>
+<div class="mw-vote-page">
 
-<section class="mw-how">
-    <div class="mw-how__container">
-        <h2 class="mw-how__title">How it Works</h2>
-        <div class="mw-how__steps">
-            <div class="mw-how__step">
-                <div class="mw-how__step-number">1</div>
-                <h3 class="mw-how__step-title">Vote for Designs</h3>
-                <p class="mw-how__step-desc">
-                    Browse our latest concepts and vote for the styles
-                    and colors you want to see in production.
-                </p>
-            </div>
-            <div class="mw-how__step">
-                <div class="mw-how__step-number">2</div>
-                <h3 class="mw-how__step-title">We Make the Winners</h3>
-                <p class="mw-how__step-desc">
-                    The most popular designs move into production using
-                    our sustainable manufacturing process.
-                </p>
-            </div>
-            <div class="mw-how__step">
-                <div class="mw-how__step-number">3</div>
-                <h3 class="mw-how__step-title">Secure Your Pre-Order</h3>
-                <p class="mw-how__step-desc">
-                    Be the first to own the winning looks by securing
-                    your pre-order at a special community price.
-                </p>
+    <section class="mw-vote">
+        <div class="mw-vote-page__container">
+            <div class="mw-vote__container">
+                <div class="mw-vote__content">
+                    <h1 class="mw-vote__title">You Vote. We Make.</h1>
+                    <p class="mw-vote__description">
+                        Browse upcoming designs, vote for your favorites, pick the
+                        winning colors, and be the first to secure your pre-order.
+                    </p>
+                </div>
+                <div class="mw-vote__image-wrapper">
+                    <img src="https://images.unsplash.com/photo-1762232975039-7b36432bcac6?w=500&h=400&fit=crop"
+                         alt="Vote hero"
+                         class="mw-vote__image"
+                         loading="lazy" />
+                </div>
             </div>
         </div>
+    </section>
 
-        <div class="mw-how__stats">
-            <div class="mw-how__stat">
-                <svg class="mw-how__icon" viewBox="0 0 24 24">
-                    <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"></path>
-                    <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-                <span class="mw-how__stat-strong">
-                    @(stats?.TotalVotesThisWeek.ToString("N0") ?? "—")
-                </span>
-                <span class="mw-how__stat-text">votes cast this week</span>
+    <section class="mw-how">
+        <div class="mw-vote-page__container">
+            <h2 class="mw-how__title">How it Works</h2>
+            <div class="mw-how__steps">
+                <div class="mw-how__step">
+                    <div class="mw-how__step-number">1</div>
+                    <h3 class="mw-how__step-title">Vote for Designs</h3>
+                    <p class="mw-how__step-desc">
+                        Browse our latest concepts and vote for the styles
+                        and colors you want to see in production.
+                    </p>
+                </div>
+                <div class="mw-how__step">
+                    <div class="mw-how__step-number">2</div>
+                    <h3 class="mw-how__step-title">We Make the Winners</h3>
+                    <p class="mw-how__step-desc">
+                        The most popular designs move into production using
+                        our sustainable manufacturing process.
+                    </p>
+                </div>
+                <div class="mw-how__step">
+                    <div class="mw-how__step-number">3</div>
+                    <h3 class="mw-how__step-title">Secure Your Pre-Order</h3>
+                    <p class="mw-how__step-desc">
+                        Be the first to own the winning looks by securing
+                        your pre-order at a special community price.
+                    </p>
+                </div>
             </div>
-            <div class="mw-how__stat">
-                <svg class="mw-how__icon" viewBox="0 0 24 24">
-                    <path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"></path>
-                    <circle cx="12" cy="8" r="6"></circle>
-                </svg>
-                <span class="mw-how__stat-text">
-                    Most wanted color: @(stats?.MostWantedColor ?? "—")
-                </span>
-            </div>
-            <div class="mw-how__stat">
-                <svg class="mw-how__icon" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <polyline points="12 6 12 12 16 14"></polyline>
-                </svg>
-                <span class="mw-how__stat-text">
-                    @(stats?.NextDeadline ?? "No active votes")
-                </span>
-            </div>
-        </div>
 
-    </div>
-</section>
-
-@if (!isAuthenticated)
-{
-    <div class="mw-vote-guest-banner">
-        <p class="mw-vote-guest-banner__text">
-            Sign in to vote for your favorite designs
-        </p>
-        <a href="/login?returnUrl=/community"
-           class="mw-vote-guest-banner__btn">
-            Sign In to Vote
-        </a>
-    </div>
-}
-
-<section class="mw-carousel">
-    <div class="container">
-
-        <div class="mw-carousel__header">
-            <div class="mw-carousel__tabs">
-                <button class="mw-carousel__tab mw-carousel__tab--active">
-                    Upcoming Designs
-                </button>
-            </div>
-            <div class="mw-carousel_nav">
-                <button @onclick="() => ScrollLeft(trendingRef)"
-                        class="d-flex align-items-center">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="2"
-                         stroke-linecap="round" stroke-linejoin="round">
-                        <path d="m15 18-6-6 6-6"></path>
+            <div class="mw-how__stats">
+                <div class="mw-how__stat">
+                    <svg class="mw-how__icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
                     </svg>
-                </button>
-                <button @onclick="() => ScrollRight(trendingRef)"
-                        class="d-flex align-items-center">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="2"
-                         stroke-linecap="round" stroke-linejoin="round">
-                        <path d="m9 18 6-6-6-6"></path>
+                    <span class="mw-how__stat-strong">
+                        @((stats?.TotalVotesThisWeek ?? 0).ToString("N0"))
+                    </span>
+                    <span class="mw-how__stat-text">votes cast this week</span>
+                </div>
+                <div class="mw-how__stat">
+                    <svg class="mw-how__icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"></path>
+                        <circle cx="12" cy="8" r="6"></circle>
                     </svg>
-                </button>
+                    <span class="mw-how__stat-text mw-how__stat-text--color">
+                        Most wanted color:
+                        @if (TryGetColorHex(stats?.MostWantedColor, out var mostWantedHex))
+                        {
+                            <span class="mw-how__color-swatch"
+                                  style="background-color:@mostWantedHex"
+                                  title="@mostWantedHex"
+                                  aria-label="Most wanted color"></span>
+                        }
+                        else
+                        {
+                            <span class="mw-how__stat-muted">No picks yet</span>
+                        }
+                    </span>
+                </div>
+                <div class="mw-how__stat">
+                    <svg class="mw-how__icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    <span class="mw-how__stat-text">
+                        @(stats?.NextDeadline ?? "No active votes")
+                    </span>
+                </div>
             </div>
         </div>
+    </section>
 
-        <!-- LOADING -->
-        @if (isLoading)
-        {
-            <p class="mw-section-loading">Loading designs...</p>
-        }
-        else if (!activeItems.Any())
-        {
-            <p style="color:#4A5C7A;font-size:14px;padding:34px 0">
-                No active designs at the moment.
-            </p>
-        }
-        else
-        {
-            <div class="mw-carousel__track" @ref="trendingRef">
-                <div class="row flex-nowrap gx-3 overflow-hidden">
-                    @foreach (var item in activeItems)
+    @if (!isAuthenticated)
+    {
+        <div class="mw-vote-page__container">
+            <div class="mw-vote-guest-banner">
+                <p class="mw-vote-guest-banner__text">
+                    Sign in to vote for your favorite designs
+                </p>
+                <a href="/login?returnUrl=/community"
+                   class="mw-vote-guest-banner__btn">
+                    Sign In to Vote
+                </a>
+            </div>
+        </div>
+    }
+
+    <section class="mw-carousel">
+        <div class="mw-vote-page__container">
+
+            <div class="mw-carousel__header">
+                <div class="mw-carousel__tabs">
+                    @foreach (var filter in DesignFilters)
                     {
-                        <div class="col-12 col-sm-6 col-md-6 col-lg-4 mw-carousel-item"
-                             @key="item.Id">
-                            <div class="mw-card">
+                        <button type="button"
+                                class="mw-carousel__tab @(activeFilter == filter ? "mw-carousel__tab--selected" : "")"
+                                @onclick="() => SelectFilter(filter)">
+                            @filter
+                        </button>
+                    }
+                </div>
+                <div class="mw-carousel__nav">
+                    <button type="button"
+                            class="mw-carousel__nav-btn"
+                            aria-label="Previous designs"
+                            @onclick="() => ScrollLeft(trendingRef)">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2"
+                             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="m15 18-6-6 6-6"></path>
+                        </svg>
+                    </button>
+                    <button type="button"
+                            class="mw-carousel__nav-btn"
+                            aria-label="Next designs"
+                            @onclick="() => ScrollRight(trendingRef)">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2"
+                             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="m9 18 6-6-6-6"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
 
-                                <div class="mw-card__image-wrapper">
-                                    <img src="@item.ImageUrl"
-                                         class="mw-card__image"
-                                         loading="lazy"
-                                         alt="@item.StyleName" />
-                                    @if (!string.IsNullOrEmpty(item.Tag))
-                                    {
-                                        <span class="mw-card__badge">@item.Tag</span>
-                                    }
-                                </div>
+            @if (isLoading)
+            {
+                <p class="mw-section-loading">Loading designs...</p>
+            }
+            else if (!activeItems.Any())
+            {
+                <p class="mw-carousel__empty">No active designs at the moment.</p>
+            }
+            else if (!FilteredActiveItems.Any())
+            {
+                <p class="mw-carousel__empty">No designs in this category yet.</p>
+            }
+            else
+            {
+                <div class="mw-carousel__track" @ref="trendingRef">
+                    <div class="row flex-nowrap">
+                        @foreach (var item in FilteredActiveItems)
+                        {
+                            <div class="col-12 col-sm-6 col-lg-4 mw-carousel-item"
+                                 @key="item.Id">
+                                <div class="mw-card">
 
-                                <div class="mw-card__content">
-                                    <h3 class="mw-card__title">@item.StyleName</h3>
-                                    <p class="mw-card__subtitle">@item.Subtitle</p>
-
-                                    <!-- VOTE COUNT -->
-                                    <div class="mw-card__votes">
-                                        👍 <strong>@item.VoteCount</strong> votes
+                                    <div class="mw-card__image-wrapper">
+                                        <img src="@item.ImageUrl"
+                                             class="mw-card__image"
+                                             loading="lazy"
+                                             alt="@item.StyleName" />
+                                        @if (!string.IsNullOrEmpty(item.Tag))
+                                        {
+                                            <span class="mw-card__badge @GetActiveBadgeClass(item.Tag)">
+                                                @item.Tag
+                                            </span>
+                                        }
                                     </div>
 
-                                    <!-- COLOR SELECTOR -->
-                                    @if (item.ColorOptions.Any())
-                                    {
-                                        <div class="mw-card__colors">
-                                            @foreach (var color in item.ColorOptions)
-                                            {
-                                                <button class="mw-card__color @(GetSelectedColor(item.Id) == color ? "mw-card__color--selected" : "")"
-                                                        style="background:@color"
-                                                        title="@color"
-                                                        @onclick="() => SelectColor(item.Id, color)">
-                                                </button>
-                                            }
+                                    <div class="mw-card__content">
+                                        <h3 class="mw-card__title">@item.StyleName</h3>
+                                        <p class="mw-card__subtitle">@item.Subtitle</p>
+
+                                        <div class="mw-card__votes">
+                                            <svg class="mw-card__votes-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                                <path d="M7 10v12"></path>
+                                                <path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"></path>
+                                            </svg>
+                                            <span><strong>@item.VoteCount</strong> votes</span>
                                         </div>
-                                    }
 
-                                    <!-- VOTE BUTTON -->
-                                    <button class="mw-card__primary @(item.HasVoted ? "mw-card__primary--voted" : "")"
-                                            @onclick="() => HandleVote(item)"
-                                            disabled="@(item.HasVoted || votingIds.Contains(item.Id))">
-                                        @if (votingIds.Contains(item.Id))
+                                        @if (item.ColorOptions.Any())
                                         {
-                                            <span>Voting...</span>
+                                            <div class="mw-card__colors-row">
+                                                <span class="mw-card__colors-label">Select your preference</span>
+                                                <div class="mw-card__colors">
+                                                    @foreach (var color in item.ColorOptions)
+                                                    {
+                                                        <button type="button"
+                                                                class="mw-card__color @(IsColorSelected(item.Id, color) ? "mw-card__color--selected" : "")"
+                                                                style="background-color:@color"
+                                                                title="@color"
+                                                                aria-pressed="@IsColorSelected(item.Id, color)"
+                                                                aria-label="Select color @color"
+                                                                disabled="@item.HasVoted"
+                                                                @onclick:stopPropagation="true"
+                                                                @onclick="() => SelectColor(item.Id, color)">
+                                                            @if (IsColorSelected(item.Id, color))
+                                                            {
+                                                                <svg class="mw-card__color-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                                                    <polyline points="20 6 9 17 4 12"
+                                                                              fill="none"
+                                                                              stroke="@MuuqWearUtils.GetContrastIconColor(color)"
+                                                                              stroke-width="3"
+                                                                              stroke-linecap="round"
+                                                                              stroke-linejoin="round" />
+                                                                </svg>
+                                                            }
+                                                        </button>
+                                                    }
+                                                </div>
+                                            </div>
                                         }
-                                        else if (item.HasVoted)
-                                        {
-                                            <span>Voted </span>
-                                        }
-                                        else
-                                        {
-                                            <span>Vote Now</span>
-                                        }
-                                    </button>
 
-                                    <!-- PRE-ORDER BUTTON -->
-                                    <button class="mw-card__secondary @(item.HasPreOrdered ? "mw-card__secondary--ordered" : "")"
-                                            @onclick="() => HandlePreOrder(item)"
-                                            disabled="@(item.HasPreOrdered || preOrderingIds.Contains(item.Id))">
-                                        @if (preOrderingIds.Contains(item.Id))
-                                        {
-                                            <span>Registering...</span>
-                                        }
-                                        else if (item.HasPreOrdered)
-                                        {
-                                            <span>Interest Registered </span>
-                                        }
-                                        else
-                                        {
-                                            <span>Pre-Order this Look</span>
-                                        }
-                                    </button>
+                                        <button type="button"
+                                                class="mw-card__primary @(item.HasVoted ? "mw-card__primary--voted" : "")"
+                                                @onclick="() => HandleVote(item)"
+                                                disabled="@(item.HasVoted || votingIds.Contains(item.Id))">
+                                            @if (votingIds.Contains(item.Id))
+                                            {
+                                                <span>Voting...</span>
+                                            }
+                                            else if (item.HasVoted)
+                                            {
+                                                <span>Voted!</span>
+                                            }
+                                            else
+                                            {
+                                                <span>Vote Now</span>
+                                            }
+                                        </button>
 
+                                        <button type="button"
+                                                class="mw-card__secondary"
+                                                @onclick="() => HandlePreOrder(item)"
+                                                disabled="@(item.HasPreOrdered || preOrderingIds.Contains(item.Id))">
+                                            @if (preOrderingIds.Contains(item.Id))
+                                            {
+                                                <span>Registering...</span>
+                                            }
+                                            else if (item.HasPreOrdered)
+                                            {
+                                                <span>Interest Registered</span>
+                                            }
+                                            else
+                                            {
+                                                <span>Pre-Order this Look</span>
+                                            }
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    }
+                        }
+                    </div>
                 </div>
-            </div>
-        }
+            }
 
-    </div>
-</section>
-
-<!-- ─── RECENTLY FINISHED ─────────────────────────────────── -->
-<section class="mw-finished">
-    <div class="container">
-
-        <div class="mw-finished__header d-flex justify-content-between align-items-center">
-            <h2 class="mw-finished__title">Recently Finished</h2>
-            <div class="mw-carousel_nav">
-                <button @onclick="() => ScrollLeft(finishedRef)"
-                        class="d-flex align-items-center">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="2"
-                         stroke-linecap="round" stroke-linejoin="round">
-                        <path d="m15 18-6-6 6-6"></path>
-                    </svg>
-                </button>
-                <button @onclick="() => ScrollRight(finishedRef)"
-                        class="d-flex align-items-center">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="2"
-                         stroke-linecap="round" stroke-linejoin="round">
-                        <path d="m9 18 6-6-6-6"></path>
-                    </svg>
-                </button>
-            </div>
         </div>
+    </section>
 
-        <p class="mw-finished__desc">
-            These community-favorites reached their vote goals and are
-            now in production.
-        </p>
+    <section class="mw-finished">
+        <div class="mw-vote-page__container">
 
-        @if (!isLoadingFinished && finishedItems.Any())
-        {
-            <div class="mw-carousel__track" @ref="finishedRef">
-                <div class="row flex-nowrap gx-3">
-                    @foreach (var item in finishedItems)
-                    {
-                        <div class="col-12 col-sm-6 col-md-6 col-lg-4 mw-carousel-item"
-                             @key="item.Id">
-                            <div class="mw-finished-card">
-                                <div class="mw-finished-card__image-wrapper">
-                                    <img src="@item.ImageUrl"
-                                         class="mw-finished-card__image"
-                                         loading="lazy"
-                                         alt="@item.StyleName" />
-                                    <span class="mw-finished-card__badge @GetFinishedBadgeClass(item.Status)">
-                                        @item.Tag
-                                    </span>
-                                </div>
-                                <div class="mw-finished-card__content">
-                                    <h3 class="mw-finished-card__title">@item.StyleName</h3>
-                                    <p class="mw-finished-card__subtitle">@item.Subtitle</p>
-                                    <button class="mw-card__primary">Shop Now</button>
-                                </div>
-                            </div>
-                        </div>
-                    }
+            <div class="mw-finished__header">
+                <h2 class="mw-finished__title">Recently Finished</h2>
+                <div class="mw-carousel__nav">
+                    <button type="button"
+                            class="mw-carousel__nav-btn"
+                            aria-label="Previous finished designs"
+                            @onclick="() => ScrollLeft(finishedRef)">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2"
+                             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="m15 18-6-6 6-6"></path>
+                        </svg>
+                    </button>
+                    <button type="button"
+                            class="mw-carousel__nav-btn"
+                            aria-label="Next finished designs"
+                            @onclick="() => ScrollRight(finishedRef)">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2"
+                             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="m9 18 6-6-6-6"></path>
+                        </svg>
+                    </button>
                 </div>
             </div>
-        }
 
-    </div>
-</section>
+            <p class="mw-finished__desc">
+                These community-favorites reached their vote goals and are
+                now in production.
+            </p>
 
-<!-- ─── TOAST ──────────────────────────────────────────────── -->
+            @if (isLoadingFinished)
+            {
+                <p class="mw-section-loading">Loading finished designs...</p>
+            }
+            else if (!finishedItems.Any())
+            {
+                <p class="mw-carousel__empty">No finished designs yet.</p>
+            }
+            else
+            {
+                <div class="mw-carousel__track" @ref="finishedRef">
+                    <div class="row flex-nowrap">
+                        @foreach (var item in finishedItems)
+                        {
+                            <div class="col-12 col-sm-6 col-lg-4 mw-carousel-item"
+                                 @key="item.Id">
+                                <div class="mw-finished-card">
+                                    <div class="mw-finished-card__image-wrapper">
+                                        <img src="@item.ImageUrl"
+                                             class="mw-finished-card__image"
+                                             loading="lazy"
+                                             alt="@item.StyleName" />
+                                        @if (!string.IsNullOrEmpty(item.Tag))
+                                        {
+                                            <span class="mw-finished-card__badge @GetFinishedBadgeClass(item.Status)">
+                                                @item.Tag
+                                            </span>
+                                        }
+                                    </div>
+                                    <div class="mw-finished-card__content">
+                                        <h3 class="mw-finished-card__title">@item.StyleName</h3>
+                                        <p class="mw-finished-card__subtitle">@item.Subtitle</p>
+                                        <button type="button" class="mw-card__primary">Shop Now</button>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+        </div>
+    </section>
+
+</div>
+
 @if (showToast)
 {
     <div class="mw-toast @(toastSuccess ? "mw-toast--success" : "mw-toast--error")">

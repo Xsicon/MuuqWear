@@ -261,14 +261,27 @@ select.mw-shop__sort-select:focus-visible {
 
 ::deep .mw-shop-product {
     display: block;
+    color: inherit;
+}
+
+.mw-shop-product__media-link {
+    display: block;
+    width: 100%;
+    height: 100%;
     text-decoration: none;
     color: inherit;
 }
 
-::deep .mw-shop-product:hover {
+.mw-shop-product__body {
+    display: block;
     text-decoration: none;
     color: inherit;
 }
+
+    .mw-shop-product__body:hover {
+        text-decoration: none;
+        color: inherit;
+    }
 
 .mw-shop-product__image {
     position: relative;

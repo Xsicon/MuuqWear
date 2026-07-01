@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.JSInterop;
 using MuuqWear.Application.Services.CartService;
+using MuuqWear.Application.Services.WishlistService;
 using MuuqWear.Model.Address;
 using MuuqWear.Model.AffiliateApplication;
 using MuuqWear.Model.Orders;
@@ -61,6 +63,11 @@ public partial class ProfileComponent
     private string settingsSuccess = string.Empty;
     private bool isSavingSettings = false;
 
+    protected override void OnInitialized()
+    {
+        WishlistStateService.OnWishlistChanged += OnWishlistChanged;
+    }
+
     protected override async Task OnInitializedAsync()
     {
         if (AuthenticationStateTask is null) return;
@@ -85,7 +92,45 @@ public partial class ProfileComponent
         var ordersResult = await ordersTask;
         if (ordersResult.Success && ordersResult.Data != null)
             userOrders = ordersResult.Data;
+
+        await WishlistStateService.InitializeAsync(
+            authState.User.Identity?.IsAuthenticated == true,
+            authState.User.FindFirst("UserId")?.Value);
+        await ApplyInitialTabFromRouteAsync();
     }
+
+    private void OnWishlistChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        WishlistStateService.OnWishlistChanged -= OnWishlistChanged;
+    }
+
+    private async Task ApplyInitialTabFromRouteAsync()
+    {
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        var path = uri.AbsolutePath.TrimEnd('/').ToLowerInvariant();
+
+        if (path == "/settings")
+        {
+            await SelectTab("settings");
+            return;
+        }
+
+        if (path == "/profile" && !string.IsNullOrEmpty(uri.Query))
+        {
+            var query = QueryHelpers.ParseQuery(uri.Query);
+            if (query.TryGetValue("tab", out var tabValues))
+            {
+                var tab = tabValues.ToString().ToLowerInvariant();
+                if (IsValidProfileTab(tab))
+                    await SelectTab(tab);
+            }
+        }
+    }
+
+    private static bool IsValidProfileTab(string tab) =>
+        tab is "overview" or "orders" or "wishlist" or "addresses" or "affiliate" or "settings";
 
     private async Task SelectAffiliateTab(string tab)
     {
@@ -161,6 +206,10 @@ public partial class ProfileComponent
     {
         activeTab = tab;
         isMobileMenuOpen = false;
+        if (tab == "wishlist")
+        {
+            await WishlistStateService.RefreshAsync();
+        }
         if (tab == "affiliate")
         {
             //await LoadAffiliateStatus();
@@ -186,14 +235,41 @@ public partial class ProfileComponent
         {
             "overview" => "Overview",
             "orders" => "Orders",
+            "wishlist" => "Wishlist",
             "addresses" => "Addresses",
+            "affiliate" => "Affiliate Hub",
             "settings" => "Settings",
             _ => "Overview"
         };
     }
+
+    private static string GetTabIconName(string tab) => tab switch
+    {
+        "overview" => "dashboard",
+        "orders" => "package",
+        "wishlist" => "heart",
+        "addresses" => "mappin",
+        "affiliate" => "users",
+        "settings" => "settings",
+        _ => "dashboard"
+    };
+
+    private static string GetIconPaths(string name) => name switch
+    {
+        "dashboard" => "<rect width=\"7\" height=\"9\" x=\"3\" y=\"3\" rx=\"1\"/><rect width=\"7\" height=\"5\" x=\"14\" y=\"3\" rx=\"1\"/><rect width=\"7\" height=\"9\" x=\"14\" y=\"12\" rx=\"1\"/><rect width=\"7\" height=\"5\" x=\"3\" y=\"16\" rx=\"1\"/>",
+        "package" => "<path d=\"m7.5 4.27 9 5.15\"/><path d=\"M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z\"/><path d=\"m3.3 7 8.7 5 8.7-5\"/><path d=\"M12 22V12\"/>",
+        "heart" => "<path d=\"M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z\"/>",
+        "mappin" => "<path d=\"M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0\"/><circle cx=\"12\" cy=\"10\" r=\"3\"/>",
+        "users" => "<path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/><path d=\"M22 21v-2a4 4 0 0 0-3-3.87\"/><path d=\"M16 3.13a4 4 0 0 1 0 7.75\"/>",
+        "settings" => "<path d=\"M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/>",
+        "logout" => "<path d=\"M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4\"/><polyline points=\"16 17 21 12 16 7\"/><line x1=\"21\" x2=\"9\" y1=\"12\" y2=\"12\"/>",
+        "star" => "<polygon points=\"12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2\"/>",
+        _ => ""
+    };
     private async Task HandleSignOut()
     {
         await CartStateService.ClearCartState();
+        await WishlistStateService.ClearWishlistState();
         NavigationManager.NavigateTo("/auth/clear", forceLoad: true);
     }
 
@@ -376,6 +452,7 @@ public partial class ProfileComponent
         {
             //  sign out and redirect to home
             await CartStateService.ClearCartState();
+            await WishlistStateService.ClearWishlistState();
             NavigationManager.NavigateTo("/auth/clear", forceLoad: true);
         }
         else

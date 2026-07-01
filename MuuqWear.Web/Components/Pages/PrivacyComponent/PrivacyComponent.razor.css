@@ -1,0 +1,136 @@
+.mw-privacy {
+    font-family: 'Manrope', sans-serif;
+    background: #fff;
+}
+
+.mw-privacy__container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 34px 16px;
+}
+
+@media (min-width: 768px) {
+    .mw-privacy__container {
+        padding: 55px 34px;
+    }
+}
+
+.mw-privacy__layout {
+    display: flex;
+    flex-direction: column;
+    gap: 34px;
+}
+
+@media (min-width: 768px) {
+    .mw-privacy__layout {
+        display: grid;
+        grid-template-columns: 200px minmax(0, 700px);
+        grid-template-rows: auto 1fr;
+        column-gap: 55px;
+        row-gap: 55px;
+    }
+
+    .mw-privacy__header {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .mw-privacy__toc {
+        grid-column: 1;
+        grid-row: 1 / -1;
+        position: sticky;
+        top: 34px;
+        align-self: start;
+    }
+
+    .mw-privacy__sections {
+        grid-column: 2;
+        grid-row: 2;
+    }
+}
+
+/* Table of contents */
+.mw-privacy__toc {
+    flex-shrink: 0;
+}
+
+.mw-privacy__toc-title {
+    color: #1E2A47;
+    font-size: 12px;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin: 0 0 21px;
+}
+
+.mw-privacy__toc-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 13px;
+}
+
+.mw-privacy__toc-link {
+    display: block;
+    text-align: left;
+    border: none;
+    background: none;
+    padding: 0;
+    cursor: pointer;
+    color: #4A5C7A;
+    font-family: inherit;
+    font-size: 14px;
+    transition: color 0.2s ease;
+}
+
+.mw-privacy__toc-link:hover {
+    color: #1E2A47;
+}
+
+.mw-privacy__eyebrow {
+    color: #4A5C7A;
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin: 0 0 8px;
+}
+
+.mw-privacy__title {
+    color: #1E2A47;
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    margin: 0 0 13px;
+}
+
+.mw-privacy__updated {
+    color: #4A5C7A;
+    font-size: 14px;
+    margin: 0;
+}
+
+.mw-privacy__sections {
+    display: flex;
+    flex-direction: column;
+    gap: 55px;
+}
+
+.mw-privacy__section {
+    scroll-margin-top: 24px;
+}
+
+.mw-privacy__section-title {
+    color: #1E2A47;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    margin: 0 0 21px;
+}
+
+.mw-privacy__section-body {
+    color: #4A5C7A;
+    font-size: 15px;
+    line-height: 28px;
+    font-family: 'Georgia', serif;
+    white-space: pre-line;
+}

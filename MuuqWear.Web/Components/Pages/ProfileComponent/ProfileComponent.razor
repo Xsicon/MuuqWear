@@ -1,4 +1,5 @@
-﻿@page "/profile"
+@page "/profile"
+@page "/settings"
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
@@ -6,6 +7,7 @@
 @using MuuqWear.Application.Services.AffiliateService
 @using MuuqWear.Application.Services.AuthService
 @using MuuqWear.Application.Services.CartService
+@using MuuqWear.Application.Services.WishlistService
 @using MuuqWear.Application.Services.OrderService
 @using MuuqWear.Application.Shared
 @using MuuqWear.Model.Authentication
@@ -33,6 +35,8 @@
 @inject AuthSessionService AuthSession
 @inject IAffiliateService AffiliateService
 @inject IJSRuntime JSRuntime
+@inject WishlistStateService WishlistStateService
+@implements IDisposable
 
 
 <PageTitle>Profile</PageTitle>
@@ -43,19 +47,16 @@
     <div class="d-md-none mb-3">
         <button class="mw-profile-mobile-toggle"
                 @onclick="() => isMobileMenuOpen = !isMobileMenuOpen">
-            <span>@GetActiveTabLabel()</span>
-            <svg xmlns="http://www.w3.org/2000/svg"
-                 width="16"
-                 height="16"
-                 viewBox="0 0 24 24"
-                 fill="none"
-                 stroke="currentColor"
-                 stroke-width="2"
-                 stroke-linecap="round"
-                 stroke-linejoin="round"
-                 style="transform: rotate(@(isMobileMenuOpen ? "180deg" : "0deg")); transition: transform 0.2s">
-                <polyline points="6 9 12 15 18 9"></polyline>
-            </svg>
+            <span class="mw-profile-mobile-toggle__label">
+                @Lucide(GetTabIconName(activeTab), 18)
+                <span>@GetActiveTabLabel()</span>
+            </span>
+            <span class="mw-profile-mobile-toggle__chevron @(isMobileMenuOpen ? "is-open" : "")">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m9 18 6-6-6-6"></path>
+                </svg>
+            </span>
         </button>
     </div>
 
@@ -77,38 +78,51 @@
             <nav class="mw-mobile-menu__nav">
                 <button class="mw-mobile-nav-item @(activeTab == "overview" ? "active" : "")"
                         @onclick='() => SelectTab("overview")'>
-                    Overview
+                    @Lucide("dashboard")
+                    <span>Overview</span>
                 </button>
                 <button class="mw-mobile-nav-item @(activeTab == "orders" ? "active" : "")"
                         @onclick='() => SelectTab("orders")'>
-                    Orders
+                    @Lucide("package")
+                    <span>Orders</span>
                 </button>
-                <button class="mw-mobile-nav-item">
-                    Wishlist
+                <button class="mw-mobile-nav-item @(activeTab == "wishlist" ? "active" : "")"
+                        @onclick='() => SelectTab("wishlist")'>
+                    @Lucide("heart")
+                    <span>Wishlist</span>
                 </button>
                 <button class="mw-mobile-nav-item @(activeTab == "addresses" ? "active" : "")"
                         @onclick='() => SelectTab("addresses")'>
-                    Addresses
+                    @Lucide("mappin")
+                    <span>Addresses</span>
                 </button>
                 <button class="mw-mobile-nav-item @(activeTab == "affiliate" ? "active" : "")"
                         @onclick='() => SelectTab("affiliate")'>
-                    Affiliate Hub
+                    @Lucide("users")
+                    <span>Affiliate Hub</span>
                 </button>
                 <button class="mw-mobile-nav-item @(activeTab == "settings" ? "active" : "")"
                         @onclick='() => SelectTab("settings")'>
-                    Settings
+                    @Lucide("settings")
+                    <span>Settings</span>
                 </button>
             </nav>
 
             <!-- AFFILIATE STATUS -->
             <div class="mw-mobile-menu__affiliate">
                 <p class="mw-affiliate-label">Affiliate Status</p>
-                <p class="mw-affiliate-value">⭐ Silver</p>
+                <p class="mw-affiliate-value">
+                    <span class="mw-affiliate-star">@Lucide("star", 14)</span>
+                    @(affiliateStatus?.Tier is { Length: > 0 } tier
+                        ? char.ToUpper(tier[0]) + tier[1..]
+                        : "Silver")
+                </p>
             </div>
 
             <!-- SIGN OUT -->
             <button class="mw-mobile-menu__signout" @onclick="HandleSignOut">
-                Sign Out
+                <span>Sign Out</span>
+                @Lucide("logout")
             </button>
 
         </div>
@@ -132,24 +146,33 @@
             <nav class="mw-profile-nav">
                 <button class="mw-nav-item @(activeTab == "overview" ? "active" : "")"
                         @onclick='() => activeTab = "overview"'>
-                    Overview
+                    <span>Overview</span>
+                    @Lucide("dashboard")
                 </button>
                 <button class="mw-nav-item @(activeTab == "orders" ? "active" : "")"
                         @onclick='() => activeTab = "orders"'>
-                    Orders
+                    <span>Orders</span>
+                    @Lucide("package")
                 </button>
-                <button class="mw-nav-item">Wishlist</button>
+                <button class="mw-nav-item @(activeTab == "wishlist" ? "active" : "")"
+                        @onclick='() => SelectTab("wishlist")'>
+                    <span>Wishlist</span>
+                    @Lucide("heart")
+                </button>
                 <button class="mw-nav-item @(activeTab == "addresses" ? "active" : "")"
                         @onclick='() => activeTab = "addresses"'>
-                    Addresses
+                    <span>Addresses</span>
+                    @Lucide("mappin")
                 </button>
                 <button class="mw-nav-item @(activeTab == "affiliate" ? "active" : "")"
                         @onclick='() => SelectTab("affiliate")'>
-                    Affiliate Hub
+                    <span>Affiliate Hub</span>
+                    @Lucide("users")
                 </button>
                 <button class="mw-nav-item @(activeTab == "settings" ? "active" : "")"
-                        @onclick='() => activeTab = "settings"'>
-                    Settings
+                        @onclick='() => SelectTab("settings")'>
+                    <span>Settings</span>
+                    @Lucide("settings")
                 </button>
             </nav>
 
@@ -217,7 +240,10 @@
             }
 
             <!-- SIGN OUT -->
-            <button class="mw-signout" @onclick="HandleSignOut">Sign Out</button>
+            <button class="mw-signout" @onclick="HandleSignOut">
+                <span>Sign Out</span>
+                @Lucide("logout")
+            </button>
 
         </aside>
 
@@ -238,24 +264,28 @@
                     <!-- ... your stat cards ... -->
                     <div class="col-6 col-md-3">
                         <div class="mw-stat-card">
+                            <span class="mw-stat-icon">@Lucide("package", 18)</span>
                             <p class="mw-stat-value">@userOrders.Count</p>
                             <p class="mw-stat-label">Orders</p>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
                         <div class="mw-stat-card">
-                            <p class="mw-stat-value">4</p>
+                            <span class="mw-stat-icon">@Lucide("heart", 18)</span>
+                            <p class="mw-stat-value">@WishlistStateService.Count</p>
                             <p class="mw-stat-label">Wishlist</p>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
                         <div class="mw-stat-card">
+                            <span class="mw-stat-icon">@Lucide("star", 18)</span>
                             <p class="mw-stat-value">@affiliateStatus?.Tier</p>
                             <p class="mw-stat-label">Affiliate Tier</p>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
                         <div class="mw-stat-card">
+                            <span class="mw-stat-icon">@Lucide("dashboard", 18)</span>
                             <p class="mw-stat-value">$1251</p>
                             <p class="mw-stat-label">Total Spent</p>
                         </div>
@@ -273,6 +303,51 @@
                 <div class="mw-orders">
                     <p class="mw-section-title">All Orders</p>
                     <OrdersList Orders="userOrders" />
+                </div>
+            }
+            else if (activeTab == "wishlist")
+            {
+                <div class="mw-wishlist-section">
+                    <p class="mw-section-title">My Wishlist</p>
+
+                    @if (!WishlistStateService.Items.Any())
+                    {
+                        <div class="mw-wishlist-empty">
+                            <span class="mw-wishlist-empty__icon">@Lucide("heart", 40)</span>
+                            <p>Your wishlist is empty.</p>
+                            <a href="/shop/apparel" class="mw-wishlist-empty__link">Browse Products</a>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="mw-wishlist-grid">
+                            @foreach (var item in WishlistStateService.Items)
+                            {
+                                <article class="mw-wishlist-card">
+                                    <div class="mw-wishlist-card__media">
+                                        <a href="/productdetail/@item.ProductId">
+                                            <img src="@item.ProductImageUrl" alt="@item.ProductName" loading="lazy" />
+                                        </a>
+                                        <WishlistButtonComponent ProductId="@item.ProductId"
+                                                                 ProductName="@item.ProductName"
+                                                                 ProductImageUrl="@item.ProductImageUrl"
+                                                                 ProductPrice="@item.ProductPrice"
+                                                                 CssClass="mw-wishlist-btn--overlay"
+                                                                 Size="16" />
+                                    </div>
+                                    <div class="mw-wishlist-card__body">
+                                        <a href="/productdetail/@item.ProductId" class="mw-wishlist-card__name">
+                                            @item.ProductName
+                                        </a>
+                                        <p class="mw-wishlist-card__price">$@item.ProductPrice.ToString("F2")</p>
+                                        <a href="/productdetail/@item.ProductId" class="mw-wishlist-card__view">
+                                            View Product
+                                        </a>
+                                    </div>
+                                </article>
+                            }
+                        </div>
+                    }
                 </div>
             }
 
@@ -1175,6 +1250,16 @@
         </button>
 
     </div>
+}
+
+@code {
+    private RenderFragment Lucide(string name, int size = 16) => __builder =>
+    {
+        <svg xmlns="http://www.w3.org/2000/svg" width="@size" height="@size" viewBox="0 0 24 24"
+             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            @((MarkupString)GetIconPaths(name))
+        </svg>
+    };
 }
 
 

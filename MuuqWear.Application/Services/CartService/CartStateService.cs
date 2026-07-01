@@ -1,4 +1,4 @@
-﻿using Microsoft.JSInterop;
+using Microsoft.JSInterop;
 using MuuqWear.Application.Services.ProductService;
 using MuuqWear.Model.Cart;
 
@@ -52,6 +52,8 @@ public class CartStateService
             // guest → load from cookie
             await LoadCartFromCookie();
         }
+
+        NotifyCartChanged();
     }
 
     // =============================================

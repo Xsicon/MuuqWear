@@ -1,4 +1,4 @@
-﻿using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
 
 namespace MuuqWear.Application.Shared;
 
@@ -68,6 +68,42 @@ public static class MuuqWearUtils
             .Trim()
             .Replace("%", "\\%")
             .Replace("_", "\\_");
+    }
+
+    /// <summary>
+    /// Returns a light or dark icon color for contrast against a hex background.
+    /// </summary>
+    public static string GetContrastIconColor(string? hexColor)
+    {
+        if (!TryParseHexColor(hexColor, out var r, out var g, out var b))
+            return "#FFFFFF";
+
+        var luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+        return luminance > 0.55 ? "#1E2A47" : "#FFFFFF";
+    }
+
+    private static bool TryParseHexColor(string? color, out int r, out int g, out int b)
+    {
+        r = g = b = 0;
+        if (string.IsNullOrWhiteSpace(color))
+            return false;
+
+        var hex = color.Trim();
+        if (!hex.StartsWith('#'))
+            hex = "#" + hex;
+
+        if (hex.Length == 4)
+            hex = $"#{hex[1]}{hex[1]}{hex[2]}{hex[2]}{hex[3]}{hex[3]}";
+
+        if (hex.Length != 7)
+            return false;
+
+        if (!int.TryParse(hex.AsSpan(1, 2), System.Globalization.NumberStyles.HexNumber, null, out r) ||
+            !int.TryParse(hex.AsSpan(3, 2), System.Globalization.NumberStyles.HexNumber, null, out g) ||
+            !int.TryParse(hex.AsSpan(5, 2), System.Globalization.NumberStyles.HexNumber, null, out b))
+            return false;
+
+        return true;
     }
 }
 

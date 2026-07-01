@@ -1,4 +1,4 @@
-﻿/* Section */
+/* Section */
 .mw-admin-products {
     padding: 16px;
 }
@@ -543,3 +543,9 @@
         border-width: 3px !important;
         border-color: #1E2A47 !important;
     }
+
+.mw-admin-color-icon {
+    width: 18px;
+    height: 18px;
+    pointer-events: none;
+}

@@ -1,0 +1,79 @@
+@page "/terms"
+@rendermode InteractiveServer
+@inject IJSRuntime JS
+
+<PageTitle>Terms & Conditions — Muuqwear</PageTitle>
+
+<div class="mw-terms">
+    <div class="mw-terms__container">
+        <div class="mw-terms__layout">
+
+            <header class="mw-terms__header">
+                <p class="mw-terms__eyebrow">Legal</p>
+                <h1 class="mw-terms__title">Terms &amp; Conditions</h1>
+                <p class="mw-terms__updated">Last updated: March 1, 2026. Muuqwear International.</p>
+            </header>
+
+            <!-- Table of Contents -->
+            <aside class="mw-terms__toc">
+                <h2 class="mw-terms__toc-title">Contents</h2>
+                <nav class="mw-terms__toc-nav">
+                    @foreach (var item in Sections)
+                    {
+                        <button type="button"
+                                class="mw-terms__toc-link"
+                                @onclick="() => ScrollTo(item.Id)">
+                            @item.Title
+                        </button>
+                    }
+                </nav>
+            </aside>
+
+            <div class="mw-terms__sections">
+                @foreach (var item in Sections)
+                {
+                    <section id="@item.Id" class="mw-terms__section">
+                        <h2 class="mw-terms__section-title">@item.Title</h2>
+                        <div class="mw-terms__section-body">@item.Body</div>
+                    </section>
+                }
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@code {
+    private sealed record TermsSection(string Id, string Title, string Body);
+
+    private async Task ScrollTo(string id) =>
+        await JS.InvokeVoidAsync("mwScrollToElement", id);
+
+    private static readonly TermsSection[] Sections =
+    {
+        new("intro", "Introduction",
+            "Welcome to Muuqwear. These Terms & Conditions govern your use of our website (muuqwear.com) and the purchase of products from us. By accessing or using our site, you agree to be bound by these terms.\n\n" +
+            "If you do not agree to these terms, please do not use our website or services. We reserve the right to update these terms at any time, and continued use of the site constitutes acceptance of any changes."),
+
+        new("accounts", "Account Terms",
+            "You may create an account to access certain features of our site. You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account.\n\n" +
+            "You must provide accurate and complete information when creating your account. You must be at least 16 years of age to create an account. We reserve the right to suspend or terminate accounts that violate these terms."),
+
+        new("products", "Product Availability & Pricing",
+            "All products displayed on our site are subject to availability. We make every effort to display accurate pricing, but errors may occasionally occur.\n\n" +
+            "Prices are displayed in USD and include applicable taxes where required by law. Shipping costs are calculated at checkout based on your delivery address and selected shipping method.\n\n" +
+            "We reserve the right to modify prices at any time without prior notice. Pre-order items are subject to estimated delivery dates, which may change based on production timelines."),
+
+        new("ip", "Intellectual Property",
+            "All content on Muuqwear.com — including but not limited to text, graphics, logos, images, product designs, and software — is the intellectual property of Muuqwear International and is protected by international copyright and trademark laws.\n\n" +
+            "You may not reproduce, distribute, modify, or create derivative works from any content on our site without our express written permission. The Muuqwear name, logo, and Sapphire Veil brand identity are registered trademarks."),
+
+        new("liability", "Limitation of Liability",
+            "To the maximum extent permitted by law, Muuqwear shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of our website or products.\n\n" +
+            "Our total liability for any claim arising from a purchase shall not exceed the amount you paid for the specific product in question. This limitation applies regardless of the theory of liability."),
+
+        new("law", "Governing Law",
+            "These Terms & Conditions shall be governed by and construed in accordance with the laws of the State of New York, United States, without regard to its conflict of law provisions.\n\n" +
+            "Any disputes arising from these terms shall be resolved through binding arbitration in New York City, in accordance with the rules of the American Arbitration Association."),
+    };
+}

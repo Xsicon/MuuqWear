@@ -11,6 +11,7 @@ using MuuqWear.Application.Services.AffiliateService;
 using MuuqWear.Application.Services.AnalyticsService;
 using MuuqWear.Application.Services.AuthService;
 using MuuqWear.Application.Services.CartService;
+using MuuqWear.Application.Services.WishlistService;
 using MuuqWear.Application.Services.CategoryService;
 using MuuqWear.Application.Services.ChatService;
 using MuuqWear.Application.Services.ContentService;
@@ -58,6 +59,10 @@ builder.Services.AddHttpClient<ICartService, CartService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
 }).AddHttpMessageHandler<AuthenticatedHttpHandler>();
+builder.Services.AddHttpClient<IWishlistService, WishlistService>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+}).AddHttpMessageHandler<AuthenticatedHttpHandler>();
 builder.Services.AddHttpClient<IOrderService, OrderService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
@@ -96,6 +101,7 @@ builder.Services.AddHttpClient<IVoteService, VoteService>(client =>
 }).AddHttpMessageHandler<AuthenticatedHttpHandler>();
 builder.Services.AddScoped<AuthStateService>();
 builder.Services.AddScoped<CartStateService>();
+builder.Services.AddScoped<WishlistStateService>();
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<CustomAuthenticationStateProvider>();
 builder.Services.AddScoped<AuthenticatedHttpHandler>();

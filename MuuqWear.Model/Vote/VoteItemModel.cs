@@ -15,6 +15,9 @@ public class VoteItemModel
     public DateTime? CreatedAt { get; set; }
     public bool HasVoted { get; set; }
     public bool HasPreOrdered { get; set; }
+
+    // color the current user picked when they voted (null if not voted)
+    public string? VotedColor { get; set; }
 }
 
 public class VoteStatsModel
@@ -27,6 +30,7 @@ public class VoteStatsModel
 public class CastVoteModel
 {
     public Guid VoteItemId { get; set; }
+    public string? PreferredColor { get; set; }
 }
 
 public class PreOrderModel
