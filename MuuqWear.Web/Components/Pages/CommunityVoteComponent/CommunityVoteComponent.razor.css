@@ -1,4 +1,4 @@
-﻿/* Design tokens */
+/* Design tokens */
 .mw-vote-page {
     --mw-navy: #1E2A47;
     --mw-navy-dark: #0B1A33;
@@ -482,13 +482,22 @@ button.mw-carousel__nav-btn:hover {
 }
 
 button.mw-card__color {
-    width: 20px;
-    height: 20px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     border: 1px solid #A9B7CC;
     padding: 0;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.mw-card__color-icon {
+    width: 14px;
+    height: 14px;
+    pointer-events: none;
 }
 
 button.mw-card__color:hover {

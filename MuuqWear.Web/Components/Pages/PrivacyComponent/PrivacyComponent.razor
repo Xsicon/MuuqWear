@@ -8,6 +8,12 @@
     <div class="mw-privacy__container">
         <div class="mw-privacy__layout">
 
+            <header class="mw-privacy__header">
+                <p class="mw-privacy__eyebrow">Legal</p>
+                <h1 class="mw-privacy__title">Privacy Policy</h1>
+                <p class="mw-privacy__updated">Last updated: March 1, 2026. Muuqwear International.</p>
+            </header>
+
             <!-- Table of Contents -->
             <aside class="mw-privacy__toc">
                 <h2 class="mw-privacy__toc-title">Contents</h2>
@@ -23,21 +29,14 @@
                 </nav>
             </aside>
 
-            <!-- Content -->
-            <div class="mw-privacy__content">
-                <p class="mw-privacy__eyebrow">Legal</p>
-                <h1 class="mw-privacy__title">Privacy Policy</h1>
-                <p class="mw-privacy__updated">Last updated: March 1, 2026. Muuqwear International.</p>
-
-                <div class="mw-privacy__sections">
-                    @foreach (var item in Sections)
-                    {
-                        <section id="@item.Id" class="mw-privacy__section">
-                            <h2 class="mw-privacy__section-title">@item.Title</h2>
-                            <div class="mw-privacy__section-body">@item.Body</div>
-                        </section>
-                    }
-                </div>
+            <div class="mw-privacy__sections">
+                @foreach (var item in Sections)
+                {
+                    <section id="@item.Id" class="mw-privacy__section">
+                        <h2 class="mw-privacy__section-title">@item.Title</h2>
+                        <div class="mw-privacy__section-body">@item.Body</div>
+                    </section>
+                }
             </div>
 
         </div>

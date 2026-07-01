@@ -8,6 +8,12 @@
     <div class="mw-terms__container">
         <div class="mw-terms__layout">
 
+            <header class="mw-terms__header">
+                <p class="mw-terms__eyebrow">Legal</p>
+                <h1 class="mw-terms__title">Terms &amp; Conditions</h1>
+                <p class="mw-terms__updated">Last updated: March 1, 2026. Muuqwear International.</p>
+            </header>
+
             <!-- Table of Contents -->
             <aside class="mw-terms__toc">
                 <h2 class="mw-terms__toc-title">Contents</h2>
@@ -23,21 +29,14 @@
                 </nav>
             </aside>
 
-            <!-- Content -->
-            <div class="mw-terms__content">
-                <p class="mw-terms__eyebrow">Legal</p>
-                <h1 class="mw-terms__title">Terms &amp; Conditions</h1>
-                <p class="mw-terms__updated">Last updated: March 1, 2026. Muuqwear International.</p>
-
-                <div class="mw-terms__sections">
-                    @foreach (var item in Sections)
-                    {
-                        <section id="@item.Id" class="mw-terms__section">
-                            <h2 class="mw-terms__section-title">@item.Title</h2>
-                            <div class="mw-terms__section-body">@item.Body</div>
-                        </section>
-                    }
-                </div>
+            <div class="mw-terms__sections">
+                @foreach (var item in Sections)
+                {
+                    <section id="@item.Id" class="mw-terms__section">
+                        <h2 class="mw-terms__section-title">@item.Title</h2>
+                        <div class="mw-terms__section-body">@item.Body</div>
+                    </section>
+                }
             </div>
 
         </div>

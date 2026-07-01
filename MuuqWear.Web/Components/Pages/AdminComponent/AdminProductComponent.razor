@@ -1,4 +1,4 @@
-﻿@page "/admin/products"
+@page "/admin/products"
 @layout Layout.AdminLayoutComponent.AdminDashboardLayoutComponent
 @rendermode InteractiveServer
 @using MuuqWear.Application.Services.ProductService
@@ -284,7 +284,14 @@ else
                                         @onclick="() => ToggleColor(color)">
                                     @if (SelectedColors.Contains(color))
                                     {
-                                        <span style="color: @(color == "#FFFFFF" ? "#000" : "#FFF"); font-weight: bold;">✓</span>
+                                        <svg class="mw-admin-color-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                            <polyline points="20 6 9 17 4 12"
+                                                      fill="none"
+                                                      stroke="@MuuqWearUtils.GetContrastIconColor(color)"
+                                                      stroke-width="3"
+                                                      stroke-linecap="round"
+                                                      stroke-linejoin="round" />
+                                        </svg>
                                     }
                                 </button>
                             }

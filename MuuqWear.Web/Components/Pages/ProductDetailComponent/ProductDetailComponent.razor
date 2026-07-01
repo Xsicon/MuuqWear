@@ -35,7 +35,7 @@ else
             <div class="mw-pd__breadcrumb">
                 <a href="/">Home</a>
                 <span>&gt;</span>
-                <a href="/shop">Apparel</a>
+                <a href="/shop/apparel">Apparel</a>
                 <span>&gt;</span>
                 <span class="mw-pd__breadcrumb-active">@product.Name</span>
             </div>
@@ -66,14 +66,37 @@ else
 
                     @if (ThumbnailImages.Any())
                     {
-                        <div class="mw-pd__thumbs">
-                            @for (var i = 0; i < ThumbnailImages.Count; i++)
+                        <div class="mw-pd__thumbs-wrap">
+                            <div class="mw-pd__thumbs" @ref="thumbsRef">
+                                @for (var i = 0; i < ThumbnailImages.Count; i++)
+                                {
+                                    var index = i;
+                                    var img = ThumbnailImages[i];
+                                    <button type="button"
+                                            class="mw-pd__thumb @(selectedThumbIndex == index ? "is-active" : "")"
+                                            @onclick="() => SelectThumb(index)">
+                                        <img src="@img" alt="@product.Name" />
+                                    </button>
+                                }
+                            </div>
+
+                            @if (ThumbnailImages.Count > 3)
                             {
-                                var index = i;
-                                var img = ThumbnailImages[i];
-                                <button class="mw-pd__thumb @(selectedThumbIndex == index ? "is-active" : "")"
-                                        @onclick="() => SelectThumb(index)">
-                                    <img src="@img" alt="@product.Name" />
+                                <button type="button"
+                                        class="mw-pd__thumbs-btn mw-pd__thumbs-btn--prev"
+                                        aria-label="Previous image"
+                                        @onclick="ScrollThumbsLeft">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="m15 18-6-6 6-6" />
+                                    </svg>
+                                </button>
+                                <button type="button"
+                                        class="mw-pd__thumbs-btn mw-pd__thumbs-btn--next"
+                                        aria-label="Next image"
+                                        @onclick="ScrollThumbsRight">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="m9 18 6-6-6-6" />
+                                    </svg>
                                 </button>
                             }
                         </div>
@@ -116,7 +139,7 @@ else
                                 <h3 class="mw-pd__label">Select Size</h3>
                                 <a href="/size-guide" class="mw-pd__sizeguide">Size Guide</a>
                             </div>
-                            <div class="mw-pd__sizes">
+                            <div class="mw-pd__sizes @(product.SizeList.Count == 1 ? "mw-pd__sizes--single" : "")">
                                 @foreach (var size in product.SizeList)
                                 {
                                     <button class="mw-pd__size @(SelectedSize == size ? "is-active" : "")"
@@ -138,7 +161,20 @@ else
                                     <button class="mw-pd__color @(SelectedColor == color ? "is-active" : "")"
                                             style="background-color:@color"
                                             aria-label="@color"
-                                            @onclick="() => SelectedColor = color"></button>
+                                            aria-pressed="@(SelectedColor == color)"
+                                            @onclick="() => SelectedColor = color">
+                                        @if (SelectedColor == color)
+                                        {
+                                            <svg class="mw-pd__color-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                                <polyline points="20 6 9 17 4 12"
+                                                          fill="none"
+                                                          stroke="@MuuqWearUtils.GetContrastIconColor(color)"
+                                                          stroke-width="3"
+                                                          stroke-linecap="round"
+                                                          stroke-linejoin="round" />
+                                            </svg>
+                                        }
+                                    </button>
                                 }
                             </div>
                         </div>
@@ -263,9 +299,12 @@ else
     private string addToCartMessageCss = string.Empty;
 
     private ElementReference completeLookRef;
+    private ElementReference thumbsRef;
     private bool _carouselInited;
+    private bool _thumbsInited;
     private const string CtlItemSelector = ".mw-ctl-item";
-    private const int MinThumbnailCount = 3;
+    private const string ThumbsItemSelector = ".mw-pd__thumb";
+    private const int MinThumbnailCount = 4;
 
     private List<string> ThumbnailImages
     {
@@ -306,6 +345,7 @@ else
         isLoading = true;
         RelatedProducts = new();
         _carouselInited = false;
+        _thumbsInited = false;
 
         await LoadProduct(productId);
         isLoading = false;
@@ -315,6 +355,12 @@ else
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (!_thumbsInited && ThumbnailImages.Count > 3)
+        {
+            _thumbsInited = true;
+            await JS.InvokeVoidAsync("enableDragScroll", thumbsRef);
+        }
+
         if (!_carouselInited && RelatedProducts.Any())
         {
             _carouselInited = true;
@@ -327,6 +373,12 @@ else
 
     private async Task ScrollCtlRight() =>
         await JS.InvokeVoidAsync("mwScrollRight", completeLookRef, CtlItemSelector);
+
+    private async Task ScrollThumbsLeft() =>
+        await JS.InvokeVoidAsync("mwScrollLeft", thumbsRef, ThumbsItemSelector);
+
+    private async Task ScrollThumbsRight() =>
+        await JS.InvokeVoidAsync("mwScrollRight", thumbsRef, ThumbsItemSelector);
 
     private async Task LoadProduct(Guid productId)
     {

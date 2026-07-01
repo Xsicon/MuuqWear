@@ -1,4 +1,4 @@
-﻿@page "/community"
+@page "/community"
 @rendermode InteractiveServer
 @inject IJSRuntime JS
 @inject IVoteService VoteService
@@ -225,6 +225,17 @@
                                                                 disabled="@item.HasVoted"
                                                                 @onclick:stopPropagation="true"
                                                                 @onclick="() => SelectColor(item.Id, color)">
+                                                            @if (IsColorSelected(item.Id, color))
+                                                            {
+                                                                <svg class="mw-card__color-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                                                    <polyline points="20 6 9 17 4 12"
+                                                                              fill="none"
+                                                                              stroke="@MuuqWearUtils.GetContrastIconColor(color)"
+                                                                              stroke-width="3"
+                                                                              stroke-linecap="round"
+                                                                              stroke-linejoin="round" />
+                                                                </svg>
+                                                            }
                                                         </button>
                                                     }
                                                 </div>
