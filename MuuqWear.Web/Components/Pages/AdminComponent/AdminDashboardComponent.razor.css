@@ -202,8 +202,8 @@
     color: #1E2A47;
 }
 
-.mw-admin[data-theme="dark"] .ov-access-item__icon,
-:global(.mw-admin[data-theme="dark"]) .ov-access-item__icon {
+html[data-admin-theme="dark"] .mw-admin .ov-access-item__icon,
+:global(html[data-admin-theme="dark"]) .mw-admin .ov-access-item__icon {
     background: rgba(230, 236, 245, 0.12);
     color: #E6ECF5;
 }
@@ -260,8 +260,8 @@
     color: #1E2A47;
 }
 
-.mw-admin[data-theme="dark"] .ov-activity-item__icon,
-:global(.mw-admin[data-theme="dark"]) .ov-activity-item__icon {
+html[data-admin-theme="dark"] .mw-admin .ov-activity-item__icon,
+:global(html[data-admin-theme="dark"]) .mw-admin .ov-activity-item__icon {
     background: rgba(230, 236, 245, 0.12);
     color: #E6ECF5;
 }
@@ -327,7 +327,7 @@
     text-decoration: none;
 }
 
-.mw-admin[data-theme="dark"] .ov-btn--secondary,
-:global(.mw-admin[data-theme="dark"]) .ov-btn--secondary {
+html[data-admin-theme="dark"] .mw-admin .ov-btn--secondary,
+:global(html[data-admin-theme="dark"]) .mw-admin .ov-btn--secondary {
     border-color: var(--admin-border);
 }

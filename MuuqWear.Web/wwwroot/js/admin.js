@@ -3,16 +3,63 @@
         return document.querySelector('.mw-admin');
     },
 
-    init: function () {
+    _readCookieTheme: function () {
+        var match = document.cookie.match(/(?:^|;\s*)admin-theme=(dark|light)/);
+        return match ? match[1] : null;
+    },
+
+    _setCookieTheme: function (value) {
+        document.cookie = 'admin-theme=' + value + ';path=/;max-age=31536000;SameSite=Lax';
+    },
+
+    _getStoredTheme: function () {
+        try {
+            var stored = localStorage.getItem('admin-theme');
+            if (stored === 'dark' || stored === 'light') {
+                return stored;
+            }
+        } catch (e) { }
+
+        var fromCookie = this._readCookieTheme();
+        if (fromCookie) {
+            return fromCookie;
+        }
+
+        var fromHtml = document.documentElement.getAttribute('data-admin-theme');
+        if (fromHtml === 'dark' || fromHtml === 'light') {
+            return fromHtml;
+        }
+
+        return 'light';
+    },
+
+    _applyTheme: function (theme) {
+        var value = theme === 'dark' ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-admin-theme', value);
+
         var root = this._root();
-        if (!root) return;
+        if (root) {
+            root.setAttribute('data-theme', value);
+        }
+
+        try {
+            localStorage.setItem('admin-theme', value);
+        } catch (e) { }
+
+        this._setCookieTheme(value);
+    },
+
+    init: function () {
+        this._applyTheme(this._getStoredTheme());
+
+        var root = this._root();
+        if (!root) {
+            return;
+        }
 
         if (localStorage.getItem('admin-sidebar-collapsed') === '1') {
             root.classList.add('an-sidebar-collapsed');
         }
-
-        var theme = localStorage.getItem('admin-theme') || 'light';
-        root.setAttribute('data-theme', theme);
     },
 
     /* Mobile drawer */
@@ -43,11 +90,8 @@
 
     /* Light / dark theme */
     toggleTheme: function () {
-        var root = this._root();
-        if (!root) return;
-        var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-        root.setAttribute('data-theme', next);
-        localStorage.setItem('admin-theme', next);
+        var current = this._getStoredTheme();
+        this._applyTheme(current === 'dark' ? 'light' : 'dark');
     }
 };
 
@@ -56,6 +100,8 @@ window.showAdminContent = function () {
     if (overlay) overlay.remove();
 };
 
-document.addEventListener('DOMContentLoaded', function () {
+window.initAdminShell = function () {
     window.adminSidebar.init();
-});
+};
+
+document.addEventListener('DOMContentLoaded', window.initAdminShell);

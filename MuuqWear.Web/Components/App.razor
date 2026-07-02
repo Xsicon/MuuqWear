@@ -1,9 +1,31 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+﻿@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    var adminTheme = ResolveAdminTheme();
+}
+
+<!DOCTYPE html>
+<html lang="en" data-admin-theme="@adminTheme">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
+    <script>
+        (function () {
+            try {
+                var theme = localStorage.getItem('admin-theme');
+                if (theme !== 'dark' && theme !== 'light') {
+                    var match = document.cookie.match(/(?:^|;\s*)admin-theme=(dark|light)/);
+                    theme = match ? match[1] : null;
+                }
+                if (theme === 'dark' || theme === 'light') {
+                    document.documentElement.setAttribute('data-admin-theme', theme);
+                    localStorage.setItem('admin-theme', theme);
+                }
+            } catch (e) { }
+        })();
+    </script>
     <link rel="stylesheet" href="bootstrap/bootstrap.min.css" />
     <link rel="stylesheet" href="app.css" />
     <link rel="stylesheet" href="css/admin-shell.css" />
@@ -20,6 +42,16 @@
     <script src="js/admin.js"></script>
     <script src="js/admin-export.js"></script>
     <script src="_framework/blazor.web.js"></script>
+    <script>
+        Blazor.addEventListener('enhancedload', function () {
+            if (window.initAdminShell) {
+                window.initAdminShell();
+                requestAnimationFrame(function () {
+                    window.initAdminShell();
+                });
+            }
+        });
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="js/chartHelpers.js"></script>
     <script src="js/stripe-interop.js"></script>
@@ -29,3 +61,16 @@
 
 </body>
 </html>
+
+@code {
+    private string ResolveAdminTheme()
+    {
+        if (HttpContextAccessor.HttpContext?.Request.Cookies.TryGetValue("admin-theme", out var theme) == true
+            && theme is "dark" or "light")
+        {
+            return theme;
+        }
+
+        return "light";
+    }
+}
