@@ -22,6 +22,7 @@ using MuuqWear.Application.Services.JournalService;
 using MuuqWear.Application.Services.NotificationService;
 using MuuqWear.Application.Services.OrderReturnService;
 using MuuqWear.Application.Services.OrderService;
+using MuuqWear.Application.Services.RefundService;
 using MuuqWear.Application.Services.PaymentService;
 using MuuqWear.Application.Services.ProductService;
 using MuuqWear.Application.Services.ProfileService;
@@ -74,6 +75,10 @@ builder.Services.AddHttpClient<IOrderReturnService, OrderReturnService>(client =
 {
     client.BaseAddress = new Uri(apiBaseUrl);
 }).AddHttpMessageHandler<AuthenticatedHttpHandler>();
+builder.Services.AddHttpClient<IRefundService, RefundService>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+}).AddHttpMessageHandler<AuthenticatedHttpHandler>();
 builder.Services.AddHttpClient<IAddressService, AddressService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
@@ -100,6 +105,7 @@ builder.Services.AddHttpClient<IVoteService, VoteService>(client =>
     client.BaseAddress = new Uri(apiBaseUrl);
 }).AddHttpMessageHandler<AuthenticatedHttpHandler>();
 builder.Services.AddScoped<AuthStateService>();
+builder.Services.AddScoped<AdminOrdersTabCoordinator>();
 builder.Services.AddScoped<CartStateService>();
 builder.Services.AddScoped<WishlistStateService>();
 builder.Services.AddCascadingAuthenticationState();

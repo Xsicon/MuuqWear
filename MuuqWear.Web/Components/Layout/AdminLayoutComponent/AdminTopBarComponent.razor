@@ -289,7 +289,7 @@
             return $"/admin/orders?search={Uri.EscapeDataString(query)}";
 
         if (query.Contains('@'))
-            return $"/admin/customers?search={Uri.EscapeDataString(query)}";
+            return $"/admin/orders?search={Uri.EscapeDataString(query)}";
 
         if (query.StartsWith("TKT-", StringComparison.OrdinalIgnoreCase))
             return $"/admin/tickets?search={Uri.EscapeDataString(query)}";

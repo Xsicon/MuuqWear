@@ -349,6 +349,114 @@ a.an-nav__item.active .an-nav__badge {
     color: #B8860B;
 }
 
+/* ─── NAV GROUPS (expandable sections) ───────────────────── */
+.an-nav-group {
+    margin-bottom: 2px;
+}
+
+.an-nav-group__header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border: none;
+    border-radius: 6px;
+    background: none;
+    color: var(--admin-muted);
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.15s, color 0.15s;
+}
+
+.an-nav-group__header:hover {
+    background: var(--admin-hover);
+    color: var(--admin-text);
+}
+
+.an-nav-group__header--active {
+    color: var(--admin-text);
+}
+
+.an-nav-group__header svg:first-of-type {
+    flex-shrink: 0;
+}
+
+.an-nav-group__chevron {
+    flex-shrink: 0;
+    margin-left: auto;
+    opacity: 0.6;
+    transition: transform 0.2s;
+}
+
+.an-nav-group--open .an-nav-group__chevron {
+    transform: rotate(180deg);
+}
+
+.an-nav-group__children {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 4px 0 4px 28px;
+}
+
+.an-nav__subitem {
+    display: block;
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    background: none;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    text-align: left;
+    color: var(--admin-muted);
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.an-nav__subitem:hover {
+    background: var(--admin-hover);
+    color: var(--admin-text);
+    text-decoration: none;
+}
+
+.an-nav__subitem--active {
+    background: var(--admin-active);
+    color: var(--admin-active-text);
+    text-decoration: none;
+}
+
+.mw-admin.an-sidebar-collapsed .an-nav-group__children,
+.mw-admin.an-sidebar-collapsed .an-nav-group__chevron {
+    display: none;
+}
+
+.mw-admin.an-sidebar-collapsed .an-nav-group__header {
+    justify-content: center;
+    padding: 10px;
+    gap: 0;
+    position: relative;
+}
+
+.mw-admin.an-sidebar-collapsed .an-nav-group__header .an-nav__label,
+.mw-admin.an-sidebar-collapsed .an-nav-group__header .an-nav__badge {
+    display: none;
+}
+
+.mw-admin.an-sidebar-collapsed .an-nav-group__header:has(.an-nav__badge)::after {
+    content: '';
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #C44545;
+}
+
 /* ─── TOPBAR ──────────────────────────────────────────────── */
 .at-topbar {
     position: sticky;

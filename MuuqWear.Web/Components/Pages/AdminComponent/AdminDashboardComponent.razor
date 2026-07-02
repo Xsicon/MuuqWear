@@ -39,7 +39,8 @@
 
         <!-- Stats -->
         <div class="ov-stats">
-            <div class="ov-stat">
+            <div class="ov-stat ov-stat--link">
+                <a href="/admin/orders?tab=orders&status=pending" class="ov-stat__link">
                 <div class="ov-stat__top">
                     <span class="ov-stat__icon ov-stat__icon--green" aria-hidden="true">
                         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"></circle><circle cx="19" cy="21" r="1"></circle><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path></svg>
@@ -51,6 +52,7 @@
                 </div>
                 <p class="ov-stat__value">@pendingOrders</p>
                 <p class="ov-stat__label">Active Orders</p>
+                </a>
             </div>
 
             <div class="ov-stat">
@@ -141,9 +143,10 @@
         <section class="ov-panel ov-panel--actions">
             <h2 class="ov-panel__title">Quick Actions</h2>
             <div class="ov-actions">
-                <a href="/admin/orders" class="ov-btn ov-btn--primary">View All Orders</a>
+                <a href="/admin/orders?tab=orders" class="ov-btn ov-btn--primary">All Orders</a>
+                <a href="/admin/orders?tab=returns" class="ov-btn ov-btn--secondary">Process Returns</a>
+                <a href="/admin/orders?tab=refunds&status=pending" class="ov-btn ov-btn--secondary">Pending Refunds</a>
                 <a href="/admin/analytics" class="ov-btn ov-btn--secondary">Export Data</a>
-                <a href="/admin/settings" class="ov-btn ov-btn--secondary">System Health</a>
             </div>
         </section>
     }
@@ -264,7 +267,7 @@
 
     private static List<AccessModule> BuildAccessModules() => new()
     {
-        new("Sales & Orders", "Full order management", "/admin/orders", OrdersAccessIcon()),
+        new("Sales & Orders", "Full order management", "/admin/orders?tab=orders", OrdersAccessIcon()),
         new("Customers", "Customer database access", "/admin/customers", CustomersAccessIcon()),
         new("Products & Inventory", "Complete product control", "/admin/products", ProductsAccessIcon()),
         new("Content", "Content management system", "/admin/content", ContentAccessIcon()),

@@ -1,37 +1,94 @@
 ﻿@page "/admin/orders"
 @layout Layout.AdminLayoutComponent.AdminDashboardLayoutComponent
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 @using Microsoft.AspNetCore.Authorization
 @using MuuqWear.Application.Services.OrderReturnService
 @using MuuqWear.Application.Services.OrderService
+@using MuuqWear.Application.Services.RefundService
 @using MuuqWear.Model.OrderReturn
 @using MuuqWear.Model.Orders
+@using MuuqWear.Model.Refund
 @using MuuqWear.Web.Components.Shared
 @inject IOrderService OrderService
 @inject IOrderReturnService OrderReturnService
+@inject NavigationManager NavigationManager
+@implements IDisposable
 @attribute [Authorize(Roles = "admin")]
 
-<PageTitle>Orders & Returns</PageTitle>
-@if (isLoading)
+<PageTitle>Sales & Orders</PageTitle>
+@if (activeMainTab == "orders" && isLoading)
 {
     <p class="mw-section-loading">Loading orders...</p>
 }
 
 <div class="orders-page">
 
-    <h1 class="orders-title">Orders &amp; Returns</h1>
+    <div class="orders-header">
+        <div>
+            <h1 class="orders-title">Sales &amp; Orders</h1>
+            <p class="orders-subtitle">@PageSubtitle</p>
+        </div>
+        <div class="orders-header__actions">
+            <button type="button"
+                    class="orders-refresh-btn"
+                    disabled="@isRefreshing"
+                    aria-label="Refresh list"
+                    @onclick="RefreshCurrentTab">
+                <svg class="orders-refresh-btn__icon @(isRefreshing ? "orders-refresh-btn__icon--spin" : "")"
+                     xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                    <path d="M3 3v5h5"></path>
+                    <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path>
+                    <path d="M16 16h5v5"></path>
+                </svg>
+                @(isRefreshing ? "Refreshing..." : "Refresh")
+            </button>
 
-    <!-- ─── MAIN TABS ──────────────────────────────────────── -->
-    <div class="orders-main-tabs">
-        <button class="orders-main-tab @(activeMainTab == "orders" ? "active" : "inactive")"
-                @onclick='() => SetMainTab("orders")'>
-            Orders
-        </button>
-        <button class="orders-main-tab @(activeMainTab == "returns" ? "active" : "inactive")"
-                @onclick='() => SetMainTab("returns")'>
-            Returns &amp; Refunds
-        </button>
+            <div class="orders-export-wrap">
+                <button type="button"
+                        class="orders-export-btn"
+                        disabled="@isExporting"
+                        aria-expanded="@exportMenuOpen"
+                        @onclick="ToggleExportMenu">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" x2="12" y1="15" y2="3"></line>
+                    </svg>
+                    @(isExporting ? "Exporting..." : "Export")
+                </button>
+                @if (exportMenuOpen)
+                {
+                    <div class="orders-export-menu">
+                        <button type="button" class="orders-export-menu__item" @onclick='() => ExportAsync("csv")'>
+                            Download CSV (all filtered)
+                        </button>
+                        <button type="button" class="orders-export-menu__item" @onclick='() => ExportAsync("excel")'>
+                            Download Excel (all filtered)
+                        </button>
+                        @if (activeMainTab == "orders" && selectedOrderIds.Any())
+                        {
+                            <button type="button" class="orders-export-menu__item orders-export-menu__item--highlight" @onclick='() => ExportAsync("csv", selectedOnly: true)'>
+                                CSV — @selectedOrderIds.Count selected
+                            </button>
+                            <button type="button" class="orders-export-menu__item orders-export-menu__item--highlight" @onclick='() => ExportAsync("excel", selectedOnly: true)'>
+                                Excel — @selectedOrderIds.Count selected
+                            </button>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
     </div>
+
+    @if (!string.IsNullOrEmpty(exportMessage))
+    {
+        <p class="orders-export-note @(exportMessage.StartsWith("Export failed") || exportMessage.StartsWith("No ") ? "orders-export-note--error" : "")">
+            @exportMessage
+        </p>
+    }
 
     @if (activeMainTab == "orders")
     {
@@ -44,6 +101,30 @@
                     @tab.Label
                 </button>
             }
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            <p class="orders-search-active">
+                Showing results for “@searchTerm”
+                <button type="button" class="orders-search-active__clear" @onclick="ClearSearch">Clear</button>
+            </p>
+        }
+
+        <div class="orders-search">
+            <svg class="orders-search__icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.3-4.3"></path>
+            </svg>
+            <input class="orders-search__input"
+                   type="search"
+                   placeholder="Search by order #, email, or customer name…"
+                   value="@searchTerm"
+                   @oninput="OnSearchInput"
+                   @onkeydown="HandleSearchKeyDown" />
+            <button type="button" class="orders-search__btn" @onclick="ApplySearch">Search</button>
         </div>
 
         <!-- ─── ORDER CARDS ───────────────────────────────── -->
@@ -79,9 +160,15 @@
                             </div>
 
                             <div class="order-card__actions">
-                                <button class="btn-view"
+                                <button type="button" class="btn-view btn-view--icon"
+                                        aria-label="View order"
                                         @onclick="() => OpenViewPanel(order.Id)">
-                                    View
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"></path>
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
                                 </button>
                                 @{
                                     var nextAction = GetNextAction(order.Status);
@@ -146,22 +233,9 @@
             <!--  scope note — only shows when something is selected -->
             @if (selectedOrderIds.Any())
             {
-                <span style="color:#4A5C7A;font-size:12px;
-                                                                                                                                     align-self:center">
-                    Current page only
-                </span>
+                <span class="orders-scope-note">Current page only</span>
             }
 
-            <button class="btn-secondary-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
-                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="7 10 12 15 17 10"></polyline>
-                    <line x1="12" x2="12" y1="15" y2="3"></line>
-                </svg>
-                Export CSV
-            </button>
             <button class="@(selectedOrderIds.Any() ? "btn-process" : "btn-secondary-sm")"
                     disabled="@(!selectedOrderIds.Any())"
                     @onclick="OpenBulkModal">
@@ -170,8 +244,8 @@
                             : "")
         </button>
     </div>
-        }
-    else
+    }
+    else if (activeMainTab == "returns")
     {
         <!-- ─── RETURN STATUS FILTER TABS ────────────────── -->
         <div class="orders-status-tabs">
@@ -183,6 +257,21 @@
                 </button>
             }
         </div>
+
+        @if (!string.IsNullOrEmpty(returnActionError))
+        {
+            <p class="orders-error">@returnActionError</p>
+        }
+
+        @if (!string.IsNullOrEmpty(returnSuccessMessage))
+        {
+            <div class="orders-success-banner">
+                <span>@returnSuccessMessage</span>
+                <button type="button" class="orders-success-banner__link" @onclick="NavigateToRefundsTab">
+                    Go to Refunds
+                </button>
+            </div>
+        }
 
         <!-- ─── RETURN CARDS ─────────────────────────────── -->
         <div class="orders-list">
@@ -211,10 +300,19 @@
                                 </span>
                             </div>
 
-                            <!-- Approve/Deny only for pending -->
+                            <div class="order-card__actions">
+                                <button type="button" class="btn-view btn-view--icon"
+                                        aria-label="View return"
+                                        @onclick="() => OpenReturnViewPanel(item)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"></path>
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                </button>
                             @if (item.Status?.ToLower() == "pending")
                             {
-                                <div class="order-card__actions">
                                     <button class="btn-process"
                                             @onclick="() => ApproveReturn(item.Id)">
                                         Approve
@@ -223,9 +321,19 @@
                                             @onclick="() => DenyReturn(item.Id)">
                                         Deny
                                     </button>
-                                </div>
                             }
+                            </div>
                         </div>
+
+                        @if (item.Status?.ToLower() == "approved")
+                        {
+                            <p class="order-card__workflow-hint">
+                                Refund may be pending —
+                                <button type="button" class="order-card__workflow-link" @onclick="NavigateToRefundsTab">
+                                    view in Refunds
+                                </button>
+                            </p>
+                        }
 
                         <!-- SECOND ROW: order number · email · date -->
                         <p class="order-card__meta">
@@ -251,11 +359,121 @@
                              PageSize="@returnsPageSize"
                              OnPageChanged="HandleReturnsPageChanged" />
     }
+    else if (activeMainTab == "refunds")
+    {
+        <!-- ─── REFUND STATUS FILTER TABS ────────────────── -->
+        <div class="orders-status-tabs">
+            @foreach (var tab in RefundStatusTabs)
+            {
+                <button class="orders-status-tab @(activeRefundStatus == tab.Value ? "active" : "inactive")"
+                        @onclick="() => SetRefundStatus(tab.Value)">
+                    @tab.Label
+                </button>
+            }
+        </div>
+
+        @if (!string.IsNullOrEmpty(refundsError))
+        {
+            <p class="orders-error">@refundsError</p>
+        }
+
+        <!-- ─── REFUND CARDS ─────────────────────────────── -->
+        <div class="orders-list">
+            @if (isLoadingRefunds)
+            {
+                <p class="orders-empty">Loading...</p>
+            }
+            else if (refundsTotalCount == 0 && string.IsNullOrEmpty(refundsError))
+            {
+                <p class="orders-empty">No refunds found.</p>
+            }
+            else if (!refunds.Any())
+            {
+                <p class="orders-empty">@(string.IsNullOrEmpty(refundsError) ? "No refunds on this page." : refundsError)</p>
+            }
+            else
+            {
+                @foreach (var item in refunds)
+                {
+                    <div class="order-card">
+                        <div class="order-card__top">
+                            <div class="order-card__left">
+                                <p class="order-card__number">
+                                    @item.RefundNumber
+                                </p>
+                                <span class="status-badge @GetRefundBadgeClass(item.Status)">
+                                    @item.Status
+                                </span>
+                            </div>
+
+                            @if (CanProcessRefund(item.Status))
+                            {
+                                <div class="order-card__actions">
+                                    <button type="button" class="btn-view btn-view--icon"
+                                            aria-label="View refund"
+                                            @onclick="() => OpenRefundViewPanel(item)">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                             viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"></path>
+                                            <circle cx="12" cy="12" r="3"></circle>
+                                        </svg>
+                                    </button>
+                                    <button class="btn-process"
+                                            disabled="@(processingRefundId == item.Id || isRefundProcessing)"
+                                            @onclick="() => OpenRefundProcessModal(item)">
+                                        @(processingRefundId == item.Id || (isRefundProcessing && processingRefund?.Id == item.Id)
+                                            ? "Processing..."
+                                            : "Process Refund")
+                                    </button>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="order-card__actions">
+                                    <button type="button" class="btn-view btn-view--icon"
+                                            aria-label="View refund"
+                                            @onclick="() => OpenRefundViewPanel(item)">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                             viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"></path>
+                                            <circle cx="12" cy="12" r="3"></circle>
+                                        </svg>
+                                    </button>
+                                </div>
+                            }
+                        </div>
+
+                        <p class="order-card__meta">
+                            Order: @item.OrderNumber
+                            · @(string.IsNullOrEmpty(item.FullName) ? item.Email : $"{item.FullName} · {item.Email}")
+                            · @item.CreatedAt?.ToString("MMM dd, yyyy")
+                        </p>
+
+                        <p class="order-card__items">
+                            $@item.Amount.ToString("F2")
+                            @if (!string.IsNullOrEmpty(item.FailureReason))
+                            {
+                                <span> · @item.FailureReason</span>
+                            }
+                        </p>
+                    </div>
+                }
+            }
+        </div>
+
+        <PaginationComponent TItem="RefundModel"
+                             TotalCount="@refundsTotalCount"
+                             CurrentPage="@refundsCurrentPage"
+                             PageSize="@refundsPageSize"
+                             OnPageChanged="HandleRefundsPageChanged" />
+    }
 
 </div>
 
 <!-- ─── VIEW PANEL ────────────────────────────────────────── -->
-@if (isViewPanelOpen && viewOrder != null)
+@if (isViewPanelOpen)
 {
     <div class="orders-panel-overlay" @onclick="CloseViewPanel"></div>
 
@@ -270,6 +488,8 @@
             </svg>
         </button>
 
+        @if (viewPanelKind == "order" && viewOrder != null)
+        {
         <p class="orders-panel__eyebrow">Order Details</p>
         <h2 class="orders-panel__title">#@viewOrder.OrderNumber</h2>
 
@@ -366,6 +586,106 @@
         </div>
     </div>
         }
+        }
+        else if (viewPanelKind == "return" && viewReturn != null)
+        {
+            <p class="orders-panel__eyebrow">Return Details</p>
+            <h2 class="orders-panel__title">#@viewReturn.ReturnNumber</h2>
+
+            <div class="orders-panel__section">
+                <span class="status-badge @GetReturnBadgeClass(viewReturn.Status)">@viewReturn.Status</span>
+                <p class="orders-panel__value">@viewReturn.FullName · @viewReturn.Email</p>
+                <p class="orders-panel__meta">Submitted @viewReturn.CreatedAt?.ToString("MMM dd, yyyy · hh:mm tt")</p>
+            </div>
+
+            <div class="orders-panel__section">
+                <p class="orders-panel__label">Order</p>
+                <p class="orders-panel__value">#@viewReturn.OrderNumber</p>
+            </div>
+
+            <div class="orders-panel__section">
+                <p class="orders-panel__label">Items to Return</p>
+                <p class="orders-panel__value">@viewReturn.ItemsToReturn</p>
+            </div>
+
+            <div class="orders-panel__section">
+                <p class="orders-panel__label">Reason</p>
+                <p class="orders-panel__value">@viewReturn.Reason</p>
+            </div>
+
+            @if (!string.IsNullOrEmpty(viewReturn.Comments))
+            {
+                <div class="orders-panel__section">
+                    <p class="orders-panel__label">Comments</p>
+                    <p class="orders-panel__value">@viewReturn.Comments</p>
+                </div>
+            }
+
+            @if (viewReturn.Status?.ToLower() == "approved")
+            {
+                <div class="orders-panel__section">
+                    <button type="button" class="btn-process" @onclick="NavigateToRefundsTab">
+                        View pending refund
+                    </button>
+                </div>
+            }
+        }
+        else if (viewPanelKind == "refund" && viewRefund != null)
+        {
+            <p class="orders-panel__eyebrow">Refund Details</p>
+            <h2 class="orders-panel__title">@viewRefund.RefundNumber</h2>
+
+            <div class="orders-panel__section">
+                <span class="status-badge @GetRefundBadgeClass(viewRefund.Status)">@viewRefund.Status</span>
+                <p class="orders-panel__value">
+                    @(string.IsNullOrEmpty(viewRefund.FullName) ? viewRefund.Email : $"{viewRefund.FullName} · {viewRefund.Email}")
+                </p>
+                <p class="orders-panel__meta">Created @viewRefund.CreatedAt?.ToString("MMM dd, yyyy · hh:mm tt")</p>
+            </div>
+
+            <div class="orders-panel__section">
+                <p class="orders-panel__label">Order</p>
+                <p class="orders-panel__value">@viewRefund.OrderNumber</p>
+            </div>
+
+            <div class="orders-panel__section">
+                <p class="orders-panel__label">Amount</p>
+                <p class="orders-panel__row-total">$@viewRefund.Amount.ToString("F2") @(viewRefund.Currency ?? "USD")</p>
+            </div>
+
+            @if (viewRefund.ProcessedAt.HasValue)
+            {
+                <div class="orders-panel__section">
+                    <p class="orders-panel__label">Processed</p>
+                    <p class="orders-panel__value">@viewRefund.ProcessedAt?.ToString("MMM dd, yyyy · hh:mm tt")</p>
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(viewRefund.StripeRefundId))
+            {
+                <div class="orders-panel__section">
+                    <p class="orders-panel__label">Stripe Refund ID</p>
+                    <p class="orders-panel__value">@viewRefund.StripeRefundId</p>
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(viewRefund.FailureReason))
+            {
+                <div class="orders-panel__section">
+                    <p class="orders-panel__label">Failure Reason</p>
+                    <p class="orders-panel__value orders-panel__value--error">@viewRefund.FailureReason</p>
+                </div>
+            }
+
+            @if (CanProcessRefund(viewRefund.Status))
+            {
+                <div class="orders-panel__section">
+                    <button type="button" class="btn-process" @onclick="() => OpenRefundProcessModal(viewRefund)">
+                        Process Refund
+                    </button>
+                </div>
+            }
+        }
 
     </div>
 }
@@ -423,6 +743,38 @@
                                 : GetNextAction(processingOrder.Status)?.Label ?? "Confirm")
             </button>
         </div>
+
+        </div>
+    </div>
+}
+
+@if (isRefundProcessModalOpen && processingRefund != null)
+{
+    <div class="process-modal-overlay" @onclick="CloseRefundProcessModal">
+        <div class="process-modal" @onclick:stopPropagation="true">
+
+            <h3 class="process-modal__title">Process Refund</h3>
+            <p class="process-modal__subtitle">
+                Confirm processing refund @processingRefund.RefundNumber for order @processingRefund.OrderNumber
+                ($@processingRefund.Amount.ToString("F2")). This will initiate the refund with the payment provider.
+            </p>
+
+            @if (!string.IsNullOrEmpty(refundProcessError))
+            {
+                <p class="orders-error orders-error--modal">@refundProcessError</p>
+            }
+
+            <div class="process-modal__actions">
+                <button class="btn-view w-100" @onclick="CloseRefundProcessModal">
+                    Cancel
+                </button>
+                <button class="btn-process"
+                        style="flex:1"
+                        @onclick="ConfirmProcessRefund"
+                        disabled="@isRefundProcessing">
+                    @(isRefundProcessing ? "Processing..." : "Confirm Refund")
+                </button>
+            </div>
 
         </div>
     </div>
