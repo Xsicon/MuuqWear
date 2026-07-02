@@ -1,348 +1,317 @@
 ﻿@page "/admin"
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
 @using MuuqWear.Application.Interfaces
+@using MuuqWear.Application.Services.AdminBadgeService
+@using MuuqWear.Application.Services.AffiliateService
 @using MuuqWear.Application.Services.HelpCenterService
 @using MuuqWear.Application.Services.OrderService
-@using MuuqWear.Model.Orders
+@using MuuqWear.Application.Services.ProductService
+@using MuuqWear.Model.AffiliateApplication
 @using MuuqWear.Model.HelpCenter
-@using MuuqWear.Web.Components.Shared
+@using MuuqWear.Model.Orders
+@using MuuqWear.Model.Products
 @layout Components.Layout.AdminLayoutComponent.AdminDashboardLayoutComponent
 @rendermode InteractiveServer
 @attribute [Authorize(Roles = "admin")]
 @inject IOrderService OrderService
 @inject IHelpCenterService HelpService
+@inject IAdminBadgeService BadgeService
+@inject IProductService ProductService
+@inject IAffiliateService AffiliateService
+@inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>Admin Dashboard</PageTitle>
 
-@if (isLoading)
-{
-    <p class="mw-section-loading">Loading dashboard...</p>
-}
-
 <div class="ov-page">
 
-    <h1 class="ov-title">Overview — Last 30 Days</h1>
+    @if (isLoading)
+    {
+        <p class="ov-loading">Loading dashboard…</p>
+    }
+    else
+    {
+        <!-- Welcome -->
+        <header class="ov-welcome">
+            <h1 class="ov-welcome__title">Welcome back, @userFirstName!</h1>
+            <p class="ov-welcome__sub">@welcomeMessage</p>
+        </header>
 
-    <!-- ─── STATS GRID ──────────────────────────────────── -->
-    <div class="ov-stats">
-
-        <div class="ov-stat">
-            <p class="ov-stat__label">Revenue</p>
-            <p class="ov-stat__value">$@totalRevenue.ToString("N0")</p>
-            <p class="ov-stat__change ov-stat__change--up">
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
-                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="m5 12 7-7 7 7"></path>
-                    <path d="M12 19V5"></path>
-                </svg>
-                +12%
-            </p>
-        </div>
-
-        <div class="ov-stat">
-            <p class="ov-stat__label">Orders</p>
-            <p class="ov-stat__value">@totalOrders.ToString("N0")</p>
-            <p class="ov-stat__change ov-stat__change--up">
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
-                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="m5 12 7-7 7 7"></path>
-                    <path d="M12 19V5"></path>
-                </svg>
-                +8%
-            </p>
-        </div>
-
-        <div class="ov-stat">
-            <p class="ov-stat__label">New Affiliates</p>
-            <p class="ov-stat__value">89</p>
-            <p class="ov-stat__change ov-stat__change--up">
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
-                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="m5 12 7-7 7 7"></path>
-                    <path d="M12 19V5"></path>
-                </svg>
-                +23%
-            </p>
-        </div>
-
-        <div class="ov-stat">
-            <p class="ov-stat__label">Avg Rating</p>
-            <p class="ov-stat__value">4.8 ★</p>
-            <p class="ov-stat__change ov-stat__change--down">
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
-                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 5v14"></path>
-                    <path d="m19 12-7 7-7-7"></path>
-                </svg>
-                -2%
-            </p>
-        </div>
-
-    </div>
-
-    <!-- ─── TWO COL GRID ────────────────────────────────── -->
-    <div class="ov-grid">
-
-        <!-- RECENT ORDERS -->
-        <div class="ov-card">
-            <div class="ov-card__header">
-                <h3 class="ov-card__title">Recent Orders</h3>
-                <a href="/admin/orders" class="ov-card__link">View All</a>
+        <!-- Stats -->
+        <div class="ov-stats">
+            <div class="ov-stat">
+                <div class="ov-stat__top">
+                    <span class="ov-stat__icon ov-stat__icon--green" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"></circle><circle cx="19" cy="21" r="1"></circle><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path></svg>
+                    </span>
+                    @if (pendingOrders > 0)
+                    {
+                        <span class="ov-stat__trend ov-stat__trend--up">+@pendingOrders</span>
+                    }
+                </div>
+                <p class="ov-stat__value">@pendingOrders</p>
+                <p class="ov-stat__label">Active Orders</p>
             </div>
-            <div class="ov-card__body">
-                @if (!recentOrders.Any())
+
+            <div class="ov-stat">
+                <div class="ov-stat__top">
+                    <span class="ov-stat__icon ov-stat__icon--orange" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"></path></svg>
+                    </span>
+                    @if (openTickets > 0)
+                    {
+                        <span class="ov-stat__trend ov-stat__trend--down">@openTickets</span>
+                    }
+                </div>
+                <p class="ov-stat__value">@openTickets</p>
+                <p class="ov-stat__label">Pending Support</p>
+            </div>
+
+            <div class="ov-stat">
+                <div class="ov-stat__top">
+                    <span class="ov-stat__icon ov-stat__icon--red" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="8" y2="12"></line><line x1="12" x2="12.01" y1="16" y2="16"></line></svg>
+                    </span>
+                    @if (lowStockCount > 0)
+                    {
+                        <span class="ov-stat__trend ov-stat__trend--warn">@lowStockCount</span>
+                    }
+                </div>
+                <p class="ov-stat__value">@lowStockCount</p>
+                <p class="ov-stat__label">Low Stock Items</p>
+            </div>
+
+            <div class="ov-stat">
+                <div class="ov-stat__top">
+                    <span class="ov-stat__icon ov-stat__icon--green" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.801 10A10 10 0 1 1 17 3.335"></path><path d="m9 11 3 3L22 4"></path></svg>
+                    </span>
+                    <span class="ov-stat__trend ov-stat__trend--up">100%</span>
+                </div>
+                <p class="ov-stat__value">Healthy</p>
+                <p class="ov-stat__label">System Status</p>
+            </div>
+        </div>
+
+        <!-- Your Access + Recent Activity -->
+        <div class="ov-grid">
+            <section class="ov-panel">
+                <h2 class="ov-panel__title">Your Access</h2>
+                <ul class="ov-access-list">
+                    @foreach (var module in accessModules)
+                    {
+                        <li @key="module.Href">
+                            <a href="@module.Href" class="ov-access-item">
+                                <span class="ov-access-item__icon" aria-hidden="true">@module.Icon</span>
+                                <span class="ov-access-item__text">
+                                    <span class="ov-access-item__label">@module.Label</span>
+                                    <span class="ov-access-item__desc">@module.Description</span>
+                                </span>
+                            </a>
+                        </li>
+                    }
+                </ul>
+            </section>
+
+            <section class="ov-panel">
+                <h2 class="ov-panel__title">Recent Activity</h2>
+                @if (!recentActivity.Any())
                 {
-                    <p class="ov-empty">No orders yet.</p>
+                    <p class="ov-empty">No recent activity.</p>
                 }
                 else
                 {
-                    @foreach (var order in recentOrders)
-                    {
-                        <div class="ov-order-row" @key="order.Id">
-                            <div>
-                                <span class="ov-order-number">#@order.OrderNumber</span>
-                                <span class="ov-order-amount">$@order.Total.ToString("F2")</span>
-                            </div>
-                            <span class="ov-status-badge @GetOrderStatusClass(order.Status)">
-                                @order.Status
-                            </span>
-                        </div>
-                    }
+                    <ul class="ov-activity-list">
+                        @foreach (var item in recentActivity)
+                        {
+                            <li class="ov-activity-item" @key="item.Key">
+                                <span class="ov-activity-item__icon" aria-hidden="true">@item.Icon</span>
+                                <span class="ov-activity-item__text">
+                                    <span class="ov-activity-item__action">@item.Action</span>
+                                    <span class="ov-activity-item__time">@item.TimeDisplay</span>
+                                </span>
+                            </li>
+                        }
+                    </ul>
                 }
-            </div>
+            </section>
         </div>
 
-        <!-- SUPPORT TICKETS PREVIEW -->
-        <div class="ov-card">
-            <div class="ov-card__header">
-                <h3 class="ov-card__title">Support Tickets</h3>
-                <a href="/admin/tickets" class="ov-card__link">Review All</a>
+        <!-- Quick Actions -->
+        <section class="ov-panel ov-panel--actions">
+            <h2 class="ov-panel__title">Quick Actions</h2>
+            <div class="ov-actions">
+                <a href="/admin/orders" class="ov-btn ov-btn--primary">View All Orders</a>
+                <a href="/admin/analytics" class="ov-btn ov-btn--secondary">Export Data</a>
+                <a href="/admin/settings" class="ov-btn ov-btn--secondary">System Health</a>
             </div>
-            <div class="ov-card__body">
-                @if (!recentTickets.Any())
-                {
-                    <p class="ov-empty">No tickets yet.</p>
-                }
-                else
-                {
-                    @foreach (var ticket in recentTickets)
-                    {
-                        <div class="ov-ticket-row" @key="ticket.Id">
-                            <div>
-                                <span class="ov-order-number">@ticket.TicketNumber</span>
-                                <span class="ov-ticket-name">@ticket.Name</span>
-                            </div>
-                            <span class="ov-status-badge @GetTicketStatusClass(ticket.Status)">
-                                @GetTicketStatusDisplay(ticket.Status)
-                            </span>
-                        </div>
-                    }
-                }
-            </div>
-        </div>
-
-    </div>
-
-    <!-- ─── SYSTEM HEALTH ────────────────────────────────── -->
-    <div class="ov-card ov-card--full">
-        <div class="ov-card__header">
-            <h3 class="ov-card__title">System Health</h3>
-        </div>
-        <div class="ov-card__body">
-            <div class="ov-health-grid">
-
-                <div class="ov-health-item">
-                    <div class="ov-health-item__icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                             viewBox="0 0 24 24" fill="none" stroke="#2D9C5A"
-                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
-                            <path d="M3 5V19A9 3 0 0 0 21 19V5"></path>
-                            <path d="M3 12A9 3 0 0 0 21 12"></path>
-                        </svg>
-                    </div>
-                    <div>
-                        <p class="ov-health-item__label">Database</p>
-                        <p class="ov-health-item__status">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"
-                                 viewBox="0 0 24 24" fill="none" stroke="#2D9C5A"
-                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
-                                <path d="m9 11 3 3L22 4"></path>
-                            </svg>
-                            Connected
-                        </p>
-                    </div>
-                </div>
-
-                <div class="ov-health-item">
-                    <div class="ov-health-item__icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                             viewBox="0 0 24 24" fill="none" stroke="#2D9C5A"
-                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect width="20" height="14" x="2" y="5" rx="2"></rect>
-                            <line x1="2" x2="22" y1="10" y2="10"></line>
-                        </svg>
-                    </div>
-                    <div>
-                        <p class="ov-health-item__label">Stripe</p>
-                        <p class="ov-health-item__status">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"
-                                 viewBox="0 0 24 24" fill="none" stroke="#2D9C5A"
-                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
-                                <path d="m9 11 3 3L22 4"></path>
-                            </svg>
-                            Connected
-                        </p>
-                    </div>
-                </div>
-
-                <div class="ov-health-item">
-                    <div class="ov-health-item__icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                             viewBox="0 0 24 24" fill="none" stroke="#2D9C5A"
-                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect width="20" height="8" x="2" y="2" rx="2" ry="2"></rect>
-                            <rect width="20" height="8" x="2" y="14" rx="2" ry="2"></rect>
-                            <line x1="6" x2="6.01" y1="6" y2="6"></line>
-                            <line x1="6" x2="6.01" y1="18" y2="18"></line>
-                        </svg>
-                    </div>
-                    <div>
-                        <p class="ov-health-item__label">Supabase</p>
-                        <p class="ov-health-item__status">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"
-                                 viewBox="0 0 24 24" fill="none" stroke="#2D9C5A"
-                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
-                                <path d="m9 11 3 3L22 4"></path>
-                            </svg>
-                            Connected
-                        </p>
-                    </div>
-                </div>
-
-                <div class="ov-health-item">
-                    <div class="ov-health-item__icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                             viewBox="0 0 24 24" fill="none" stroke="#2D9C5A"
-                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
-                            <path d="M21 3v5h-5"></path>
-                            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
-                            <path d="M8 16H3v5"></path>
-                        </svg>
-                    </div>
-                    <div>
-                        <p class="ov-health-item__label">Last Backup</p>
-                        <p class="ov-health-item__status ov-health-item__status--plain">
-                            Today 2:00 AM
-                        </p>
-                    </div>
-                </div>
-
-                <div class="ov-health-item">
-                    <div class="ov-health-item__icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                             viewBox="0 0 24 24" fill="none" stroke="#2D9C5A"
-                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="9" cy="7" r="4"></circle>
-                            <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
-                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                        </svg>
-                    </div>
-                    <div>
-                        <p class="ov-health-item__label">Active Users</p>
-                        <p class="ov-health-item__status ov-health-item__status--plain">
-                            @activeUsers
-                        </p>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-    </div>
+        </section>
+    }
 
 </div>
 
 @code {
+    private const int LowStockThreshold = 5;
 
-    // ─── STATE ────────────────────────────────────────────────
-    private List<OrderModel> recentOrders = new();
-    private List<SupportTicketModel> recentTickets = new();
-    private bool isLoading = false;
-    private decimal totalRevenue = 0;
-    private int totalOrders = 0;
-    private int activeUsers = 0;
+    private bool isLoading = true;
+    private string userFirstName = "Admin";
+    private string welcomeMessage = "You have full access to all dashboard features and settings.";
+    private int pendingOrders;
+    private int openTickets;
+    private int lowStockCount;
+
+    private List<AccessModule> accessModules = new();
+    private List<ActivityItem> recentActivity = new();
 
     protected override async Task OnInitializedAsync()
     {
-        isLoading = true;
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        var fullName = user.FindFirst("FullName")?.Value
+                       ?? user.FindFirst("name")?.Value
+                       ?? "Admin";
+        userFirstName = fullName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? "Admin";
+
+        accessModules = BuildAccessModules();
+
         await Task.WhenAll(
-            LoadRecentOrders(),
-            LoadRecentTickets());
+            LoadBadgeCounts(),
+            LoadRecentActivity());
+
         isLoading = false;
     }
 
-    // ─── LOAD ─────────────────────────────────────────────────
-    private async Task LoadRecentOrders()
+    private async Task LoadBadgeCounts()
     {
-
-        var result = await OrderService.GetAllOrders(
-            null, null, 1, 4);
-
-        if (result.Success && result.Data != null)
+        var badgeResult = await BadgeService.GetCounts();
+        if (badgeResult.Success && badgeResult.Data != null)
         {
-            recentOrders = result.Data.Data;
-            totalOrders = result.Data.TotalCount;
-
-            totalRevenue = recentOrders.Sum(o => o.Total);
+            pendingOrders = badgeResult.Data.PendingOrders;
+            openTickets = badgeResult.Data.OpenTickets;
         }
 
-        StateHasChanged();
+        var productResult = await ProductService.GetAll(new ProductFilterModel { Page = 1, PageSize = 100 });
+        if (productResult.Success && productResult.Data?.Data != null)
+        {
+            lowStockCount = productResult.Data.Data
+                .Count(p => p.Stock > 0 && p.Stock < LowStockThreshold);
+        }
     }
 
-    private async Task LoadRecentTickets()
+    private async Task LoadRecentActivity()
     {
+        var activities = new List<ActivityItem>();
 
-        var result = await HelpService.GetAllTickets(null, 1, 4);
+        var ordersTask = OrderService.GetAllOrders(null, null, 1, 3);
+        var ticketsTask = HelpService.GetAllTickets(null, 1, 3);
+        var affiliatesTask = AffiliateService.GetAllApplications("pending");
 
-        if (result.Success && result.Data != null)
-            recentTickets = result.Data.Data;
+        await Task.WhenAll(ordersTask, ticketsTask, affiliatesTask);
 
-        StateHasChanged();
+        var ordersResult = await ordersTask;
+        if (ordersResult.Success && ordersResult.Data?.Data != null)
+        {
+            foreach (var order in ordersResult.Data.Data)
+            {
+                activities.Add(new ActivityItem
+                {
+                    Key = $"order-{order.Id}",
+                    Action = $"New order #{order.OrderNumber}",
+                    TimeDisplay = FormatRelativeTime(order.CreatedAt),
+                    SortAt = order.CreatedAt ?? DateTime.MinValue,
+                    Icon = OrderIcon()
+                });
+            }
+        }
+
+        var ticketsResult = await ticketsTask;
+        if (ticketsResult.Success && ticketsResult.Data?.Data != null)
+        {
+            foreach (var ticket in ticketsResult.Data.Data)
+            {
+                activities.Add(new ActivityItem
+                {
+                    Key = $"ticket-{ticket.Id}",
+                    Action = $"Support ticket {ticket.TicketNumber}",
+                    TimeDisplay = FormatRelativeTime(ticket.CreatedAt),
+                    SortAt = ticket.CreatedAt ?? DateTime.MinValue,
+                    Icon = TicketIcon()
+                });
+            }
+        }
+
+        var affiliatesResult = await affiliatesTask;
+        if (affiliatesResult.Success && affiliatesResult.Data != null)
+        {
+            foreach (var app in affiliatesResult.Data.Take(2))
+            {
+                activities.Add(new ActivityItem
+                {
+                    Key = $"affiliate-{app.Id}",
+                    Action = $"Affiliate application from {app.FullName}",
+                    TimeDisplay = FormatRelativeTime(app.SubmittedAt),
+                    SortAt = app.SubmittedAt,
+                    Icon = AffiliateIcon()
+                });
+            }
+        }
+
+        recentActivity = activities
+            .OrderByDescending(a => a.SortAt)
+            .Take(5)
+            .ToList();
     }
 
-    // ─── HELPERS ──────────────────────────────────────────────
-    private string GetOrderStatusClass(string? status) => status?.ToLower() switch
+    private static List<AccessModule> BuildAccessModules() => new()
     {
-        "pending" => "ov-status-badge--pending",
-        "processing" => "ov-status-badge--processing",
-        "shipped" => "ov-status-badge--shipped",
-        "delivered" => "ov-status-badge--delivered",
-        "cancelled" => "ov-status-badge--cancelled",
-        _ => "ov-status-badge--pending"
+        new("Sales & Orders", "Full order management", "/admin/orders", OrdersAccessIcon()),
+        new("Customers", "Customer database access", "/admin/customers", CustomersAccessIcon()),
+        new("Products & Inventory", "Complete product control", "/admin/products", ProductsAccessIcon()),
+        new("Content", "Content management system", "/admin/content", ContentAccessIcon()),
+        new("Affiliate Program", "Affiliate management", "/admin/affiliates", AffiliatesAccessIcon()),
+        new("Customer Support", "Support system access", "/admin/tickets", SupportAccessIcon()),
+        new("Career Management", "Job posting & hiring", "/admin/jobs", CareersAccessIcon()),
+        new("System & Technology", "System administration", "/admin/settings", SystemAccessIcon()),
     };
 
-    private string GetTicketStatusClass(string? status) => status switch
+    private static string FormatRelativeTime(DateTime? utc)
     {
-        "open" => "ov-status-badge--pending",
-        "in_progress" => "ov-status-badge--processing",
-        "resolved" => "ov-status-badge--delivered",
-        _ => "ov-status-badge--pending"
-    };
+        if (utc is null) return "Recently";
+        var diff = DateTime.UtcNow - utc.Value.ToUniversalTime();
+        if (diff.TotalMinutes < 1) return "Just now";
+        if (diff.TotalMinutes < 60) return $"{(int)diff.TotalMinutes} min ago";
+        if (diff.TotalHours < 24) return $"{(int)diff.TotalHours} hr ago";
+        if (diff.TotalDays < 7) return $"{(int)diff.TotalDays} days ago";
+        return utc.Value.ToLocalTime().ToString("MMM d, yyyy");
+    }
 
-    private string GetTicketStatusDisplay(string? status) => status switch
+    private sealed class AccessModule(string label, string description, string href, RenderFragment icon)
     {
-        "open" => "Open",
-        "in_progress" => "In Progress",
-        "resolved" => "Resolved",
-        _ => status ?? "Unknown"
-    };
+        public string Label { get; } = label;
+        public string Description { get; } = description;
+        public string Href { get; } = href;
+        public RenderFragment Icon { get; } = icon;
+    }
+
+    private sealed class ActivityItem
+    {
+        public string Key { get; set; } = string.Empty;
+        public string Action { get; set; } = string.Empty;
+        public string TimeDisplay { get; set; } = string.Empty;
+        public DateTime SortAt { get; set; }
+        public RenderFragment Icon { get; set; } = _ => { };
+    }
+
+    private static RenderFragment OrderIcon() => @<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"></circle><circle cx="19" cy="21" r="1"></circle><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path></svg>;
+    private static RenderFragment TicketIcon() => @<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>;
+    private static RenderFragment AffiliateIcon() => @<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="19" x2="19" y1="8" y2="14"></line><line x1="22" x2="16" y1="11" y2="11"></line></svg>;
+
+    private static RenderFragment OrdersAccessIcon() => @<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"></circle><circle cx="19" cy="21" r="1"></circle><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path></svg>;
+    private static RenderFragment CustomersAccessIcon() => @<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>;
+    private static RenderFragment ProductsAccessIcon() => @<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"></path></svg>;
+    private static RenderFragment ContentAccessIcon() => @<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path></svg>;
+    private static RenderFragment AffiliatesAccessIcon() => @<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="19" x2="19" y1="8" y2="14"></line><line x1="22" x2="16" y1="11" y2="11"></line></svg>;
+    private static RenderFragment SupportAccessIcon() => @<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"></path></svg>;
+    private static RenderFragment CareersAccessIcon() => @<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="6" rx="2"></rect><path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>;
+    private static RenderFragment SystemAccessIcon() => @<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="8" x="2" y="2" rx="2"></rect><rect width="20" height="8" x="2" y="14" rx="2"></rect><line x1="6" x2="6.01" y1="6" y2="6"></line><line x1="6" x2="6.01" y1="18" y2="18"></line></svg>;
 }

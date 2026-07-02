@@ -12,65 +12,114 @@
 @inject IConfiguration Configuration
 @implements IAsyncDisposable
 
-<!-- ─── TOPBAR ───────────────────────────────────────────── -->
 <header class="at-topbar">
 
-    <!-- HAMBURGER (mobile) -->
-    <button class="at-topbar__hamburger" onclick="window.adminSidebar.toggle()">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
-             viewBox="0 0 24 24" fill="none" stroke="currentColor"
-             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 3v16a2 2 0 0 0 2 2h16"></path>
-            <path d="M18 17V9"></path>
-            <path d="M13 17V5"></path>
-            <path d="M8 17v-3"></path>
-        </svg>
-    </button>
+    <div class="at-topbar__left">
+        <!-- Mobile: open drawer -->
+        <button type="button"
+                class="at-topbar__btn at-topbar__btn--mobile"
+                aria-label="Open navigation menu"
+                onclick="window.adminSidebar.toggle()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <line x1="4" x2="20" y1="6" y2="6"></line>
+                <line x1="4" x2="20" y1="12" y2="12"></line>
+                <line x1="4" x2="20" y1="18" y2="18"></line>
+            </svg>
+        </button>
 
-    <!-- RIGHT ICONS -->
+        <!-- Desktop: collapse to icon rail -->
+        <button type="button"
+                class="at-topbar__btn at-topbar__btn--collapse"
+                aria-label="Collapse sidebar"
+                onclick="window.adminSidebar.toggleCollapsed()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect width="18" height="18" x="3" y="3" rx="2"></rect>
+                <path d="M9 3v18"></path>
+            </svg>
+        </button>
+    </div>
+
+    <div class="at-topbar__search">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+             viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="m21 21-4.3-4.3"></path>
+        </svg>
+        <input class="at-topbar__search-input"
+               type="search"
+               placeholder="Search orders, customers, products..."
+               @bind="searchQuery"
+               @bind:event="oninput"
+               @onkeydown="HandleSearchKeyDown" />
+    </div>
+
     <div class="at-topbar__right">
 
-        <!-- NOTIFICATIONS -->
+        <!-- Theme toggle -->
+        <button type="button"
+                class="at-topbar__btn"
+                aria-label="Toggle theme"
+                onclick="window.adminSidebar.toggleTheme()">
+            <svg class="at-theme-icon at-theme-icon--light" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+            </svg>
+            <svg class="at-theme-icon at-theme-icon--dark" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="4"></circle>
+                <path d="M12 2v2"></path>
+                <path d="M12 20v2"></path>
+                <path d="m4.93 4.93 1.41 1.41"></path>
+                <path d="m17.66 17.66 1.41 1.41"></path>
+                <path d="M2 12h2"></path>
+                <path d="M20 12h2"></path>
+                <path d="m6.34 17.66-1.41 1.41"></path>
+                <path d="m19.07 4.93-1.41 1.41"></path>
+            </svg>
+        </button>
+
+        <!-- Notifications -->
         <div class="at-topbar__icon-wrap">
-            <button class="at-topbar__icon-btn"
+            <button type="button"
+                    class="at-topbar__btn"
+                    aria-label="Notifications"
                     @onclick="ToggleNotifications">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
                      viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <path d="M10.268 21a2 2 0 0 0 3.464 0"></path>
                     <path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"></path>
                 </svg>
                 @if (unreadCount > 0)
                 {
-                    <span class="at-topbar__badge at-topbar__badge--red">
-                        @unreadCount
-                    </span>
+                    <span class="at-topbar__badge at-topbar__badge--red">@unreadCount</span>
                 }
             </button>
 
-            <!-- NOTIFICATION DROPDOWN -->
             @if (isNotificationsOpen)
             {
                 <div class="at-notif-dropdown">
                     <div class="at-notif-dropdown__header">
                         <span class="at-notif-dropdown__title">Notifications</span>
-                        <button class="at-notif-dropdown__mark-read"
-                                @onclick="MarkAllRead">
+                        <button type="button" class="at-notif-dropdown__mark-read" @onclick="MarkAllRead">
                             Mark All Read
                         </button>
                     </div>
 
                     @if (isLoadingNotifications)
                     {
-                        <div class="at-notif-dropdown__empty">
-                            Loading...
-                        </div>
+                        <div class="at-notif-dropdown__empty">Loading...</div>
                     }
                     else if (!notifications.Any())
                     {
-                        <div class="at-notif-dropdown__empty">
-                            No notifications
-                        </div>
+                        <div class="at-notif-dropdown__empty">No notifications</div>
                     }
                     else
                     {
@@ -92,24 +141,24 @@
             }
         </div>
 
-        <!-- MAIL (static) -->
-        <button class="at-topbar__icon-btn" style="position:relative">
+        <!-- Mail -->
+        <button type="button" class="at-topbar__btn" aria-label="Messages">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
                  viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <rect width="20" height="16" x="2" y="4" rx="2"></rect>
                 <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
             </svg>
             <span class="at-topbar__badge at-topbar__badge--dark">2</span>
         </button>
 
-        <!-- USER AVATAR + DROPDOWN -->
+        <!-- User menu -->
         <div class="at-topbar__icon-wrap">
-            <button class="at-topbar__user-btn" @onclick="ToggleUserMenu">
+            <button type="button" class="at-topbar__user-btn" aria-label="User menu" @onclick="ToggleUserMenu">
                 <div class="at-topbar__avatar">@userInitials</div>
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                <svg class="at-topbar__user-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14"
                      viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <path d="m6 9 6 6 6-6"></path>
                 </svg>
             </button>
@@ -121,11 +170,10 @@
                         <p class="at-user-dropdown__name">@userName</p>
                         <p class="at-user-dropdown__role">Admin</p>
                     </div>
-                    <button class="at-user-dropdown__logout"
-                            @onclick="HandleLogout">
+                    <button type="button" class="at-user-dropdown__logout" @onclick="HandleLogout">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
                              viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                             <polyline points="16 17 21 12 16 7"></polyline>
                             <line x1="21" x2="9" y1="12" y2="12"></line>
@@ -139,7 +187,6 @@
     </div>
 </header>
 
-<!-- CLICK OUTSIDE OVERLAY -->
 @if (isNotificationsOpen || isUserMenuOpen)
 {
     <div class="at-topbar__overlay" @onclick="CloseAllDropdowns"></div>
@@ -147,49 +194,40 @@
 
 @code {
 
-    // ─── STATE ────────────────────────────────────────────────
     private string searchQuery = string.Empty;
-    private bool isNotificationsOpen = false;
-    private bool isUserMenuOpen = false;
-    private bool isLoadingNotifications = false;
+    private bool isNotificationsOpen;
+    private bool isUserMenuOpen;
+    private bool isLoadingNotifications;
     private List<NotificationModel> notifications = new();
-    private int unreadCount = 0;
+    private int unreadCount;
     private string userName = string.Empty;
     private string userInitials = "AD";
 
-    // ─── REALTIME ─────────────────────────────────────────────
     private VoteRealtimeSubscription? _ordersSub;
     private VoteRealtimeSubscription? _ticketsSub;
     private VoteRealtimeSubscription? _returnsSub;
 
     protected override async Task OnInitializedAsync()
     {
-        //  get user info from auth state
-        var authState = await AuthStateProvider
-            .GetAuthenticationStateAsync();
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
 
         userName = user.FindFirst("FullName")?.Value
                    ?? user.FindFirst("name")?.Value
                    ?? "Admin";
 
-        var parts = userName.Trim()
-            .Split(' ', StringSplitOptions.RemoveEmptyEntries);
-
+        var parts = userName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
         userInitials = parts.Length >= 2
             ? $"{parts[0][0]}{parts[^1][0]}".ToUpper()
             : parts[0][..Math.Min(2, parts[0].Length)].ToUpper();
 
-        //  load initial notifications
         await LoadNotifications();
         NotifyRealtime.OnNotification += HandleNewNotification;
 
-        //  subscribe to realtime
         _ = NotifyRealtime.InitializeAsync(
-         Configuration["Supabase:Url"]!,
-         Configuration["Supabase:AnonKey"]!);
+            Configuration["Supabase:Url"]!,
+            Configuration["Supabase:AnonKey"]!);
     }
-
 
     private void HandleNewNotification(NotificationModel notify)
     {
@@ -203,7 +241,6 @@
         });
     }
 
-    // ─── NOTIFICATIONS ────────────────────────────────────────
     private async Task LoadNotifications()
     {
         isLoadingNotifications = true;
@@ -232,53 +269,12 @@
             n.IsRead = true;
         unreadCount = 0;
         StateHasChanged();
-
         await NotificationService.MarkAllRead();
     }
-    // ─── REALTIME ─────────────────────────────────────────────
-    //  subscribes to orders, tickets, returns tables
-    // new row inserted → adds notification to top of list
-    private void HandleNewOrder(string message)
-    {
-        AddNotification(NotificationType.Order, message);
-    }
 
-    private void HandleNewTicket(string message)
-    {
-        AddNotification(NotificationType.Ticket, message);
-    }
-
-    private void HandleNewReturn(string message)
-    {
-        AddNotification(NotificationType.Return, message);
-    }
-
-    private void AddNotification(string type, string message)
-    {
-        var notif = new NotificationModel
-        {
-            Type = type,
-            Message = message,
-            CreatedAt = DateTime.UtcNow,
-            IsRead = false
-        };
-
-        //  add to top, keep only 5
-        InvokeAsync(() =>
-        {
-            notifications.Insert(0, notif);
-            if (notifications.Count > 5)
-                notifications.RemoveAt(notifications.Count - 1);
-            unreadCount++;
-            StateHasChanged();
-        });
-    }
-
-    // ─── SEARCH ───────────────────────────────────────────────
     private void HandleSearchKeyDown(KeyboardEventArgs e)
     {
-        if (e.Key != "Enter" ||
-            string.IsNullOrWhiteSpace(searchQuery)) return;
+        if (e.Key != "Enter" || string.IsNullOrWhiteSpace(searchQuery)) return;
 
         var query = searchQuery.Trim();
         var url = DetectSearchUrl(query);
@@ -286,26 +282,21 @@
         NavigationManager.NavigateTo(url);
     }
 
-    private string DetectSearchUrl(string query)
+    private static string DetectSearchUrl(string query)
     {
-        // order number pattern → MQ-XXXXXXXX
         if (query.StartsWith("MQ-", StringComparison.OrdinalIgnoreCase) ||
             query.StartsWith("#MQ-", StringComparison.OrdinalIgnoreCase))
             return $"/admin/orders?search={Uri.EscapeDataString(query)}";
 
-        // email pattern → customers
         if (query.Contains('@'))
             return $"/admin/customers?search={Uri.EscapeDataString(query)}";
 
-        // TKT- pattern → tickets
         if (query.StartsWith("TKT-", StringComparison.OrdinalIgnoreCase))
             return $"/admin/tickets?search={Uri.EscapeDataString(query)}";
 
-        // default → products
         return $"/admin/products?search={Uri.EscapeDataString(query)}";
     }
 
-    // ─── USER MENU ────────────────────────────────────────────
     private void ToggleUserMenu()
     {
         isUserMenuOpen = !isUserMenuOpen;
@@ -323,8 +314,7 @@
         isUserMenuOpen = false;
     }
 
-    // ─── HELPERS ──────────────────────────────────────────────
-    private string GetNotifIconClass(string type) => type switch
+    private static string GetNotifIconClass(string type) => type switch
     {
         NotificationType.Order => "at-notif-item__icon--order",
         NotificationType.Ticket => "at-notif-item__icon--ticket",
@@ -336,20 +326,14 @@
     private RenderFragment GetNotifIcon(string type) => type switch
     {
         NotificationType.Order => @<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"></path></svg>,
-
         NotificationType.Ticket => @<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path></svg>,
-
         NotificationType.Return => @<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>,
-
         _ => @<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"></path></svg>
     };
 
-    // ─── DISPOSE ──────────────────────────────────────────────
     public async ValueTask DisposeAsync()
     {
         NotifyRealtime.OnNotification -= HandleNewNotification;
         await ValueTask.CompletedTask;
-
     }
 }
-
