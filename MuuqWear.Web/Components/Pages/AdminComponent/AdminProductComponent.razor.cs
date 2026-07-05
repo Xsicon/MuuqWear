@@ -1,15 +1,25 @@
-﻿using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.AspNetCore.WebUtilities;
+using MuuqWear.Application.Shared;
 using MuuqWear.Model.Products;
 
 namespace MuuqWear.Web.Components.Pages.AdminComponent;
 
-public partial class AdminProductComponent
+public partial class AdminProductComponent : IDisposable
 {
+    [Inject] private NavigationManager NavigationManager { get; set; } = default!;
+    [Inject] private AdminProductsTabCoordinator ProductsTabCoordinator { get; set; } = default!;
+
     [SupplyParameterFromQuery(Name = "search")]
     public string? SearchQuery { get; set; }
-    public string? searchTerm = string.Empty;
+
+    [SupplyParameterFromQuery(Name = "view")]
+    public string? ViewQuery { get; set; }
+
+    private string activeView = "catalog";
 
     private bool isStockModalOpen = false;
     private ProductModel? stockProduct = null;
@@ -18,21 +28,181 @@ public partial class AdminProductComponent
     private string stockError = string.Empty;
     private bool showDeleteConfirm = false;
 
-    private const int LowStockThreshold = 5;
+    // BULK UPDATE STATE
+    private HashSet<Guid> selectedProductIds = new();
+    private bool isBulkModalOpen = false;
+    private string bulkStockMode = "set";
+    private int bulkQuantity = 0;
+    private bool isBulkUpdating = false;
+    private string bulkError = string.Empty;
+
     private string activeFilter = "All";
 
     //  computed — low stock count for warning banner
     private int LowStockCount => FilteredProducts
-        .Count(p => p.Stock > 0 && p.Stock < LowStockThreshold);
+        .Count(ProductStockHelper.IsLowStock);
 
     //  update FilteredProducts to handle new filters
     private IEnumerable<ProductModel> FilteredProducts => activeFilter switch
     {
         "All" => ApplySearch(Products),
-        "LowStock" => ApplySearch(Products.Where(p => p.Stock > 0 && p.Stock < LowStockThreshold)),
-        "OutOfStock" => ApplySearch(Products.Where(p => p.Stock == 0)),
+        "LowStock" => ApplySearch(Products.Where(ProductStockHelper.IsLowStock)),
+        "OutOfStock" => ApplySearch(Products.Where(ProductStockHelper.IsOutOfStock)),
         _ => ApplySearch(Products.Where(p => p.CategoryId.ToString() == activeFilter))
     };
+
+    private string PageSubtitle => activeView switch
+    {
+        "stock" => "Review and update per-size inventory across all products",
+        "low-stock" => "Products below the restock threshold",
+        "restock" => "Out-of-stock items needing restock",
+        _ => "Manage product catalog, pricing, and categories"
+    };
+
+    private string ViewContextLabel => activeView switch
+    {
+        "stock" => "Stock Levels view — size breakdown and Update Stock actions",
+        "low-stock" => $"Low Stock Alerts — products with fewer than {ProductStockHelper.LowStockThreshold} units",
+        "restock" => "Restock Requests — products with zero total stock",
+        _ => string.Empty
+    };
+
+    private bool ShowCatalogActions => activeView == "catalog";
+    private bool ShowCategoryFilters => activeView == "catalog";
+    private bool ShowProductMetaDetails => activeView == "catalog";
+    private bool StockFocusLayout => activeView is "stock" or "low-stock" or "restock";
+
+    private List<ProductModel> VisibleProducts => FilteredProducts.ToList();
+
+    private bool AllProductsSelected =>
+        VisibleProducts.Any() && VisibleProducts.All(p => selectedProductIds.Contains(p.Id));
+
+    private void ToggleProductSelection(Guid productId)
+    {
+        if (selectedProductIds.Contains(productId))
+            selectedProductIds.Remove(productId);
+        else
+            selectedProductIds.Add(productId);
+    }
+
+    private void ToggleSelectAllProducts()
+    {
+        if (AllProductsSelected)
+            selectedProductIds.Clear();
+        else
+            foreach (var product in VisibleProducts)
+                selectedProductIds.Add(product.Id);
+    }
+
+    private void OpenBulkModal()
+    {
+        bulkStockMode = "set";
+        bulkQuantity = 0;
+        bulkError = string.Empty;
+        isBulkModalOpen = true;
+    }
+
+    private void CloseBulkModal()
+    {
+        isBulkModalOpen = false;
+        bulkStockMode = "set";
+        bulkQuantity = 0;
+        bulkError = string.Empty;
+    }
+
+    private async Task ConfirmBulkUpdate()
+    {
+        if (bulkQuantity < 0)
+        {
+            bulkError = "Quantity cannot be negative.";
+            return;
+        }
+
+        if (!selectedProductIds.Any())
+            return;
+
+        isBulkUpdating = true;
+        bulkError = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            foreach (var productId in selectedProductIds.ToList())
+            {
+                var sizeStockResult = await ProductService.GetSizeStock(productId);
+
+                if (sizeStockResult.Success && sizeStockResult.Data is { Count: > 0 } sizes)
+                {
+                    foreach (var size in sizes)
+                    {
+                        var newQty = bulkStockMode == "set"
+                            ? bulkQuantity
+                            : size.Quantity + bulkQuantity;
+                        newQty = Math.Max(0, newQty);
+
+                        var result = await ProductService.UpdateSizeStock(size.Id, newQty);
+                        if (!result.Success)
+                        {
+                            bulkError = result.Message ?? "Failed to update stock";
+                            return;
+                        }
+                    }
+
+                    var refreshed = await ProductService.GetSizeStock(productId);
+                    if (!refreshed.Success || refreshed.Data == null)
+                    {
+                        bulkError = refreshed.Message ?? "Failed to refresh stock";
+                        return;
+                    }
+
+                    var totalStock = refreshed.Data.Sum(s => s.Quantity);
+                    var stockResult = await ProductService.UpdateStock(productId, totalStock);
+                    if (!stockResult.Success)
+                    {
+                        bulkError = stockResult.Message ?? "Failed to sync total stock";
+                        return;
+                    }
+
+                    var product = Products.FirstOrDefault(p => p.Id == productId);
+                    if (product != null)
+                    {
+                        product.SizeStock = refreshed.Data;
+                        ProductStockHelper.SyncStockFromSizes(product);
+                    }
+                }
+                else
+                {
+                    var product = Products.FirstOrDefault(p => p.Id == productId);
+                    if (product == null)
+                        continue;
+
+                    var currentStock = ProductStockHelper.GetEffectiveStock(product);
+                    var newStock = bulkStockMode == "set"
+                        ? bulkQuantity
+                        : currentStock + bulkQuantity;
+                    newStock = Math.Max(0, newStock);
+
+                    var result = await ProductService.UpdateStock(productId, newStock);
+                    if (!result.Success)
+                    {
+                        bulkError = result.Message ?? "Failed to update stock";
+                        return;
+                    }
+
+                    product.Stock = newStock;
+                }
+            }
+
+            selectedProductIds.Clear();
+            CloseBulkModal();
+            ProductsTabCoordinator.RequestBadgeCountsRefresh();
+        }
+        finally
+        {
+            isBulkUpdating = false;
+            StateHasChanged();
+        }
+    }
 
     private async Task SetFilter(string filter)
     {
@@ -117,16 +287,95 @@ public partial class AdminProductComponent
     }
     protected override async Task OnInitializedAsync()
     {
+        ProductsTabCoordinator.ViewChanged += OnProductsViewChanged;
+        NavigationManager.LocationChanged += OnLocationChanged;
+
+        ApplyViewFromQuery();
+
         if (!string.IsNullOrEmpty(SearchQuery))
-            searchTerm = SearchQuery;
+            searchQuery = SearchQuery;
 
         isLoading = true;
-        await Task.WhenAll(LoadProducts(_currentPage, _pageSize, searchTerm), LoadCategories());
+        await Task.WhenAll(LoadProducts(_currentPage, _pageSize, searchQuery), LoadCategories());
         isLoading = false;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var previousView = activeView;
+        ApplyViewFromQuery();
+
+        if (previousView != activeView && !isFormOpen)
+        {
+            _currentPage = 1;
+            await LoadProducts(_currentPage, _pageSize, searchQuery);
+        }
+    }
+
+    private void OnProductsViewChanged(string view)
+    {
+        var normalized = AdminProductsTabCoordinator.NormalizeView(view);
+        if (activeView == normalized)
+            return;
+
+        activeView = normalized;
+        ApplyFilterForView();
+        _currentPage = 1;
+
+        _ = InvokeAsync(async () =>
+        {
+            await LoadProducts(_currentPage, _pageSize, searchQuery);
+            StateHasChanged();
+        });
+    }
+
+    private async void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        if (!NavigationManager.ToBaseRelativePath(NavigationManager.Uri)
+                .StartsWith("admin/products", StringComparison.OrdinalIgnoreCase))
+            return;
+
+        await InvokeAsync(async () =>
+        {
+            ApplyViewFromQuery();
+            _currentPage = 1;
+            await LoadProducts(_currentPage, _pageSize, searchQuery);
+            StateHasChanged();
+        });
+    }
+
+    private void ApplyViewFromQuery()
+    {
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        var query = QueryHelpers.ParseQuery(uri.Query);
+
+        var view = query.TryGetValue("view", out var value) && !string.IsNullOrEmpty(value)
+            ? value.ToString()
+            : ViewQuery;
+
+        activeView = AdminProductsTabCoordinator.NormalizeView(view);
+        ApplyFilterForView();
+    }
+
+    private void ApplyFilterForView()
+    {
+        activeFilter = activeView switch
+        {
+            "low-stock" => "LowStock",
+            "restock" => "OutOfStock",
+            _ => "All"
+        };
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+        ProductsTabCoordinator.ViewChanged -= OnProductsViewChanged;
     }
 
     private async Task LoadProducts(int page = 1, int pageSize = 10, string? search = null)
     {
+        selectedProductIds.Clear();
 
         Guid? categoryId = null;
         if (activeFilter != "All" &&
@@ -156,13 +405,16 @@ public partial class AdminProductComponent
         {
             var allProducts = result.Data.Data;
 
+            foreach (var product in allProducts)
+                ProductStockHelper.SyncStockFromSizes(product);
+
             Products = activeFilter switch
             {
                 "LowStock" => allProducts
-                    .Where(p => p.Stock > 0 && p.Stock < LowStockThreshold)
+                    .Where(ProductStockHelper.IsLowStock)
                     .ToList(),
                 "OutOfStock" => allProducts
-                    .Where(p => p.Stock == 0)
+                    .Where(ProductStockHelper.IsOutOfStock)
                     .ToList(),
                 _ => allProducts
             };
@@ -691,11 +943,18 @@ public partial class AdminProductComponent
             //  calculate total for local UI update
             var totalStock = editingSizeStock.Sum(s => s.Quantity);
 
+            var stockResult = await ProductService.UpdateStock(stockProduct!.Id, totalStock);
+            if (!stockResult.Success)
+            {
+                stockError = stockResult.Message ?? "Failed to sync total stock";
+                return;
+            }
+
             //  update local product list
             var product = Products.FirstOrDefault(p => p.Id == stockProduct!.Id);
             if (product != null)
             {
-                product.Stock = totalStock; //  calculated, not from DB
+                product.Stock = totalStock;
                 product.SizeStock = editingSizeStock
                     .Select(s => new SizeStockModel
                     {
@@ -705,6 +964,7 @@ public partial class AdminProductComponent
                     }).ToList();
             }
             CloseStockModal();
+            ProductsTabCoordinator.RequestBadgeCountsRefresh();
         }
         finally
         {

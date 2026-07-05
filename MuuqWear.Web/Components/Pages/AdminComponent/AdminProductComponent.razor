@@ -1,202 +1,275 @@
 @page "/admin/products"
 @layout Layout.AdminLayoutComponent.AdminDashboardLayoutComponent
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 @using MuuqWear.Application.Services.ProductService
 @using MuuqWear.Application.Services.CategoryService
 @using MuuqWear.Model.Products
+@using MuuqWear.Application.Shared
 @using Microsoft.AspNetCore.Authorization
 @using MuuqWear.Web.Components.Shared
 @inject IProductService ProductService
 @inject ICategoryService CategoryService
+@implements IDisposable
 @attribute [Authorize(Roles = "admin")]
 
+<PageTitle>Products &amp; Inventory</PageTitle>
 
-@if (isLoading)
+@if (isLoading && !isFormOpen)
 {
     <p class="mw-section-loading">Loading products...</p>
 }
 
 @if (!isFormOpen)
 {
-    <section class="mw-admin-products">
+    <div class="products-page">
 
-        <!-- HEADER -->
         <div class="products-header">
-            <h1 class="products-header__title">Products & Inventory</h1>
+            <div>
+                <h1 class="products-header__title">Products &amp; Inventory</h1>
+                <p class="products-header__subtitle">@PageSubtitle</p>
+            </div>
             <div class="products-header__actions">
-                <button class="btn-primary" @onclick="OpenAddForm">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
-                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M5 12h14"></path>
-                        <path d="M12 5v14"></path>
-                    </svg>
-                    Add New Product
-                </button>
-                <button class="btn-secondary">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
-                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="17 8 12 3 7 8"></polyline>
-                        <line x1="12" x2="12" y1="3" y2="15"></line>
-                    </svg>
-                    Import CSV
-                </button>
-                <button class="btn-secondary">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
-                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="7 10 12 15 17 10"></polyline>
-                        <line x1="12" x2="12" y1="15" y2="3"></line>
-                    </svg>
-                    Export
-                </button>
+                @if (ShowCatalogActions)
+                {
+                    <button type="button" class="btn-primary" @onclick="OpenAddForm">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                             viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M5 12h14"></path>
+                            <path d="M12 5v14"></path>
+                        </svg>
+                        Add New Product
+                    </button>
+                    <button type="button" class="btn-secondary" disabled title="Coming soon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                             viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" x2="12" y1="3" y2="15"></line>
+                        </svg>
+                        Import CSV
+                    </button>
+                    <button type="button" class="btn-secondary" disabled title="Coming soon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                             viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" x2="12" y1="15" y2="3"></line>
+                        </svg>
+                        Export
+                    </button>
+                }
             </div>
         </div>
 
-        <!-- FILTER TABS -->
+        @if (!string.IsNullOrEmpty(ViewContextLabel))
+        {
+            <p class="products-view-context">@ViewContextLabel</p>
+        }
+
+        @if (LowStockCount > 0 && activeFilter != "OutOfStock" && activeView == "catalog")
+        {
+            <div class="low-stock-banner">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path>
+                    <path d="M12 9v4"></path>
+                    <path d="M12 17h.01"></path>
+                </svg>
+                @LowStockCount product@(LowStockCount == 1 ? "" : "s") below threshold (@ProductStockHelper.LowStockThreshold units)
+            </div>
+        }
+
+        @if (ShowCategoryFilters)
+        {
         <div class="products-filters">
-            <button class="products-filter-tab @(activeFilter == "All" ? "active" : "")"
+            <button type="button"
+                    class="products-filter-tab @(activeFilter == "All" ? "active" : "inactive")"
                     @onclick='() => SetFilter("All")'>
                 All
             </button>
             @foreach (var cat in Categories)
             {
-                <button class="products-filter-tab @(activeFilter == cat.Id.ToString() ? "active" : "")"
+                <button type="button"
+                        class="products-filter-tab @(activeFilter == cat.Id.ToString() ? "active" : "inactive")"
                         @onclick="() => SetFilter(cat.Id.ToString())">
                     @cat.Name
                 </button>
             }
-            <button class="products-filter-tab @(activeFilter == "LowStock" ? "active" : "")"
+            <button type="button"
+                    class="products-filter-tab @(activeFilter == "LowStock" ? "active" : "inactive")"
                     @onclick='() => SetFilter("LowStock")'>
                 Low Stock
             </button>
-            <button class="products-filter-tab @(activeFilter == "OutOfStock" ? "active" : "")"
+            <button type="button"
+                    class="products-filter-tab @(activeFilter == "OutOfStock" ? "active" : "inactive")"
                     @onclick='() => SetFilter("OutOfStock")'>
                 Out of Stock
             </button>
         </div>
+        }
 
-
-        <div style="margin-bottom:16px">
-            <input class="mw-admin-input w-100"
-                   placeholder="Search products..."
+        <div class="products-search">
+            <svg class="products-search__icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.3-4.3"></path>
+            </svg>
+            <input class="products-search__input"
+                   type="search"
+                   placeholder="Search products by name or description…"
                    value="@searchQuery"
                    @oninput="HandleSearchInput"
                    @onkeydown="HandleSearchKeyDown" />
         </div>
 
-        <!-- PRODUCT CARDS -->
+        <div class="products-bulk-bar">
+            <label class="products-select-all">
+                <input type="checkbox"
+                       checked="@AllProductsSelected"
+                       @onchange="ToggleSelectAllProducts" />
+                <span>
+                    @if (selectedProductIds.Any())
+                    {
+                        @($"{selectedProductIds.Count} selected")
+                    }
+                    else
+                    {
+                        @("Select All")
+                    }
+                </span>
+            </label>
+            @if (selectedProductIds.Any())
+            {
+                <span class="products-scope-note">Current page only</span>
+            }
+
+            <button type="button"
+                    class="@(selectedProductIds.Any() ? "btn-process" : "btn-secondary-sm")"
+                    disabled="@(!selectedProductIds.Any())"
+                    @onclick="OpenBulkModal">
+                Bulk Update @(selectedProductIds.Any()
+                            ? $"({selectedProductIds.Count})"
+                            : "")
+            </button>
+        </div>
+
         <div class="products-list">
             @if (isLoading)
             {
-                <p style="color:#4A5C7A;font-size:14px">Loading...</p>
+                <p class="products-empty">Loading...</p>
             }
             else if (!FilteredProducts.Any())
             {
-                <p style="color:#4A5C7A;font-size:14px">No products found.</p>
+                <p class="products-empty">No products found.</p>
             }
             else
             {
                 @foreach (var item in FilteredProducts)
                 {
-                    <div class="product-card" @key="item.Id">
-
-                        <!-- TOP ROW: name + badge + buttons -->
+                    <div class="product-card @(StockFocusLayout ? "product-card--stock-focus" : "")" @key="item.Id">
                         <div class="product-card__top">
                             <div class="product-card__name-row">
+                                <input type="checkbox"
+                                       class="product-card__checkbox"
+                                       checked="@selectedProductIds.Contains(item.Id)"
+                                       @onchange="() => ToggleProductSelection(item.Id)" />
                                 <p class="product-card__name">@item.Name</p>
-                                @if (item.Stock == 0)
+                                @if (ProductStockHelper.IsOutOfStock(item))
                                 {
-                                    <span class="stock-badge stock-badge--out">
-                                        Out of Stock
-                                    </span>
+                                    <span class="stock-badge stock-badge--out">Out of Stock</span>
                                 }
-                                else if (item.Stock < LowStockThreshold)
+                                else if (ProductStockHelper.IsLowStock(item))
                                 {
-                                    <span class="stock-badge stock-badge--low">
-                                        Low Stock
-                                    </span>
+                                    <span class="stock-badge stock-badge--low">Low Stock</span>
+                                }
+                                else
+                                {
+                                    <span class="stock-badge stock-badge--in">In Stock</span>
                                 }
                             </div>
 
                             <div class="product-card__actions">
-                                <button class="btn-secondary"
-                                        @onclick="() => OpenEditForm(item)">
-                                    Edit
-                                </button>
-                                <button class="@(item.Stock == 0 ? "btn-primary" : "btn-secondary")"
+                                @if (ShowCatalogActions)
+                                {
+                                    <button type="button" class="btn-secondary"
+                                            @onclick="() => OpenEditForm(item)">
+                                        Edit
+                                    </button>
+                                }
+                                <button type="button"
+                                        class="@(StockFocusLayout || ProductStockHelper.IsOutOfStock(item) ? "btn-primary" : "btn-secondary")"
                                         @onclick="() => OpenStockModal(item)">
-                                    @(item.Stock == 0 ? "Restock" : "Update Stock")
+                                    @(ProductStockHelper.IsOutOfStock(item) ? "Restock" : "Update Stock")
                                 </button>
                             </div>
                         </div>
 
-                        <!-- SECOND ROW: SKU · Price · Category -->
-                        <p class="product-card__meta">
-                            @if (!string.IsNullOrEmpty(item.Sku))
-                            {
-                                <span>SKU: @item.Sku · </span>
-                            }
-                        <span>Price: @item.Price.ToString("C") · </span>
-                        <span>
-                            @(Categories.FirstOrDefault(c => c.Id == item.CategoryId)?.Name
-                                                ?? "Uncategorised")
-                </span>
-            </p>
-
-                        <!-- THIRD ROW: size pills with counts -->
-            @if (item.SizeStock.Any())
+                        @if (ShowProductMetaDetails)
                         {
-                            <div class="product-card__sizes">
+                            <p class="product-card__meta">
+                                @if (!string.IsNullOrEmpty(item.Sku))
+                                {
+                                    <span>SKU: @item.Sku · </span>
+                                }
+                                <span>Price: @item.Price.ToString("C") · </span>
+                                <span>
+                                    @(Categories.FirstOrDefault(c => c.Id == item.CategoryId)?.Name
+                                        ?? "Uncategorised")
+                                </span>
+                            </p>
+                        }
+                        else
+                        {
+                            <p class="product-card__meta product-card__meta--stock">
+                                @if (!string.IsNullOrEmpty(item.Sku))
+                                {
+                                    <span>SKU: @item.Sku · </span>
+                                }
+                                <span class="product-card__total-stock">
+                                    Total stock: <strong>@ProductStockHelper.GetEffectiveStock(item)</strong> units
+                                </span>
+                            </p>
+                        }
+
+                        @if (item.SizeStock.Any())
+                        {
+                            <div class="product-card__sizes @(StockFocusLayout ? "product-card__sizes--emphasis" : "")">
                                 @foreach (var s in item.SizeStock)
                                 {
                                     var pillClass = s.Quantity == 0
-                                    ? "size-pill size-pill--out"
-                                    : s.Quantity < LowStockThreshold
-                                    ? "size-pill size-pill--low"
-                                    : "size-pill size-pill--normal";
+                                        ? "size-pill size-pill--out"
+                                        : s.Quantity < ProductStockHelper.LowStockThreshold
+                                            ? "size-pill size-pill--low"
+                                            : "size-pill size-pill--normal";
 
-                                    <span class="@pillClass">
-                                        @($"{s.Size}({s.Quantity})")
+                                    <span class="size-pill-row">
+                                        <span class="size-pill-row__label">@s.Size</span>
+                                        <span class="@pillClass">@s.Quantity</span>
                                     </span>
                                 }
                             </div>
                         }
-
+                        else if (StockFocusLayout)
+                        {
+                            <p class="product-card__no-sizes">No size breakdown — total stock only.</p>
+                        }
                     </div>
                 }
             }
         </div>
 
-        <!-- PAGINATION -->
         <PaginationComponent TItem="ProductModel"
                              TotalCount="_totalCount"
                              CurrentPage="_currentPage"
                              PageSize="_pageSize"
                              OnPageChanged="HandlePageChanged" />
 
-        <!-- LOW STOCK WARNING BANNER -->
-        @if (LowStockCount > 0)
-        {
-            <div class="low-stock-banner">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3">
-                    </path>
-                    <path d="M12 9v4"></path>
-                    <path d="M12 17h.01"></path>
-                </svg>
-                @LowStockCount product@(LowStockCount == 1 ? "" : "s") below threshold
-            </div>
-        }
-
-
-
-    </section>
+    </div>
 }
 else
 {
@@ -627,7 +700,7 @@ else
                                              <span style="color:#4A5C7A;font-size:12px;min-width:60px">
                     @(size.Quantity == 0
                     ? "Out of stock"
-                    : size.Quantity < LowStockThreshold
+                    : size.Quantity < ProductStockHelper.LowStockThreshold
                     ? "Low stock"
                     : "In stock")
                 </span>
@@ -658,6 +731,67 @@ else
                 </button>
             </div>
 
+        </div>
+    </div>
+}
+
+@if (isBulkModalOpen)
+{
+    <div class="products-bulk-modal-overlay" @onclick="CloseBulkModal">
+        <div class="products-bulk-modal" @onclick:stopPropagation="true">
+            <h3 class="products-bulk-modal__title">
+                Bulk Update @selectedProductIds.Count Product@(selectedProductIds.Count == 1 ? "" : "s")
+            </h3>
+            <p class="products-bulk-modal__subtitle">
+                Choose how to apply the quantity to each size of the selected products.
+                Products without size breakdown use total stock instead.
+            </p>
+
+            <div class="products-bulk-modal__modes">
+                <label class="products-bulk-modal__mode @(bulkStockMode == "set" ? "products-bulk-modal__mode--active" : "")">
+                    <input type="radio"
+                           name="bulkStockMode"
+                           value="set"
+                           checked="@(bulkStockMode == "set")"
+                           @onchange='() => bulkStockMode = "set"' />
+                    <span>Set each size to</span>
+                </label>
+                <label class="products-bulk-modal__mode @(bulkStockMode == "add" ? "products-bulk-modal__mode--active" : "")">
+                    <input type="radio"
+                           name="bulkStockMode"
+                           value="add"
+                           checked="@(bulkStockMode == "add")"
+                           @onchange='() => bulkStockMode = "add"' />
+                    <span>Add to each size</span>
+                </label>
+            </div>
+
+            <div class="products-bulk-modal__quantity">
+                <label for="bulkQuantity">@(bulkStockMode == "set" ? "Quantity per size" : "Units to add per size")</label>
+                <input id="bulkQuantity"
+                       type="number"
+                       class="mw-admin-input"
+                       min="0"
+                       value="@bulkQuantity"
+                       @onchange="e => bulkQuantity = int.TryParse(e.Value?.ToString(), out var q) ? Math.Max(0, q) : 0" />
+            </div>
+
+            @if (!string.IsNullOrEmpty(bulkError))
+            {
+                <p class="products-bulk-modal__error">@bulkError</p>
+            }
+
+            <div class="products-bulk-modal__actions">
+                <button type="button" class="btn-secondary" @onclick="CloseBulkModal">
+                    Cancel
+                </button>
+                <button type="button"
+                        class="btn-primary"
+                        @onclick="ConfirmBulkUpdate"
+                        disabled="@isBulkUpdating">
+                    @(isBulkUpdating ? "Updating..." : "Apply Update")
+                </button>
+            </div>
         </div>
     </div>
 }

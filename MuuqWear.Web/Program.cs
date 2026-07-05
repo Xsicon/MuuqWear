@@ -1,4 +1,4 @@
-﻿using BlazorBootstrap;
+using BlazorBootstrap;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -106,6 +106,7 @@ builder.Services.AddHttpClient<IVoteService, VoteService>(client =>
 }).AddHttpMessageHandler<AuthenticatedHttpHandler>();
 builder.Services.AddScoped<AuthStateService>();
 builder.Services.AddScoped<AdminOrdersTabCoordinator>();
+builder.Services.AddScoped<AdminProductsTabCoordinator>();
 builder.Services.AddScoped<CartStateService>();
 builder.Services.AddScoped<WishlistStateService>();
 builder.Services.AddCascadingAuthenticationState();

@@ -2,12 +2,16 @@
 @using Microsoft.AspNetCore.Components.Routing
 @using Microsoft.AspNetCore.WebUtilities
 @using MuuqWear.Application.Services.AdminBadgeService
+@using MuuqWear.Application.Services.ProductService
 @using MuuqWear.Application.Shared
 @using MuuqWear.Model.AdminBadgeCount
+@using MuuqWear.Model.Products
 @inject AuthenticationStateProvider AuthStateProvider
 @inject IAdminBadgeService BadgeService
+@inject IProductService ProductService
 @inject NavigationManager NavigationManager
 @inject AdminOrdersTabCoordinator OrdersTabCoordinator
+@inject AdminProductsTabCoordinator ProductsTabCoordinator
 @rendermode InteractiveServer
 @implements IDisposable
 
@@ -109,18 +113,55 @@
         <span class="an-nav__label">Customers</span>
     </NavLink>
 
-    <NavLink href="/admin/products"
-             class="an-nav__item"
-             title="Products & Inventory"
-             onclick="window.adminSidebar.close()">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
-             viewBox="0 0 24 24" fill="none" stroke="currentColor"
-             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"></path>
-            <circle cx="7.5" cy="7.5" r=".5" fill="currentColor"></circle>
-        </svg>
-        <span class="an-nav__label">Products &amp; Inventory</span>
-    </NavLink>
+    <!-- Products & Inventory (expandable) -->
+    <div class="an-nav-group @(productsInventoryOpen ? "an-nav-group--open" : "")">
+        <button type="button"
+                class="an-nav-group__header @(IsProductsSectionActive ? "an-nav-group__header--active" : "")"
+                aria-expanded="@productsInventoryOpen"
+                @onclick="ToggleProductsInventory">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"></path>
+                <circle cx="7.5" cy="7.5" r=".5" fill="currentColor"></circle>
+            </svg>
+            <span class="an-nav__label">Products &amp; Inventory</span>
+            @if (lowStockCount > 0)
+            {
+                <span class="an-nav__badge an-nav__badge--yellow">@lowStockCount</span>
+            }
+            <svg class="an-nav-group__chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m6 9 6 6 6-6"></path>
+            </svg>
+        </button>
+        @if (productsInventoryOpen)
+        {
+            <div class="an-nav-group__children">
+                <button type="button"
+                        class="an-nav__subitem @(IsProductsViewActive("catalog") ? "an-nav__subitem--active" : "")"
+                        @onclick='() => NavigateToProductsView("catalog")'>
+                    Product Catalog
+                </button>
+                <button type="button"
+                        class="an-nav__subitem @(IsProductsViewActive("stock") ? "an-nav__subitem--active" : "")"
+                        @onclick='() => NavigateToProductsView("stock")'>
+                    Stock Levels
+                </button>
+                <button type="button"
+                        class="an-nav__subitem @(IsProductsViewActive("low-stock") ? "an-nav__subitem--active" : "")"
+                        @onclick='() => NavigateToProductsView("low-stock")'>
+                    Low Stock Alerts
+                </button>
+                <button type="button"
+                        class="an-nav__subitem @(IsProductsViewActive("restock") ? "an-nav__subitem--active" : "")"
+                        @onclick='() => NavigateToProductsView("restock")'>
+                    Restock Requests
+                </button>
+            </div>
+        }
+    </div>
 
     <NavLink href="/admin/content"
              class="an-nav__item"
@@ -242,8 +283,10 @@
     private string userName = string.Empty;
     private string userInitials = "AD";
     private int openTickets = 0;
+    private int lowStockCount = 0;
     private AdminBadgeCountsModel? counts;
     private bool salesOrdersOpen;
+    private bool productsInventoryOpen;
 
     protected override async Task OnInitializedAsync()
     {
@@ -266,9 +309,13 @@
         if (result)
             openTickets = counts!.OpenTickets;
 
+        await LoadLowStockCountAsync();
+
         NavigationManager.LocationChanged += OnLocationChanged;
         OrdersTabCoordinator.BadgeCountsRefreshRequested += OnBadgeCountsRefreshRequested;
+        ProductsTabCoordinator.BadgeCountsRefreshRequested += OnProductsBadgeCountsRefreshRequested;
         SyncSalesOrdersGroup();
+        SyncProductsInventoryGroup();
     }
 
     private void OnBadgeCountsRefreshRequested()
@@ -277,6 +324,15 @@
         {
             if (await LoadBadgeCountsAsync())
                 openTickets = counts!.OpenTickets;
+            StateHasChanged();
+        });
+    }
+
+    private void OnProductsBadgeCountsRefreshRequested()
+    {
+        _ = InvokeAsync(async () =>
+        {
+            await LoadLowStockCountAsync();
             StateHasChanged();
         });
     }
@@ -293,10 +349,29 @@
         return false;
     }
 
+    private async Task LoadLowStockCountAsync()
+    {
+        var result = await ProductService.GetAll(new ProductFilterModel
+        {
+            Page = 1,
+            PageSize = 1000
+        });
+
+        if (!result.Success || result.Data?.Data == null)
+            return;
+
+        foreach (var product in result.Data.Data)
+            ProductStockHelper.SyncStockFromSizes(product);
+
+        lowStockCount = result.Data.Data.Count(ProductStockHelper.IsLowStock);
+    }
+
     private async void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {
         SyncSalesOrdersGroup();
+        SyncProductsInventoryGroup();
         await LoadBadgeCountsAsync();
+        await LoadLowStockCountAsync();
         await InvokeAsync(StateHasChanged);
     }
 
@@ -304,6 +379,41 @@
     {
         if (IsSalesOrdersSectionActive)
             salesOrdersOpen = true;
+    }
+
+    private void SyncProductsInventoryGroup()
+    {
+        if (IsProductsSectionActive)
+            productsInventoryOpen = true;
+    }
+
+    private void ToggleProductsInventory()
+    {
+        productsInventoryOpen = !productsInventoryOpen;
+    }
+
+    private void NavigateToProductsView(string view)
+    {
+        NavigationManager.NavigateTo($"/admin/products?view={view}");
+        ProductsTabCoordinator.NotifyViewChanged(view);
+    }
+
+    private bool IsProductsSectionActive =>
+        NavigationManager.ToBaseRelativePath(NavigationManager.Uri)
+            .StartsWith("admin/products", StringComparison.OrdinalIgnoreCase);
+
+    private bool IsProductsViewActive(string view)
+    {
+        if (!IsProductsSectionActive)
+            return false;
+
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        var query = QueryHelpers.ParseQuery(uri.Query);
+
+        if (!query.TryGetValue("view", out var value) || string.IsNullOrEmpty(value))
+            return view == "catalog";
+
+        return value.ToString().Equals(view, StringComparison.OrdinalIgnoreCase);
     }
 
     private void ToggleSalesOrders()
@@ -339,5 +449,6 @@
     {
         NavigationManager.LocationChanged -= OnLocationChanged;
         OrdersTabCoordinator.BadgeCountsRefreshRequested -= OnBadgeCountsRefreshRequested;
+        ProductsTabCoordinator.BadgeCountsRefreshRequested -= OnProductsBadgeCountsRefreshRequested;
     }
 }

@@ -1,4 +1,5 @@
 ﻿@page "/admin"
+@using MuuqWear.Application.Shared
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Authorization
 @using MuuqWear.Application.Interfaces
@@ -69,7 +70,8 @@
                 <p class="ov-stat__label">Pending Support</p>
             </div>
 
-            <div class="ov-stat">
+            <div class="ov-stat ov-stat--link">
+                <a href="/admin/products?view=low-stock" class="ov-stat__link">
                 <div class="ov-stat__top">
                     <span class="ov-stat__icon ov-stat__icon--red" aria-hidden="true">
                         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="8" y2="12"></line><line x1="12" x2="12.01" y1="16" y2="16"></line></svg>
@@ -81,6 +83,11 @@
                 </div>
                 <p class="ov-stat__value">@lowStockCount</p>
                 <p class="ov-stat__label">Low Stock Items</p>
+                @if (lowStockCount > 0)
+                {
+                    <p class="ov-stat__hint">Below @ProductStockHelper.LowStockThreshold units · View alerts</p>
+                }
+                </a>
             </div>
 
             <div class="ov-stat">
@@ -146,6 +153,7 @@
                 <a href="/admin/orders?tab=orders" class="ov-btn ov-btn--primary">All Orders</a>
                 <a href="/admin/orders?tab=returns" class="ov-btn ov-btn--secondary">Process Returns</a>
                 <a href="/admin/orders?tab=refunds&status=pending" class="ov-btn ov-btn--secondary">Pending Refunds</a>
+                <a href="/admin/products?view=low-stock" class="ov-btn ov-btn--secondary">Low Stock Alerts</a>
                 <a href="/admin/analytics" class="ov-btn ov-btn--secondary">Export Data</a>
             </div>
         </section>
@@ -154,14 +162,13 @@
 </div>
 
 @code {
-    private const int LowStockThreshold = 5;
-
     private bool isLoading = true;
     private string userFirstName = "Admin";
     private string welcomeMessage = "You have full access to all dashboard features and settings.";
     private int pendingOrders;
     private int openTickets;
     private int lowStockCount;
+    private List<ProductModel> lowStockProducts = new();
 
     private List<AccessModule> accessModules = new();
     private List<ActivityItem> recentActivity = new();
@@ -177,11 +184,33 @@
 
         accessModules = BuildAccessModules();
 
-        await Task.WhenAll(
-            LoadBadgeCounts(),
-            LoadRecentActivity());
+        await Task.WhenAll(LoadBadgeCounts(), LoadLowStockProducts());
+        await LoadRecentActivity();
 
         isLoading = false;
+    }
+
+    private async Task LoadLowStockProducts()
+    {
+        var productResult = await ProductService.GetAll(new ProductFilterModel
+        {
+            Page = 1,
+            PageSize = 1000
+        });
+
+        if (!productResult.Success || productResult.Data?.Data == null)
+            return;
+
+        foreach (var product in productResult.Data.Data)
+            ProductStockHelper.SyncStockFromSizes(product);
+
+        lowStockProducts = productResult.Data.Data
+            .Where(ProductStockHelper.IsLowStock)
+            .OrderBy(p => ProductStockHelper.GetEffectiveStock(p))
+            .ThenBy(p => p.Name)
+            .ToList();
+
+        lowStockCount = lowStockProducts.Count;
     }
 
     private async Task LoadBadgeCounts()
@@ -191,13 +220,6 @@
         {
             pendingOrders = badgeResult.Data.PendingOrders;
             openTickets = badgeResult.Data.OpenTickets;
-        }
-
-        var productResult = await ProductService.GetAll(new ProductFilterModel { Page = 1, PageSize = 100 });
-        if (productResult.Success && productResult.Data?.Data != null)
-        {
-            lowStockCount = productResult.Data.Data
-                .Count(p => p.Stock > 0 && p.Stock < LowStockThreshold);
         }
     }
 
@@ -259,6 +281,18 @@
             }
         }
 
+        foreach (var product in lowStockProducts.Take(3))
+        {
+            activities.Add(new ActivityItem
+            {
+                Key = $"lowstock-{product.Id}",
+                Action = $"Low stock alert: {product.Name}",
+                TimeDisplay = $"{ProductStockHelper.GetEffectiveStock(product)} unit{(ProductStockHelper.GetEffectiveStock(product) == 1 ? "" : "s")} left",
+                SortAt = DateTime.UtcNow.AddMinutes(-ProductStockHelper.GetEffectiveStock(product)),
+                Icon = LowStockIcon()
+            });
+        }
+
         recentActivity = activities
             .OrderByDescending(a => a.SortAt)
             .Take(5)
@@ -269,7 +303,7 @@
     {
         new("Sales & Orders", "Full order management", "/admin/orders?tab=orders", OrdersAccessIcon()),
         new("Customers", "Customer database access", "/admin/customers", CustomersAccessIcon()),
-        new("Products & Inventory", "Complete product control", "/admin/products", ProductsAccessIcon()),
+        new("Products & Inventory", "Complete product control", "/admin/products?view=catalog", ProductsAccessIcon()),
         new("Content", "Content management system", "/admin/content", ContentAccessIcon()),
         new("Affiliate Program", "Affiliate management", "/admin/affiliates", AffiliatesAccessIcon()),
         new("Customer Support", "Support system access", "/admin/tickets", SupportAccessIcon()),
@@ -308,6 +342,7 @@
     private static RenderFragment OrderIcon() => @<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"></circle><circle cx="19" cy="21" r="1"></circle><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path></svg>;
     private static RenderFragment TicketIcon() => @<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>;
     private static RenderFragment AffiliateIcon() => @<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="19" x2="19" y1="8" y2="14"></line><line x1="22" x2="16" y1="11" y2="11"></line></svg>;
+    private static RenderFragment LowStockIcon() => @<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="8" y2="12"></line><line x1="12" x2="12.01" y1="16" y2="16"></line></svg>;
 
     private static RenderFragment OrdersAccessIcon() => @<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"></circle><circle cx="19" cy="21" r="1"></circle><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path></svg>;
     private static RenderFragment CustomersAccessIcon() => @<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>;
