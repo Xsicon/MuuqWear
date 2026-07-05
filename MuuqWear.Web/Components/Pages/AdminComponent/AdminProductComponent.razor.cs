@@ -204,6 +204,12 @@ public partial class AdminProductComponent : IDisposable
         }
     }
 
+    private void NavigateToLowStockView()
+    {
+        NavigationManager.NavigateTo("/admin/products?view=low-stock");
+        ProductsTabCoordinator.NotifyViewChanged("low-stock");
+    }
+
     private async Task SetFilter(string filter)
     {
         activeFilter = filter;
@@ -265,8 +271,9 @@ public partial class AdminProductComponent : IDisposable
     private bool isDeleting = false;
 
     //PAGINATION STATE
+    private const int DefaultPageSize = 10;
     private int _currentPage = 1;
-    private int _pageSize = 10;
+    private int _pageSize = DefaultPageSize;
     private int _totalCount = 0;
 
     //OBJECT
@@ -359,12 +366,19 @@ public partial class AdminProductComponent : IDisposable
 
     private void ApplyFilterForView()
     {
+        var wasStockFilter = activeFilter is "LowStock" or "OutOfStock";
+
         activeFilter = activeView switch
         {
             "low-stock" => "LowStock",
             "restock" => "OutOfStock",
             _ => "All"
         };
+
+        // Leaving low-stock/restock loaded with PageSize = filtered count (e.g. 1).
+        // Reset so catalog/stock views paginate normally again.
+        if (wasStockFilter && activeFilter == "All")
+            _pageSize = DefaultPageSize;
     }
 
     public void Dispose()
@@ -421,7 +435,9 @@ public partial class AdminProductComponent : IDisposable
 
             _totalCount = isStockFilter ? Products.Count : result.Data.TotalCount;
             _currentPage = isStockFilter ? 1 : result.Data.Page;
-            _pageSize = isStockFilter ? Products.Count : result.Data.PageSize;
+
+            if (!isStockFilter)
+                _pageSize = result.Data.PageSize > 0 ? result.Data.PageSize : DefaultPageSize;
         }
 
         StateHasChanged();

@@ -401,7 +401,10 @@ html[data-admin-theme="dark"] .mw-admin a.an-nav__item.active .an-nav__badge {
 }
 
 .an-nav__subitem {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
     width: 100%;
     padding: 8px 12px;
     border: none;
@@ -427,6 +430,22 @@ html[data-admin-theme="dark"] .mw-admin a.an-nav__item.active .an-nav__badge {
     background: var(--admin-active);
     color: var(--admin-active-text);
     text-decoration: none;
+}
+
+.an-nav__subitem-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 999px;
+    line-height: 1.2;
+    flex-shrink: 0;
+    background: #FEF3C7;
+    color: #92400E;
+}
+
+html[data-admin-theme="dark"] .mw-admin .an-nav__subitem-badge {
+    background: rgba(254, 243, 199, 0.15);
+    color: #FCD34D;
 }
 
 .mw-admin.an-sidebar-collapsed .an-nav-group__children,

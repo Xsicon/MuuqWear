@@ -153,6 +153,10 @@
                         class="an-nav__subitem @(IsProductsViewActive("low-stock") ? "an-nav__subitem--active" : "")"
                         @onclick='() => NavigateToProductsView("low-stock")'>
                     Low Stock Alerts
+                    @if (lowStockCount > 0)
+                    {
+                        <span class="an-nav__subitem-badge">@lowStockCount</span>
+                    }
                 </button>
                 <button type="button"
                         class="an-nav__subitem @(IsProductsViewActive("restock") ? "an-nav__subitem--active" : "")"

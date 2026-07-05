@@ -50,19 +50,51 @@
                         </svg>
                         Import CSV
                     </button>
-                    <button type="button" class="btn-secondary" disabled title="Coming soon">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
-                             viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="7 10 12 15 17 10"></polyline>
-                            <line x1="12" x2="12" y1="15" y2="3"></line>
-                        </svg>
-                        Export
-                    </button>
+                    <div class="products-export-wrap">
+                        <button type="button"
+                                class="btn-secondary products-export-btn"
+                                @onclick="ToggleExportMenu"
+                                disabled="@isExporting">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" x2="12" y1="15" y2="3"></line>
+                            </svg>
+                            @(isExporting ? "Exporting..." : "Export")
+                        </button>
+                        @if (exportMenuOpen)
+                        {
+                            <div class="products-export-menu">
+                                <button type="button" class="products-export-menu__item" @onclick='() => ExportAsync("csv")'>
+                                    Download CSV (all filtered)
+                                </button>
+                                <button type="button" class="products-export-menu__item" @onclick='() => ExportAsync("excel")'>
+                                    Download Excel (all filtered)
+                                </button>
+                                @if (selectedProductIds.Any())
+                                {
+                                    <button type="button" class="products-export-menu__item products-export-menu__item--highlight" @onclick='() => ExportAsync("csv", selectedOnly: true)'>
+                                        CSV — @selectedProductIds.Count selected
+                                    </button>
+                                    <button type="button" class="products-export-menu__item products-export-menu__item--highlight" @onclick='() => ExportAsync("excel", selectedOnly: true)'>
+                                        Excel — @selectedProductIds.Count selected
+                                    </button>
+                                }
+                            </div>
+                        }
+                    </div>
                 }
             </div>
         </div>
+
+        @if (!string.IsNullOrEmpty(exportMessage))
+        {
+            <p class="products-export-note @(exportMessage.StartsWith("Export failed") || exportMessage.StartsWith("No ") ? "products-export-note--error" : "")">
+                @exportMessage
+            </p>
+        }
 
         @if (!string.IsNullOrEmpty(ViewContextLabel))
         {
@@ -71,7 +103,7 @@
 
         @if (LowStockCount > 0 && activeFilter != "OutOfStock" && activeView == "catalog")
         {
-            <div class="low-stock-banner">
+            <button type="button" class="low-stock-banner" @onclick="NavigateToLowStockView">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
                      viewBox="0 0 24 24" fill="none" stroke="currentColor"
                      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -80,7 +112,8 @@
                     <path d="M12 17h.01"></path>
                 </svg>
                 @LowStockCount product@(LowStockCount == 1 ? "" : "s") below threshold (@ProductStockHelper.LowStockThreshold units)
-            </div>
+                <span class="low-stock-banner__link">View alerts →</span>
+            </button>
         }
 
         @if (ShowCategoryFilters)
@@ -661,76 +694,50 @@ else
 
 @if (isStockModalOpen && stockProduct != null)
 {
-    <div class="mw-modal-overlay" @onclick="CloseStockModal">
-        <div class="mw-modal" style="max-width:420px"
-             @onclick:stopPropagation="true">
-
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5 style="margin:0;color:#1E2A47;font-weight:700">
-                    Update Stock — @stockProduct.Name
-                </h5>
-                <button class="mw-close-btn" @onclick="CloseStockModal">✕</button>
+    <div class="products-bulk-modal-overlay" @onclick="CloseStockModal">
+        <div class="products-stock-modal" @onclick:stopPropagation="true">
+            <div class="products-stock-modal__header">
+                <h3 class="products-stock-modal__title">Update Stock — @stockProduct.Name</h3>
+                <button type="button" class="products-stock-modal__close" @onclick="CloseStockModal" aria-label="Close">✕</button>
             </div>
 
             @if (!string.IsNullOrEmpty(stockError))
             {
-                <p style="color:#C44545;font-size:13px;margin-bottom:12px">
-                    @stockError
-                </p>
+                <p class="products-stock-modal__error">@stockError</p>
             }
 
-            <!-- SIZE STOCK INPUTS -->
-            <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:21px">
+            <div class="products-stock-modal__sizes">
                 @foreach (var size in editingSizeStock)
                 {
-                    <div style="display:flex;align-items:center;
-                                                                                                                                                                                            justify-content:space-between;gap:12px">
-                        <span style="color:#1E2A47;font-size:13px;
-                                                                                                                                                                                                 font-weight:700;min-width:40px">
-                            @size.Size
-                        </span>
+                    <div class="products-stock-modal__row">
+                        <span class="products-stock-modal__size-label">@size.Size</span>
                         <input type="number"
-                               class="mw-admin-input"
-                               style="width:100px;text-align:center"
+                               class="mw-admin-input products-stock-modal__input"
                                min="0"
                                value="@size.Quantity"
-                               @onchange="e => size.Quantity =
-                               int.TryParse(e.Value?.ToString(), out var q)
-                               ? Math.Max(0, q) : 0" />
-                                             <span style="color:#4A5C7A;font-size:12px;min-width:60px">
-                    @(size.Quantity == 0
-                    ? "Out of stock"
-                    : size.Quantity < ProductStockHelper.LowStockThreshold
-                    ? "Low stock"
-                    : "In stock")
-                </span>
-            </div>
-                        }
+                               @onchange="e => size.Quantity = int.TryParse(e.Value?.ToString(), out var q) ? Math.Max(0, q) : 0" />
+                        <span class="products-stock-modal__hint">
+                            @(size.Quantity == 0
+                                ? "Out of stock"
+                                : size.Quantity < ProductStockHelper.LowStockThreshold
+                                    ? "Low stock"
+                                    : "In stock")
+                        </span>
+                    </div>
+                }
             </div>
 
-            <!-- TOTAL -->
-            <div style="display:flex;justify-content:space-between;
-                                                                                                                        padding:12px 0;border-top:1px solid rgba(169,183,204,0.3);
-                                                                                                                        margin-bottom:21px">
-                <span style="color:#4A5C7A;font-size:13px">Total Stock</span>
-                <span style="color:#1E2A47;font-size:13px;font-weight:700">
-                    @editingSizeStock.Sum(s => s.Quantity)
-                </span>
+            <div class="products-stock-modal__total">
+                <span>Total Stock</span>
+                <strong>@editingSizeStock.Sum(s => s.Quantity)</strong>
             </div>
 
-            <!-- BUTTONS -->
-            <div class="d-flex gap-2">
-                <button class="mw-btn-secondary w-100"
-                        @onclick="CloseStockModal">
-                    Cancel
-                </button>
-                <button class="mw-btn-primary w-100"
-                        @onclick="SaveSizeStock"
-                        disabled="@isUpdatingStock">
+            <div class="products-stock-modal__actions">
+                <button type="button" class="btn-secondary" @onclick="CloseStockModal">Cancel</button>
+                <button type="button" class="btn-primary" @onclick="SaveSizeStock" disabled="@isUpdatingStock">
                     @(isUpdatingStock ? "Saving..." : "Save Stock")
                 </button>
             </div>
-
         </div>
     </div>
 }
