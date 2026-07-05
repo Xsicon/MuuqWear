@@ -127,6 +127,37 @@
             <button type="button" class="orders-search__btn" @onclick="ApplySearch">Search</button>
         </div>
 
+        <!-- ─── BULK ACTIONS ──────────────────────────────── -->
+        <div class="orders-bulk-bar">
+            <label class="orders-select-all">
+                <input type="checkbox"
+                       checked="@AllSelected"
+                       @onchange="ToggleSelectAll" />
+                <span>
+                    @if (selectedOrderIds.Any())
+                    {
+                        @($"{selectedOrderIds.Count} selected")
+                    }
+                    else
+                    {
+                        @("Select All")
+                    }
+                </span>
+            </label>
+            @if (selectedOrderIds.Any())
+            {
+                <span class="orders-scope-note">Current page only</span>
+            }
+
+            <button class="@(selectedOrderIds.Any() ? "btn-process" : "btn-secondary-sm")"
+                    disabled="@(!selectedOrderIds.Any())"
+                    @onclick="OpenBulkModal">
+                Bulk Update @(selectedOrderIds.Any()
+                            ? $"({selectedOrderIds.Count})"
+                            : "")
+            </button>
+        </div>
+
         <!-- ─── ORDER CARDS ───────────────────────────────── -->
         <div class="orders-list">
             @if (isLoading)
@@ -210,40 +241,6 @@
                              CurrentPage="@currentPage"
                              PageSize="@pageSize"
                              OnPageChanged="HandlePageChanged" />
-
-        <!-- ─── BOTTOM ACTIONS ────────────────────────────── -->
-        <div class="orders-bottom">
-
-            <!-- SELECT ALL -->
-            <label class="orders-select-all">
-                <input type="checkbox"
-                       checked="@AllSelected"
-                       @onchange="ToggleSelectAll" />
-                <span>
-                    @if (selectedOrderIds.Any())
-                    {
-                        @($"{selectedOrderIds.Count} selected")
-                    }
-                    else
-                    {
-                        @("Select All")
-                    }
-                </span>
-            </label>
-            <!--  scope note — only shows when something is selected -->
-            @if (selectedOrderIds.Any())
-            {
-                <span class="orders-scope-note">Current page only</span>
-            }
-
-            <button class="@(selectedOrderIds.Any() ? "btn-process" : "btn-secondary-sm")"
-                    disabled="@(!selectedOrderIds.Any())"
-                    @onclick="OpenBulkModal">
-                Bulk Update @(selectedOrderIds.Any()
-                            ? $"({selectedOrderIds.Count})"
-                            : "")
-        </button>
-    </div>
     }
     else if (activeMainTab == "returns")
     {
