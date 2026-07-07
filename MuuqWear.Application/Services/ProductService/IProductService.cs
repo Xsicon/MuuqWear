@@ -15,7 +15,7 @@ public interface IProductService
     Task<Response<List<ProductModel>>> GetRelated(Guid id);
     Task<Response<ProductImageModel>> AddProductImage(AddProductImageModel request);
     Task<Response<bool>> DeleteProductImage(Guid imageId);
-    Task<Response<SizeStockModel>> UpdateSizeStock(Guid productId, int totalStock);
+    Task<Response<SizeStockModel>> UpdateSizeStock(Guid sizeStockId, int quantity);
     Task<Response<ProductModel>> UpdateStock(Guid productId, int totalStock);
     Task<Response<List<SizeStockModel>>> GetSizeStock(Guid productId);
     Task<Response<SizeStockModel>> AddSizeStock(Guid productId, string size, int quantity);

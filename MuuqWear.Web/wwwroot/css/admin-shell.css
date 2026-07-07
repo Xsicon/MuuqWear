@@ -613,6 +613,10 @@ html[data-admin-theme="dark"] .mw-admin .an-nav__subitem-badge {
     background: #C44545;
 }
 
+.at-topbar__badge--yellow {
+    background: #ED6C02;
+}
+
 .at-topbar__badge--dark {
     background: #1E2A47;
 }
@@ -730,12 +734,47 @@ html[data-admin-theme="dark"] .mw-admin .at-topbar__avatar {
     text-align: center;
 }
 
+.at-notif-dropdown__section {
+    margin: 0;
+    padding: 8px 16px 4px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--admin-muted);
+}
+
+.at-notif-dropdown__view-all {
+    display: block;
+    width: 100%;
+    padding: 12px 16px;
+    border: none;
+    border-top: 1px solid var(--admin-border);
+    background: none;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: #1E2A47;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.at-notif-dropdown__view-all:hover {
+    background: var(--admin-hover);
+}
+
 .at-notif-item {
     display: flex;
     align-items: flex-start;
     gap: 10px;
+    width: 100%;
     padding: 10px 16px;
+    border: none;
     border-bottom: 1px solid var(--admin-border);
+    background: none;
+    text-align: left;
+    cursor: pointer;
+    font-family: inherit;
     transition: background 0.15s;
 }
 
@@ -776,6 +815,11 @@ html[data-admin-theme="dark"] .mw-admin .at-topbar__avatar {
 .at-notif-item__icon--stock {
     background: rgba(196, 69, 69, 0.1);
     color: #C44545;
+}
+
+.at-notif-item__icon--note {
+    background: rgba(99, 102, 241, 0.12);
+    color: #6366f1;
 }
 
 .at-notif-item__message {

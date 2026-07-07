@@ -346,25 +346,34 @@ public class ProductService : IProductService
     {
         try
         {
-            var result = await _http.PatchAsJsonAsync(
-                $"api/Product/{productId}/stock",
-                new { Stock = totalStock });
-
-            if (!result.IsSuccessStatusCode)
+            var existing = await GetById(productId);
+            if (!existing.Success || existing.Data == null)
+            {
                 return new Response<ProductModel>
                 {
                     Success = false,
-                    Message = $"Server error: {result.StatusCode}"
+                    Message = existing.Message ?? "Product not found"
                 };
+            }
 
-            var response = await result.Content
-                .ReadFromJsonAsync<Response<ProductModel>>();
-
-            return response ?? new Response<ProductModel>
+            var product = existing.Data;
+            return await Update(productId, new UpdateProductModel
             {
-                Success = false,
-                Message = "Empty response"
-            };
+                Name = product.Name,
+                Price = product.Price,
+                Badge = product.Badge,
+                ImageUrl = product.ImageUrl,
+                Stock = totalStock,
+                Category = product.Category,
+                IsActive = product.IsActive,
+                IsNewArrival = product.IsNewArrival,
+                IsFeatured = product.IsFeatured,
+                IsBestSeller = product.IsBestSeller,
+                Description = product.Description,
+                Gender = product.Gender,
+                CategoryId = product.CategoryId,
+                ColorOptions = product.ColorOptions ?? new()
+            });
         }
         catch (Exception ex)
         {

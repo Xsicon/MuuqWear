@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.JSInterop;
 using MuuqWear.Application.Shared;
 using MuuqWear.Model.Products;
 
@@ -19,13 +20,20 @@ public partial class AdminProductComponent : IDisposable
     [SupplyParameterFromQuery(Name = "view")]
     public string? ViewQuery { get; set; }
 
+    [SupplyParameterFromQuery(Name = "productId")]
+    public string? ProductIdQuery { get; set; }
+
     private string activeView = "catalog";
+    private Guid? pendingFocusProductId;
+    private Guid? highlightProductId;
 
     private bool isStockModalOpen = false;
     private ProductModel? stockProduct = null;
     private List<SizeStockModel> editingSizeStock = new();
     private bool isUpdatingStock = false;
     private string stockError = string.Empty;
+    private bool stockLoadFailed = false;
+    private bool CanSaveStock => editingSizeStock.Count > 0 && !stockLoadFailed && !isUpdatingStock;
     private bool showDeleteConfirm = false;
 
     // BULK UPDATE STATE
@@ -152,14 +160,6 @@ public partial class AdminProductComponent : IDisposable
                     if (!refreshed.Success || refreshed.Data == null)
                     {
                         bulkError = refreshed.Message ?? "Failed to refresh stock";
-                        return;
-                    }
-
-                    var totalStock = refreshed.Data.Sum(s => s.Quantity);
-                    var stockResult = await ProductService.UpdateStock(productId, totalStock);
-                    if (!stockResult.Success)
-                    {
-                        bulkError = stockResult.Message ?? "Failed to sync total stock";
                         return;
                     }
 
@@ -295,9 +295,11 @@ public partial class AdminProductComponent : IDisposable
     protected override async Task OnInitializedAsync()
     {
         ProductsTabCoordinator.ViewChanged += OnProductsViewChanged;
+        ProductsTabCoordinator.ProductFocusRequested += OnProductFocusRequested;
         NavigationManager.LocationChanged += OnLocationChanged;
 
         ApplyViewFromQuery();
+        ApplyProductFocusFromQuery();
 
         if (!string.IsNullOrEmpty(SearchQuery))
             searchQuery = SearchQuery;
@@ -305,17 +307,32 @@ public partial class AdminProductComponent : IDisposable
         isLoading = true;
         await Task.WhenAll(LoadProducts(_currentPage, _pageSize, searchQuery), LoadCategories());
         isLoading = false;
+        await TryFocusProductAsync();
     }
 
     protected override async Task OnParametersSetAsync()
     {
         var previousView = activeView;
+        var previousFocus = pendingFocusProductId;
         ApplyViewFromQuery();
+        ApplyProductFocusFromQuery();
 
         if (previousView != activeView && !isFormOpen)
         {
             _currentPage = 1;
             await LoadProducts(_currentPage, _pageSize, searchQuery);
+        }
+
+        if (pendingFocusProductId.HasValue && pendingFocusProductId != previousFocus)
+        {
+            if (activeView != "low-stock")
+            {
+                activeView = "low-stock";
+                ApplyFilterForView();
+            }
+
+            await LoadProducts(_currentPage, _pageSize, searchQuery);
+            await TryFocusProductAsync();
         }
     }
 
@@ -336,6 +353,21 @@ public partial class AdminProductComponent : IDisposable
         });
     }
 
+    private void OnProductFocusRequested(Guid productId)
+    {
+        pendingFocusProductId = productId;
+
+        _ = InvokeAsync(async () =>
+        {
+            activeView = "low-stock";
+            ApplyFilterForView();
+            _currentPage = 1;
+            await LoadProducts(_currentPage, _pageSize, searchQuery);
+            await TryFocusProductAsync();
+            StateHasChanged();
+        });
+    }
+
     private async void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {
         if (!NavigationManager.ToBaseRelativePath(NavigationManager.Uri)
@@ -345,8 +377,10 @@ public partial class AdminProductComponent : IDisposable
         await InvokeAsync(async () =>
         {
             ApplyViewFromQuery();
+            ApplyProductFocusFromQuery();
             _currentPage = 1;
             await LoadProducts(_currentPage, _pageSize, searchQuery);
+            await TryFocusProductAsync();
             StateHasChanged();
         });
     }
@@ -362,6 +396,79 @@ public partial class AdminProductComponent : IDisposable
 
         activeView = AdminProductsTabCoordinator.NormalizeView(view);
         ApplyFilterForView();
+    }
+
+    private void ApplyProductFocusFromQuery()
+    {
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        var query = QueryHelpers.ParseQuery(uri.Query);
+
+        if (query.TryGetValue("productId", out var value) &&
+            Guid.TryParse(value.ToString(), out var productId))
+        {
+            pendingFocusProductId = productId;
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(ProductIdQuery) &&
+            Guid.TryParse(ProductIdQuery, out var fromParam))
+        {
+            pendingFocusProductId = fromParam;
+        }
+    }
+
+    private async Task TryFocusProductAsync()
+    {
+        if (!pendingFocusProductId.HasValue)
+            return;
+
+        var productId = pendingFocusProductId.Value;
+        pendingFocusProductId = null;
+
+        var product = Products.FirstOrDefault(p => p.Id == productId);
+        if (product == null)
+        {
+            var result = await ProductService.GetById(productId);
+            if (result.Success && result.Data != null)
+            {
+                ProductStockHelper.SyncStockFromSizes(result.Data);
+                product = result.Data;
+            }
+        }
+
+        if (product == null)
+            return;
+
+        if (Products.All(p => p.Id != product.Id))
+        {
+            Products.Insert(0, product);
+            _totalCount = Products.Count;
+        }
+
+        if (isStockModalOpen && stockProduct?.Id == productId)
+        {
+            highlightProductId = productId;
+            await ScrollToProductAsync(productId);
+            return;
+        }
+
+        highlightProductId = productId;
+        await OpenStockModal(product);
+        await ScrollToProductAsync(productId);
+    }
+
+    private async Task ScrollToProductAsync(Guid productId)
+    {
+        try
+        {
+            await JS.InvokeVoidAsync(
+                "adminScroll.scrollIntoView",
+                $"product-{productId}");
+        }
+        catch
+        {
+            // scroll helper optional
+        }
     }
 
     private void ApplyFilterForView()
@@ -385,6 +492,7 @@ public partial class AdminProductComponent : IDisposable
     {
         NavigationManager.LocationChanged -= OnLocationChanged;
         ProductsTabCoordinator.ViewChanged -= OnProductsViewChanged;
+        ProductsTabCoordinator.ProductFocusRequested -= OnProductFocusRequested;
     }
 
     private async Task LoadProducts(int page = 1, int pageSize = 10, string? search = null)
@@ -939,38 +1047,66 @@ public partial class AdminProductComponent : IDisposable
 
     private async Task SaveSizeStock()
     {
+        if (stockProduct == null || editingSizeStock.Count == 0)
+            return;
+
         isUpdatingStock = true;
         stockError = string.Empty;
         StateHasChanged();
+
         try
         {
-            //  update each size one by one
-            foreach (var size in editingSizeStock)
-            {
-                var result = await ProductService.UpdateSizeStock(
-                    size.Id, size.Quantity);
-                if (!result.Success)
-                {
-                    stockError = result.Message ?? "Failed to update stock";
-                    return;
-                }
-            }
+            var editedQuantities = editingSizeStock.ToDictionary(
+                s => s.Size,
+                s => s.Quantity,
+                StringComparer.OrdinalIgnoreCase);
 
-            //  calculate total for local UI update
-            var totalStock = editingSizeStock.Sum(s => s.Quantity);
-
-            var stockResult = await ProductService.UpdateStock(stockProduct!.Id, totalStock);
-            if (!stockResult.Success)
+            var freshResult = await ProductService.GetSizeStock(stockProduct.Id);
+            if (!freshResult.Success || freshResult.Data is not { Count: > 0 } freshSizes)
             {
-                stockError = stockResult.Message ?? "Failed to sync total stock";
+                stockError = freshResult.Message
+                             ?? "Could not load size stock IDs. Close the modal and try again.";
                 return;
             }
 
-            //  update local product list
-            var product = Products.FirstOrDefault(p => p.Id == stockProduct!.Id);
+            foreach (var size in freshSizes)
+            {
+                if (editedQuantities.TryGetValue(size.Size, out var qty))
+                    size.Quantity = qty;
+            }
+
+            editingSizeStock = freshSizes;
+
+            foreach (var size in editingSizeStock)
+            {
+                Response<SizeStockModel> result;
+                if (size.Id == Guid.Empty)
+                {
+                    result = await ProductService.AddSizeStock(
+                        stockProduct.Id, size.Size, size.Quantity);
+                }
+                else
+                {
+                    result = await ProductService.UpdateSizeStock(size.Id, size.Quantity);
+                }
+
+                if (!result.Success)
+                {
+                    stockError = $"{result.Message ?? "Failed to update stock"} (size {size.Size})";
+                    return;
+                }
+
+                if (size.Id == Guid.Empty && result.Data != null)
+                    size.Id = result.Data.Id;
+            }
+
+            var refreshed = await ProductService.GetSizeStock(stockProduct.Id);
+            if (refreshed.Success && refreshed.Data is { Count: > 0 })
+                editingSizeStock = refreshed.Data;
+
+            var product = Products.FirstOrDefault(p => p.Id == stockProduct.Id);
             if (product != null)
             {
-                product.Stock = totalStock;
                 product.SizeStock = editingSizeStock
                     .Select(s => new SizeStockModel
                     {
@@ -978,7 +1114,9 @@ public partial class AdminProductComponent : IDisposable
                         Size = s.Size,
                         Quantity = s.Quantity
                     }).ToList();
+                ProductStockHelper.SyncStockFromSizes(product);
             }
+
             CloseStockModal();
             ProductsTabCoordinator.RequestBadgeCountsRefresh();
         }
@@ -1006,14 +1144,27 @@ public partial class AdminProductComponent : IDisposable
     //}
     private async Task OpenStockModal(ProductModel item)
     {
+        if (isStockModalOpen)
+            CloseStockModal();
+
         stockProduct = item;
         stockError = string.Empty;
+        stockLoadFailed = false;
         isUpdatingStock = false;
+        editingSizeStock = new();
 
-        //  fetch latest size stock
         var result = await ProductService.GetSizeStock(item.Id);
-        if (result.Success && result.Data != null)
+        if (result.Success && result.Data is { Count: > 0 })
+        {
             editingSizeStock = result.Data;
+        }
+        else
+        {
+            stockLoadFailed = true;
+            stockError = result.Success && result.Data is { Count: 0 }
+                ? "This product has no size stock rows yet. Add sizes from the product edit form first."
+                : result.Message ?? "Could not load size stock. Please try again.";
+        }
 
         isStockModalOpen = true;
         StateHasChanged();
@@ -1024,6 +1175,7 @@ public partial class AdminProductComponent : IDisposable
         isStockModalOpen = false;
         stockProduct = null;
         editingSizeStock = new();
+        stockLoadFailed = false;
     }
 
     private async Task HandleDeleteFromForm()

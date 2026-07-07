@@ -20,6 +20,10 @@ public static class ProductStockHelper
 
     public static bool IsLowStock(ProductModel product)
     {
+        if (product.SizeStock.Count > 0
+            && product.SizeStock.Any(s => s.Quantity > 0 && s.Quantity < LowStockThreshold))
+            return true;
+
         var stock = GetEffectiveStock(product);
         return stock > 0 && stock < LowStockThreshold;
     }

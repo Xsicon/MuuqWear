@@ -12,6 +12,7 @@
 @inject NavigationManager NavigationManager
 @inject AdminOrdersTabCoordinator OrdersTabCoordinator
 @inject AdminProductsTabCoordinator ProductsTabCoordinator
+@inject AdminCustomersTabCoordinator CustomersTabCoordinator
 @rendermode InteractiveServer
 @implements IDisposable
 
@@ -98,20 +99,52 @@
         }
     </div>
 
-    <NavLink href="/admin/customers"
-             class="an-nav__item"
-             title="Customers"
-             onclick="window.adminSidebar.close()">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
-             viewBox="0 0 24 24" fill="none" stroke="currentColor"
-             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-            <circle cx="9" cy="7" r="4"></circle>
-            <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
-            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-        </svg>
-        <span class="an-nav__label">Customers</span>
-    </NavLink>
+    <!-- Customers (expandable) -->
+    <div class="an-nav-group @(customersOpen ? "an-nav-group--open" : "")">
+        <button type="button"
+                class="an-nav-group__header @(IsCustomersSectionActive ? "an-nav-group__header--active" : "")"
+                aria-expanded="@customersOpen"
+                @onclick="ToggleCustomers">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+            <span class="an-nav__label">Customers</span>
+            @if (counts is not null && counts.TotalCustomers > 0)
+            {
+                <span class="an-nav__badge">@counts.TotalCustomers</span>
+            }
+            <svg class="an-nav-group__chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m6 9 6 6 6-6"></path>
+            </svg>
+        </button>
+        @if (customersOpen)
+        {
+            <div class="an-nav-group__children">
+                <button type="button"
+                        class="an-nav__subitem @(IsCustomersViewActive("list") ? "an-nav__subitem--active" : "")"
+                        @onclick='() => NavigateToCustomersView("list")'>
+                    Customer List
+                </button>
+                <button type="button"
+                        class="an-nav__subitem @(IsCustomersViewActive("details") ? "an-nav__subitem--active" : "")"
+                        @onclick='() => NavigateToCustomersView("details")'>
+                    Customer Details
+                </button>
+                <button type="button"
+                        class="an-nav__subitem @(IsCustomersViewActive("notes") ? "an-nav__subitem--active" : "")"
+                        @onclick='() => NavigateToCustomersView("notes")'>
+                    Customer Notes
+                </button>
+            </div>
+        }
+    </div>
 
     <!-- Products & Inventory (expandable) -->
     <div class="an-nav-group @(productsInventoryOpen ? "an-nav-group--open" : "")">
@@ -291,6 +324,7 @@
     private AdminBadgeCountsModel? counts;
     private bool salesOrdersOpen;
     private bool productsInventoryOpen;
+    private bool customersOpen;
 
     protected override async Task OnInitializedAsync()
     {
@@ -320,6 +354,7 @@
         ProductsTabCoordinator.BadgeCountsRefreshRequested += OnProductsBadgeCountsRefreshRequested;
         SyncSalesOrdersGroup();
         SyncProductsInventoryGroup();
+        SyncCustomersGroup();
     }
 
     private void OnBadgeCountsRefreshRequested()
@@ -374,6 +409,7 @@
     {
         SyncSalesOrdersGroup();
         SyncProductsInventoryGroup();
+        SyncCustomersGroup();
         await LoadBadgeCountsAsync();
         await LoadLowStockCountAsync();
         await InvokeAsync(StateHasChanged);
@@ -389,6 +425,41 @@
     {
         if (IsProductsSectionActive)
             productsInventoryOpen = true;
+    }
+
+    private void SyncCustomersGroup()
+    {
+        if (IsCustomersSectionActive)
+            customersOpen = true;
+    }
+
+    private void ToggleCustomers()
+    {
+        customersOpen = !customersOpen;
+    }
+
+    private void NavigateToCustomersView(string view)
+    {
+        NavigationManager.NavigateTo($"/admin/customers?view={view}");
+        CustomersTabCoordinator.NotifyViewChanged(view);
+    }
+
+    private bool IsCustomersSectionActive =>
+        NavigationManager.ToBaseRelativePath(NavigationManager.Uri)
+            .StartsWith("admin/customers", StringComparison.OrdinalIgnoreCase);
+
+    private bool IsCustomersViewActive(string view)
+    {
+        if (!IsCustomersSectionActive)
+            return false;
+
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        var query = QueryHelpers.ParseQuery(uri.Query);
+
+        if (!query.TryGetValue("view", out var value) || string.IsNullOrEmpty(value))
+            return view == "list";
+
+        return value.ToString().Equals(view, StringComparison.OrdinalIgnoreCase);
     }
 
     private void ToggleProductsInventory()

@@ -149,7 +149,19 @@ Figma defines dashboard roles and what each role sees:
 ### 5.3 Customers (`Customers.tsx`)
 **Route:** `/admin/customers` → `AdminCustomerComponent.razor`
 
-**Table columns:** Name, Email, Orders, Total Spent, Joined, Last Order, Actions (view eye)  
+**Sidebar (expandable, per design ref):**
+- Customer List → `?view=list` (default)
+- Customer Details → `?view=details` (profile + threaded internal notes)
+- Customer Notes → `?view=notes` (table of note summaries + panel)
+- Badge: total customer count from `IAdminBadgeService`
+
+**Internal notes (threaded, admin-only):**
+- `GET api/Customer/{customerId}/notes` — list notes (newest first)
+- `POST api/Customer/{customerId}/notes` — add note; author from JWT
+- Extend `GET api/Customer` rows with `NoteCount`, `LatestNotePreview`, `LatestNoteAt`, `LatestNoteAuthorName`, `LatestNoteAuthorRole`
+- Each note must include `AuthorName` and optional `AuthorRole` (displayed as `[Sarah - Support]`)
+
+**Table columns (Customer List):** Name, Email, Orders, Total Spent, Joined, Last Order, Actions (view eye)  
 **Header:** `CUSTOMERS (n)` + Export button
 
 **Mock row shape:**
@@ -296,6 +308,7 @@ Figma defines dashboard roles and what each role sees:
 ## 8. Per-section checklist (repeat for each phase)
 
 - [ ] Read Figma `.tsx` + compare to current Blazor component
+- [ ] **Check `.design-reference/backend/` and `BackendDashboard.tsx` for expandable sidebar sub-items** (Orders, Customers, Products, Content, etc.)
 - [ ] Update markup to match new layout (cards, badges, filters)
 - [ ] Update scoped CSS (match tokens in §2)
 - [ ] Keep existing `@inject` services and `.razor.cs` logic

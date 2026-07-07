@@ -105,3 +105,11 @@ window.initAdminShell = function () {
 };
 
 document.addEventListener('DOMContentLoaded', window.initAdminShell);
+
+window.adminScroll = {
+    scrollIntoView: function (elementId) {
+        var el = document.getElementById(elementId);
+        if (!el) return;
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+};

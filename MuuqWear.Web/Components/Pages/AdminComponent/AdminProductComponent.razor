@@ -204,7 +204,9 @@
             {
                 @foreach (var item in FilteredProducts)
                 {
-                    <div class="product-card @(StockFocusLayout ? "product-card--stock-focus" : "")" @key="item.Id">
+                    <div id="@($"product-{item.Id}")"
+                         class="product-card @(StockFocusLayout ? "product-card--stock-focus" : "") @(highlightProductId == item.Id ? "product-card--highlighted" : "")"
+                         @key="item.Id">
                         <div class="product-card__top">
                             <div class="product-card__name-row">
                                 <input type="checkbox"
@@ -706,6 +708,11 @@ else
                 <p class="products-stock-modal__error">@stockError</p>
             }
 
+            @if (editingSizeStock.Count == 0)
+            {
+                <p class="products-stock-modal__hint">No size stock loaded for this product.</p>
+            }
+
             <div class="products-stock-modal__sizes">
                 @foreach (var size in editingSizeStock)
                 {
@@ -734,7 +741,7 @@ else
 
             <div class="products-stock-modal__actions">
                 <button type="button" class="btn-secondary" @onclick="CloseStockModal">Cancel</button>
-                <button type="button" class="btn-primary" @onclick="SaveSizeStock" disabled="@isUpdatingStock">
+                <button type="button" class="btn-primary" @onclick="SaveSizeStock" disabled="@(!CanSaveStock)">
                     @(isUpdatingStock ? "Saving..." : "Save Stock")
                 </button>
             </div>

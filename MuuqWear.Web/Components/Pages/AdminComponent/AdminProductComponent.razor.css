@@ -354,6 +354,12 @@
     border-left: 3px solid #1E2A47;
 }
 
+.product-card--highlighted {
+    outline: 2px solid #ED6C02;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(237, 108, 2, 0.15);
+}
+
 .product-card__meta--stock {
     font-weight: 500;
 }

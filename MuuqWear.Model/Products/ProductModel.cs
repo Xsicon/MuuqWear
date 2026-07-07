@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace MuuqWear.Model.Products;
 public class ProductModel
@@ -64,6 +65,18 @@ public class UpdateSizeStockModel
 public class SizeStockModel
 {
     public Guid Id { get; set; }
+
+    [JsonPropertyName("sizeStockId")]
+    public Guid SizeStockId
+    {
+        get => Id;
+        set
+        {
+            if (value != Guid.Empty)
+                Id = value;
+        }
+    }
+
     public string Size { get; set; } = string.Empty;
     public int Quantity { get; set; }
 }

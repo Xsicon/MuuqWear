@@ -107,6 +107,7 @@ builder.Services.AddHttpClient<IVoteService, VoteService>(client =>
 builder.Services.AddScoped<AuthStateService>();
 builder.Services.AddScoped<AdminOrdersTabCoordinator>();
 builder.Services.AddScoped<AdminProductsTabCoordinator>();
+builder.Services.AddScoped<AdminCustomersTabCoordinator>();
 builder.Services.AddScoped<CartStateService>();
 builder.Services.AddScoped<WishlistStateService>();
 builder.Services.AddCascadingAuthenticationState();

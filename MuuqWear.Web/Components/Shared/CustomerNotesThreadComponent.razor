@@ -1,0 +1,77 @@
+@using MuuqWear.Model.Customer
+@using MuuqWear.Web.Helpers
+
+<div class="customer-notes-thread">
+    <p class="customer-notes-thread__heading">Internal Notes</p>
+
+    @if (IsLoading)
+    {
+        <p class="customer-notes-thread__status">Loading notes…</p>
+    }
+    else if (!Notes.Any())
+    {
+        <p class="customer-notes-thread__status">No internal notes yet. Add the first note below.</p>
+    }
+    else
+    {
+        <ul class="customer-notes-thread__list">
+            @foreach (var note in Notes)
+            {
+                <li class="customer-notes-thread__item" @key="note.Id">
+                    <p class="customer-notes-thread__meta">
+                        <span class="customer-notes-thread__author">
+                            @CustomerNoteFormatter.FormatAuthorBracket(note)
+                        </span>
+                        <span class="customer-notes-thread__time">
+                            @FormatTimestamp(note.CreatedAt)
+                        </span>
+                    </p>
+                    <p class="customer-notes-thread__body">@note.Body</p>
+                </li>
+            }
+        </ul>
+    }
+
+    @if (!string.IsNullOrEmpty(ErrorMessage))
+    {
+        <p class="customer-notes-thread__error">@ErrorMessage</p>
+    }
+
+    <div class="customer-notes-thread__composer">
+        <textarea class="customer-notes-thread__input"
+                  rows="3"
+                  placeholder="Add note…"
+                  disabled="@IsSaving"
+                  @bind="draftBody"
+                  @bind:event="oninput"></textarea>
+        <button type="button"
+                class="customer-notes-thread__submit"
+                disabled="@(IsSaving || string.IsNullOrWhiteSpace(draftBody))"
+                @onclick="SubmitNoteAsync">
+            @(IsSaving ? "Saving…" : "Add Note")
+        </button>
+    </div>
+</div>
+
+@code {
+    [Parameter] public IReadOnlyList<CustomerNoteModel> Notes { get; set; } = Array.Empty<CustomerNoteModel>();
+    [Parameter] public bool IsLoading { get; set; }
+    [Parameter] public bool IsSaving { get; set; }
+    [Parameter] public string? ErrorMessage { get; set; }
+    [Parameter] public EventCallback<string> OnAddNote { get; set; }
+
+    private string draftBody = string.Empty;
+
+    private async Task SubmitNoteAsync()
+    {
+        if (string.IsNullOrWhiteSpace(draftBody) || IsSaving)
+            return;
+
+        var body = draftBody.Trim();
+        await OnAddNote.InvokeAsync(body);
+        draftBody = string.Empty;
+    }
+
+    private static string FormatTimestamp(DateTime value) =>
+        value.ToString("MMM dd, yyyy h:mm tt");
+}

@@ -8,6 +8,7 @@ public class AdminProductsTabCoordinator
 {
     public event Action<string>? ViewChanged;
     public event Action? BadgeCountsRefreshRequested;
+    public event Action<Guid>? ProductFocusRequested;
 
     public void NotifyViewChanged(string view)
     {
@@ -17,6 +18,11 @@ public class AdminProductsTabCoordinator
     public void RequestBadgeCountsRefresh()
     {
         BadgeCountsRefreshRequested?.Invoke();
+    }
+
+    public void NotifyProductFocus(Guid productId)
+    {
+        ProductFocusRequested?.Invoke(productId);
     }
 
     public static string NormalizeView(string? view) =>

@@ -1,16 +1,23 @@
 ﻿@rendermode InteractiveServer
 @using Microsoft.AspNetCore.Components.Authorization
-@using MuuqWear.Application.Interfaces
+@using Microsoft.AspNetCore.Components.Web
+@using MuuqWear.Application.Services.CustomerService
 @using MuuqWear.Application.Services.NotificationService
-@using MuuqWear.Application.Services.VoteService
+@using MuuqWear.Application.Services.ProductService
 @using MuuqWear.Application.Shared
+@using MuuqWear.Model.Customer
+@using MuuqWear.Model.Messages
 @using MuuqWear.Model.NotificationModel
+@using MuuqWear.Model.Products
+@using MuuqWear.Web.Services
 @inject INotificationService NotificationService
+@inject IProductService ProductService
+@inject ICustomerService CustomerService
+@inject AdminProductsTabCoordinator ProductsTabCoordinator
+@inject AdminCustomersTabCoordinator CustomersTabCoordinator
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthStateProvider
-@inject NotificationRealtimeService NotifyRealtime
-@inject IConfiguration Configuration
-@implements IAsyncDisposable
+@implements IDisposable
 
 <header class="at-topbar">
 
@@ -90,6 +97,7 @@
             <button type="button"
                     class="at-topbar__btn"
                     aria-label="Notifications"
+                    aria-expanded="@isNotificationsOpen"
                     @onclick="ToggleNotifications">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
                      viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -99,7 +107,7 @@
                 </svg>
                 @if (unreadCount > 0)
                 {
-                    <span class="at-topbar__badge at-topbar__badge--red">@unreadCount</span>
+                    <span class="at-topbar__badge at-topbar__badge--yellow">@unreadCount</span>
                 }
             </button>
 
@@ -108,49 +116,130 @@
                 <div class="at-notif-dropdown">
                     <div class="at-notif-dropdown__header">
                         <span class="at-notif-dropdown__title">Notifications</span>
-                        <button type="button" class="at-notif-dropdown__mark-read" @onclick="MarkAllRead">
-                            Mark All Read
-                        </button>
+                        @if (notifications.Any(n => !n.IsRead))
+                        {
+                            <button type="button" class="at-notif-dropdown__mark-read" @onclick="MarkAllRead">
+                                Mark All Read
+                            </button>
+                        }
                     </div>
 
                     @if (isLoadingNotifications)
                     {
-                        <div class="at-notif-dropdown__empty">Loading...</div>
+                        <div class="at-notif-dropdown__empty">Loading…</div>
                     }
                     else if (!notifications.Any())
                     {
-                        <div class="at-notif-dropdown__empty">No notifications</div>
+                        <div class="at-notif-dropdown__empty">No notifications — all products are well stocked.</div>
                     }
                     else
                     {
+                        @if (lowStockCount > 0)
+                        {
+                            <p class="at-notif-dropdown__section">Low stock (@lowStockCount)</p>
+                        }
+
                         @foreach (var notif in notifications)
                         {
-                            <div class="at-notif-item @(notif.IsRead ? "" : "at-notif-item--unread")"
-                                 @key="notif.Id">
+                            <button type="button"
+                                    class="at-notif-item @(notif.IsRead ? "" : "at-notif-item--unread")"
+                                    @key="notif.Id"
+                                    @onclick="() => HandleNotificationClick(notif)">
                                 <div class="at-notif-item__icon @GetNotifIconClass(notif.Type)">
                                     @GetNotifIcon(notif.Type)
                                 </div>
                                 <div class="at-notif-item__content">
                                     <p class="at-notif-item__message">@notif.Message</p>
-                                    <p class="at-notif-item__time">@notif.TimeDisplay</p>
+                                    <p class="at-notif-item__time">@GetNotificationDetail(notif)</p>
                                 </div>
-                            </div>
+                            </button>
+                        }
+
+                        @if (lowStockCount > notifications.Count)
+                        {
+                            <button type="button"
+                                    class="at-notif-dropdown__view-all"
+                                    @onclick="ViewAllLowStock">
+                                View all @lowStockCount low-stock products
+                            </button>
                         }
                     }
                 </div>
             }
         </div>
 
-        <!-- Mail -->
-        <button type="button" class="at-topbar__btn" aria-label="Messages">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
-                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <rect width="20" height="16" x="2" y="4" rx="2"></rect>
-                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
-            </svg>
-            <span class="at-topbar__badge at-topbar__badge--dark">2</span>
-        </button>
+        <!-- Messages (customer internal notes) -->
+        <div class="at-topbar__icon-wrap">
+            <button type="button"
+                    class="at-topbar__btn"
+                    aria-label="Messages"
+                    aria-expanded="@isMessagesOpen"
+                    @onclick="ToggleMessages">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect width="20" height="16" x="2" y="4" rx="2"></rect>
+                    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+                </svg>
+                @if (unreadMessageCount > 0)
+                {
+                    <span class="at-topbar__badge at-topbar__badge--dark">@unreadMessageCount</span>
+                }
+            </button>
+
+            @if (isMessagesOpen)
+            {
+                <div class="at-notif-dropdown">
+                    <div class="at-notif-dropdown__header">
+                        <span class="at-notif-dropdown__title">Messages</span>
+                        @if (messages.Any(m => !m.IsRead))
+                        {
+                            <button type="button" class="at-notif-dropdown__mark-read" @onclick="MarkAllMessagesRead">
+                                Mark All Read
+                            </button>
+                        }
+                    </div>
+
+                    @if (isLoadingMessages)
+                    {
+                        <div class="at-notif-dropdown__empty">Loading…</div>
+                    }
+                    else if (!messages.Any())
+                    {
+                        <div class="at-notif-dropdown__empty">No customer notes yet.</div>
+                    }
+                    else
+                    {
+                        <p class="at-notif-dropdown__section">Customer notes (@messageCount)</p>
+
+                        @foreach (var message in messages)
+                        {
+                            <button type="button"
+                                    class="at-notif-item @(message.IsRead ? "" : "at-notif-item--unread")"
+                                    @key="message.Id"
+                                    @onclick="() => HandleMessageClick(message)">
+                                <div class="at-notif-item__icon at-notif-item__icon--note">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                                </div>
+                                <div class="at-notif-item__content">
+                                    <p class="at-notif-item__message">@message.CustomerName</p>
+                                    <p class="at-notif-item__time">@GetMessageDetail(message)</p>
+                                </div>
+                            </button>
+                        }
+
+                        @if (messageCount > messages.Count)
+                        {
+                            <button type="button"
+                                    class="at-notif-dropdown__view-all"
+                                    @onclick="ViewAllCustomerNotes">
+                                View all customer notes
+                            </button>
+                        }
+                    }
+                </div>
+            }
+        </div>
 
         <!-- User menu -->
         <div class="at-topbar__icon-wrap">
@@ -187,7 +276,7 @@
     </div>
 </header>
 
-@if (isNotificationsOpen || isUserMenuOpen)
+@if (isNotificationsOpen || isMessagesOpen || isUserMenuOpen)
 {
     <div class="at-topbar__overlay" @onclick="CloseAllDropdowns"></div>
 }
@@ -196,16 +285,23 @@
 
     private string searchQuery = string.Empty;
     private bool isNotificationsOpen;
+    private bool isMessagesOpen;
     private bool isUserMenuOpen;
     private bool isLoadingNotifications;
+    private bool isLoadingMessages;
     private List<NotificationModel> notifications = new();
+    private List<AdminMessageModel> messages = new();
     private int unreadCount;
+    private int unreadMessageCount;
+    private int lowStockCount;
+    private int messageCount;
+    private readonly HashSet<Guid> lowStockProductIds = new();
+    private readonly HashSet<Guid> readNotificationIds = new();
+    private readonly Dictionary<Guid, DateTime> readNoteAtByCustomerId = new();
     private string userName = string.Empty;
     private string userInitials = "AD";
-
-    private VoteRealtimeSubscription? _ordersSub;
-    private VoteRealtimeSubscription? _ticketsSub;
-    private VoteRealtimeSubscription? _returnsSub;
+    private System.Threading.Timer? _refreshTimer;
+    private const int RefreshIntervalSeconds = 30;
 
     protected override async Task OnInitializedAsync()
     {
@@ -221,24 +317,75 @@
             ? $"{parts[0][0]}{parts[^1][0]}".ToUpper()
             : parts[0][..Math.Min(2, parts[0].Length)].ToUpper();
 
-        await LoadNotifications();
-        NotifyRealtime.OnNotification += HandleNewNotification;
+        ProductsTabCoordinator.BadgeCountsRefreshRequested += OnProductsChanged;
+        CustomersTabCoordinator.MessagesRefreshRequested += OnCustomerNotesChanged;
+        NavigationManager.LocationChanged += OnLocationChanged;
 
-        _ = NotifyRealtime.InitializeAsync(
-            Configuration["Supabase:Url"]!,
-            Configuration["Supabase:AnonKey"]!);
+        _refreshTimer = new System.Threading.Timer(
+            _ => _ = InvokeAsync(RefreshHeaderAsync),
+            null,
+            TimeSpan.FromSeconds(RefreshIntervalSeconds),
+            TimeSpan.FromSeconds(RefreshIntervalSeconds));
+
+        await RefreshHeaderAsync();
     }
 
-    private void HandleNewNotification(NotificationModel notify)
+    private void OnProductsChanged()
     {
-        InvokeAsync(() =>
-        {
-            notifications.Insert(0, notify);
-            if (notifications.Count > 5)
-                notifications.RemoveAt(notifications.Count - 1);
-            unreadCount++;
-            StateHasChanged();
-        });
+        _ = InvokeAsync(LoadNotifications);
+    }
+
+    private void OnCustomerNotesChanged()
+    {
+        _ = InvokeAsync(LoadMessages);
+    }
+
+    private async Task RefreshHeaderAsync()
+    {
+        await LoadNotifications();
+        await LoadMessages();
+    }
+
+    private async void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        if (!NavigationManager.ToBaseRelativePath(NavigationManager.Uri)
+                .StartsWith("admin", StringComparison.OrdinalIgnoreCase))
+            return;
+
+        await InvokeAsync(RefreshHeaderAsync);
+    }
+
+    private async Task LoadMessages()
+    {
+        isLoadingMessages = true;
+        StateHasChanged();
+
+        var customers = await LoadAllCustomersAsync();
+        var withNotes = customers
+            .Where(c => c.LatestNoteAt.HasValue && !string.IsNullOrWhiteSpace(c.LatestNotePreview))
+            .ToList();
+
+        messageCount = withNotes.Count;
+        messages = AdminHeaderMessagesBuilder
+            .FromCustomers(customers, readNoteAtByCustomerId)
+            .OrderBy(m => m.IsRead)
+            .ThenByDescending(m => m.CreatedAt)
+            .ToList();
+
+        unreadMessageCount = messages.Count(m => !m.IsRead);
+
+        isLoadingMessages = false;
+        StateHasChanged();
+    }
+
+    private async Task<List<CustomerModel>> LoadAllCustomersAsync()
+    {
+        var result = await CustomerService.GetAll(null, 1, 1000);
+
+        if (!result.Success || result.Data?.Data == null)
+            return new List<CustomerModel>();
+
+        return result.Data.Data;
     }
 
     private async Task LoadNotifications()
@@ -246,30 +393,205 @@
         isLoadingNotifications = true;
         StateHasChanged();
 
-        var result = await NotificationService.GetRecent();
-        if (result.Success && result.Data != null)
+        var allProducts = await LoadAllProductsAsync();
+        var lowStockProducts = allProducts
+            .Where(ProductStockHelper.IsLowStock)
+            .OrderBy(p => ProductStockHelper.GetEffectiveStock(p))
+            .ThenBy(p => p.Name)
+            .ToList();
+
+        lowStockCount = lowStockProducts.Count;
+        lowStockProductIds.Clear();
+        foreach (var product in lowStockProducts)
+            lowStockProductIds.Add(product.Id);
+
+        var lowStockNotifications = AdminHeaderNotificationsBuilder
+            .FromLowStockProducts(lowStockProducts, readNotificationIds);
+
+        var merged = new List<NotificationModel>(lowStockNotifications);
+        var coveredProductIds = lowStockNotifications
+            .Select(n => n.Id)
+            .ToHashSet();
+
+        // API notifications (orders, tickets, persisted low-stock size alerts, etc.)
+        var apiResult = await NotificationService.GetRecent();
+        if (apiResult.Success && apiResult.Data is { Count: > 0 })
         {
-            notifications = result.Data;
-            unreadCount = notifications.Count(n => !n.IsRead);
+            foreach (var apiNotif in apiResult.Data)
+            {
+                AdminNotificationEnricher.Enrich(apiNotif, allProducts);
+
+                if (merged.Any(n => n.Id == apiNotif.Id))
+                    continue;
+
+                // Skip API low-stock alerts when we already show the product-level alert
+                if (AdminNotificationEnricher.IsLowStockNotification(apiNotif)
+                    && apiNotif.ProductId is Guid productId
+                    && coveredProductIds.Contains(productId))
+                    continue;
+
+                apiNotif.IsRead = readNotificationIds.Contains(apiNotif.Id)
+                    || (apiNotif.ProductId is Guid readProductId && readNotificationIds.Contains(readProductId));
+                merged.Add(apiNotif);
+            }
         }
+
+        notifications = merged
+            .OrderBy(n => n.IsRead)
+            .ThenBy(n => n.Type == NotificationType.LowStock ? 0 : 1)
+            .ThenByDescending(n => n.CreatedAt)
+            .ToList();
+
+        unreadCount = notifications.Count(n => !n.IsRead);
 
         isLoadingNotifications = false;
         StateHasChanged();
     }
 
+    private async Task<List<ProductModel>> LoadAllProductsAsync()
+    {
+        var result = await ProductService.GetAll(new ProductFilterModel
+        {
+            Page = 1,
+            PageSize = 1000,
+            IncludeTickets = true
+        });
+
+        if (!result.Success || result.Data?.Data == null)
+            return new List<ProductModel>();
+
+        foreach (var product in result.Data.Data)
+            ProductStockHelper.SyncStockFromSizes(product);
+
+        return result.Data.Data;
+    }
+
     private void ToggleNotifications()
     {
         isNotificationsOpen = !isNotificationsOpen;
+        isMessagesOpen = false;
         isUserMenuOpen = false;
+
+        if (isNotificationsOpen)
+            _ = LoadNotifications();
+    }
+
+    private void ToggleMessages()
+    {
+        isMessagesOpen = !isMessagesOpen;
+        isNotificationsOpen = false;
+        isUserMenuOpen = false;
+
+        if (isMessagesOpen)
+            _ = LoadMessages();
     }
 
     private async Task MarkAllRead()
     {
         foreach (var n in notifications)
+        {
             n.IsRead = true;
+            readNotificationIds.Add(n.Id);
+        }
+
         unreadCount = 0;
         StateHasChanged();
         await NotificationService.MarkAllRead();
+    }
+
+    private void HandleNotificationClick(NotificationModel notif)
+    {
+        notif.IsRead = true;
+        readNotificationIds.Add(notif.Id);
+        if (notif.ProductId is Guid productId)
+            readNotificationIds.Add(productId);
+
+        unreadCount = notifications.Count(n => !n.IsRead);
+        isNotificationsOpen = false;
+
+        var focusProductId = AdminNotificationEnricher.ResolveProductId(notif)
+                             ?? (AdminNotificationEnricher.IsLowStockNotification(notif)
+                                 && lowStockProductIds.Contains(notif.Id)
+                                 ? notif.Id
+                                 : (Guid?)null);
+
+        var linkHasProductFocus = notif.Link?.Contains("productId=", StringComparison.OrdinalIgnoreCase) == true;
+        if (focusProductId is Guid id && !linkHasProductFocus)
+            ProductsTabCoordinator.NotifyProductFocus(id);
+
+        if (!string.IsNullOrWhiteSpace(notif.Link))
+        {
+            NavigationManager.NavigateTo(notif.Link);
+            return;
+        }
+
+        if (AdminNotificationEnricher.IsLowStockNotification(notif))
+            NavigationManager.NavigateTo("/admin/products?view=low-stock");
+    }
+
+    private void HandleMessageClick(AdminMessageModel message)
+    {
+        message.IsRead = true;
+        readNoteAtByCustomerId[message.CustomerId] = message.CreatedAt;
+
+        unreadMessageCount = messages.Count(m => !m.IsRead);
+        isMessagesOpen = false;
+
+        var linkHasCustomerFocus = message.Link.Contains("customerId=", StringComparison.OrdinalIgnoreCase);
+        if (!linkHasCustomerFocus)
+            CustomersTabCoordinator.NotifyCustomerFocus(message.CustomerId);
+
+        NavigationManager.NavigateTo(message.Link);
+    }
+
+    private void MarkAllMessagesRead()
+    {
+        foreach (var message in messages)
+        {
+            message.IsRead = true;
+            readNoteAtByCustomerId[message.CustomerId] = message.CreatedAt;
+        }
+
+        unreadMessageCount = 0;
+        StateHasChanged();
+    }
+
+    private void ViewAllCustomerNotes()
+    {
+        isMessagesOpen = false;
+        NavigationManager.NavigateTo("/admin/customers?view=notes");
+    }
+
+    private static string GetMessageDetail(AdminMessageModel message)
+    {
+        var preview = string.IsNullOrWhiteSpace(message.Preview)
+            ? "Internal note"
+            : message.Preview;
+
+        if (preview.Length > 72)
+            preview = preview[..72].TrimEnd() + "…";
+
+        return $"{message.AuthorLabel} · {preview} · {message.TimeDisplay}";
+    }
+
+    private void ViewAllLowStock()
+    {
+        isNotificationsOpen = false;
+        NavigationManager.NavigateTo("/admin/products?view=low-stock");
+    }
+
+    private static string GetNotificationDetail(NotificationModel notif)
+    {
+        if (AdminNotificationEnricher.IsLowStockNotification(notif))
+        {
+            if (!string.IsNullOrWhiteSpace(notif.TimeAgo))
+                return notif.TimeAgo;
+
+            if (!string.IsNullOrWhiteSpace(notif.SizeLabel))
+                return $"Size {notif.SizeLabel} · tap to restock";
+        }
+
+        return notif.TimeDisplay;
     }
 
     private void HandleSearchKeyDown(KeyboardEventArgs e)
@@ -301,6 +623,7 @@
     {
         isUserMenuOpen = !isUserMenuOpen;
         isNotificationsOpen = false;
+        isMessagesOpen = false;
     }
 
     private void HandleLogout()
@@ -311,6 +634,7 @@
     private void CloseAllDropdowns()
     {
         isNotificationsOpen = false;
+        isMessagesOpen = false;
         isUserMenuOpen = false;
     }
 
@@ -320,6 +644,8 @@
         NotificationType.Ticket => "at-notif-item__icon--ticket",
         NotificationType.Return => "at-notif-item__icon--return",
         NotificationType.LowStock => "at-notif-item__icon--stock",
+        NotificationType.Stock => "at-notif-item__icon--stock",
+        _ when type.Contains("stock", StringComparison.OrdinalIgnoreCase) => "at-notif-item__icon--stock",
         _ => "at-notif-item__icon--order"
     };
 
@@ -328,12 +654,19 @@
         NotificationType.Order => @<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"></path></svg>,
         NotificationType.Ticket => @<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path></svg>,
         NotificationType.Return => @<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>,
+        NotificationType.LowStock => StockIcon(),
+        NotificationType.Stock => StockIcon(),
+        _ when type.Contains("stock", StringComparison.OrdinalIgnoreCase) => StockIcon(),
         _ => @<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"></path></svg>
     };
 
-    public async ValueTask DisposeAsync()
+    private static RenderFragment StockIcon() => @<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"></path><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"></circle></svg>;
+
+    public void Dispose()
     {
-        NotifyRealtime.OnNotification -= HandleNewNotification;
-        await ValueTask.CompletedTask;
+        _refreshTimer?.Dispose();
+        ProductsTabCoordinator.BadgeCountsRefreshRequested -= OnProductsChanged;
+        CustomersTabCoordinator.MessagesRefreshRequested -= OnCustomerNotesChanged;
+        NavigationManager.LocationChanged -= OnLocationChanged;
     }
 }

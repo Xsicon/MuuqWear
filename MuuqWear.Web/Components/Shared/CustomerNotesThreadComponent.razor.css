@@ -1,0 +1,121 @@
+.customer-notes-thread {
+    margin-top: 8px;
+}
+
+.customer-notes-thread__heading {
+    margin: 0 0 12px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--admin-muted, #4A5C7A);
+}
+
+.customer-notes-thread__status {
+    margin: 0 0 12px;
+    font-size: 13px;
+    color: var(--admin-muted, #4A5C7A);
+}
+
+.customer-notes-thread__list {
+    list-style: none;
+    margin: 0 0 16px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+.customer-notes-thread__item {
+    padding: 12px 14px;
+    border: 1px solid var(--admin-border, rgba(169, 183, 204, 0.35));
+    background: var(--admin-hover, #F4F6F9);
+}
+
+.customer-notes-thread__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    margin: 0 0 6px;
+    font-size: 11px;
+}
+
+.customer-notes-thread__author {
+    font-weight: 800;
+    font-size: 12px;
+    color: var(--admin-text, #1E2A47);
+    letter-spacing: 0.2px;
+}
+
+.customer-notes-thread__time {
+    color: var(--admin-muted, #4A5C7A);
+}
+
+.customer-notes-thread__body {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--admin-text, #1E2A47);
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.customer-notes-thread__error {
+    margin: 0 0 10px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #C44545;
+}
+
+.customer-notes-thread__composer {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.customer-notes-thread__input {
+    width: 100%;
+    min-height: 72px;
+    padding: 10px 12px;
+    font-size: 13px;
+    font-family: inherit;
+    border: 1px solid var(--admin-border, rgba(169, 183, 204, 0.6));
+    background: var(--admin-surface, #fff);
+    color: var(--admin-text, #1E2A47);
+    resize: vertical;
+}
+
+.customer-notes-thread__input:focus {
+    outline: 2px solid #1E2A47;
+    outline-offset: 0;
+}
+
+.customer-notes-thread__submit {
+    align-self: flex-start;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 10px 16px;
+    border: none;
+    cursor: pointer;
+    background: #1E2A47;
+    color: white;
+    font-family: inherit;
+}
+
+.customer-notes-thread__submit:hover:not(:disabled) {
+    background: #0B1A33;
+}
+
+.customer-notes-thread__submit:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+:global(html[data-admin-theme="dark"]) .mw-admin .customer-notes-thread__item,
+:global(html[data-admin-theme="dark"]) .mw-admin .customer-notes-thread__input {
+    background: rgba(244, 246, 249, 0.06);
+    border-color: var(--admin-border, rgba(169, 183, 204, 0.2));
+    color: var(--admin-text, #E6ECF5);
+}
