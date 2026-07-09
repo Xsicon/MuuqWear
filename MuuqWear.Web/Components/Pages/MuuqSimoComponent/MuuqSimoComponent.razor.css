@@ -2003,3 +2003,57 @@
     color: #4A5C7A;
     font-size: 14px;
 }
+
+/* =============================================
+   MULTI-EVENT SWITCHER
+   ============================================= */
+.ms-event-nav {
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+    border-bottom: 1px solid #E6ECF5;
+    background: #F7F9FC;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+}
+
+.ms-event-nav__item {
+    flex: 1 1 0;
+    min-width: 200px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 14px 20px;
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.ms-event-nav__item:hover {
+    background: #EEF2F8;
+}
+
+.ms-event-nav__item--active {
+    background: #fff;
+    border-bottom-color: #1E2A47;
+}
+
+.ms-event-nav__title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1E2A47;
+    letter-spacing: 0.01em;
+}
+
+.ms-event-nav__tagline {
+    font-size: 11px;
+    color: #4A5C7A;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ms-event-nav__item--active .ms-event-nav__title {
+    color: #1E2A47;
+}

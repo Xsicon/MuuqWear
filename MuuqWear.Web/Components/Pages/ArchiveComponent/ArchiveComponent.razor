@@ -1,10 +1,7 @@
 ﻿@page "/design-history"
-@using MuuqWear.Application.Services.ContentService
 @using MuuqWear.Model.Archive
 @using MuuqWear.Model.ContentItem
 @rendermode InteractiveServer
-@inject IJSRuntime JS
-@inject IContentService ContentService
 
 
 <PageTitle>The Archive — Muuqwear</PageTitle>
@@ -64,7 +61,7 @@
                         <div class="ar-carousel__track" @ref="handle.TrackRef">
                             @foreach (var c in items)
                             {
-                                <article class="ar-card" @onclick="() => OpenStoryPanel(c)">
+                                <article class="ar-card" @onclick="() => OpenStoryPanelAsync(c)">
                                     <div class="ar-card__media">
                                         <img src="@c.ImageUrl"
                                              alt="@c.Title"
@@ -78,7 +75,7 @@
                                         </p>
                                         <button type="button"
                                                 class="ar-card__cta"
-                                                @onclick="() => OpenStoryPanel(c)"
+                                                @onclick="() => OpenStoryPanelAsync(c)"
                                                 @onclick:stopPropagation="true">
                                             Read the Story →
                                         </button>
@@ -124,7 +121,13 @@
 
             <!-- Top bar -->
             <div class="ar-story__topbar">
-                <p id="story-title" class="ar-story__topbar-title">@viewingItem.Title</p>
+                <div class="ar-story__topbar-text">
+                    <p id="story-title" class="ar-story__topbar-title">@viewingItem.Title</p>
+                    @if (viewingItem.Views > 0)
+                    {
+                        <p class="ar-story__views">@viewingItem.Views.ToString("N0") views</p>
+                    }
+                </div>
                 <button type="button"
                         class="ar-story__close"
                         @onclick="CloseStoryPanel"
@@ -241,8 +244,23 @@
             </div>
 
             <!-- Action bar -->
+            @if (shareLinkCopied)
+            {
+                <p class="ar-story__share-cue" role="status" aria-live="polite">
+                    Link copied to clipboard!
+                </p>
+            }
+            @if (!string.IsNullOrWhiteSpace(shopMessage))
+            {
+                <p class="ar-story__shop-cue" role="status" aria-live="polite">
+                    @shopMessage
+                </p>
+            }
             <div class="ar-story__actions">
-                <button type="button" class="ar-story__action ar-story__action--solid">
+                <button type="button"
+                        class="ar-story__action ar-story__action--solid"
+                        @onclick="ShopThisDesignAsync"
+                        disabled="@isShopping">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
                          viewBox="0 0 24 24" fill="none" stroke="currentColor"
                          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -250,121 +268,37 @@
                         <circle cx="19" cy="21" r="1"></circle>
                         <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path>
                     </svg>
-                    <span>Shop This Design</span>
+                    <span>@(isShopping ? "Checking…" : "Shop This Design")</span>
                 </button>
-                <button type="button" class="ar-story__action ar-story__action--outline">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
-                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="18" cy="5" r="3"></circle>
-                        <circle cx="6" cy="12" r="3"></circle>
-                        <circle cx="18" cy="19" r="3"></circle>
-                        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
-                        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
-                    </svg>
-                    <span>Share Story</span>
+                <button type="button"
+                        class="ar-story__action ar-story__action--outline@(shareLinkCopied ? " ar-story__action--copied" : "")"
+                        @onclick="ShareStoryAsync"
+                        aria-label="@(shareLinkCopied ? "Link copied" : "Share story")">
+                    @if (shareLinkCopied)
+                    {
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                             viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        <span>Copied!</span>
+                    }
+                    else
+                    {
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                             viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="18" cy="5" r="3"></circle>
+                            <circle cx="6" cy="12" r="3"></circle>
+                            <circle cx="18" cy="19" r="3"></circle>
+                            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                        </svg>
+                        <span>Share Story</span>
+                    }
                 </button>
             </div>
 
         </aside>
     </div>
-}
-
-@code {
-
-    // Story panel state
-    private ContentItemModel? viewingItem = null;
-
-    private void OpenStoryPanel(ContentItemModel item)
-    {
-        viewingItem = item;
-    }
-
-    private void CloseStoryPanel()
-    {
-        viewingItem = null;
-    }
-
-
-    private class CarouselHandle
-    {
-        public ElementReference TrackRef;
-        public bool DragEnabled = false;
-    }
-    private Dictionary<string, CarouselHandle> handles = new();
-    private bool isLoading = true;
-    private Dictionary<string, List<ContentItemModel>> itemsByCollection = new();
-    private Dictionary<string, ElementReference> carouselRefs = new();
-    private List<ContentItemModel> ItemsFor(string collectionKey)
-        => itemsByCollection.TryGetValue(collectionKey, out var items)
-            ? items
-            : new List<ContentItemModel>();
-
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadItems();
-    }
-
-
-    private async Task ScrollLeft(ElementReference el)
-    => await JS.InvokeVoidAsync("mwScrollLeft", el, ".ar-card");
-
-    private async Task ScrollRight(ElementReference el)
-        => await JS.InvokeVoidAsync("mwScrollRight", el, ".ar-card");
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender || carouselRefs.Count == 0) return;
-
-        // Enable drag-scroll on each rendered carousel
-        foreach (var refPair in carouselRefs)
-        {
-            await JS.InvokeVoidAsync("enableDragScroll", refPair.Value);
-        }
-    }
-
-    private async Task LoadItems()
-    {
-        isLoading = true;
-
-        var result = await ContentService.GetPublishedDesignHistory();
-        if (result.Success && result.Data != null)
-        {
-            itemsByCollection = result.Data
-                .Where(x => !string.IsNullOrWhiteSpace(x.Collection))
-                .GroupBy(x => x.Collection!)
-                .ToDictionary(g => g.Key, g => g.ToList());
-        }
-
-        // Create a handle for every defined collection that has items
-        handles = ArchiveCollections.All
-            .Where(def => itemsByCollection.ContainsKey(def.CollectionKey))
-            .ToDictionary(def => def.CollectionKey, _ => new CarouselHandle());
-
-        isLoading = false;
-    }
-
-    private IEnumerable<string> SplitParagraphs(string? text)
-    {
-        if (string.IsNullOrWhiteSpace(text))
-            yield break;
-
-        // Split on blank lines (one or more consecutive newlines)
-        var paragraphs = text
-            .Replace("\r\n", "\n")
-            .Split(new[] { "\n\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
-
-        foreach (var p in paragraphs)
-        {
-            var trimmed = p.Trim();
-            if (!string.IsNullOrWhiteSpace(trimmed))
-                yield return trimmed;
-        }
-    }
-
-    private static bool HasTechnicalDetails(ContentItemModel item)
-        => !string.IsNullOrWhiteSpace(item.TechnicalFabric)
-        || !string.IsNullOrWhiteSpace(item.TechnicalTechniques)
-        || !string.IsNullOrWhiteSpace(item.TechnicalProduction)
-        || !string.IsNullOrWhiteSpace(item.TechnicalAvailability);
 }

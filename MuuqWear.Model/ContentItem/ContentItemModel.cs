@@ -22,6 +22,7 @@ public class ContentItemModel
     public string? TechnicalTechniques { get; set; }
     public string? TechnicalProduction { get; set; }
     public string? TechnicalAvailability { get; set; }
+    public Guid? ProductId { get; set; }
 }
 
 public class CreateContentItemModel
@@ -39,6 +40,7 @@ public class CreateContentItemModel
     public string? TechnicalTechniques { get; set; }
     public string? TechnicalProduction { get; set; }
     public string? TechnicalAvailability { get; set; }
+    public Guid? ProductId { get; set; }
 }
 
 public class UpdateContentItemModel
@@ -56,6 +58,7 @@ public class UpdateContentItemModel
     public string? TechnicalTechniques { get; set; }
     public string? TechnicalProduction { get; set; }
     public string? TechnicalAvailability { get; set; }
+    public Guid? ProductId { get; set; }
 }
 
 public enum ContentCategory

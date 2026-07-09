@@ -403,6 +403,20 @@
     margin: 0;
 }
 
+.ar-story__topbar-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.ar-story__views {
+    margin: 0;
+    font-size: 11px;
+    color: #4A5C7A;
+    letter-spacing: 0.02em;
+}
+
 .ar-story__close {
     width: 32px;
     height: 32px;
@@ -550,6 +564,37 @@
 }
 
 /* Action bar — sticky bottom */
+.ar-story__share-cue {
+    margin: 0;
+    padding: 10px 21px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    text-align: center;
+    color: #1E2A47;
+    background: #E8F5E9;
+    border-top: 1px solid rgba(76, 175, 80, 0.25);
+}
+
+.ar-story__shop-cue {
+    margin: 0;
+    padding: 10px 21px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    text-align: center;
+    color: #7A4F01;
+    background: #FFF4E5;
+    border-top: 1px solid rgba(255, 152, 0, 0.25);
+}
+
+@media (min-width: 768px) {
+    .ar-story__share-cue,
+    .ar-story__shop-cue {
+        padding: 10px 34px;
+    }
+}
+
 .ar-story__actions {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -583,6 +628,11 @@
     border: 1px solid #1E2A47;
 }
 
+.ar-story__action:disabled {
+    opacity: 0.65;
+    cursor: wait;
+}
+
 .ar-story__action--solid {
     background: #1E2A47;
     color: #FFFFFF;
@@ -595,6 +645,12 @@
 .ar-story__action--outline {
     background: transparent;
     color: #1E2A47;
+}
+
+.ar-story__action--copied {
+    background: #E8F5E9;
+    border-color: #4CAF50;
+    color: #2E7D32;
 }
 
     .ar-story__action--outline:hover {

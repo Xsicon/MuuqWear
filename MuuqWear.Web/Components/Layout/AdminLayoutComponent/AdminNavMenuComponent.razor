@@ -13,6 +13,7 @@
 @inject AdminOrdersTabCoordinator OrdersTabCoordinator
 @inject AdminProductsTabCoordinator ProductsTabCoordinator
 @inject AdminCustomersTabCoordinator CustomersTabCoordinator
+@inject AdminContentTabCoordinator ContentTabCoordinator
 @rendermode InteractiveServer
 @implements IDisposable
 
@@ -200,18 +201,46 @@
         }
     </div>
 
-    <NavLink href="/admin/content"
-             class="an-nav__item"
-             title="Content"
-             onclick="window.adminSidebar.close()">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
-             viewBox="0 0 24 24" fill="none" stroke="currentColor"
-             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-            <path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"></path>
-        </svg>
-        <span class="an-nav__label">Content</span>
-    </NavLink>
+    <!-- Content (expandable) -->
+    <div class="an-nav-group @(contentOpen ? "an-nav-group--open" : "")">
+        <button type="button"
+                class="an-nav-group__header @(IsContentSectionActive ? "an-nav-group__header--active" : "")"
+                aria-expanded="@contentOpen"
+                @onclick="ToggleContent">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"></path>
+            </svg>
+            <span class="an-nav__label">Content</span>
+            <svg class="an-nav-group__chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m6 9 6 6 6-6"></path>
+            </svg>
+        </button>
+        @if (contentOpen)
+        {
+            <div class="an-nav-group__children">
+                <button type="button"
+                        class="an-nav__subitem @(IsContentViewActive("journal") ? "an-nav__subitem--active" : "")"
+                        @onclick='() => NavigateToContentView("journal")'>
+                    Journal Articles
+                </button>
+                <button type="button"
+                        class="an-nav__subitem @(IsContentViewActive("events") ? "an-nav__subitem--active" : "")"
+                        @onclick='() => NavigateToContentView("events")'>
+                    Events
+                </button>
+                <button type="button"
+                        class="an-nav__subitem @(IsContentViewActive("design-history") ? "an-nav__subitem--active" : "")"
+                        @onclick='() => NavigateToContentView("design-history")'>
+                    Design History
+                </button>
+            </div>
+        }
+    </div>
 
     <NavLink href="/admin/affiliates"
              class="an-nav__item"
@@ -325,6 +354,7 @@
     private bool salesOrdersOpen;
     private bool productsInventoryOpen;
     private bool customersOpen;
+    private bool contentOpen;
 
     protected override async Task OnInitializedAsync()
     {
@@ -355,6 +385,7 @@
         SyncSalesOrdersGroup();
         SyncProductsInventoryGroup();
         SyncCustomersGroup();
+        SyncContentGroup();
     }
 
     private void OnBadgeCountsRefreshRequested()
@@ -410,6 +441,7 @@
         SyncSalesOrdersGroup();
         SyncProductsInventoryGroup();
         SyncCustomersGroup();
+        SyncContentGroup();
         await LoadBadgeCountsAsync();
         await LoadLowStockCountAsync();
         await InvokeAsync(StateHasChanged);
@@ -431,6 +463,12 @@
     {
         if (IsCustomersSectionActive)
             customersOpen = true;
+    }
+
+    private void SyncContentGroup()
+    {
+        if (IsContentSectionActive)
+            contentOpen = true;
     }
 
     private void ToggleCustomers()
@@ -487,6 +525,35 @@
 
         if (!query.TryGetValue("view", out var value) || string.IsNullOrEmpty(value))
             return view == "catalog";
+
+        return value.ToString().Equals(view, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private void ToggleContent()
+    {
+        contentOpen = !contentOpen;
+    }
+
+    private void NavigateToContentView(string view)
+    {
+        NavigationManager.NavigateTo($"/admin/content?view={view}");
+        ContentTabCoordinator.NotifyViewChanged(view);
+    }
+
+    private bool IsContentSectionActive =>
+        NavigationManager.ToBaseRelativePath(NavigationManager.Uri)
+            .StartsWith("admin/content", StringComparison.OrdinalIgnoreCase);
+
+    private bool IsContentViewActive(string view)
+    {
+        if (!IsContentSectionActive)
+            return false;
+
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        var query = QueryHelpers.ParseQuery(uri.Query);
+
+        if (!query.TryGetValue("view", out var value) || string.IsNullOrEmpty(value))
+            return view == "journal";
 
         return value.ToString().Equals(view, StringComparison.OrdinalIgnoreCase);
     }

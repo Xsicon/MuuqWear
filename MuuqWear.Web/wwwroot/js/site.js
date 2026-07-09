@@ -580,6 +580,39 @@ window.mwMuuqsimoCountdown = {
     }
 };
 
+window.mwMuuqsimoHero = {
+    instance: null,
+
+    init: function () {
+        var self = this;
+
+        function boot() {
+            if (typeof Swiper === 'undefined') {
+                setTimeout(boot, 50);
+                return;
+            }
+
+            var el = document.querySelector('.ms-hero__carousel');
+            if (!el) return;
+
+            if (self.instance) {
+                self.instance.destroy(true, true);
+                self.instance = null;
+            }
+
+            self.instance = new Swiper('.ms-hero__carousel', {
+                loop: true,
+                effect: 'fade',
+                fadeEffect: { crossFade: true },
+                autoplay: { delay: 5000, disableOnInteraction: false },
+                pagination: { el: '.ms-hero__pagination', clickable: true }
+            });
+        }
+
+        boot();
+    }
+};
+
 
 
 
@@ -693,5 +726,29 @@ window.muuqAnalyticsChart = {
             this._chart.destroy();
             this._chart = null;
         }
+    }
+};
+
+window.mwCopyToClipboard = async function (text) {
+    try {
+        if (navigator.clipboard?.writeText) {
+            await navigator.clipboard.writeText(text);
+            return true;
+        }
+    } catch (_) { /* fallback below */ }
+
+    try {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "absolute";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+        return ok;
+    } catch (_) {
+        return false;
     }
 };

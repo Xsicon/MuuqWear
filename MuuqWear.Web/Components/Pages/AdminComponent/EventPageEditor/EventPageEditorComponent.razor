@@ -1,0 +1,629 @@
+@using Microsoft.AspNetCore.Components.Forms
+@using MuuqWear.Model.Muuqsimo
+
+<div class="event-editor">
+    <div class="event-editor__intro">
+        <p class="event-editor__hint">
+            Build the public Muuqsimo event page section by section. Ticket prices and stock come from Products marked as tickets.
+        </p>
+    </div>
+
+    <EventEditorSection Title="Hero & dates"
+                        IsOpen="@IsExpanded("hero")"
+                        OnToggle="@(() => ToggleSection("hero"))">
+                <div class="form-field">
+                    <label class="form-label">URL slug *</label>
+                    <input @bind="Model.Slug" placeholder="muuqsimo-2025" class="form-input" />
+                    <p class="form-hint">Used in <code>/muuqsimo?slug=…</code> lookup</p>
+                </div>
+                <div class="form-field-row">
+                    <div class="form-field">
+                        <label class="form-label">Eyebrow</label>
+                        <input @bind="Model.Eyebrow" placeholder="The Annual Flagship Gala" class="form-input" />
+                    </div>
+                    <div class="form-field">
+                        <label class="form-label">Tagline</label>
+                        <input @bind="Model.Tagline" placeholder="Where Fashion Meets Legacy" class="form-input" />
+                    </div>
+                </div>
+                <div class="form-field">
+                    <label class="form-label">Subtitle</label>
+                    <input @bind="Model.Subtitle" placeholder="The Veil Has Risen" class="form-input" />
+                </div>
+                <div class="form-field-row">
+                    <div class="event-editor-date-group">
+                        <span class="event-editor-date-group__label">Start</span>
+                        <div class="event-editor-date-group__inputs">
+                            <input type="date" value="@ToDateValue(Model.StartDate)" @onchange="e => UpdateStartDate(e, true)" class="form-input" />
+                            <input type="time" value="@ToTimeValue(Model.StartDate)" @onchange="e => UpdateStartDate(e, false)" class="form-input" />
+                        </div>
+                    </div>
+                    <div class="event-editor-date-group">
+                        <span class="event-editor-date-group__label">End</span>
+                        <div class="event-editor-date-group__inputs">
+                            <input type="date" value="@ToDateValue(Model.EndDate)" @onchange="e => UpdateEndDate(e, true)" class="form-input" />
+                            <input type="time" value="@ToTimeValue(Model.EndDate)" @onchange="e => UpdateEndDate(e, false)" class="form-input" />
+                        </div>
+                    </div>
+                </div>
+                <div class="event-editor-date-group">
+                    <span class="event-editor-date-group__label">Countdown (UTC)</span>
+                    <div class="event-editor-date-group__inputs">
+                        <input type="date" value="@ToDateValue(Model.CountdownUtc)" @onchange="e => UpdateCountdown(e, true)" class="form-input" />
+                        <input type="time" value="@ToTimeValue(Model.CountdownUtc)" @onchange="e => UpdateCountdown(e, false)" class="form-input" />
+                    </div>
+                </div>
+    </EventEditorSection>
+
+    @* ── Venue ── *@
+    <EventEditorSection Title="Venue"
+                        IsOpen="@IsExpanded("venue")"
+                        OnToggle="@(() => ToggleSection("venue"))">
+                <div class="form-field">
+                    <label class="form-label">Name</label>
+                    <input @bind="Model.Venue!.Name" class="form-input" />
+                </div>
+                <div class="form-field">
+                    <label class="form-label">Address</label>
+                    <input @bind="Model.Venue!.Address" class="form-input" />
+                </div>
+                <div class="form-field">
+                    <label class="form-label">Accessibility</label>
+                    <input @bind="Model.Venue!.Accessibility" class="form-input" />
+                </div>
+                <div class="form-field-row">
+                    <div class="form-field">
+                        <label class="form-label">Transit</label>
+                        <input @bind="Model.Venue!.Transit" class="form-input" />
+                    </div>
+                    <div class="form-field">
+                        <label class="form-label">Parking</label>
+                        <input @bind="Model.Venue!.Parking" class="form-input" />
+                    </div>
+                </div>
+    </EventEditorSection>
+
+    @* ── Dress code ── *@
+    <EventEditorSection Title="Dress code" IsOpen="@IsExpanded("dress")"
+                        OnToggle="@(() => ToggleSection("dress"))">
+                <div class="form-field">
+                    <label class="form-label">Theme</label>
+                    <input @bind="Model.DressCode!.Theme" class="form-input" />
+                </div>
+                <div class="form-field">
+                    <label class="form-label">Description</label>
+                    <textarea @bind="Model.DressCode!.Description" rows="3" class="form-textarea"></textarea>
+                </div>
+    </EventEditorSection>
+
+    @* ── Hero slides ── *@
+    <EventEditorSection Title="Hero carousel" Count="@Model.HeroSlides.Count" IsOpen="@IsExpanded("slides")"
+                        OnToggle="@(() => ToggleSection("slides"))">
+                @for (var i = 0; i < Model.HeroSlides.Count; i++)
+                {
+                    var index = i;
+                    var slide = Model.HeroSlides[index];
+                    <div class="event-editor-list-item">
+                        <div class="event-editor-list-item__header">
+                            <p class="event-editor-list-item__label"><span class="event-editor-list-item__index">@(index + 1)</span> Slide</p>
+                            @if (Model.HeroSlides.Count > 1)
+                            {
+                                <button type="button" class="event-editor-btn event-editor-btn--danger"
+                                        @onclick="() => Model.HeroSlides.RemoveAt(index)">Remove</button>
+                            }
+                        </div>
+                        <AdminEventImageInput Label="Image"
+                                              Url="@slide.ImageUrl"
+                                              UrlChanged="@(url => { slide.ImageUrl = url; return Task.CompletedTask; })"
+                                              OnUpload="@(e => UploadImageAsync(url => SetHeroSlideImage(index, url), e))" />
+                        <div class="form-field">
+                            <label class="form-label">Alt text</label>
+                            <input @bind="slide.Alt" class="form-input" />
+                        </div>
+                    </div>
+                }
+                <button type="button" class="event-editor-btn"
+                        @onclick="() => Model.HeroSlides.Add(new MuuqsimoHeroSlideModel())">
+                    + Add slide
+                </button>
+    </EventEditorSection>
+
+    @* ── Experience ── *@
+    <EventEditorSection Title="Experience" IsOpen="@IsExpanded("experience")"
+                        OnToggle="@(() => ToggleSection("experience"))">
+                <div class="form-field">
+                    <label class="form-label">Eyebrow</label>
+                    <input @bind="Model.Experience!.Eyebrow" class="form-input" />
+                </div>
+                <div class="form-field">
+                    <label class="form-label">Title</label>
+                    <input @bind="Model.Experience!.Title" class="form-input" />
+                </div>
+                <div class="form-field">
+                    <label class="form-label">Body</label>
+                    <textarea @bind="Model.Experience!.Body" rows="4" class="form-textarea"></textarea>
+                </div>
+                <p class="event-editor-subsection">Experience cards</p>
+                @for (var i = 0; i < Model.Experience.Cards.Count; i++)
+                {
+                    var index = i;
+                    var card = Model.Experience.Cards[index];
+                    <div class="event-editor-list-item">
+                        <div class="event-editor-list-item__header">
+                            <p class="event-editor-list-item__label"><span class="event-editor-list-item__index">@(index + 1)</span> Card</p>
+                            <button type="button" class="event-editor-btn event-editor-btn--danger"
+                                    @onclick="() => Model.Experience!.Cards.RemoveAt(index)">Remove</button>
+                        </div>
+                        <div class="form-field">
+                            <label class="form-label">Title</label>
+                            <input @bind="card.Title" class="form-input" />
+                        </div>
+                        <AdminEventImageInput Label="Image"
+                                              Url="@card.ImageUrl"
+                                              UrlChanged="@(url => { card.ImageUrl = url; return Task.CompletedTask; })"
+                                              OnUpload="@(e => UploadImageAsync(url => SetExperienceCardImage(index, url), e))" />
+                    </div>
+                }
+                <button type="button" class="event-editor-btn"
+                        @onclick="() => Model.Experience!.Cards.Add(new MuuqsimoExperienceCardModel())">
+                    + Add card
+                </button>
+    </EventEditorSection>
+
+    @* ── Blue Veil Walk ── *@
+    <EventEditorSection Title="Blue Veil Walk" IsOpen="@IsExpanded("blueVeil")"
+                        OnToggle="@(() => ToggleSection("blueVeil"))">
+                <div class="form-field">
+                    <label class="form-label">Eyebrow</label>
+                    <input @bind="Model.BlueVeilWalk!.Eyebrow" class="form-input" />
+                </div>
+                <div class="form-field">
+                    <label class="form-label">Title</label>
+                    <input @bind="Model.BlueVeilWalk!.Title" class="form-input" />
+                </div>
+                <div class="form-field">
+                    <label class="form-label">Body</label>
+                    <textarea @bind="Model.BlueVeilWalk!.Body" rows="4" class="form-textarea"></textarea>
+                </div>
+                <AdminEventImageInput Label="Image"
+                                      Url="@(Model.BlueVeilWalk!.ImageUrl ?? string.Empty)"
+                                      UrlChanged="@(url => { Model.BlueVeilWalk!.ImageUrl = url; return Task.CompletedTask; })"
+                                      OnUpload="@(e => UploadImageAsync(SetBlueVeilImage, e))" />
+                <p class="event-editor-subsection">Specs</p>
+                @for (var i = 0; i < Model.BlueVeilWalk.Specs.Count; i++)
+                {
+                    var index = i;
+                    var spec = Model.BlueVeilWalk.Specs[index];
+                    <div class="event-editor-list-item">
+                        <div class="event-editor-list-item__header">
+                            <p class="event-editor-list-item__label"><span class="event-editor-list-item__index">@(index + 1)</span> Spec</p>
+                            <button type="button" class="event-editor-btn event-editor-btn--danger"
+                                    @onclick="() => Model.BlueVeilWalk!.Specs.RemoveAt(index)">Remove</button>
+                        </div>
+                        <div class="form-field-row">
+                            <div class="form-field">
+                                <label class="form-label">Label</label>
+                                <input @bind="spec.Label" class="form-input" />
+                            </div>
+                            <div class="form-field">
+                                <label class="form-label">Value</label>
+                                <input @bind="spec.Value" class="form-input" />
+                            </div>
+                        </div>
+                    </div>
+                }
+                <button type="button" class="event-editor-btn"
+                        @onclick="() => Model.BlueVeilWalk!.Specs.Add(new MuuqsimoLabelValueModel())">
+                    + Add spec
+                </button>
+    </EventEditorSection>
+
+    @* ── Schedule ── *@
+    <EventEditorSection Title="Schedule" Count="@Model.Schedule.Count" IsOpen="@IsExpanded("schedule")"
+                        OnToggle="@(() => ToggleSection("schedule"))">
+                @for (var i = 0; i < Model.Schedule.Count; i++)
+                {
+                    var index = i;
+                    var entry = Model.Schedule[index];
+                    <div class="event-editor-list-item">
+                        <div class="event-editor-list-item__header">
+                            <p class="event-editor-list-item__label"><span class="event-editor-list-item__index">@(index + 1)</span> Item</p>
+                            @if (Model.Schedule.Count > 1)
+                            {
+                                <button type="button" class="event-editor-btn event-editor-btn--danger"
+                                        @onclick="() => Model.Schedule.RemoveAt(index)">Remove</button>
+                            }
+                        </div>
+                        <div class="form-field-row">
+                            <div class="form-field">
+                                <label class="form-label">Icon</label>
+                                <input @bind="entry.Icon" placeholder="sparkles, shirt, trophy…" class="form-input" />
+                            </div>
+                            <div class="form-field">
+                                <label class="form-label">Time</label>
+                                <input @bind="entry.Time" placeholder="6:00 PM" class="form-input" />
+                            </div>
+                        </div>
+                        <div class="form-field">
+                            <label class="form-label">Title</label>
+                            <input @bind="entry.Title" class="form-input" />
+                        </div>
+                        <div class="form-field">
+                            <label class="form-label">Location</label>
+                            <input @bind="entry.Location" class="form-input" />
+                        </div>
+                        <div class="form-field">
+                            <label class="form-label">Description</label>
+                            <textarea @bind="entry.Description" rows="2" class="form-textarea"></textarea>
+                        </div>
+                    </div>
+                }
+                <button type="button" class="event-editor-btn"
+                        @onclick="() => Model.Schedule.Add(new MuuqsimoScheduleEntryModel())">
+                    + Add schedule item
+                </button>
+    </EventEditorSection>
+
+    @* ── Runway show ── *@
+    <EventEditorSection Title="Runway show" IsOpen="@IsExpanded("runway")"
+                        OnToggle="@(() => ToggleSection("runway"))">
+                <div class="form-field">
+                    <label class="form-label">Eyebrow</label>
+                    <input @bind="Model.RunwayShow!.Eyebrow" class="form-input" />
+                </div>
+                <div class="form-field">
+                    <label class="form-label">Title</label>
+                    <input @bind="Model.RunwayShow!.Title" class="form-input" />
+                </div>
+                <div class="form-field">
+                    <label class="form-label">Subtitle</label>
+                    <textarea @bind="Model.RunwayShow!.Subtitle" rows="2" class="form-textarea"></textarea>
+                </div>
+                <div class="form-field">
+                    <label class="form-label">Models extra line</label>
+                    <input @bind="Model.RunwayShow!.ModelsExtra" placeholder="+ 20 additional diverse models" class="form-input" />
+                </div>
+
+                <p class="event-editor-subsection">Collections</p>
+                @for (var i = 0; i < Model.RunwayShow.Collections.Count; i++)
+                {
+                    var index = i;
+                    var col = Model.RunwayShow.Collections[index];
+                    <div class="event-editor-list-item">
+                        <div class="event-editor-list-item__header">
+                            <p class="event-editor-list-item__label"><span class="event-editor-list-item__index">@(index + 1)</span> Collection</p>
+                            <button type="button" class="event-editor-btn event-editor-btn--danger"
+                                    @onclick="() => Model.RunwayShow!.Collections.RemoveAt(index)">Remove</button>
+                        </div>
+                        <div class="form-field-row">
+                            <div class="form-field">
+                                <label class="form-label">Number</label>
+                                <input @bind="col.Number" placeholder="01" class="form-input" />
+                            </div>
+                            <div class="form-field">
+                                <label class="form-label">Title</label>
+                                <input @bind="col.Title" class="form-input" />
+                            </div>
+                        </div>
+                        <div class="form-field">
+                            <label class="form-label">Description</label>
+                            <textarea @bind="col.Description" rows="2" class="form-textarea"></textarea>
+                        </div>
+                    </div>
+                }
+                <button type="button" class="event-editor-btn"
+                        @onclick="() => Model.RunwayShow!.Collections.Add(new MuuqsimoCollectionModel())">
+                    + Add collection
+                </button>
+
+                <p class="event-editor-subsection">Featured models</p>
+                @for (var i = 0; i < Model.RunwayShow.FeaturedModels.Count; i++)
+                {
+                    var index = i;
+                    var model = Model.RunwayShow.FeaturedModels[index];
+                    <div class="event-editor-list-item">
+                        <div class="event-editor-list-item__header">
+                            <p class="event-editor-list-item__label"><span class="event-editor-list-item__index">@(index + 1)</span> Model</p>
+                            <button type="button" class="event-editor-btn event-editor-btn--danger"
+                                    @onclick="() => Model.RunwayShow!.FeaturedModels.RemoveAt(index)">Remove</button>
+                        </div>
+                        <div class="form-field-row">
+                            <div class="form-field">
+                                <label class="form-label">Initials</label>
+                                <input @bind="model.Initials" class="form-input" />
+                            </div>
+                            <div class="form-field">
+                                <label class="form-label">Name</label>
+                                <input @bind="model.Name" class="form-input" />
+                            </div>
+                        </div>
+                        <div class="form-field">
+                            <label class="form-label">Credit</label>
+                            <input @bind="model.Credit" class="form-input" />
+                        </div>
+                    </div>
+                }
+                <button type="button" class="event-editor-btn"
+                        @onclick="() => Model.RunwayShow!.FeaturedModels.Add(new MuuqsimoFeaturedModelModel())">
+                    + Add model
+                </button>
+
+                <p class="event-editor-subsection">Music &amp; lighting</p>
+                @for (var i = 0; i < Model.RunwayShow.MusicLighting.Count; i++)
+                {
+                    var index = i;
+                    var item = Model.RunwayShow.MusicLighting[index];
+                    <div class="event-editor-list-item">
+                        <div class="event-editor-list-item__header">
+                            <p class="event-editor-list-item__label"><span class="event-editor-list-item__index">@(index + 1)</span> Item</p>
+                            <button type="button" class="event-editor-btn event-editor-btn--danger"
+                                    @onclick="() => Model.RunwayShow!.MusicLighting.RemoveAt(index)">Remove</button>
+                        </div>
+                        <div class="form-field-row">
+                            <div class="form-field">
+                                <label class="form-label">Icon</label>
+                                <input @bind="item.Icon" class="form-input" />
+                            </div>
+                            <div class="form-field">
+                                <label class="form-label">Title</label>
+                                <input @bind="item.Title" class="form-input" />
+                            </div>
+                        </div>
+                        <div class="form-field">
+                            <label class="form-label">Description</label>
+                            <textarea @bind="item.Description" rows="2" class="form-textarea"></textarea>
+                        </div>
+                    </div>
+                }
+                <button type="button" class="event-editor-btn"
+                        @onclick="() => Model.RunwayShow!.MusicLighting.Add(new MuuqsimoMusicLightingModel())">
+                    + Add item
+                </button>
+
+                <p class="event-editor-subsection">Production credits</p>
+                @for (var i = 0; i < Model.RunwayShow.Production.Count; i++)
+                {
+                    var index = i;
+                    var credit = Model.RunwayShow.Production[index];
+                    <div class="event-editor-list-item">
+                        <div class="event-editor-list-item__header">
+                            <p class="event-editor-list-item__label"><span class="event-editor-list-item__index">@(index + 1)</span> Credit</p>
+                            <button type="button" class="event-editor-btn event-editor-btn--danger"
+                                    @onclick="() => Model.RunwayShow!.Production.RemoveAt(index)">Remove</button>
+                        </div>
+                        <div class="form-field-row">
+                            <div class="form-field">
+                                <label class="form-label">Role</label>
+                                <input @bind="credit.Role" class="form-input" />
+                            </div>
+                            <div class="form-field">
+                                <label class="form-label">Provider</label>
+                                <input @bind="credit.Provider" class="form-input" />
+                            </div>
+                        </div>
+                    </div>
+                }
+                <button type="button" class="event-editor-btn"
+                        @onclick="() => Model.RunwayShow!.Production.Add(new MuuqsimoProductionCreditModel())">
+                    + Add credit
+                </button>
+    </EventEditorSection>
+
+    @* ── Awards ── *@
+    <EventEditorSection Title="Awards" Count="@Model.Awards.Count" IsOpen="@IsExpanded("awards")"
+                        OnToggle="@(() => ToggleSection("awards"))">
+                @for (var i = 0; i < Model.Awards.Count; i++)
+                {
+                    var index = i;
+                    var award = Model.Awards[index];
+                    <div class="event-editor-list-item">
+                        <div class="event-editor-list-item__header">
+                            <p class="event-editor-list-item__label"><span class="event-editor-list-item__index">@(index + 1)</span> Award</p>
+                            @if (Model.Awards.Count > 1)
+                            {
+                                <button type="button" class="event-editor-btn event-editor-btn--danger"
+                                        @onclick="() => Model.Awards.RemoveAt(index)">Remove</button>
+                            }
+                        </div>
+                        <div class="form-field-row">
+                            <div class="form-field">
+                                <label class="form-label">Icon</label>
+                                <input @bind="award.Icon" placeholder="gem, crown, trophy…" class="form-input" />
+                            </div>
+                            <div class="form-field">
+                                <label class="form-label">Title</label>
+                                <input @bind="award.Title" class="form-input" />
+                            </div>
+                        </div>
+                        <div class="form-field">
+                            <label class="form-label">Prize</label>
+                            <input @bind="award.Prize" class="form-input" />
+                        </div>
+                    </div>
+                }
+                <button type="button" class="event-editor-btn"
+                        @onclick="() => Model.Awards.Add(new MuuqsimoAwardModel())">
+                    + Add award
+                </button>
+    </EventEditorSection>
+
+    @* ── Tickets ── *@
+    <EventEditorSection Title="Tickets" IsOpen="@IsExpanded("tickets")"
+                        OnToggle="@(() => ToggleSection("tickets"))">
+                <div class="form-field">
+                    <label class="form-label">Capacity note</label>
+                    <input @bind="Model.Tickets!.CapacityNote" class="form-input" />
+                </div>
+                <div class="form-field">
+                    <label class="form-label">Subtitle</label>
+                    <input @bind="Model.Tickets!.Subtitle" class="form-input" />
+                </div>
+                <div class="form-field">
+                    <label class="form-label">Press contact</label>
+                    <input @bind="Model.Tickets!.PressContact" type="email" class="form-input" />
+                </div>
+
+                <p class="event-editor-subsection">Ticket tier configs</p>
+                <p class="event-editor__hint">Link each tier to a ticket product ID. Price and stock are managed under Products.</p>
+                @for (var i = 0; i < Model.Tickets.TierConfigs.Count; i++)
+                {
+                    var index = i;
+                    var tier = Model.Tickets.TierConfigs[index];
+                    <div class="event-editor-list-item">
+                        <div class="event-editor-list-item__header">
+                            <p class="event-editor-list-item__label"><span class="event-editor-list-item__index">@(index + 1)</span> Tier</p>
+                            <button type="button" class="event-editor-btn event-editor-btn--danger"
+                                    @onclick="() => Model.Tickets!.TierConfigs.RemoveAt(index)">Remove</button>
+                        </div>
+                        <div class="form-field">
+                            <label class="form-label">Product ID (GUID)</label>
+                            <input value="@tier.ProductId.ToString()"
+                                   @onchange="e => tier.ProductId = Guid.TryParse(e.Value?.ToString(), out var id) ? id : Guid.Empty"
+                                   class="form-input" />
+                        </div>
+                        <div class="form-field-row">
+                            <div class="form-field">
+                                <label class="form-label">Total capacity</label>
+                                <input @bind="tier.TotalCapacity" type="number" min="0" class="form-input" />
+                            </div>
+                            <div class="form-field">
+                                <label class="form-label">Badge</label>
+                                <input @bind="tier.Badge" placeholder="Most Popular" class="form-input" />
+                            </div>
+                        </div>
+                        <label class="event-editor-checkbox">
+                            <input type="checkbox" @bind="tier.IsHighlighted" />
+                            Highlight this tier
+                        </label>
+                        <div class="form-field">
+                            <label class="form-label">Perks (one per line)</label>
+                            <textarea value="@JoinLines(tier.Perks)"
+                                      @onchange="e => UpdatePerks(tier, e)"
+                                      rows="4"
+                                      class="form-textarea"></textarea>
+                        </div>
+                    </div>
+                }
+                <button type="button" class="event-editor-btn"
+                        @onclick="() => Model.Tickets!.TierConfigs.Add(new MuuqsimoTicketTierConfigModel())">
+                    + Add tier config
+                </button>
+
+                <p class="event-editor-subsection">Affiliate benefits</p>
+                @for (var i = 0; i < Model.Tickets.AffiliateBenefits.Count; i++)
+                {
+                    var index = i;
+                    var benefit = Model.Tickets.AffiliateBenefits[index];
+                    <div class="event-editor-list-item">
+                        <div class="event-editor-list-item__header">
+                            <p class="event-editor-list-item__label"><span class="event-editor-list-item__index">@(index + 1)</span> Benefit</p>
+                            <button type="button" class="event-editor-btn event-editor-btn--danger"
+                                    @onclick="() => Model.Tickets!.AffiliateBenefits.RemoveAt(index)">Remove</button>
+                        </div>
+                        <div class="form-field-row">
+                            <div class="form-field">
+                                <label class="form-label">Tier</label>
+                                <input @bind="benefit.Tier" placeholder="Gold" class="form-input" />
+                            </div>
+                            <div class="form-field">
+                                <label class="form-label">Dot color</label>
+                                <input @bind="benefit.DotColor" placeholder="#D4A843" class="form-input" />
+                            </div>
+                        </div>
+                        <div class="form-field">
+                            <label class="form-label">Benefit</label>
+                            <input @bind="benefit.Benefit" class="form-input" />
+                        </div>
+                    </div>
+                }
+                <button type="button" class="event-editor-btn"
+                        @onclick="() => Model.Tickets!.AffiliateBenefits.Add(new MuuqsimoAffiliateBenefitModel())">
+                    + Add affiliate benefit
+                </button>
+    </EventEditorSection>
+
+    @* ── Team ── *@
+    <EventEditorSection Title="Team" Count="@Model.Team.Count" IsOpen="@IsExpanded("team")"
+                        OnToggle="@(() => ToggleSection("team"))">
+                @for (var i = 0; i < Model.Team.Count; i++)
+                {
+                    var index = i;
+                    var member = Model.Team[index];
+                    <div class="event-editor-list-item">
+                        <div class="event-editor-list-item__header">
+                            <p class="event-editor-list-item__label"><span class="event-editor-list-item__index">@(index + 1)</span> Member</p>
+                            @if (Model.Team.Count > 1)
+                            {
+                                <button type="button" class="event-editor-btn event-editor-btn--danger"
+                                        @onclick="() => Model.Team.RemoveAt(index)">Remove</button>
+                            }
+                        </div>
+                        <div class="form-field-row">
+                            <div class="form-field">
+                                <label class="form-label">Name</label>
+                                <input @bind="member.Name" class="form-input" />
+                            </div>
+                            <div class="form-field">
+                                <label class="form-label">Role</label>
+                                <input @bind="member.Role" class="form-input" />
+                            </div>
+                        </div>
+                    </div>
+                }
+                <button type="button" class="event-editor-btn"
+                        @onclick="() => Model.Team.Add(new MuuqsimoTeamMemberModel())">
+                    + Add team member
+                </button>
+    </EventEditorSection>
+
+    @* ── Sponsors ── *@
+    <EventEditorSection Title="Sponsors" Count="@Model.Sponsors.Count" IsOpen="@IsExpanded("sponsors")"
+                        OnToggle="@(() => ToggleSection("sponsors"))">
+                @for (var i = 0; i < Model.Sponsors.Count; i++)
+                {
+                    var index = i;
+                    var sponsor = Model.Sponsors[index];
+                    <div class="event-editor-list-item">
+                        <div class="event-editor-list-item__header">
+                            <p class="event-editor-list-item__label"><span class="event-editor-list-item__index">@(index + 1)</span> Sponsor</p>
+                            @if (Model.Sponsors.Count > 1)
+                            {
+                                <button type="button" class="event-editor-btn event-editor-btn--danger"
+                                        @onclick="() => Model.Sponsors.RemoveAt(index)">Remove</button>
+                            }
+                        </div>
+                        <div class="form-field-row">
+                            <div class="form-field">
+                                <label class="form-label">Role</label>
+                                <input @bind="sponsor.Role" class="form-input" />
+                            </div>
+                            <div class="form-field">
+                                <label class="form-label">Name</label>
+                                <input @bind="sponsor.Name" class="form-input" />
+                            </div>
+                        </div>
+                    </div>
+                }
+                <button type="button" class="event-editor-btn"
+                        @onclick="() => Model.Sponsors.Add(new MuuqsimoSponsorModel())">
+                    + Add sponsor
+                </button>
+    </EventEditorSection>
+
+    @* ── Closing CTA ── *@
+    <EventEditorSection Title="Closing CTA" IsOpen="@IsExpanded("closing")"
+                        OnToggle="@(() => ToggleSection("closing"))">
+                <div class="form-field">
+                    <label class="form-label">Eyebrow</label>
+                    <input @bind="Model.ClosingCta!.Eyebrow" class="form-input" />
+                </div>
+                <div class="form-field">
+                    <label class="form-label">Title</label>
+                    <input @bind="Model.ClosingCta!.Title" class="form-input" />
+                </div>
+                <AdminEventImageInput Label="Background image"
+                                      Url="@(Model.ClosingCta!.ImageUrl ?? string.Empty)"
+                                      UrlChanged="@(url => { Model.ClosingCta!.ImageUrl = url; return Task.CompletedTask; })"
+                                      OnUpload="@(e => UploadImageAsync(SetClosingCtaImage, e))" />
+    </EventEditorSection>
+</div>

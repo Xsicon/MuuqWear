@@ -1,0 +1,39 @@
+<div class="event-editor-section @(IsOpen ? "event-editor-section--open" : "")">
+    <button type="button" class="event-editor-section__toggle" @onclick="OnToggle">
+        <div class="event-editor-section__title-wrap">
+            <p class="event-editor-section__title">@Title</p>
+            @if (Count is not null)
+            {
+                <span class="event-editor-section__count">@Count</span>
+            }
+        </div>
+        <span class="event-editor-section__chevron" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m6 9 6 6 6-6"></path>
+            </svg>
+        </span>
+    </button>
+    @if (IsOpen)
+    {
+        <div class="event-editor-section__body">
+            @ChildContent
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Title { get; set; } = string.Empty;
+
+    [Parameter]
+    public int? Count { get; set; }
+
+    [Parameter]
+    public bool IsOpen { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback OnToggle { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+}

@@ -14,11 +14,13 @@ using MuuqWear.Application.Services.CartService;
 using MuuqWear.Application.Services.WishlistService;
 using MuuqWear.Application.Services.CategoryService;
 using MuuqWear.Application.Services.ChatService;
+using MuuqWear.Application.Services.ArchiveService;
 using MuuqWear.Application.Services.ContentService;
 using MuuqWear.Application.Services.CustomerService;
 using MuuqWear.Application.Services.HelpCenterService;
 using MuuqWear.Application.Services.JobPostingService;
 using MuuqWear.Application.Services.JournalService;
+using MuuqWear.Application.Services.MuuqsimoService;
 using MuuqWear.Application.Services.NotificationService;
 using MuuqWear.Application.Services.OrderReturnService;
 using MuuqWear.Application.Services.OrderService;
@@ -83,11 +85,15 @@ builder.Services.AddHttpClient<IAddressService, AddressService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
 }).AddHttpMessageHandler<AuthenticatedHttpHandler>();
-// no AuthenticatedHttpHandler — public endpoint
+// Public endpoint — no auth handler
 builder.Services.AddHttpClient<IJournalService, JournalService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
-}).AddHttpMessageHandler<AuthenticatedHttpHandler>();
+});
+builder.Services.AddHttpClient<IMuuqsimoService, MuuqsimoService>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+});
 builder.Services.AddHttpClient<IAdminSettingService, AdminSettingService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
@@ -108,6 +114,7 @@ builder.Services.AddScoped<AuthStateService>();
 builder.Services.AddScoped<AdminOrdersTabCoordinator>();
 builder.Services.AddScoped<AdminProductsTabCoordinator>();
 builder.Services.AddScoped<AdminCustomersTabCoordinator>();
+builder.Services.AddScoped<AdminContentTabCoordinator>();
 builder.Services.AddScoped<CartStateService>();
 builder.Services.AddScoped<WishlistStateService>();
 builder.Services.AddCascadingAuthenticationState();
@@ -122,6 +129,10 @@ builder.Services.AddHttpClient<IContentService, ContentService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
 }).AddHttpMessageHandler<AuthenticatedHttpHandler>();
+builder.Services.AddHttpClient<IArchiveService, ArchiveService>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+});
 builder.Services.AddHttpClient<IHelpCenterService, HelpCenterService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
