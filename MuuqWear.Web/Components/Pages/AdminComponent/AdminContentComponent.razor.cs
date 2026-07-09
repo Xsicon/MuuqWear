@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.AspNetCore.WebUtilities;
 using MuuqWear.Application.Services.ContentService;
+using MuuqWear.Application.Services.ProductService;
 using MuuqWear.Application.Shared;
 using MuuqWear.Model.ContentItem;
 using MuuqWear.Model.Muuqsimo;
@@ -13,6 +14,7 @@ public partial class AdminContentComponent : IDisposable
 {
     [Inject] private NavigationManager NavigationManager { get; set; } = default!;
     [Inject] private IContentService ContentService { get; set; } = default!;
+    [Inject] private IProductService ProductService { get; set; } = default!;
     [Inject] private AdminContentTabCoordinator ContentTabCoordinator { get; set; } = default!;
 
     [SupplyParameterFromQuery(Name = "view")]
@@ -324,6 +326,19 @@ public partial class AdminContentComponent : IDisposable
         return false;
     }
 
+    private async Task<bool> TryValidateLinkedProductAsync()
+    {
+        if (ActiveCategory != ContentCategory.DesignHistory || form.ProductId == null)
+            return true;
+
+        var result = await ProductService.GetById(form.ProductId.Value);
+        if (result.Success && result.Data != null)
+            return true;
+
+        formError = "Linked product ID does not match an existing product.";
+        return false;
+    }
+
     private async Task HandleCreate()
     {
         if (string.IsNullOrWhiteSpace(form.Title))
@@ -336,6 +351,9 @@ public partial class AdminContentComponent : IDisposable
             return;
 
         if (!TryApplyProductId())
+            return;
+
+        if (!await TryValidateLinkedProductAsync())
             return;
 
         isSaving = true;
@@ -404,6 +422,9 @@ public partial class AdminContentComponent : IDisposable
             return;
 
         if (!TryApplyProductId())
+            return;
+
+        if (!await TryValidateLinkedProductAsync())
             return;
 
         isSaving = true;

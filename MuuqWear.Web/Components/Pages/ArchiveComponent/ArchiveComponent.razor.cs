@@ -27,6 +27,7 @@ public partial class ArchiveComponent : IDisposable
     private Guid? _lastRecordedViewId;
     private Guid? _pendingOpenId;
     private bool shareLinkCopied;
+    private bool shareCopyFailed;
     private CancellationTokenSource? _shareCopyResetCts;
     private string? shopMessage;
     private bool isShopping;
@@ -152,6 +153,9 @@ public partial class ArchiveComponent : IDisposable
     {
         viewingItem = item;
         ClearShopMessage();
+        shareLinkCopied = false;
+        shareCopyFailed = false;
+        _shareCopyResetCts?.Cancel();
 
         if (updateUrl)
         {
@@ -176,6 +180,7 @@ public partial class ArchiveComponent : IDisposable
         viewingItem = null;
         _lastRecordedViewId = null;
         shareLinkCopied = false;
+        shareCopyFailed = false;
         _shareCopyResetCts?.Cancel();
         ClearShopMessage();
         NavigationManager.NavigateTo("/design-history", replace: true);
@@ -188,6 +193,7 @@ public partial class ArchiveComponent : IDisposable
 
         ClearShopMessage();
         shareLinkCopied = false;
+        shareCopyFailed = false;
         _shareCopyResetCts?.Cancel();
 
         if (IsDesignShopUnavailable(viewingItem))
@@ -201,14 +207,23 @@ public partial class ArchiveComponent : IDisposable
 
         try
         {
-            var product = await ResolveLinkedProductAsync(viewingItem);
-            if (product == null)
+            var (product, status) = await ResolveLinkedProductAsync(viewingItem);
+            if (product != null)
             {
-                await ShowShopMessageAsync("This design isn't linked to a product in the shop yet.");
+                NavigationManager.NavigateTo($"/productdetail/{product.Id}");
                 return;
             }
 
-            NavigationManager.NavigateTo($"/productdetail/{product.Id}");
+            var message = status switch
+            {
+                ProductLinkStatus.NotConfigured =>
+                    "This design isn't linked to a product in the shop yet.",
+                ProductLinkStatus.Inactive =>
+                    "The linked product is no longer available in the shop.",
+                _ => "The linked product could not be found in the shop."
+            };
+
+            await ShowShopMessageAsync(message);
         }
         finally
         {
@@ -243,6 +258,8 @@ public partial class ArchiveComponent : IDisposable
     {
         shopMessage = null;
         _shopMessageResetCts?.Cancel();
+        _shopMessageResetCts?.Dispose();
+        _shopMessageResetCts = null;
     }
 
     private static bool IsDesignShopUnavailable(ContentItemModel item)
@@ -252,42 +269,33 @@ public partial class ArchiveComponent : IDisposable
 
         var availability = item.TechnicalAvailability.ToLowerInvariant();
         return availability.Contains("sold out", StringComparison.Ordinal)
-            || availability.Contains("archival", StringComparison.Ordinal)
-            || availability.Contains("no longer available", StringComparison.Ordinal)
-            || availability.Contains("not available", StringComparison.Ordinal);
+            || availability.Contains("archival piece", StringComparison.Ordinal)
+            || availability.Contains("museum archival", StringComparison.Ordinal)
+            || availability.Contains("no longer available", StringComparison.Ordinal);
     }
 
-    private async Task<ProductModel?> ResolveLinkedProductAsync(ContentItemModel item)
+    private enum ProductLinkStatus
     {
-        if (item.ProductId is Guid productId && productId != Guid.Empty)
-        {
-            var linked = await ProductService.GetById(productId);
-            if (linked.Success && linked.Data is { IsActive: true })
-                return linked.Data;
+        Found,
+        NotConfigured,
+        NotFound,
+        Inactive
+    }
 
-            return null;
-        }
+    private async Task<(ProductModel? Product, ProductLinkStatus Status)> ResolveLinkedProductAsync(
+        ContentItemModel item)
+    {
+        if (item.ProductId is not Guid productId || productId == Guid.Empty)
+            return (null, ProductLinkStatus.NotConfigured);
 
-        if (string.IsNullOrWhiteSpace(item.Title))
-            return null;
+        var linked = await ProductService.GetById(productId);
+        if (!linked.Success || linked.Data == null)
+            return (null, ProductLinkStatus.NotFound);
 
-        var title = item.Title.Trim();
-        var search = await ProductService.GetAll(new ProductFilterModel
-        {
-            Search = title,
-            Page = 1,
-            PageSize = 20
-        });
+        if (!linked.Data.IsActive)
+            return (null, ProductLinkStatus.Inactive);
 
-        if (!search.Success || search.Data?.Data == null)
-            return null;
-
-        return search.Data.Data
-            .Where(p => p.IsActive && !string.IsNullOrWhiteSpace(p.Name))
-            .FirstOrDefault(p =>
-                string.Equals(p.Name, title, StringComparison.OrdinalIgnoreCase)
-                || p.Name!.Contains(title, StringComparison.OrdinalIgnoreCase)
-                || title.Contains(p.Name, StringComparison.OrdinalIgnoreCase));
+        return (linked.Data, ProductLinkStatus.Found);
     }
 
     private async Task ShareStoryAsync()
@@ -298,7 +306,27 @@ public partial class ArchiveComponent : IDisposable
         var url = NavigationManager.ToAbsoluteUri($"/design-history#{viewingItem.Id}").ToString();
         var copied = await JS.InvokeAsync<bool>("mwCopyToClipboard", url);
         if (!copied)
+        {
+            shareLinkCopied = false;
+            shareCopyFailed = true;
+            ClearShopMessage();
+            StateHasChanged();
+
+            _shareCopyResetCts?.Cancel();
+            _shareCopyResetCts?.Dispose();
+            _shareCopyResetCts = new CancellationTokenSource();
+            try
+            {
+                await Task.Delay(4000, _shareCopyResetCts.Token);
+                shareCopyFailed = false;
+                StateHasChanged();
+            }
+            catch (TaskCanceledException)
+            {
+            }
+
             return;
+        }
 
         _shareCopyResetCts?.Cancel();
         _shareCopyResetCts?.Dispose();
@@ -306,6 +334,7 @@ public partial class ArchiveComponent : IDisposable
         var token = _shareCopyResetCts.Token;
 
         ClearShopMessage();
+        shareCopyFailed = false;
         shareLinkCopied = true;
         StateHasChanged();
 

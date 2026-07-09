@@ -1,4 +1,5 @@
 -- Links design history stories to storefront products for "Shop This Design".
+-- REQUIRED: run this migration before deploying API changes that read/write product_id.
 -- Run in Supabase SQL editor against the MuuqWear schema.
 
 ALTER TABLE "MuuqWear".design_history

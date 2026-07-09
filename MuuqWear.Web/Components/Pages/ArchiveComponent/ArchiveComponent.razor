@@ -250,6 +250,12 @@
                     Link copied to clipboard!
                 </p>
             }
+            @if (shareCopyFailed)
+            {
+                <p class="ar-story__shop-cue" role="status" aria-live="polite">
+                    Couldn't copy the link. Please copy the URL from your browser instead.
+                </p>
+            }
             @if (!string.IsNullOrWhiteSpace(shopMessage))
             {
                 <p class="ar-story__shop-cue" role="status" aria-live="polite">
