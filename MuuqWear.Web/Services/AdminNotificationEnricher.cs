@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using MuuqWear.Application.Shared;
 using MuuqWear.Model.NotificationModel;
 using MuuqWear.Model.Products;
@@ -6,73 +5,41 @@ using MuuqWear.Model.Products;
 namespace MuuqWear.Web.Services;
 
 /// <summary>
-/// Resolves navigation links for API-backed admin notifications (e.g. per-size low stock alerts).
+/// Normalizes API-backed admin notifications (e.g. per-size low stock alerts).
 /// </summary>
 public static class AdminNotificationEnricher
 {
-    private static readonly Regex ProductAndSizePattern = new(
-        @"Low stock alert:\s*(.+?)\s*\(Size\s+([^)]+)\)",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled);
-
-    private static readonly Regex SizeOnlyPattern = new(
-        @"Low stock alert:\s*Size\s+(\S+)\s*\(only\s+(\d+)\s+left\)",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled);
-
     public static bool IsLowStockNotification(NotificationModel notification) =>
         notification.Type.Equals(NotificationType.LowStock, StringComparison.OrdinalIgnoreCase)
         || notification.Type.Equals(NotificationType.Stock, StringComparison.OrdinalIgnoreCase)
         || notification.Message.Contains("low stock", StringComparison.OrdinalIgnoreCase);
 
-    public static void Enrich(NotificationModel notification, IReadOnlyList<ProductModel> products)
+    /// <summary>
+    /// Normalizes low-stock notifications and validates product links against the loaded catalog.
+    /// Products outside the loaded slice are left as-is (API is source of truth).
+    /// Returns false when a stale low-stock alert should be dropped from the feed.
+    /// </summary>
+    public static bool Enrich(
+        NotificationModel notification,
+        IReadOnlyDictionary<Guid, ProductModel> productsById)
     {
         if (!IsLowStockNotification(notification))
-            return;
+            return true;
 
         if (notification.Type.Equals(NotificationType.Stock, StringComparison.OrdinalIgnoreCase))
             notification.Type = NotificationType.LowStock;
 
+        if (!ValidateAgainstCatalog(notification, productsById))
+            return false;
+
         if (!string.IsNullOrWhiteSpace(notification.Link))
-            return;
+            return true;
 
-        if (notification.ProductId is Guid productId)
-        {
-            notification.Link = BuildProductLink(productId);
-            return;
-        }
+        notification.Link = notification.ProductId is Guid productId
+            ? BuildProductLink(productId)
+            : "/admin/products?view=low-stock";
 
-        var productAndSize = ProductAndSizePattern.Match(notification.Message);
-        if (productAndSize.Success)
-        {
-            var productName = productAndSize.Groups[1].Value.Trim();
-            var size = productAndSize.Groups[2].Value.Trim();
-            var product = FindByName(products, productName)
-                          ?? FindBySize(products, size, null);
-
-            if (product != null)
-            {
-                ApplyProduct(notification, product, size);
-                return;
-            }
-        }
-
-        var sizeOnly = SizeOnlyPattern.Match(notification.Message);
-        if (sizeOnly.Success)
-        {
-            var size = sizeOnly.Groups[1].Value.Trim();
-            if (int.TryParse(sizeOnly.Groups[2].Value, out var quantity))
-            {
-                var product = FindBySize(products, size, quantity)
-                              ?? FindBySize(products, size, null);
-
-                if (product != null)
-                {
-                    ApplyProduct(notification, product, size);
-                    return;
-                }
-            }
-        }
-
-        notification.Link = "/admin/products?view=low-stock";
+        return true;
     }
 
     public static Guid? ResolveProductId(NotificationModel notification)
@@ -95,42 +62,55 @@ public static class AdminNotificationEnricher
         return null;
     }
 
-    private static void ApplyProduct(NotificationModel notification, ProductModel product, string? size)
+    private static bool ValidateAgainstCatalog(
+        NotificationModel notification,
+        IReadOnlyDictionary<Guid, ProductModel> productsById)
     {
-        notification.ProductId = product.Id;
-        notification.SizeLabel = size;
-        notification.Link = BuildProductLink(product.Id);
+        if (notification.ProductId is not Guid productId)
+            return true;
+
+        if (!productsById.TryGetValue(productId, out var product))
+            return true;
+
+        if (IsStillLowStock(notification, product))
+            return true;
+
+        ClearProductContext(notification);
+        return false;
+    }
+
+    private static bool IsStillLowStock(NotificationModel notification, ProductModel product)
+    {
+        if (notification.SizeStockId is Guid sizeStockId)
+        {
+            var size = product.SizeStock.FirstOrDefault(s => s.Id == sizeStockId);
+            return size != null
+                   && size.Quantity > 0
+                   && size.Quantity < ProductStockHelper.LowStockThreshold;
+        }
+
+        if (!string.IsNullOrWhiteSpace(notification.SizeLabel)
+            && product.SizeStock.Count > 0)
+        {
+            var size = product.SizeStock.FirstOrDefault(s =>
+                s.Size.Equals(notification.SizeLabel, StringComparison.OrdinalIgnoreCase));
+
+            return size != null
+                   && size.Quantity > 0
+                   && size.Quantity < ProductStockHelper.LowStockThreshold;
+        }
+
+        return ProductStockHelper.IsLowStock(product);
+    }
+
+    private static void ClearProductContext(NotificationModel notification)
+    {
+        notification.ProductId = null;
+        notification.SizeStockId = null;
+        notification.SizeLabel = null;
+        notification.Link = "/admin/products?view=low-stock";
     }
 
     private static string BuildProductLink(Guid productId) =>
         $"/admin/products?view=low-stock&productId={productId}";
-
-    private static ProductModel? FindByName(IReadOnlyList<ProductModel> products, string name) =>
-        products.FirstOrDefault(p =>
-            p.Name?.Equals(name, StringComparison.OrdinalIgnoreCase) == true
-            || p.Name?.Contains(name, StringComparison.OrdinalIgnoreCase) == true);
-
-    private static ProductModel? FindBySize(
-        IReadOnlyList<ProductModel> products,
-        string size,
-        int? quantity)
-    {
-        ProductModel? fallback = null;
-
-        foreach (var product in products)
-        {
-            foreach (var sizeStock in product.SizeStock)
-            {
-                if (!sizeStock.Size.Equals(size, StringComparison.OrdinalIgnoreCase))
-                    continue;
-
-                if (quantity.HasValue && sizeStock.Quantity == quantity.Value)
-                    return product;
-
-                fallback ??= product;
-            }
-        }
-
-        return fallback;
-    }
 }

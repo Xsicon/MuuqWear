@@ -20,6 +20,9 @@ public interface IProductService
     Task<Response<List<SizeStockModel>>> GetSizeStock(Guid productId);
     Task<Response<SizeStockModel>> AddSizeStock(Guid productId, string size, int quantity);
 
+    Task<Response<BatchUpdateSizeStockResult>> UpdateSizeStockBatch(
+        Guid productId, BatchUpdateSizeStockRequest request);
+
     Task<Response<bool>> DeleteSizeStock(Guid sizeStockId);
 
 

@@ -22,11 +22,11 @@ public class ContentService : IContentService
         try
         {
             var result = await _http.GetAsync($"api/Content/{type}");
-            return await ReadResponse<List<ContentItemModel>>(result);
+            return await HttpResponseReader.ReadAsync<List<ContentItemModel>>(result);
         }
         catch (Exception ex)
         {
-            return Response<List<ContentItemModel>>.Fail("Error: " + ex.Message);
+            return Response<List<ContentItemModel>>.Fail(HttpResponseReader.FromException(ex));
         }
     }
 
@@ -38,11 +38,11 @@ public class ContentService : IContentService
         try
         {
             var result = await _http.GetAsync($"api/Content/{type}/{id}");
-            return await ReadResponse<ContentItemModel>(result);
+            return await HttpResponseReader.ReadAsync<ContentItemModel>(result);
         }
         catch (Exception ex)
         {
-            return Response<ContentItemModel>.Fail("Error: " + ex.Message);
+            return Response<ContentItemModel>.Fail(HttpResponseReader.FromException(ex));
         }
     }
 
@@ -55,11 +55,11 @@ public class ContentService : IContentService
         try
         {
             var result = await _http.PostAsJsonAsync($"api/Content/{type}", request);
-            return await ReadResponse<ContentItemModel>(result);
+            return await HttpResponseReader.ReadAsync<ContentItemModel>(result);
         }
         catch (Exception ex)
         {
-            return Response<ContentItemModel>.Fail("Error: " + ex.Message);
+            return Response<ContentItemModel>.Fail(HttpResponseReader.FromException(ex));
         }
     }
 
@@ -72,11 +72,11 @@ public class ContentService : IContentService
         try
         {
             var result = await _http.PutAsJsonAsync($"api/Content/{type}/{id}", request);
-            return await ReadResponse<ContentItemModel>(result);
+            return await HttpResponseReader.ReadAsync<ContentItemModel>(result);
         }
         catch (Exception ex)
         {
-            return Response<ContentItemModel>.Fail("Error: " + ex.Message);
+            return Response<ContentItemModel>.Fail(HttpResponseReader.FromException(ex));
         }
     }
 
@@ -88,11 +88,11 @@ public class ContentService : IContentService
         try
         {
             var result = await _http.DeleteAsync($"api/Content/{type}/{id}");
-            return await ReadResponse<bool>(result);
+            return await HttpResponseReader.ReadAsync<bool>(result);
         }
         catch (Exception ex)
         {
-            return Response<bool>.Fail("Error: " + ex.Message);
+            return Response<bool>.Fail(HttpResponseReader.FromException(ex));
         }
     }
 
@@ -105,11 +105,11 @@ public class ContentService : IContentService
         {
             var result = await _http.PatchAsync(
                 $"api/Content/{type}/{id}/publish", null);
-            return await ReadResponse<ContentItemModel>(result);
+            return await HttpResponseReader.ReadAsync<ContentItemModel>(result);
         }
         catch (Exception ex)
         {
-            return Response<ContentItemModel>.Fail("Error: " + ex.Message);
+            return Response<ContentItemModel>.Fail(HttpResponseReader.FromException(ex));
         }
     }
 
@@ -122,28 +122,11 @@ public class ContentService : IContentService
         {
             var result = await _http.PatchAsync(
                 $"api/Content/{type}/{id}/unpublish", null);
-            return await ReadResponse<ContentItemModel>(result);
+            return await HttpResponseReader.ReadAsync<ContentItemModel>(result);
         }
         catch (Exception ex)
         {
-            return Response<ContentItemModel>.Fail("Error: " + ex.Message);
-        }
-    }
-
-    // =============================================
-    // HELPER
-    // =============================================
-    private async Task<Response<T>> ReadResponse<T>(HttpResponseMessage response)
-    {
-        try
-        {
-            var result = await response.Content
-                .ReadFromJsonAsync<Response<T>>();
-            return result ?? Response<T>.Fail("Empty response");
-        }
-        catch
-        {
-            return Response<T>.Fail("Failed to parse response");
+            return Response<ContentItemModel>.Fail(HttpResponseReader.FromException(ex));
         }
     }
 
@@ -162,11 +145,11 @@ public class ContentService : IContentService
             content.Add(fileContent, "file", fileName);
 
             var result = await _http.PostAsync("api/Content/upload-image", content);
-            return await ReadResponse<string>(result);
+            return await HttpResponseReader.ReadAsync<string>(result);
         }
         catch (Exception ex)
         {
-            return Response<string>.Fail("Error: " + ex.Message);
+            return Response<string>.Fail(HttpResponseReader.FromException(ex));
         }
     }
 
@@ -178,11 +161,11 @@ public class ContentService : IContentService
         try
         {
             var result = await _http.GetAsync("api/Content/design-history/published");
-            return await ReadResponse<List<ContentItemModel>>(result);
+            return await HttpResponseReader.ReadAsync<List<ContentItemModel>>(result);
         }
         catch (Exception ex)
         {
-            return Response<List<ContentItemModel>>.Fail("Error: " + ex.Message);
+            return Response<List<ContentItemModel>>.Fail(HttpResponseReader.FromException(ex));
         }
     }
 }

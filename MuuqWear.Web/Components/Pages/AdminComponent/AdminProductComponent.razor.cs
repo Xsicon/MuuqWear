@@ -135,62 +135,88 @@ public partial class AdminProductComponent : IDisposable
 
         try
         {
-            foreach (var productId in selectedProductIds.ToList())
+            var productIds = selectedProductIds.ToList();
+            var totalCount = productIds.Count;
+            var successfulIds = new List<Guid>();
+
+            foreach (var productId in productIds)
             {
-                var sizeStockResult = await ProductService.GetSizeStock(productId);
-
-                if (sizeStockResult.Success && sizeStockResult.Data is { Count: > 0 } sizes)
+                var product = Products.FirstOrDefault(p => p.Id == productId);
+                if (product == null)
                 {
-                    foreach (var size in sizes)
+                    var fetched = await ProductService.GetById(productId);
+                    if (fetched.Success && fetched.Data != null)
                     {
-                        var newQty = bulkStockMode == "set"
-                            ? bulkQuantity
-                            : size.Quantity + bulkQuantity;
-                        newQty = Math.Max(0, newQty);
-
-                        var result = await ProductService.UpdateSizeStock(size.Id, newQty);
-                        if (!result.Success)
-                        {
-                            bulkError = result.Message ?? "Failed to update stock";
-                            return;
-                        }
+                        ProductStockHelper.SyncStockFromSizes(fetched.Data);
+                        product = fetched.Data;
                     }
+                }
 
-                    var refreshed = await ProductService.GetSizeStock(productId);
-                    if (!refreshed.Success || refreshed.Data == null)
+                var productLabel = GetProductLabel(product);
+
+                var sizeStockResult = await ProductService.GetSizeStock(productId);
+                var sizes = ResolveSizeStockForBulk(productId, sizeStockResult);
+
+                if (sizes.Count > 0)
+                {
+                    var (success, error) = await TryBatchUpdateSizeStockAsync(
+                        productId,
+                        sizes,
+                        size => bulkStockMode == "set"
+                            ? bulkQuantity
+                            : size.Quantity + bulkQuantity,
+                        product);
+
+                    if (!success)
                     {
-                        bulkError = refreshed.Message ?? "Failed to refresh stock";
+                        ReportBulkPartialFailure(
+                            successfulIds.Count, totalCount, productLabel, error!, successfulIds);
                         return;
                     }
 
-                    var product = Products.FirstOrDefault(p => p.Id == productId);
-                    if (product != null)
-                    {
-                        product.SizeStock = refreshed.Data;
-                        ProductStockHelper.SyncStockFromSizes(product);
-                    }
+                    successfulIds.Add(productId);
+                    continue;
                 }
+
+                if (product == null)
+                {
+                    ReportBulkPartialFailure(
+                        successfulIds.Count,
+                        totalCount,
+                        "Unknown product",
+                        "Selected product is not in the current list. Reload and try again.",
+                        successfulIds);
+                    return;
+                }
+
+                var currentStock = ProductStockHelper.GetEffectiveStock(product);
+                var newStock = bulkStockMode == "set"
+                    ? bulkQuantity
+                    : currentStock + bulkQuantity;
+                newStock = Math.Max(0, newStock);
+
+                var aggregateResult = await ProductService.UpdateStock(productId, newStock);
+                if (!aggregateResult.Success)
+                {
+                    ReportBulkPartialFailure(
+                        successfulIds.Count,
+                        totalCount,
+                        productLabel,
+                        aggregateResult.Message ?? "Failed to update stock",
+                        successfulIds);
+                    return;
+                }
+
+                if (aggregateResult.Data?.SizeStock is { Count: > 0 } aggregateSizes)
+                    ApplySizeStockToProduct(productId, aggregateSizes, product);
                 else
                 {
-                    var product = Products.FirstOrDefault(p => p.Id == productId);
-                    if (product == null)
-                        continue;
-
-                    var currentStock = ProductStockHelper.GetEffectiveStock(product);
-                    var newStock = bulkStockMode == "set"
-                        ? bulkQuantity
-                        : currentStock + bulkQuantity;
-                    newStock = Math.Max(0, newStock);
-
-                    var result = await ProductService.UpdateStock(productId, newStock);
-                    if (!result.Success)
-                    {
-                        bulkError = result.Message ?? "Failed to update stock";
-                        return;
-                    }
-
                     product.Stock = newStock;
+                    if (Products.All(p => p.Id != productId))
+                        Products.Add(product);
                 }
+
+                successfulIds.Add(productId);
             }
 
             selectedProductIds.Clear();
@@ -368,13 +394,18 @@ public partial class AdminProductComponent : IDisposable
         });
     }
 
-    private async void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {
         if (!NavigationManager.ToBaseRelativePath(NavigationManager.Uri)
                 .StartsWith("admin/products", StringComparison.OrdinalIgnoreCase))
             return;
 
-        await InvokeAsync(async () =>
+        _ = InvokeAsync(HandleLocationChangedAsync);
+    }
+
+    private async Task HandleLocationChangedAsync()
+    {
+        try
         {
             ApplyViewFromQuery();
             ApplyProductFocusFromQuery();
@@ -382,7 +413,12 @@ public partial class AdminProductComponent : IDisposable
             await LoadProducts(_currentPage, _pageSize, searchQuery);
             await TryFocusProductAsync();
             StateHasChanged();
-        });
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+            StateHasChanged();
+        }
     }
 
     private void ApplyViewFromQuery()
@@ -1069,53 +1105,19 @@ public partial class AdminProductComponent : IDisposable
                 return;
             }
 
-            foreach (var size in freshSizes)
+            var batchRequest = BuildBatchRequest(
+                freshSizes,
+                size => editedQuantities.TryGetValue(size.Size, out var qty) ? qty : size.Quantity);
+
+            var result = await ProductService.UpdateSizeStockBatch(stockProduct.Id, batchRequest);
+            if (!result.Success || result.Data?.SizeStock == null)
             {
-                if (editedQuantities.TryGetValue(size.Size, out var qty))
-                    size.Quantity = qty;
+                stockError = result.Message ?? "Failed to update stock";
+                return;
             }
 
-            editingSizeStock = freshSizes;
-
-            foreach (var size in editingSizeStock)
-            {
-                Response<SizeStockModel> result;
-                if (size.Id == Guid.Empty)
-                {
-                    result = await ProductService.AddSizeStock(
-                        stockProduct.Id, size.Size, size.Quantity);
-                }
-                else
-                {
-                    result = await ProductService.UpdateSizeStock(size.Id, size.Quantity);
-                }
-
-                if (!result.Success)
-                {
-                    stockError = $"{result.Message ?? "Failed to update stock"} (size {size.Size})";
-                    return;
-                }
-
-                if (size.Id == Guid.Empty && result.Data != null)
-                    size.Id = result.Data.Id;
-            }
-
-            var refreshed = await ProductService.GetSizeStock(stockProduct.Id);
-            if (refreshed.Success && refreshed.Data is { Count: > 0 })
-                editingSizeStock = refreshed.Data;
-
-            var product = Products.FirstOrDefault(p => p.Id == stockProduct.Id);
-            if (product != null)
-            {
-                product.SizeStock = editingSizeStock
-                    .Select(s => new SizeStockModel
-                    {
-                        Id = s.Id,
-                        Size = s.Size,
-                        Quantity = s.Quantity
-                    }).ToList();
-                ProductStockHelper.SyncStockFromSizes(product);
-            }
+            editingSizeStock = result.Data.SizeStock;
+            ApplySizeStockToProduct(stockProduct.Id, result.Data.SizeStock);
 
             CloseStockModal();
             ProductsTabCoordinator.RequestBadgeCountsRefresh();

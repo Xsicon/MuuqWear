@@ -23,11 +23,11 @@ public class AnalyticsService : IAnalyticsService
         try
         {
             var result = await _http.GetAsync("api/Analytics/revenue");
-            return await ReadResponse<RevenueOverTimeModel>(result);
+            return await HttpResponseReader.ReadAsync<RevenueOverTimeModel>(result);
         }
         catch (Exception ex)
         {
-            return Response<RevenueOverTimeModel>.Fail("Error: " + ex.Message);
+            return Response<RevenueOverTimeModel>.Fail(HttpResponseReader.FromException(ex));
         }
     }
 
@@ -40,11 +40,11 @@ public class AnalyticsService : IAnalyticsService
         {
             var result = await _http.GetAsync(
                 $"api/Analytics/top-products?limit={limit}");
-            return await ReadResponse<List<TopSellingProductModel>>(result);
+            return await HttpResponseReader.ReadAsync<List<TopSellingProductModel>>(result);
         }
         catch (Exception ex)
         {
-            return Response<List<TopSellingProductModel>>.Fail("Error: " + ex.Message);
+            return Response<List<TopSellingProductModel>>.Fail(HttpResponseReader.FromException(ex));
         }
     }
 
@@ -56,28 +56,11 @@ public class AnalyticsService : IAnalyticsService
         try
         {
             var result = await _http.GetAsync("api/Analytics/affiliate-performance");
-            return await ReadResponse<List<AffiliatePerformanceModel>>(result);
+            return await HttpResponseReader.ReadAsync<List<AffiliatePerformanceModel>>(result);
         }
         catch (Exception ex)
         {
-            return Response<List<AffiliatePerformanceModel>>.Fail("Error: " + ex.Message);
-        }
-    }
-
-    // =============================================
-    // HELPER
-    // =============================================
-    private async Task<Response<T>> ReadResponse<T>(HttpResponseMessage response)
-    {
-        try
-        {
-            var result = await response.Content
-                .ReadFromJsonAsync<Response<T>>();
-            return result ?? Response<T>.Fail("Empty response");
-        }
-        catch
-        {
-            return Response<T>.Fail("Failed to parse response");
+            return Response<List<AffiliatePerformanceModel>>.Fail(HttpResponseReader.FromException(ex));
         }
     }
 }

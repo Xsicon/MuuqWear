@@ -22,11 +22,11 @@ public class JournalService : IJournalService
         try
         {
             var result = await _http.GetAsync("api/Journal");
-            return await ReadResponse<List<ContentItemModel>>(result);
+            return await HttpResponseReader.ReadAsync<List<ContentItemModel>>(result);
         }
         catch (Exception ex)
         {
-            return Response<List<ContentItemModel>>.Fail("Error: " + ex.Message);
+            return Response<List<ContentItemModel>>.Fail(HttpResponseReader.FromException(ex));
         }
     }
 
@@ -38,28 +38,11 @@ public class JournalService : IJournalService
         try
         {
             var result = await _http.GetAsync($"api/Journal/{id}");
-            return await ReadResponse<ContentItemModel>(result);
+            return await HttpResponseReader.ReadAsync<ContentItemModel>(result);
         }
         catch (Exception ex)
         {
-            return Response<ContentItemModel>.Fail("Error: " + ex.Message);
-        }
-    }
-
-    // =============================================
-    // HELPER
-    // =============================================
-    private async Task<Response<T>> ReadResponse<T>(HttpResponseMessage response)
-    {
-        try
-        {
-            var result = await response.Content
-                .ReadFromJsonAsync<Response<T>>();
-            return result ?? Response<T>.Fail("Empty response");
-        }
-        catch
-        {
-            return Response<T>.Fail("Failed to parse response");
+            return Response<ContentItemModel>.Fail(HttpResponseReader.FromException(ex));
         }
     }
 
@@ -100,7 +83,7 @@ public class JournalService : IJournalService
             return new Response<PaginatedResponse<ContentItemModel>>
             {
                 Success = false,
-                Message = ex.Message
+                Message = HttpResponseReader.FromException(ex)
             };
         }
     }

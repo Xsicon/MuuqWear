@@ -744,6 +744,14 @@ html[data-admin-theme="dark"] .mw-admin .at-topbar__avatar {
     color: var(--admin-muted);
 }
 
+.at-notif-dropdown__truncation {
+    margin: 0;
+    padding: 4px 16px 8px;
+    font-size: 11px;
+    line-height: 1.4;
+    color: var(--admin-muted);
+}
+
 .at-notif-dropdown__view-all {
     display: block;
     width: 100%;

@@ -9,6 +9,7 @@ namespace MuuqWear.Application.Shared;
 public static class ProductStockHelper
 {
     public const int LowStockThreshold = 5;
+    public const string DefaultAggregateSize = "One Size";
 
     public static int GetEffectiveStock(ProductModel product) =>
         product.SizeStock.Count > 0

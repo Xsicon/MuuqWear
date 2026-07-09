@@ -18,9 +18,12 @@ public class AdminMessageModel
     {
         get
         {
-            var created = CreatedAt.Kind == DateTimeKind.Unspecified
-                ? DateTime.SpecifyKind(CreatedAt, DateTimeKind.Utc)
-                : CreatedAt.ToUniversalTime();
+            var created = CreatedAt.Kind switch
+            {
+                DateTimeKind.Utc => CreatedAt,
+                DateTimeKind.Local => CreatedAt.ToUniversalTime(),
+                _ => DateTime.SpecifyKind(CreatedAt, DateTimeKind.Utc)
+            };
 
             var diff = DateTime.UtcNow - created;
             if (diff.TotalMinutes < 1) return "Just now";

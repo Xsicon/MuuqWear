@@ -18,11 +18,11 @@ public class AddressService : IAddressService
         try
         {
             var result = await _http.GetAsync("api/Address");
-            return await ReadResponse<List<AddressModel>>(result);
+            return await HttpResponseReader.ReadAsync<List<AddressModel>>(result);
         }
         catch (Exception ex)
         {
-            return Response<List<AddressModel>>.Fail("Error: " + ex.Message);
+            return Response<List<AddressModel>>.Fail(HttpResponseReader.FromException(ex));
         }
     }
 
@@ -31,11 +31,11 @@ public class AddressService : IAddressService
         try
         {
             var result = await _http.GetAsync($"api/Address/{id}");
-            return await ReadResponse<AddressModel>(result);
+            return await HttpResponseReader.ReadAsync<AddressModel>(result);
         }
         catch (Exception ex)
         {
-            return Response<AddressModel>.Fail("Error: " + ex.Message);
+            return Response<AddressModel>.Fail(HttpResponseReader.FromException(ex));
         }
     }
 
@@ -44,11 +44,11 @@ public class AddressService : IAddressService
         try
         {
             var result = await _http.PostAsJsonAsync("api/Address", request);
-            return await ReadResponse<AddressModel>(result);
+            return await HttpResponseReader.ReadAsync<AddressModel>(result);
         }
         catch (Exception ex)
         {
-            return Response<AddressModel>.Fail("Error: " + ex.Message);
+            return Response<AddressModel>.Fail(HttpResponseReader.FromException(ex));
         }
     }
 
@@ -57,11 +57,11 @@ public class AddressService : IAddressService
         try
         {
             var result = await _http.PutAsJsonAsync($"api/Address/{id}", request);
-            return await ReadResponse<AddressModel>(result);
+            return await HttpResponseReader.ReadAsync<AddressModel>(result);
         }
         catch (Exception ex)
         {
-            return Response<AddressModel>.Fail("Error: " + ex.Message);
+            return Response<AddressModel>.Fail(HttpResponseReader.FromException(ex));
         }
     }
 
@@ -70,11 +70,11 @@ public class AddressService : IAddressService
         try
         {
             var result = await _http.DeleteAsync($"api/Address/{id}");
-            return await ReadResponse<bool>(result);
+            return await HttpResponseReader.ReadAsync<bool>(result);
         }
         catch (Exception ex)
         {
-            return Response<bool>.Fail("Error: " + ex.Message);
+            return Response<bool>.Fail(HttpResponseReader.FromException(ex));
         }
     }
 
@@ -84,26 +84,11 @@ public class AddressService : IAddressService
         {
             var result = await _http.PatchAsync(
                 $"api/Address/{id}/set-default", null);
-            return await ReadResponse<AddressModel>(result);
+            return await HttpResponseReader.ReadAsync<AddressModel>(result);
         }
         catch (Exception ex)
         {
-            return Response<AddressModel>.Fail("Error: " + ex.Message);
-        }
-    }
-
-    // ─── helper ───────────────────────────────────────────────
-    private async Task<Response<T>> ReadResponse<T>(HttpResponseMessage response)
-    {
-        try
-        {
-            var result = await response.Content
-                .ReadFromJsonAsync<Response<T>>();
-            return result ?? Response<T>.Fail("Empty response");
-        }
-        catch
-        {
-            return Response<T>.Fail("Failed to parse response");
+            return Response<AddressModel>.Fail(HttpResponseReader.FromException(ex));
         }
     }
 }

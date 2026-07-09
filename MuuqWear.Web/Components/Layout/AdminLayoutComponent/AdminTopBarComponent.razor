@@ -1,6 +1,7 @@
 ﻿@rendermode InteractiveServer
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Components.Web
+@using Microsoft.JSInterop
 @using MuuqWear.Application.Services.CustomerService
 @using MuuqWear.Application.Services.NotificationService
 @using MuuqWear.Application.Services.ProductService
@@ -9,10 +10,12 @@
 @using MuuqWear.Model.Messages
 @using MuuqWear.Model.NotificationModel
 @using MuuqWear.Model.Products
+@using MuuqWear.Web.Helpers
 @using MuuqWear.Web.Services
 @inject INotificationService NotificationService
 @inject IProductService ProductService
 @inject ICustomerService CustomerService
+@inject IJSRuntime JS
 @inject AdminProductsTabCoordinator ProductsTabCoordinator
 @inject AdminCustomersTabCoordinator CustomersTabCoordinator
 @inject NavigationManager NavigationManager
@@ -139,6 +142,14 @@
                             <p class="at-notif-dropdown__section">Low stock (@lowStockCount)</p>
                         }
 
+                        @if (productsFeedTruncated)
+                        {
+                            <p class="at-notif-dropdown__truncation">
+                                Showing the first @AdminHeaderFeedLoader.MaxRecords of @productsTotalCount products.
+                                Counts may be incomplete.
+                            </p>
+                        }
+
                         @foreach (var notif in notifications)
                         {
                             <button type="button"
@@ -210,7 +221,15 @@
                     }
                     else
                     {
-                        <p class="at-notif-dropdown__section">Customer notes (@messageCount)</p>
+                        <p class="at-notif-dropdown__section">Recent notes (@messageCount)</p>
+
+                        @if (customersFeedTruncated)
+                        {
+                            <p class="at-notif-dropdown__truncation">
+                                Showing the first @AdminHeaderFeedLoader.MaxRecords of @customersTotalCount customers.
+                                Counts may be incomplete.
+                            </p>
+                        }
 
                         @foreach (var message in messages)
                         {
@@ -291,13 +310,20 @@
     private bool isLoadingMessages;
     private List<NotificationModel> notifications = new();
     private List<AdminMessageModel> messages = new();
+    private List<(CustomerModel Customer, CustomerNoteModel Note)> loadedNoteEntries = new();
     private int unreadCount;
     private int unreadMessageCount;
     private int lowStockCount;
     private int messageCount;
+    private bool productsFeedTruncated;
+    private bool customersFeedTruncated;
+    private int productsTotalCount;
+    private int customersTotalCount;
     private readonly HashSet<Guid> lowStockProductIds = new();
     private readonly HashSet<Guid> readNotificationIds = new();
     private readonly Dictionary<Guid, DateTime> readNoteAtByCustomerId = new();
+    private readonly Dictionary<Guid, DateTime> lowStockFirstSeenAt = new();
+    private AdminHeaderReadStateStore? readStateStore;
     private string userName = string.Empty;
     private string userInitials = "AD";
     private System.Threading.Timer? _refreshTimer;
@@ -319,16 +345,44 @@
 
         ProductsTabCoordinator.BadgeCountsRefreshRequested += OnProductsChanged;
         CustomersTabCoordinator.MessagesRefreshRequested += OnCustomerNotesChanged;
-        NavigationManager.LocationChanged += OnLocationChanged;
+
+        readStateStore = new AdminHeaderReadStateStore(JS);
+        await LoadPersistedReadStateAsync();
 
         _refreshTimer = new System.Threading.Timer(
-            _ => _ = InvokeAsync(RefreshHeaderAsync),
+            _ => _ = InvokeAsync(RefreshBadgeCountsAsync),
             null,
             TimeSpan.FromSeconds(RefreshIntervalSeconds),
             TimeSpan.FromSeconds(RefreshIntervalSeconds));
 
-        await RefreshHeaderAsync();
+        await RefreshBadgeCountsAsync();
     }
+
+    private async Task LoadPersistedReadStateAsync()
+    {
+        if (readStateStore == null)
+            return;
+
+        var notificationIds = await readStateStore.LoadNotificationIdsAsync();
+        foreach (var id in notificationIds)
+            readNotificationIds.Add(id);
+
+        var noteReadAt = await readStateStore.LoadNoteReadAtAsync();
+        foreach (var (customerId, readAt) in noteReadAt)
+            readNoteAtByCustomerId[customerId] = readAt;
+
+        var firstSeen = await readStateStore.LoadLowStockFirstSeenAsync();
+        foreach (var (productId, seenAt) in firstSeen)
+            lowStockFirstSeenAt[productId] = seenAt;
+    }
+
+    private Task PersistReadStateAsync() =>
+        readStateStore == null
+            ? Task.CompletedTask
+            : Task.WhenAll(
+                readStateStore.SaveNotificationIdsAsync(readNotificationIds),
+                readStateStore.SaveNoteReadAtAsync(readNoteAtByCustomerId),
+                readStateStore.SaveLowStockFirstSeenAsync(lowStockFirstSeenAt));
 
     private void OnProductsChanged()
     {
@@ -340,52 +394,85 @@
         _ = InvokeAsync(LoadMessages);
     }
 
-    private async Task RefreshHeaderAsync()
+    private async Task RefreshBadgeCountsAsync()
     {
-        await LoadNotifications();
-        await LoadMessages();
+        try
+        {
+            var apiResult = await NotificationService.GetRecent();
+            if (apiResult.Success && apiResult.Data is { Count: > 0 })
+            {
+                var apiNotifs = apiResult.Data
+                    .Where(n => AdminNotificationEnricher.Enrich(n, EmptyProductCatalog))
+                    .ToList();
+
+                unreadCount = apiNotifs.Count(n => !IsNotificationRead(n));
+                lowStockCount = apiNotifs.Count(AdminNotificationEnricher.IsLowStockNotification);
+
+                lowStockProductIds.Clear();
+                foreach (var notif in apiNotifs.Where(AdminNotificationEnricher.IsLowStockNotification))
+                {
+                    if (notif.ProductId is Guid productId)
+                        lowStockProductIds.Add(productId);
+                }
+            }
+        }
+        catch
+        {
+            // Keep the last known badge counts when the lightweight refresh fails.
+        }
+
+        StateHasChanged();
     }
 
-    private async void OnLocationChanged(object? sender, LocationChangedEventArgs e)
-    {
-        if (!NavigationManager.ToBaseRelativePath(NavigationManager.Uri)
-                .StartsWith("admin", StringComparison.OrdinalIgnoreCase))
-            return;
-
-        await InvokeAsync(RefreshHeaderAsync);
-    }
+    private bool IsNotificationRead(NotificationModel notif) =>
+        readNotificationIds.Contains(notif.Id)
+        || (notif.SizeStockId is Guid sizeStockId && readNotificationIds.Contains(sizeStockId))
+        || (notif.ProductId is Guid productId && readNotificationIds.Contains(productId));
 
     private async Task LoadMessages()
     {
         isLoadingMessages = true;
         StateHasChanged();
 
-        var customers = await LoadAllCustomersAsync();
-        var withNotes = customers
+        var customerFeed = await AdminHeaderFeedLoader.LoadCustomersAsync(CustomerService);
+        customersFeedTruncated = customerFeed.IsTruncated;
+        customersTotalCount = customerFeed.TotalCount;
+
+        var customers = customerFeed.Items;
+        var customersWithNotes = customers
             .Where(c => c.LatestNoteAt.HasValue && !string.IsNullOrWhiteSpace(c.LatestNotePreview))
+            .OrderByDescending(c => c.LatestNoteAt)
+            .Take(AdminHeaderMessagesBuilder.NoteFetchCustomerLimit)
             .ToList();
 
-        messageCount = withNotes.Count;
+        var noteTasks = customersWithNotes.Select(async customer =>
+        {
+            var result = await CustomerService.GetNotes(customer.Id);
+            if (!result.Success || result.Data == null)
+                return Array.Empty<(CustomerModel Customer, CustomerNoteModel Note)>();
+
+            return result.Data
+                .Select(note => (Customer: customer, Note: note))
+                .ToArray();
+        });
+
+        var noteGroups = await Task.WhenAll(noteTasks);
+        loadedNoteEntries = AdminHeaderMessagesBuilder.CapNotesPerCustomer(
+            noteGroups.SelectMany(group => group));
+
+        messageCount = loadedNoteEntries.Count;
         messages = AdminHeaderMessagesBuilder
-            .FromCustomers(customers, readNoteAtByCustomerId)
+            .FromNotes(loadedNoteEntries, readNoteAtByCustomerId)
             .OrderBy(m => m.IsRead)
             .ThenByDescending(m => m.CreatedAt)
             .ToList();
 
-        unreadMessageCount = messages.Count(m => !m.IsRead);
+        unreadMessageCount = AdminHeaderMessagesBuilder.CountUnreadNotes(
+            loadedNoteEntries,
+            readNoteAtByCustomerId);
 
         isLoadingMessages = false;
         StateHasChanged();
-    }
-
-    private async Task<List<CustomerModel>> LoadAllCustomersAsync()
-    {
-        var result = await CustomerService.GetAll(null, 1, 1000);
-
-        if (!result.Success || result.Data?.Data == null)
-            return new List<CustomerModel>();
-
-        return result.Data.Data;
     }
 
     private async Task LoadNotifications()
@@ -393,47 +480,57 @@
         isLoadingNotifications = true;
         StateHasChanged();
 
-        var allProducts = await LoadAllProductsAsync();
-        var lowStockProducts = allProducts
-            .Where(ProductStockHelper.IsLowStock)
-            .OrderBy(p => ProductStockHelper.GetEffectiveStock(p))
-            .ThenBy(p => p.Name)
-            .ToList();
+        var productFeedTask = AdminHeaderFeedLoader.LoadProductsAsync(ProductService);
+        var apiResultTask = NotificationService.GetRecent();
+        await Task.WhenAll(productFeedTask, apiResultTask);
+
+        var productFeed = await productFeedTask;
+        productsFeedTruncated = productFeed.IsTruncated;
+        productsTotalCount = productFeed.TotalCount;
+
+        var allProducts = productFeed.Items;
+        var productsById = allProducts.ToDictionary(p => p.Id);
+
+        var lowStockProducts = AdminHeaderNotificationsBuilder.OrderLowStockProducts(allProducts);
+        AdminHeaderNotificationsBuilder.UpdateFirstSeenTimes(lowStockProducts, lowStockFirstSeenAt);
 
         lowStockCount = lowStockProducts.Count;
         lowStockProductIds.Clear();
         foreach (var product in lowStockProducts)
             lowStockProductIds.Add(product.Id);
 
-        var lowStockNotifications = AdminHeaderNotificationsBuilder
-            .FromLowStockProducts(lowStockProducts, readNotificationIds);
+        var merged = new List<NotificationModel>();
+        var apiLowStockProductIds = new HashSet<Guid>();
 
-        var merged = new List<NotificationModel>(lowStockNotifications);
-        var coveredProductIds = lowStockNotifications
-            .Select(n => n.Id)
-            .ToHashSet();
-
-        // API notifications (orders, tickets, persisted low-stock size alerts, etc.)
-        var apiResult = await NotificationService.GetRecent();
+        var apiResult = await apiResultTask;
         if (apiResult.Success && apiResult.Data is { Count: > 0 })
         {
             foreach (var apiNotif in apiResult.Data)
             {
-                AdminNotificationEnricher.Enrich(apiNotif, allProducts);
-
-                if (merged.Any(n => n.Id == apiNotif.Id))
+                if (!AdminNotificationEnricher.Enrich(apiNotif, productsById))
                     continue;
 
-                // Skip API low-stock alerts when we already show the product-level alert
                 if (AdminNotificationEnricher.IsLowStockNotification(apiNotif)
-                    && apiNotif.ProductId is Guid productId
-                    && coveredProductIds.Contains(productId))
-                    continue;
+                    && apiNotif.ProductId is Guid productId)
+                    apiLowStockProductIds.Add(productId);
 
-                apiNotif.IsRead = readNotificationIds.Contains(apiNotif.Id)
-                    || (apiNotif.ProductId is Guid readProductId && readNotificationIds.Contains(readProductId));
+                apiNotif.IsRead = IsNotificationRead(apiNotif);
                 merged.Add(apiNotif);
             }
+        }
+
+        var lowStockNotifications = AdminHeaderNotificationsBuilder
+            .FromLowStockProducts(lowStockProducts, readNotificationIds, lowStockFirstSeenAt);
+
+        foreach (var clientNotif in lowStockNotifications)
+        {
+            if (clientNotif.ProductId is Guid productId && apiLowStockProductIds.Contains(productId))
+                continue;
+
+            if (merged.Any(n => n.Id == clientNotif.Id))
+                continue;
+
+            merged.Add(clientNotif);
         }
 
         notifications = merged
@@ -445,25 +542,8 @@
         unreadCount = notifications.Count(n => !n.IsRead);
 
         isLoadingNotifications = false;
+        await PersistReadStateAsync();
         StateHasChanged();
-    }
-
-    private async Task<List<ProductModel>> LoadAllProductsAsync()
-    {
-        var result = await ProductService.GetAll(new ProductFilterModel
-        {
-            Page = 1,
-            PageSize = 1000,
-            IncludeTickets = true
-        });
-
-        if (!result.Success || result.Data?.Data == null)
-            return new List<ProductModel>();
-
-        foreach (var product in result.Data.Data)
-            ProductStockHelper.SyncStockFromSizes(product);
-
-        return result.Data.Data;
     }
 
     private void ToggleNotifications()
@@ -492,17 +572,24 @@
         {
             n.IsRead = true;
             readNotificationIds.Add(n.Id);
+            if (n.SizeStockId is Guid sizeStockId)
+                readNotificationIds.Add(sizeStockId);
+            if (n.ProductId is Guid productId)
+                readNotificationIds.Add(productId);
         }
 
         unreadCount = 0;
         StateHasChanged();
         await NotificationService.MarkAllRead();
+        await PersistReadStateAsync();
     }
 
-    private void HandleNotificationClick(NotificationModel notif)
+    private async Task HandleNotificationClick(NotificationModel notif)
     {
         notif.IsRead = true;
         readNotificationIds.Add(notif.Id);
+        if (notif.SizeStockId is Guid sizeStockId)
+            readNotificationIds.Add(sizeStockId);
         if (notif.ProductId is Guid productId)
             readNotificationIds.Add(productId);
 
@@ -519,6 +606,8 @@
         if (focusProductId is Guid id && !linkHasProductFocus)
             ProductsTabCoordinator.NotifyProductFocus(id);
 
+        await PersistReadStateAsync();
+
         if (!string.IsNullOrWhiteSpace(notif.Link))
         {
             NavigationManager.NavigateTo(notif.Link);
@@ -529,31 +618,37 @@
             NavigationManager.NavigateTo("/admin/products?view=low-stock");
     }
 
-    private void HandleMessageClick(AdminMessageModel message)
+    private async Task HandleMessageClick(AdminMessageModel message)
     {
         message.IsRead = true;
-        readNoteAtByCustomerId[message.CustomerId] = message.CreatedAt;
+        AdminHeaderMessagesBuilder.MarkCustomerNoteRead(
+            readNoteAtByCustomerId,
+            message.CustomerId,
+            message.CreatedAt);
 
-        unreadMessageCount = messages.Count(m => !m.IsRead);
+        unreadMessageCount = AdminHeaderMessagesBuilder.CountUnreadNotes(
+            loadedNoteEntries,
+            readNoteAtByCustomerId);
         isMessagesOpen = false;
 
         var linkHasCustomerFocus = message.Link.Contains("customerId=", StringComparison.OrdinalIgnoreCase);
         if (!linkHasCustomerFocus)
             CustomersTabCoordinator.NotifyCustomerFocus(message.CustomerId);
 
+        await PersistReadStateAsync();
         NavigationManager.NavigateTo(message.Link);
     }
 
-    private void MarkAllMessagesRead()
+    private async Task MarkAllMessagesRead()
     {
+        AdminHeaderMessagesBuilder.MarkAllNotesRead(loadedNoteEntries, readNoteAtByCustomerId);
+
         foreach (var message in messages)
-        {
             message.IsRead = true;
-            readNoteAtByCustomerId[message.CustomerId] = message.CreatedAt;
-        }
 
         unreadMessageCount = 0;
         StateHasChanged();
+        await PersistReadStateAsync();
     }
 
     private void ViewAllCustomerNotes()
@@ -667,6 +762,8 @@
         _refreshTimer?.Dispose();
         ProductsTabCoordinator.BadgeCountsRefreshRequested -= OnProductsChanged;
         CustomersTabCoordinator.MessagesRefreshRequested -= OnCustomerNotesChanged;
-        NavigationManager.LocationChanged -= OnLocationChanged;
     }
+
+    private static readonly IReadOnlyDictionary<Guid, ProductModel> EmptyProductCatalog =
+        new Dictionary<Guid, ProductModel>();
 }

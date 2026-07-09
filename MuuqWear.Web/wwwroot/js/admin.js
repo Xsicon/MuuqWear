@@ -113,3 +113,22 @@ window.adminScroll = {
         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 };
+
+window.adminHeaderReadState = {
+    load: function (key) {
+        try {
+            return sessionStorage.getItem(key);
+        } catch (e) {
+            return null;
+        }
+    },
+    save: function (key, value) {
+        try {
+            if (value == null || value === '') {
+                sessionStorage.removeItem(key);
+            } else {
+                sessionStorage.setItem(key, value);
+            }
+        } catch (e) { }
+    }
+};

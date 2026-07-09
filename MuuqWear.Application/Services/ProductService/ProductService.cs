@@ -59,7 +59,7 @@ public class ProductService : IProductService
             return new Response<PaginatedResponse<ProductModel>>
             {
                 Success = false,
-                Message = ex.Message
+                Message = HttpResponseReader.FromException(ex)
             };
         }
     }
@@ -82,7 +82,7 @@ public class ProductService : IProductService
             return new Response<HomeProductsModel>
             {
                 Success = false,
-                Message = ex.Message
+                Message = HttpResponseReader.FromException(ex)
             };
         }
     }
@@ -138,7 +138,7 @@ public class ProductService : IProductService
             return new Response<string>
             {
                 Success = false,
-                Message = ex.Message
+                Message = HttpResponseReader.FromException(ex)
             };
         }
     }
@@ -201,7 +201,7 @@ public class ProductService : IProductService
             return new Response<ProductModel>
             {
                 Success = false,
-                Message = ex.Message
+                Message = HttpResponseReader.FromException(ex)
             };
         }
     }
@@ -225,7 +225,7 @@ public class ProductService : IProductService
             return new Response<List<ProductModel>>
             {
                 Success = false,
-                Message = ex.Message
+                Message = HttpResponseReader.FromException(ex)
             };
         }
     }
@@ -299,7 +299,7 @@ public class ProductService : IProductService
             return new Response<List<SizeStockModel>>
             {
                 Success = false,
-                Message = ex.Message
+                Message = HttpResponseReader.FromException(ex)
             };
         }
     }
@@ -337,7 +337,7 @@ public class ProductService : IProductService
             return new Response<SizeStockModel>
             {
                 Success = false,
-                Message = ex.Message
+                Message = HttpResponseReader.FromException(ex)
             };
         }
     }
@@ -346,43 +346,134 @@ public class ProductService : IProductService
     {
         try
         {
-            var existing = await GetById(productId);
-            if (!existing.Success || existing.Data == null)
+            if (totalStock < 0)
             {
                 return new Response<ProductModel>
                 {
                     Success = false,
-                    Message = existing.Message ?? "Product not found"
+                    Message = "Quantity cannot be negative."
                 };
             }
 
-            var product = existing.Data;
-            return await Update(productId, new UpdateProductModel
+            var request = await BuildAggregateStockBatchRequestAsync(productId, totalStock);
+            if (request == null)
             {
-                Name = product.Name,
-                Price = product.Price,
-                Badge = product.Badge,
-                ImageUrl = product.ImageUrl,
-                Stock = totalStock,
-                Category = product.Category,
-                IsActive = product.IsActive,
-                IsNewArrival = product.IsNewArrival,
-                IsFeatured = product.IsFeatured,
-                IsBestSeller = product.IsBestSeller,
-                Description = product.Description,
-                Gender = product.Gender,
-                CategoryId = product.CategoryId,
-                ColorOptions = product.ColorOptions ?? new()
-            });
+                return new Response<ProductModel>
+                {
+                    Success = false,
+                    Message = "Product has per-size stock; use size stock batch update instead."
+                };
+            }
+
+            var batchResult = await UpdateSizeStockBatch(productId, request);
+
+            if (!batchResult.Success
+                && request.Upserts.Count > 0
+                && request.Items.Count == 0)
+            {
+                var refreshed = await GetSizeStock(productId);
+                if (refreshed.Success && refreshed.Data is { Count: > 0 } sizes)
+                {
+                    var retryRequest = BuildAggregateStockBatchRequestFromSizes(sizes, totalStock);
+                    if (retryRequest != null)
+                        batchResult = await UpdateSizeStockBatch(productId, retryRequest);
+                }
+            }
+
+            if (!batchResult.Success || batchResult.Data?.SizeStock == null)
+            {
+                return new Response<ProductModel>
+                {
+                    Success = false,
+                    Message = batchResult.Message ?? "Failed to update stock"
+                };
+            }
+
+            var productResult = await GetById(productId);
+            if (productResult.Success && productResult.Data != null)
+            {
+                productResult.Data.SizeStock = batchResult.Data.SizeStock;
+                productResult.Data.Stock = batchResult.Data.TotalStock;
+                return productResult;
+            }
+
+            return new Response<ProductModel>
+            {
+                Success = true,
+                Message = batchResult.Message,
+                Data = new ProductModel
+                {
+                    Id = productId,
+                    Stock = batchResult.Data.TotalStock,
+                    SizeStock = batchResult.Data.SizeStock
+                }
+            };
         }
         catch (Exception ex)
         {
             return new Response<ProductModel>
             {
                 Success = false,
-                Message = ex.Message
+                Message = HttpResponseReader.FromException(ex)
             };
         }
+    }
+
+    private async Task<BatchUpdateSizeStockRequest?> BuildAggregateStockBatchRequestAsync(
+        Guid productId, int totalStock)
+    {
+        var sizeStockResult = await GetSizeStock(productId);
+        if (!sizeStockResult.Success || sizeStockResult.Data == null)
+        {
+            return new BatchUpdateSizeStockRequest
+            {
+                Upserts =
+                {
+                    new BatchSizeStockUpsertItem
+                    {
+                        Size = ProductStockHelper.DefaultAggregateSize,
+                        Quantity = totalStock
+                    }
+                }
+            };
+        }
+
+        return BuildAggregateStockBatchRequestFromSizes(sizeStockResult.Data, totalStock);
+    }
+
+    private static BatchUpdateSizeStockRequest? BuildAggregateStockBatchRequestFromSizes(
+        List<SizeStockModel> sizes,
+        int totalStock)
+    {
+        if (sizes.Count == 0)
+        {
+            return new BatchUpdateSizeStockRequest
+            {
+                Upserts =
+                {
+                    new BatchSizeStockUpsertItem
+                    {
+                        Size = ProductStockHelper.DefaultAggregateSize,
+                        Quantity = totalStock
+                    }
+                }
+            };
+        }
+
+        if (sizes.Count > 1)
+            return null;
+
+        return new BatchUpdateSizeStockRequest
+        {
+            Items =
+            {
+                new BatchSizeStockUpdateItem
+                {
+                    SizeStockId = sizes[0].Id,
+                    Quantity = totalStock
+                }
+            }
+        };
     }
 
     // =============================================
@@ -416,7 +507,60 @@ public class ProductService : IProductService
             return new Response<bool>
             {
                 Success = false,
-                Message = ex.Message
+                Message = HttpResponseReader.FromException(ex)
+            };
+        }
+    }
+
+    // =============================================
+    // BATCH UPDATE SIZE STOCK (atomic)
+    // =============================================
+    public async Task<Response<BatchUpdateSizeStockResult>> UpdateSizeStockBatch(
+        Guid productId, BatchUpdateSizeStockRequest request)
+    {
+        try
+        {
+            var result = await _http.PatchAsJsonAsync(
+                $"api/Product/{productId}/size-stock/batch",
+                request);
+
+            if (!result.IsSuccessStatusCode)
+            {
+                var message = $"Server error: {result.StatusCode}";
+                try
+                {
+                    var error = await result.Content
+                        .ReadFromJsonAsync<Response<BatchUpdateSizeStockResult>>();
+                    if (!string.IsNullOrWhiteSpace(error?.Message))
+                        message = error.Message;
+                }
+                catch
+                {
+                    // keep status-based message
+                }
+
+                return new Response<BatchUpdateSizeStockResult>
+                {
+                    Success = false,
+                    Message = message
+                };
+            }
+
+            var response = await result.Content
+                .ReadFromJsonAsync<Response<BatchUpdateSizeStockResult>>();
+
+            return response ?? new Response<BatchUpdateSizeStockResult>
+            {
+                Success = false,
+                Message = "Empty response"
+            };
+        }
+        catch (Exception ex)
+        {
+            return new Response<BatchUpdateSizeStockResult>
+            {
+                Success = false,
+                Message = HttpResponseReader.FromException(ex)
             };
         }
     }
@@ -454,7 +598,7 @@ public class ProductService : IProductService
             return new Response<SizeStockModel>
             {
                 Success = false,
-                Message = ex.Message
+                Message = HttpResponseReader.FromException(ex)
             };
         }
     }

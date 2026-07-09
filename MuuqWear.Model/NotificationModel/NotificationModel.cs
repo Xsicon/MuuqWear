@@ -8,6 +8,7 @@ public class NotificationModel
     public string? Link { get; set; }
     public Guid? ProductId { get; set; }
     public string? SizeLabel { get; set; }
+    public Guid? SizeStockId { get; set; }
     public string TimeAgo { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public bool IsRead { get; set; } = false;

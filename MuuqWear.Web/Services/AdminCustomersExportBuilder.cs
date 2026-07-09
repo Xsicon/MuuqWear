@@ -1,5 +1,6 @@
 using ClosedXML.Excel;
 using MuuqWear.Model.Customer;
+using MuuqWear.Web.Helpers;
 using System.Globalization;
 using System.Text;
 
@@ -20,7 +21,7 @@ public static class AdminCustomersExportBuilder
         sb.AppendLine($"Search,{FormatFilter(searchFilter)}");
         sb.AppendLine($"Generated,{stamp}");
         sb.AppendLine();
-        sb.AppendLine("Name,Email,Orders,Total Spent,Joined,Last Order");
+        sb.AppendLine("Name,Email,Orders,Total Spent,Joined,Last Order,Note Count,Latest Note,Latest Note Author,Latest Note Date");
 
         foreach (var customer in customers)
         {
@@ -30,7 +31,11 @@ public static class AdminCustomersExportBuilder
                 Csv(customer.OrderCount),
                 CsvMoney(customer.TotalSpent),
                 Csv(FormatDate(customer.CreatedAt)),
-                Csv(FormatDate(customer.LastOrderAt))));
+                Csv(FormatDate(customer.LastOrderAt)),
+                Csv(customer.NoteCount),
+                Csv(customer.LatestNotePreview),
+                Csv(FormatNoteAuthor(customer)),
+                Csv(FormatDate(customer.LatestNoteAt))));
         }
 
         return Encoding.UTF8.GetPreamble()
@@ -65,7 +70,11 @@ public static class AdminCustomersExportBuilder
 
     private static (string[] Headers, List<object?[]> Rows) BuildRows(IReadOnlyList<CustomerModel> customers)
     {
-        var headers = new[] { "Name", "Email", "Orders", "Total Spent", "Joined", "Last Order" };
+        var headers = new[]
+        {
+            "Name", "Email", "Orders", "Total Spent", "Joined", "Last Order",
+            "Note Count", "Latest Note", "Latest Note Author", "Latest Note Date"
+        };
 
         var rows = customers.Select(c => new object?[]
         {
@@ -74,7 +83,11 @@ public static class AdminCustomersExportBuilder
             c.OrderCount,
             c.TotalSpent,
             FormatDate(c.CreatedAt),
-            FormatDate(c.LastOrderAt)
+            FormatDate(c.LastOrderAt),
+            c.NoteCount,
+            c.LatestNotePreview,
+            FormatNoteAuthor(c),
+            FormatDate(c.LatestNoteAt)
         }).ToList();
 
         return (headers, rows);
@@ -151,7 +164,7 @@ public static class AdminCustomersExportBuilder
             return;
         }
 
-        if (header is "Orders")
+        if (header is "Orders" or "Note Count")
         {
             cell.Value = Convert.ToInt64(value, CultureInfo.InvariantCulture);
             return;
@@ -165,6 +178,13 @@ public static class AdminCustomersExportBuilder
 
     private static string FormatDate(DateTime? value) =>
         value?.ToString("MMM dd, yyyy", CultureInfo.InvariantCulture) ?? "—";
+
+    private static string FormatNoteAuthor(CustomerModel customer) =>
+        string.IsNullOrWhiteSpace(customer.LatestNotePreview)
+            ? "—"
+            : CustomerNoteFormatter.FormatAuthorLabel(
+                customer.LatestNoteAuthorName,
+                customer.LatestNoteAuthorRole);
 
     private static string Csv(object? value)
     {

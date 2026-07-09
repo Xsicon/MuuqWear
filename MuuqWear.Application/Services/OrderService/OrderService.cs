@@ -54,7 +54,7 @@ public class OrderService : IOrderService
             return new Response<OrderModel>
             {
                 Success = false,
-                Message = ex.Message
+                Message = HttpResponseReader.FromException(ex)
             };
         }
     }
@@ -78,7 +78,7 @@ public class OrderService : IOrderService
             return new Response<List<OrderModel>>
             {
                 Success = false,
-                Message = ex.Message
+                Message = HttpResponseReader.FromException(ex)
             };
         }
     }
@@ -112,7 +112,7 @@ public class OrderService : IOrderService
             return new Response<PaginatedResponse<OrderModel>>
             {
                 Success = false,
-                Message = ex.Message
+                Message = HttpResponseReader.FromException(ex)
             };
         }
     }
@@ -139,7 +139,7 @@ public class OrderService : IOrderService
             return new Response<OrderModel>
             {
                 Success = false,
-                Message = ex.Message
+                Message = HttpResponseReader.FromException(ex)
             };
         }
     }
@@ -177,7 +177,7 @@ public class OrderService : IOrderService
             return new Response<OrderModel>
             {
                 Success = false,
-                Message = ex.Message
+                Message = HttpResponseReader.FromException(ex)
             };
         }
     }
@@ -219,7 +219,7 @@ public class OrderService : IOrderService
             return new Response<int>
             {
                 Success = false,
-                Message = ex.Message
+                Message = HttpResponseReader.FromException(ex)
             };
         }
     }

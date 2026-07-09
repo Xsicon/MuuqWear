@@ -25,11 +25,11 @@ public class CustomerService : ICustomerService
                 url += $"&search={Uri.EscapeDataString(search)}";
 
             var result = await _http.GetAsync(url);
-            return await ReadResponse<PaginatedResponse<CustomerModel>>(result);
+            return await HttpResponseReader.ReadAsync<PaginatedResponse<CustomerModel>>(result);
         }
         catch (Exception ex)
         {
-            return Response<PaginatedResponse<CustomerModel>>.Fail(ex.Message);
+            return Response<PaginatedResponse<CustomerModel>>.Fail(HttpResponseReader.FromException(ex));
         }
     }
 
@@ -38,11 +38,11 @@ public class CustomerService : ICustomerService
         try
         {
             var result = await _http.GetAsync($"api/Customer/{customerId}/notes");
-            return await ReadResponse<List<CustomerNoteModel>>(result);
+            return await HttpResponseReader.ReadAsync<List<CustomerNoteModel>>(result);
         }
         catch (Exception ex)
         {
-            return Response<List<CustomerNoteModel>>.Fail(ex.Message);
+            return Response<List<CustomerNoteModel>>.Fail(HttpResponseReader.FromException(ex));
         }
     }
 
@@ -53,33 +53,11 @@ public class CustomerService : ICustomerService
         {
             var result = await _http.PostAsJsonAsync(
                 $"api/Customer/{customerId}/notes", request);
-            return await ReadResponse<CustomerNoteModel>(result);
+            return await HttpResponseReader.ReadAsync<CustomerNoteModel>(result);
         }
         catch (Exception ex)
         {
-            return Response<CustomerNoteModel>.Fail(ex.Message);
-        }
-    }
-
-    private static async Task<Response<T>> ReadResponse<T>(HttpResponseMessage response)
-    {
-        if (!response.IsSuccessStatusCode)
-        {
-            var message = await response.Content.ReadAsStringAsync();
-            if (string.IsNullOrWhiteSpace(message))
-                message = $"Server error: {response.StatusCode}";
-
-            return Response<T>.Fail(message);
-        }
-
-        try
-        {
-            var result = await response.Content.ReadFromJsonAsync<Response<T>>();
-            return result ?? Response<T>.Fail("Empty response");
-        }
-        catch
-        {
-            return Response<T>.Fail("Failed to parse response");
+            return Response<CustomerNoteModel>.Fail(HttpResponseReader.FromException(ex));
         }
     }
 }

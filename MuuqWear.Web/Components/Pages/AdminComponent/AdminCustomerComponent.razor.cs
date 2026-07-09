@@ -125,13 +125,18 @@ public partial class AdminCustomerComponent : IDisposable
         });
     }
 
-    private async void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {
         if (!NavigationManager.ToBaseRelativePath(NavigationManager.Uri)
                 .StartsWith("admin/customers", StringComparison.OrdinalIgnoreCase))
             return;
 
-        await InvokeAsync(async () =>
+        _ = InvokeAsync(HandleLocationChangedAsync);
+    }
+
+    private async Task HandleLocationChangedAsync()
+    {
+        try
         {
             ApplyViewFromQuery();
             ApplyCustomerFocusFromQuery();
@@ -142,7 +147,12 @@ public partial class AdminCustomerComponent : IDisposable
             await LoadCustomers();
             await TryFocusCustomerAsync();
             StateHasChanged();
-        });
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+            StateHasChanged();
+        }
     }
 
     private void ApplyViewFromQuery()

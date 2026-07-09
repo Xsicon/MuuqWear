@@ -22,11 +22,11 @@ public class JobPostingService : IJobPostingService
         try
         {
             var result = await _http.GetAsync("api/JobPosting");
-            return await ReadResponse<List<JobPostingModel>>(result);
+            return await HttpResponseReader.ReadAsync<List<JobPostingModel>>(result);
         }
         catch (Exception ex)
         {
-            return Response<List<JobPostingModel>>.Fail("Error: " + ex.Message);
+            return Response<List<JobPostingModel>>.Fail(HttpResponseReader.FromException(ex));
         }
     }
 
@@ -38,11 +38,11 @@ public class JobPostingService : IJobPostingService
         try
         {
             var result = await _http.GetAsync("api/JobPosting/open");
-            return await ReadResponse<List<JobPostingModel>>(result);
+            return await HttpResponseReader.ReadAsync<List<JobPostingModel>>(result);
         }
         catch (Exception ex)
         {
-            return Response<List<JobPostingModel>>.Fail("Error: " + ex.Message);
+            return Response<List<JobPostingModel>>.Fail(HttpResponseReader.FromException(ex));
         }
     }
 
@@ -54,11 +54,11 @@ public class JobPostingService : IJobPostingService
         try
         {
             var result = await _http.GetAsync($"api/JobPosting/{id}");
-            return await ReadResponse<JobPostingModel>(result);
+            return await HttpResponseReader.ReadAsync<JobPostingModel>(result);
         }
         catch (Exception ex)
         {
-            return Response<JobPostingModel>.Fail("Error: " + ex.Message);
+            return Response<JobPostingModel>.Fail(HttpResponseReader.FromException(ex));
         }
     }
 
@@ -70,11 +70,11 @@ public class JobPostingService : IJobPostingService
         try
         {
             var result = await _http.PostAsJsonAsync("api/JobPosting", request);
-            return await ReadResponse<JobPostingModel>(result);
+            return await HttpResponseReader.ReadAsync<JobPostingModel>(result);
         }
         catch (Exception ex)
         {
-            return Response<JobPostingModel>.Fail("Error: " + ex.Message);
+            return Response<JobPostingModel>.Fail(HttpResponseReader.FromException(ex));
         }
     }
 
@@ -87,11 +87,11 @@ public class JobPostingService : IJobPostingService
         try
         {
             var result = await _http.PutAsJsonAsync($"api/JobPosting/{id}", request);
-            return await ReadResponse<JobPostingModel>(result);
+            return await HttpResponseReader.ReadAsync<JobPostingModel>(result);
         }
         catch (Exception ex)
         {
-            return Response<JobPostingModel>.Fail("Error: " + ex.Message);
+            return Response<JobPostingModel>.Fail(HttpResponseReader.FromException(ex));
         }
     }
 
@@ -103,11 +103,11 @@ public class JobPostingService : IJobPostingService
         try
         {
             var result = await _http.DeleteAsync($"api/JobPosting/{id}");
-            return await ReadResponse<bool>(result);
+            return await HttpResponseReader.ReadAsync<bool>(result);
         }
         catch (Exception ex)
         {
-            return Response<bool>.Fail("Error: " + ex.Message);
+            return Response<bool>.Fail(HttpResponseReader.FromException(ex));
         }
     }
 
@@ -120,11 +120,11 @@ public class JobPostingService : IJobPostingService
         {
             var result = await _http.PatchAsync(
                 $"api/JobPosting/{id}/close", null);
-            return await ReadResponse<JobPostingModel>(result);
+            return await HttpResponseReader.ReadAsync<JobPostingModel>(result);
         }
         catch (Exception ex)
         {
-            return Response<JobPostingModel>.Fail("Error: " + ex.Message);
+            return Response<JobPostingModel>.Fail(HttpResponseReader.FromException(ex));
         }
     }
 
@@ -137,28 +137,11 @@ public class JobPostingService : IJobPostingService
         {
             var result = await _http.PatchAsync(
                 $"api/JobPosting/{id}/reopen", null);
-            return await ReadResponse<JobPostingModel>(result);
+            return await HttpResponseReader.ReadAsync<JobPostingModel>(result);
         }
         catch (Exception ex)
         {
-            return Response<JobPostingModel>.Fail("Error: " + ex.Message);
-        }
-    }
-
-    // =============================================
-    // HELPER
-    // =============================================
-    private async Task<Response<T>> ReadResponse<T>(HttpResponseMessage response)
-    {
-        try
-        {
-            var result = await response.Content
-                .ReadFromJsonAsync<Response<T>>();
-            return result ?? Response<T>.Fail("Empty response");
-        }
-        catch
-        {
-            return Response<T>.Fail("Failed to parse response");
+            return Response<JobPostingModel>.Fail(HttpResponseReader.FromException(ex));
         }
     }
 
@@ -172,11 +155,11 @@ public class JobPostingService : IJobPostingService
         {
             var result = await _http.PostAsJsonAsync(
                 $"api/JobPosting/{jobId}/applications", request);
-            return await ReadResponse<JobApplicationModel>(result);
+            return await HttpResponseReader.ReadAsync<JobApplicationModel>(result);
         }
         catch (Exception ex)
         {
-            return Response<JobApplicationModel>.Fail("Error: " + ex.Message);
+            return Response<JobApplicationModel>.Fail(HttpResponseReader.FromException(ex));
         }
     }
 
@@ -189,11 +172,11 @@ public class JobPostingService : IJobPostingService
         {
             var result = await _http.GetAsync(
                 $"api/JobPosting/{jobId}/applications");
-            return await ReadResponse<List<JobApplicationModel>>(result);
+            return await HttpResponseReader.ReadAsync<List<JobApplicationModel>>(result);
         }
         catch (Exception ex)
         {
-            return Response<List<JobApplicationModel>>.Fail("Error: " + ex.Message);
+            return Response<List<JobApplicationModel>>.Fail(HttpResponseReader.FromException(ex));
         }
     }
 
@@ -206,11 +189,11 @@ public class JobPostingService : IJobPostingService
         {
             var result = await _http.GetAsync(
                 $"api/JobPosting/applications/{applicationId}");
-            return await ReadResponse<JobApplicationModel>(result);
+            return await HttpResponseReader.ReadAsync<JobApplicationModel>(result);
         }
         catch (Exception ex)
         {
-            return Response<JobApplicationModel>.Fail("Error: " + ex.Message);
+            return Response<JobApplicationModel>.Fail(HttpResponseReader.FromException(ex));
         }
     }
 
@@ -224,11 +207,11 @@ public class JobPostingService : IJobPostingService
         {
             var result = await _http.PatchAsJsonAsync(
                 $"api/JobPosting/applications/{applicationId}/status", request);
-            return await ReadResponse<JobApplicationModel>(result);
+            return await HttpResponseReader.ReadAsync<JobApplicationModel>(result);
         }
         catch (Exception ex)
         {
-            return Response<JobApplicationModel>.Fail("Error: " + ex.Message);
+            return Response<JobApplicationModel>.Fail(HttpResponseReader.FromException(ex));
         }
     }
 
@@ -241,11 +224,11 @@ public class JobPostingService : IJobPostingService
         {
             var result = await _http.DeleteAsync(
                 $"api/JobPosting/applications/{applicationId}");
-            return await ReadResponse<bool>(result);
+            return await HttpResponseReader.ReadAsync<bool>(result);
         }
         catch (Exception ex)
         {
-            return Response<bool>.Fail("Error: " + ex.Message);
+            return Response<bool>.Fail(HttpResponseReader.FromException(ex));
         }
     }
 
@@ -265,11 +248,11 @@ public class JobPostingService : IJobPostingService
 
             var result = await _http.PostAsync(
                 "api/JobPosting/applications/upload-resume", content);
-            return await ReadResponse<string>(result);
+            return await HttpResponseReader.ReadAsync<string>(result);
         }
         catch (Exception ex)
         {
-            return Response<string>.Fail("Error: " + ex.Message);
+            return Response<string>.Fail(HttpResponseReader.FromException(ex));
         }
     }
 }

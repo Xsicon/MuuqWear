@@ -22,11 +22,11 @@ public class ProfileService : IProfileService
         try
         {
             var result = await _http.GetAsync("api/Profile");
-            return await ReadResponse<ProfileModel>(result);
+            return await HttpResponseReader.ReadAsync<ProfileModel>(result);
         }
         catch (Exception ex)
         {
-            return Response<ProfileModel>.Fail("Error: " + ex.Message);
+            return Response<ProfileModel>.Fail(HttpResponseReader.FromException(ex));
         }
     }
 
@@ -38,28 +38,11 @@ public class ProfileService : IProfileService
         try
         {
             var result = await _http.PutAsJsonAsync("api/Profile", request);
-            return await ReadResponse<ProfileModel>(result);
+            return await HttpResponseReader.ReadAsync<ProfileModel>(result);
         }
         catch (Exception ex)
         {
-            return Response<ProfileModel>.Fail("Error: " + ex.Message);
-        }
-    }
-
-    // =============================================
-    // HELPER
-    // =============================================
-    private async Task<Response<T>> ReadResponse<T>(HttpResponseMessage response)
-    {
-        try
-        {
-            var result = await response.Content
-                .ReadFromJsonAsync<Response<T>>();
-            return result ?? Response<T>.Fail("Empty response");
-        }
-        catch
-        {
-            return Response<T>.Fail("Failed to parse response");
+            return Response<ProfileModel>.Fail(HttpResponseReader.FromException(ex));
         }
     }
 
@@ -71,11 +54,11 @@ public class ProfileService : IProfileService
         try
         {
             var result = await _http.DeleteAsync("api/Profile/delete-account");
-            return await ReadResponse<bool>(result);
+            return await HttpResponseReader.ReadAsync<bool>(result);
         }
         catch (Exception ex)
         {
-            return Response<bool>.Fail("Error: " + ex.Message);
+            return Response<bool>.Fail(HttpResponseReader.FromException(ex));
         }
     }
 }
