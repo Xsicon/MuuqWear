@@ -17,3 +17,6 @@
 
 # Logs
 *.lo
+/docs/Muuqwear full design ref
+_build_out/
+_build_out_api/
