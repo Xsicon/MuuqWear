@@ -187,6 +187,9 @@
 }
 
 @code {
+    [SupplyParameterFromQuery(Name = "article")]
+    public string? ArticleQuery { get; set; }
+
     private List<ContentItemModel> articles = new();
     private List<string> categories = new();
     private string activeFilter = "All";
@@ -212,8 +215,8 @@
 
             if (items.Any())
             {
-                heroArticle = items.First();
-                articles = items.Skip(1).ToList();
+                heroArticle = items.FirstOrDefault(x => x.IsFeatured) ?? items.First();
+                articles = items.Where(x => x.Id != heroArticle.Id).ToList();
             }
 
             hasMore = result.Data.HasMore;
@@ -221,6 +224,9 @@
         }
 
         isLoading = false;
+
+        if (!string.IsNullOrWhiteSpace(ArticleQuery))
+            await TryOpenArticleFromQueryAsync();
     }
 
     private async Task LoadArticles(bool reset = false)
@@ -291,6 +297,35 @@
 
         _ = JS.InvokeVoidAsync("mwSetBodyOverflowHidden");
         await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task TryOpenArticleFromQueryAsync()
+    {
+        if (string.IsNullOrWhiteSpace(ArticleQuery))
+            return;
+
+        if (Guid.TryParse(ArticleQuery, out var articleId))
+        {
+            var full = await JournalService.GetById(articleId);
+            if (full.Success && full.Data != null)
+            {
+                selectedArticle = full.Data;
+                _ = JS.InvokeVoidAsync("mwSetBodyOverflowHidden");
+                await InvokeAsync(StateHasChanged);
+            }
+
+            return;
+        }
+
+        var allVisible = heroArticle != null
+            ? articles.Append(heroArticle)
+            : articles;
+
+        var match = allVisible.FirstOrDefault(x =>
+            string.Equals(x.Slug, ArticleQuery, StringComparison.OrdinalIgnoreCase));
+
+        if (match != null)
+            await OpenArticleAsync(match);
     }
 
     private void CloseArticle()

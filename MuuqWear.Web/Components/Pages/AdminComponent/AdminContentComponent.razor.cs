@@ -60,6 +60,7 @@ public partial class AdminContentComponent : IDisposable
         NavigationManager.LocationChanged += OnLocationChanged;
         ApplyViewFromQuery();
         await LoadItems();
+        await RefreshTabCountsAsync();
     }
 
     protected override async Task OnParametersSetAsync()
@@ -71,6 +72,8 @@ public partial class AdminContentComponent : IDisposable
         {
             searchQuery = string.Empty;
             statusFilter = "all";
+            journalCategoryFilter = "All";
+            journalStatusFilter = "All";
             CloseForm();
             await LoadItems();
         }
@@ -111,6 +114,8 @@ public partial class AdminContentComponent : IDisposable
 
             if (!result.Success)
                 pageError = result.Message ?? "Failed to load content.";
+
+            SyncActiveTabCount();
         }
         finally
         {
@@ -128,6 +133,8 @@ public partial class AdminContentComponent : IDisposable
         activeView = normalized;
         searchQuery = string.Empty;
         statusFilter = "all";
+        journalCategoryFilter = "All";
+        journalStatusFilter = "All";
         CloseForm();
 
         _ = InvokeAsync(async () =>
@@ -155,6 +162,8 @@ public partial class AdminContentComponent : IDisposable
         {
             searchQuery = string.Empty;
             statusFilter = "all";
+            journalCategoryFilter = "All";
+            journalStatusFilter = "All";
             CloseForm();
             await LoadItems();
         }
@@ -189,40 +198,38 @@ public partial class AdminContentComponent : IDisposable
         statusFilter = filter;
     }
 
-    private async Task HandlePublish(Guid id)
+    private async Task<bool> HandlePublish(Guid id)
     {
         pageError = string.Empty;
         var result = await ContentService.Publish(ActiveCategory, id);
-        if (result.Success)
+        if (result.Success && result.Data != null)
         {
-            var item = items.FirstOrDefault(x => x.Id == id);
-            if (item != null)
-                item.Status = "published";
-        }
-        else
-        {
-            pageError = result.Message ?? "Failed to publish item.";
+            ReplaceItemInList(items, result.Data);
+            tabCounts[activeView] = items.Count;
+            StateHasChanged();
+            return true;
         }
 
+        pageError = result.Message ?? "Failed to publish item.";
         StateHasChanged();
+        return false;
     }
 
-    private async Task HandleUnpublish(Guid id)
+    private async Task<bool> HandleUnpublish(Guid id)
     {
         pageError = string.Empty;
         var result = await ContentService.Unpublish(ActiveCategory, id);
-        if (result.Success)
+        if (result.Success && result.Data != null)
         {
-            var item = items.FirstOrDefault(x => x.Id == id);
-            if (item != null)
-                item.Status = "draft";
-        }
-        else
-        {
-            pageError = result.Message ?? "Failed to unpublish item.";
+            ReplaceItemInList(items, result.Data);
+            tabCounts[activeView] = items.Count;
+            StateHasChanged();
+            return true;
         }
 
+        pageError = result.Message ?? "Failed to unpublish item.";
         StateHasChanged();
+        return false;
     }
 
     private string GetTabLabel(string view) =>
@@ -232,13 +239,14 @@ public partial class AdminContentComponent : IDisposable
     {
         "events" => "Manage Muuqsimo events and announcements",
         "design-history" => "Curate design archive entries for the storefront",
-        _ => "Edit website content and journal articles"
+        _ => "Edit website content and articles"
     };
 
     private string GetPublicViewUrl(ContentItemModel item) => activeView switch
     {
         "events" => EventPublicUrl(item),
         "design-history" => $"/design-history#{item.Id}",
+        "journal" => GetJournalPublicUrl(item),
         _ => "/journal"
     };
 
@@ -277,6 +285,7 @@ public partial class AdminContentComponent : IDisposable
         imageTab = "url";
         secondImageTab = "url";
         eventContent = EventPageContentSerializer.CreateDefault();
+        InitJournalFormFields();
         isFormOpen = true;
     }
 
@@ -339,22 +348,24 @@ public partial class AdminContentComponent : IDisposable
         return false;
     }
 
-    private async Task HandleCreate()
+    private async Task<bool> HandleCreate()
     {
         if (string.IsNullOrWhiteSpace(form.Title))
         {
             formError = "Title is required";
-            return;
+            return false;
         }
 
         if (!TryPrepareEventForm())
-            return;
+            return false;
 
         if (!TryApplyProductId())
-            return;
+            return false;
 
         if (!await TryValidateLinkedProductAsync())
-            return;
+            return false;
+
+        ApplyJournalPanelToForm();
 
         isSaving = true;
         formError = string.Empty;
@@ -366,14 +377,16 @@ public partial class AdminContentComponent : IDisposable
         {
             items.Insert(0, result.Data);
             isFormOpen = false;
-        }
-        else
-        {
-            formError = result.Message ?? "Failed to create item";
+            SyncActiveTabCount();
+            isSaving = false;
+            StateHasChanged();
+            return true;
         }
 
+        formError = result.Message ?? "Failed to create item";
         isSaving = false;
         StateHasChanged();
+        return false;
     }
 
     private void OpenEditForm(ContentItemModel item)
@@ -400,7 +413,15 @@ public partial class AdminContentComponent : IDisposable
             TechnicalTechniques = item.TechnicalTechniques,
             TechnicalProduction = item.TechnicalProduction,
             TechnicalAvailability = item.TechnicalAvailability,
-            ProductId = item.ProductId
+            ProductId = item.ProductId,
+            Author = item.Author,
+            Excerpt = item.Excerpt,
+            Slug = item.Slug,
+            SeoTitle = item.SeoTitle,
+            Tags = item.Tags,
+            IsFeatured = item.IsFeatured,
+            ScheduledAt = item.ScheduledAt,
+            ReadTimeMinutes = item.ReadTimeMinutes
         };
 
         formProductId = item.ProductId?.ToString() ?? string.Empty;
@@ -408,24 +429,31 @@ public partial class AdminContentComponent : IDisposable
         eventContent = ActiveCategory == ContentCategory.Events
             ? EventPageContentSerializer.Parse(item.Content)
             : new MuuqsimoPageContentModel();
+
+        if (ActiveCategory == ContentCategory.JournalArticles)
+            LoadJournalPanelFromItem(item);
+        else
+            InitJournalFormFields();
     }
 
-    private async Task HandleEdit()
+    private async Task<bool> HandleEdit()
     {
         if (string.IsNullOrWhiteSpace(form.Title))
         {
             formError = "Title is required";
-            return;
+            return false;
         }
 
         if (!TryPrepareEventForm())
-            return;
+            return false;
 
         if (!TryApplyProductId())
-            return;
+            return false;
 
         if (!await TryValidateLinkedProductAsync())
-            return;
+            return false;
+
+        ApplyJournalPanelToForm();
 
         isSaving = true;
         formError = string.Empty;
@@ -434,38 +462,22 @@ public partial class AdminContentComponent : IDisposable
         var result = await ContentService.Update(
             ActiveCategory,
             editingItem!.Id,
-            new UpdateContentItemModel
-            {
-                Title = form.Title,
-                Content = form.Content,
-                Category = form.Category,
-                ImageUrl = form.ImageUrl,
-                Designer = form.Designer,
-                Year = form.Year,
-                Inspiration = form.Inspiration,
-                Collection = form.Collection,
-                SecondImageUrl = form.SecondImageUrl,
-                TechnicalFabric = form.TechnicalFabric,
-                TechnicalTechniques = form.TechnicalTechniques,
-                TechnicalProduction = form.TechnicalProduction,
-                TechnicalAvailability = form.TechnicalAvailability,
-                ProductId = form.ProductId
-            });
+            BuildUpdateModel());
 
         if (result.Success && result.Data != null)
         {
-            var index = items.FindIndex(x => x.Id == editingItem.Id);
-            if (index >= 0)
-                items[index] = result.Data;
+            ReplaceItemInList(items, result.Data);
             isFormOpen = false;
-        }
-        else
-        {
-            formError = result.Message ?? "Failed to update item";
+            SyncActiveTabCount();
+            isSaving = false;
+            StateHasChanged();
+            return true;
         }
 
+        formError = result.Message ?? "Failed to update item";
         isSaving = false;
         StateHasChanged();
+        return false;
     }
 
     private void OpenDeleteModal(ContentItemModel item)
@@ -493,7 +505,11 @@ public partial class AdminContentComponent : IDisposable
         if (result.Success)
         {
             items.RemoveAll(x => x.Id == deletingItem.Id);
+            var title = deletingItem.Title;
             CloseDeleteModal();
+            SyncActiveTabCount();
+            if (activeView == "journal")
+                ShowToast($"\"{title}\" deleted");
         }
         else
         {

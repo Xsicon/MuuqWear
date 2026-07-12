@@ -23,14 +23,25 @@ public class ContentItemModel
     public string? TechnicalProduction { get; set; }
     public string? TechnicalAvailability { get; set; }
     public Guid? ProductId { get; set; }
+
+    // Journal-only fields (nullable; ignored for Events/DesignHistory)
+    public string? Author { get; set; }
+    public string? Excerpt { get; set; }
+    public string? Slug { get; set; }
+    public string? SeoTitle { get; set; }
+    public List<string>? Tags { get; set; }
+    public bool IsFeatured { get; set; }
+    public DateTime? ScheduledAt { get; set; }
+    public int? ReadTimeMinutes { get; set; }
 }
 
 public class CreateContentItemModel
 {
     public string Title { get; set; } = string.Empty;
     public string? Content { get; set; }
-    public string? Category { get; set; }  // ← add
-    public string? ImageUrl { get; set; }  // ← add
+    public string? Status { get; set; }
+    public string? Category { get; set; }
+    public string? ImageUrl { get; set; }
     public string? Designer { get; set; }
     public string? Year { get; set; }
     public string? Inspiration { get; set; }
@@ -41,14 +52,25 @@ public class CreateContentItemModel
     public string? TechnicalProduction { get; set; }
     public string? TechnicalAvailability { get; set; }
     public Guid? ProductId { get; set; }
+
+    // Journal-only
+    public string? Author { get; set; }
+    public string? Excerpt { get; set; }
+    public string? Slug { get; set; }
+    public string? SeoTitle { get; set; }
+    public List<string>? Tags { get; set; }
+    public bool? IsFeatured { get; set; }
+    public DateTime? ScheduledAt { get; set; }
+    public int? ReadTimeMinutes { get; set; }
 }
 
 public class UpdateContentItemModel
 {
     public string Title { get; set; } = string.Empty;
     public string? Content { get; set; }
-    public string? Category { get; set; }  // ← add
-    public string? ImageUrl { get; set; }  // ← add
+    public string? Status { get; set; }
+    public string? Category { get; set; }
+    public string? ImageUrl { get; set; }
     public string? Designer { get; set; }
     public string? Year { get; set; }
     public string? Inspiration { get; set; }
@@ -59,6 +81,16 @@ public class UpdateContentItemModel
     public string? TechnicalProduction { get; set; }
     public string? TechnicalAvailability { get; set; }
     public Guid? ProductId { get; set; }
+
+    // Journal-only
+    public string? Author { get; set; }
+    public string? Excerpt { get; set; }
+    public string? Slug { get; set; }
+    public string? SeoTitle { get; set; }
+    public List<string>? Tags { get; set; }
+    public bool? IsFeatured { get; set; }
+    public DateTime? ScheduledAt { get; set; }
+    public int? ReadTimeMinutes { get; set; }
 }
 
 public enum ContentCategory

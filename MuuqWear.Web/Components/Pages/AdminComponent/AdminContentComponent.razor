@@ -19,28 +19,19 @@
 {
     <div class="content-page">
 
-        <div class="content-header">
+        <div class="content-shell-header">
             <div>
-                <h1 class="content-header__title">Content Management</h1>
-                <p class="content-header__subtitle">
-                    @GetPageSubtitle()
-                    @if (items.Count > 0)
-                    {
-                        <span> · @items.Count item@(items.Count == 1 ? "" : "s")</span>
-                    }
-                </p>
+                <p class="content-shell-eyebrow">Creative &amp; Content</p>
+                <h1 class="content-shell-title">Content Management</h1>
+                <p class="content-shell-subtitle">Publish and manage all customer-facing content across the site</p>
             </div>
-            <div class="content-header__actions">
-                <button type="button" class="btn-primary" @onclick="OpenForm">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
-                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M5 12h14"></path>
-                        <path d="M12 5v14"></path>
-                    </svg>
-                    Create New
-                </button>
-            </div>
+            <button type="button" class="content-create-btn" @onclick="OpenForm">
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M5 12h14"></path>
+                    <path d="M12 5v14"></path>
+                </svg>
+                @GetCreateButtonLabel()
+            </button>
         </div>
 
         @if (!string.IsNullOrEmpty(pageError))
@@ -48,149 +39,341 @@
             <p class="content-error">@pageError</p>
         }
 
-        <div class="content-tabs" role="tablist" aria-label="Content type">
+        <div class="content-health-banner">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
+                <polyline points="16 7 22 7 22 13"></polyline>
+            </svg>
+            @if (activeView == "journal")
+            {
+                <div class="content-health-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    <span>@JournalLowSeoCount articles need SEO attention</span>
+                </div>
+                <div class="content-health-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6366F1" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                    <span>@JournalDraftCount articles in draft</span>
+                </div>
+                <div class="content-health-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#22C55E" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                    <span>@JournalPublishedCount articles published</span>
+                </div>
+            }
+            else
+            {
+                <div class="content-health-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6366F1" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                    <span>@items.Count(x => !x.IsPublished) @GetTabLabel(activeView).ToLowerInvariant() in draft</span>
+                </div>
+                <div class="content-health-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#22C55E" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                    <span>@items.Count(x => x.IsPublished) published</span>
+                </div>
+            }
+        </div>
+
+        <div class="content-tabs-ref" role="tablist" aria-label="Content type">
             @foreach (var tab in TabViews)
             {
                 <button type="button"
                         role="tab"
                         aria-selected="@(activeView == tab.View)"
-                        class="content-tabs__item @(activeView == tab.View ? "content-tabs__item--active" : "")"
+                        class="content-tabs-ref__item @(activeView == tab.View ? "content-tabs-ref__item--active" : "")"
                         @onclick="() => SwitchTab(tab.View)">
-                    @tab.Label
+                    @if (tab.View == "journal")
+                    {
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+                    }
+                    else if (tab.View == "design-history")
+                    {
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+                    }
+                    else
+                    {
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                    }
+                    @(tab.View == "journal" ? "Journal" : tab.View == "design-history" ? "Design History" : "Events")
+                    <span class="content-tabs-ref__count">@GetTabCount(tab.View)</span>
                 </button>
             }
         </div>
 
-        <div class="content-search">
-            <svg class="content-search__icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <circle cx="11" cy="11" r="8"></circle>
-                <path d="m21 21-4.3-4.3"></path>
-            </svg>
-            <input class="content-search__input"
-                   type="search"
-                   placeholder="Search by title…"
-                   @bind="searchQuery"
-                   @bind:event="oninput" />
-        </div>
+        @if (activeView == "journal")
+        {
+            <div class="content-stats-grid content-stats-grid--4">
+                <div class="content-stat-card">
+                    <div class="content-stat-card__icon" style="background-color: #1E2A4718;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1E2A47" stroke-width="2" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                    </div>
+                    <div>
+                        <p class="content-stat-card__value">@JournalTotalViews.ToString("N0")</p>
+                        <p class="content-stat-card__label">Total Views</p>
+                    </div>
+                </div>
+                <div class="content-stat-card">
+                    <div class="content-stat-card__icon" style="background-color: #22C55E18;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22C55E" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                    </div>
+                    <div>
+                        <p class="content-stat-card__value">@JournalPublishedCount</p>
+                        <p class="content-stat-card__label">Published</p>
+                    </div>
+                </div>
+                <div class="content-stat-card">
+                    <div class="content-stat-card__icon" style="background-color: #F59E0B18;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                    </div>
+                    <div>
+                        <p class="content-stat-card__value">@JournalDraftCount</p>
+                        <p class="content-stat-card__label">Drafts</p>
+                    </div>
+                </div>
+                <div class="content-stat-card">
+                    <div class="content-stat-card__icon" style="background-color: #6366F118;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6366F1" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    </div>
+                    <div>
+                        <p class="content-stat-card__value">0</p>
+                        <p class="content-stat-card__label">Scheduled</p>
+                    </div>
+                </div>
+            </div>
 
-        <div class="content-filters">
-            <button type="button"
-                    class="content-filter-tab @(statusFilter == "all" ? "active" : "inactive")"
-                    @onclick='() => SetStatusFilter("all")'>
-                All
-            </button>
-            <button type="button"
-                    class="content-filter-tab @(statusFilter == "published" ? "active" : "inactive")"
-                    @onclick='() => SetStatusFilter("published")'>
-                Published
-            </button>
-            <button type="button"
-                    class="content-filter-tab @(statusFilter == "draft" ? "active" : "inactive")"
-                    @onclick='() => SetStatusFilter("draft")'>
-                Draft
-            </button>
-        </div>
+            <div class="content-journal-toolbar">
+                <div class="content-journal-search">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+                    <input type="search"
+                           placeholder="Search articles or authors..."
+                           @bind="searchQuery"
+                           @bind:event="oninput" />
+                </div>
+                <div class="content-pill-group">
+                    @foreach (var cat in JournalCategories)
+                    {
+                        <button type="button"
+                                class="content-pill @(journalCategoryFilter == cat ? "content-pill--filled" : "")"
+                                @onclick="() => SetJournalCategoryFilter(cat)">
+                            @cat
+                        </button>
+                    }
+                </div>
+                <div class="content-pill-group content-pill-group--muted">
+                    @foreach (var status in JournalStatuses)
+                    {
+                        <button type="button"
+                                class="content-pill @(journalStatusFilter == status ? "content-pill--soft" : "")"
+                                @onclick="() => SetJournalStatusFilter(status)">
+                            @status
+                        </button>
+                    }
+                </div>
+            </div>
 
-        <div class="content-list">
-            @if (isLoading)
-            {
-                <p class="content-empty">Loading…</p>
-            }
-            else if (!FilteredItems.Any())
-            {
-                <p class="content-empty">
-                    @(items.Count == 0 ? "No items yet. Create your first entry." : "No items match your filters.")
-                </p>
-            }
-            else
-            {
-                @foreach (var item in FilteredItems)
+            <div class="content-journal-list">
+                @if (isLoading)
                 {
-                    <article class="content-card">
-                        <div class="content-card__main">
-                            <div class="content-card__title-row">
-                                <h2 class="content-card__title">@item.Title</h2>
-                                <span class="content-badge @(item.IsPublished ? "content-badge--published" : "content-badge--draft")">
-                                    @(item.IsPublished ? "Published" : "Draft")
-                                </span>
+                    <p class="content-empty">Loading…</p>
+                }
+                else if (!FilteredJournalItems.Any())
+                {
+                    <div class="content-journal-empty">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><line x1="21" y1="10" x2="3" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="21" y1="18" x2="3" y2="18"></line></svg>
+                        <p>No articles match your filters.</p>
+                    </div>
+                }
+                else
+                {
+                    @foreach (var item in FilteredJournalItems)
+                    {
+                        var seoScore = JournalSeoScorer.Score(item);
+                        var seoColor = GetSeoBarColor(seoScore);
+                        <article class="content-journal-row">
+                            <div class="content-journal-row__thumb">
+                                <img src="@GetJournalThumbnail(item)" alt="" />
                             </div>
-                            <p class="content-card__meta">
-                                @FormatItemDate(item)
-                                @if (item.IsPublished)
-                                {
-                                    <span> · @item.Views.ToString("N0") views</span>
-                                }
-                            </p>
-                        </div>
-
-                        <div class="content-card__actions">
-                            <button type="button"
-                                    class="content-icon-btn"
-                                    title="Edit"
-                                    aria-label="Edit @item.Title"
-                                    @onclick="() => OpenEditForm(item)">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                    <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                    <path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"></path>
-                                </svg>
-                            </button>
-
-                            @if (item.IsPublished)
-                            {
-                                <a class="content-icon-btn"
-                                   href="@GetPublicViewUrl(item)"
+                            <div class="content-journal-row__main">
+                                <div class="content-journal-row__badges">
+                                    <span class="content-cat @GetCategoryBadgeClass(item.Category)">@GetCategoryLabel(item.Category)</span>
+                                    <span class="content-status-badge @(item.IsPublished ? "content-status-badge--published" : item.Status == "scheduled" ? "content-status-badge--scheduled" : "content-status-badge--draft")">
+                                        <span class="content-status-badge__dot"></span>
+                                        @(item.IsPublished ? "Published" : "Draft")
+                                    </span>
+                                </div>
+                                <p class="content-journal-row__title">@item.Title</p>
+                                <p class="content-journal-row__meta">@GetJournalAuthorLine(item)</p>
+                            </div>
+                            <div class="content-journal-row__stats">
+                                <div>
+                                    <p class="content-journal-row__stat-value">@item.Views.ToString("N0")</p>
+                                    <p class="content-journal-row__stat-label">views</p>
+                                </div>
+                                <div>
+                                    <div class="content-seo-bar">
+                                        <div class="content-seo-bar__track">
+                                            <div class="content-seo-bar__fill" style="width: @(seoScore)%; background-color: @seoColor;"></div>
+                                        </div>
+                                        <span class="content-seo-bar__score" style="color: @seoColor;">@seoScore</span>
+                                    </div>
+                                    <p class="content-journal-row__stat-label">SEO</p>
+                                </div>
+                            </div>
+                            <div class="content-journal-row__actions">
+                                <button type="button" class="content-row-icon-btn" title="Edit" @onclick="() => OpenEditForm(item)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"></path></svg>
+                                </button>
+                                <a class="content-row-icon-btn"
+                                   href="@GetJournalPublicUrl(item)"
                                    target="_blank"
                                    rel="noopener noreferrer"
-                                   title="View on site"
-                                   aria-label="View @item.Title on site">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                        <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"></path>
-                                        <circle cx="12" cy="12" r="3"></circle>
-                                    </svg>
+                                   title="@(item.IsPublished ? "Preview on site" : "Publish to preview on site")"
+                                   aria-disabled="@(!item.IsPublished)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M7 7h10v10"></path><path d="M7 17 17 7"></path></svg>
                                 </a>
-                            }
-
-                            @if (item.IsPublished)
-                            {
                                 <button type="button"
-                                        class="content-action-btn content-action-btn--secondary"
-                                        @onclick="() => HandleUnpublish(item.Id)">
-                                    Unpublish
+                                        class="content-row-publish-btn @(item.IsPublished ? "content-row-publish-btn--muted" : "")"
+                                        @onclick="() => ToggleJournalPublishAsync(item)">
+                                    @(item.IsPublished ? "Unpublish" : "Publish")
                                 </button>
-                            }
-                            else
-                            {
-                                <button type="button"
-                                        class="content-action-btn content-action-btn--primary"
-                                        @onclick="() => HandlePublish(item.Id)">
-                                    Publish
+                                <button type="button" class="content-row-icon-btn content-row-icon-btn--danger" title="Delete" @onclick="() => OpenDeleteModal(item)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
                                 </button>
-                            }
-
-                            <button type="button"
-                                    class="content-icon-btn content-icon-btn--danger"
-                                    title="Delete"
-                                    aria-label="Delete @item.Title"
-                                    @onclick="() => OpenDeleteModal(item)">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                    <path d="M3 6h18"></path>
-                                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
-                                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
-                                </svg>
-                            </button>
-                        </div>
-                    </article>
+                            </div>
+                        </article>
+                    }
                 }
-            }
-        </div>
+            </div>
+        }
+        else
+        {
+            <div class="content-search">
+                <svg class="content-search__icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.3-4.3"></path>
+                </svg>
+                <input class="content-search__input"
+                       type="search"
+                       placeholder="Search by title…"
+                       @bind="searchQuery"
+                       @bind:event="oninput" />
+            </div>
+
+            <div class="content-filters">
+                <button type="button"
+                        class="content-filter-tab @(statusFilter == "all" ? "active" : "inactive")"
+                        @onclick='() => SetStatusFilter("all")'>
+                    All
+                </button>
+                <button type="button"
+                        class="content-filter-tab @(statusFilter == "published" ? "active" : "inactive")"
+                        @onclick='() => SetStatusFilter("published")'>
+                    Published
+                </button>
+                <button type="button"
+                        class="content-filter-tab @(statusFilter == "draft" ? "active" : "inactive")"
+                        @onclick='() => SetStatusFilter("draft")'>
+                    Draft
+                </button>
+            </div>
+
+            <div class="content-list">
+                @if (isLoading)
+                {
+                    <p class="content-empty">Loading…</p>
+                }
+                else if (!FilteredItems.Any())
+                {
+                    <p class="content-empty">
+                        @(items.Count == 0 ? "No items yet. Create your first entry." : "No items match your filters.")
+                    </p>
+                }
+                else
+                {
+                    @foreach (var item in FilteredItems)
+                    {
+                        <article class="content-card">
+                            <div class="content-card__body">
+                                <div class="content-card__main">
+                                    <div class="content-card__title-row">
+                                        <h2 class="content-card__title">@item.Title</h2>
+                                        <span class="content-badge @(item.IsPublished ? "content-badge--published" : "content-badge--draft")">
+                                            @(item.IsPublished ? "Published" : "Draft")
+                                        </span>
+                                    </div>
+                                    <p class="content-card__meta">
+                                        @FormatItemDate(item) · @item.Views.ToString("N0") views
+                                    </p>
+                                </div>
+
+                                <div class="content-card__actions">
+                                    <button type="button"
+                                            class="content-icon-btn"
+                                            title="Edit"
+                                            aria-label="Edit @item.Title"
+                                            @onclick="() => OpenEditForm(item)">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                             viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                            <path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"></path>
+                                        </svg>
+                                    </button>
+
+                                    @if (item.IsPublished)
+                                    {
+                                        <a class="content-icon-btn"
+                                           href="@GetPublicViewUrl(item)"
+                                           target="_blank"
+                                           rel="noopener noreferrer"
+                                           title="View on site"
+                                           aria-label="View @item.Title on site">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"></path>
+                                                <circle cx="12" cy="12" r="3"></circle>
+                                            </svg>
+                                        </a>
+                                    }
+
+                                    @if (item.IsPublished)
+                                    {
+                                        <button type="button"
+                                                class="btn-primary content-card__publish-btn"
+                                                @onclick="() => HandleUnpublish(item.Id)">
+                                            Unpublish
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button type="button"
+                                                class="btn-primary content-card__publish-btn"
+                                                @onclick="() => HandlePublish(item.Id)">
+                                            Publish
+                                        </button>
+                                    }
+
+                                    <button type="button"
+                                            class="content-icon-btn content-icon-btn--danger"
+                                            title="Delete"
+                                            aria-label="Delete @item.Title"
+                                            @onclick="() => OpenDeleteModal(item)">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                             viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <path d="M3 6h18"></path>
+                                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </article>
+                    }
+                }
+            </div>
+        }
     </div>
 }
 
@@ -198,82 +381,142 @@
 {
     <div class="form-overlay" @onclick="CloseForm"></div>
 
-    <div class="form-panel @(activeView == "events" ? "form-panel--wide" : "")">
+    <div class="form-panel @(activeView == "events" ? "form-panel--wide" : ActiveCategory == ContentCategory.JournalArticles ? "form-panel--journal" : "")">
 
-        <div class="form-panel__header">
-            <p class="form-panel__title">
-                @(isEditMode ? "Edit" : "Create") @GetTabLabel(activeView)
-            </p>
-            <button type="button" class="form-panel__close" @onclick="CloseForm" aria-label="Close">✕</button>
+        <div class="form-panel__header form-panel__header--ref">
+            <div>
+                <p class="form-panel__eyebrow">
+                    @(ActiveCategory == ContentCategory.JournalArticles ? "Journal" : ActiveCategory == ContentCategory.DesignHistory ? "Design History" : "Events")
+                </p>
+                <h3 class="form-panel__title">
+                    @(isEditMode
+                        ? ActiveCategory == ContentCategory.JournalArticles ? "Edit Article" : $"Edit {GetTabLabel(activeView)}"
+                        : ActiveCategory == ContentCategory.JournalArticles ? "New Article" : $"Create {GetTabLabel(activeView)}")
+                </h3>
+            </div>
+            <button type="button" class="form-panel__close-ref" @onclick="CloseForm" aria-label="Close">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+            </button>
         </div>
 
         @if (!string.IsNullOrEmpty(formError))
         {
-            <p class="form-error">@formError</p>
+            <p class="form-error form-error--inset">@formError</p>
         }
 
-        <div class="form-fields">
-
-            <div class="form-field">
-                <label class="form-label">Title *</label>
-                <input @bind="form.Title"
-                       placeholder="Enter title"
-                       class="form-input" />
-            </div>
+        <div class="form-fields form-fields--ref">
 
             @if (ActiveCategory == ContentCategory.JournalArticles)
             {
-                <div class="form-field">
-                    <label class="form-label">Category</label>
-                    <select @bind="form.Category" class="form-input">
-                        <option value="">Select category</option>
-                        <option value="Design">Design</option>
-                        <option value="Innovation">Innovation</option>
-                        <option value="Lifestyle">Lifestyle</option>
-                        <option value="Tech">Tech</option>
-                    </select>
-                </div>
-
-                <div class="form-field">
-                    <label class="form-label">Image</label>
-
-                    <div class="form-segment-tabs">
-                        <button type="button"
-                                class="form-segment-tab @(imageTab == "url" ? "active" : "")"
-                                @onclick='() => imageTab = "url"'>
-                            URL
-                        </button>
-                        <button type="button"
-                                class="form-segment-tab @(imageTab == "upload" ? "active" : "")"
-                                @onclick='() => imageTab = "upload"'>
-                            Upload
-                        </button>
-                    </div>
-
-                    @if (imageTab == "url")
+                <div class="form-image-drop">
+                    @if (!string.IsNullOrEmpty(form.ImageUrl))
                     {
-                        <input @bind="form.ImageUrl"
-                               placeholder="https://..."
-                               class="form-input" />
+                        <img src="@form.ImageUrl" alt="" class="form-image-drop__preview" />
                     }
                     else
                     {
-                        <InputFile OnChange="HandleImageUpload"
-                                   accept="image/*"
-                                   class="form-input" />
-
-                        @if (isUploading)
-                        {
-                            <p class="form-hint">Uploading…</p>
-                        }
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                        <p class="form-image-drop__title">Drop image or click to upload</p>
+                        <p class="form-image-drop__hint">1200 × 800 px recommended</p>
                     }
+                </div>
 
-                    @if (!string.IsNullOrEmpty(form.ImageUrl))
+                <div class="form-grid-2">
+                    <div class="form-field form-field--span-2">
+                        <label class="form-label">Title</label>
+                        <input @bind="form.Title" @bind:after="OnJournalTitleChanged" placeholder="Article headline..." class="form-input form-input--ref" />
+                    </div>
+                    <div class="form-field">
+                        <label class="form-label">Category</label>
+                        <select @bind="form.Category" @bind:after="OnJournalFormFieldChanged" class="form-input form-input--ref">
+                            <option value="Culture">Culture</option>
+                            <option value="Design">Design</option>
+                            <option value="Innovation">Innovation</option>
+                            <option value="Lifestyle">Lifestyle</option>
+                            <option value="Tech">Tech</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label class="form-label">Author</label>
+                        <input value="Muuqwear Editorial" disabled class="form-input form-input--ref form-input--disabled" />
+                    </div>
+                </div>
+
+                <div class="form-field">
+                    <label class="form-label">Excerpt</label>
+                    <textarea @bind="journalExcerpt" @bind:after="OnJournalExcerptChanged" rows="2" placeholder="Short summary shown in listings and search previews..." class="form-textarea form-textarea--ref form-textarea--compact"></textarea>
+                </div>
+
+                <div class="form-field">
+                    <label class="form-label">Image URL</label>
+                    <div class="form-segment-tabs">
+                        <button type="button" class="form-segment-tab @(imageTab == "url" ? "active" : "")" @onclick='() => imageTab = "url"'>URL</button>
+                        <button type="button" class="form-segment-tab @(imageTab == "upload" ? "active" : "")" @onclick='() => imageTab = "upload"'>Upload</button>
+                    </div>
+                    @if (imageTab == "url")
                     {
-                        <img src="@form.ImageUrl"
-                             alt="Preview"
-                             class="form-image-preview" />
+                        <input @bind="form.ImageUrl" @bind:after="OnJournalFormFieldChanged" placeholder="https://..." class="form-input form-input--ref" />
                     }
+                    else
+                    {
+                        <InputFile OnChange="HandleImageUpload" accept="image/*" class="form-input form-input--ref" />
+                        @if (isUploading) { <p class="form-hint">Uploading…</p> }
+                    }
+                </div>
+
+                <div class="form-field">
+                    <label class="form-label">Body Content</label>
+                    <div class="form-editor-toolbar">
+                        @foreach (var tool in new[] { "B", "I", "H2", "H3", "Link" })
+                        {
+                            <button type="button" class="form-editor-toolbar__btn">@tool</button>
+                        }
+                    </div>
+                    <textarea @bind="form.Content" @bind:after="OnJournalFormFieldChanged" rows="8" placeholder="Write the full article body here..." class="form-textarea form-textarea--ref form-textarea--toolbar"></textarea>
+                </div>
+
+                <div class="form-seo-block">
+                    <div class="form-seo-block__header">
+                        <p class="form-label" style="margin:0;">SEO</p>
+                        @{
+                            var panelSeo = JournalFormSeoScore;
+                            var panelSeoColor = GetSeoBarColor(panelSeo);
+                        }
+                        <div class="content-seo-bar">
+                            <div class="content-seo-bar__track">
+                                <div class="content-seo-bar__fill" style="width: @(panelSeo)%; background-color: @panelSeoColor;"></div>
+                            </div>
+                            <span class="content-seo-bar__score" style="color: @panelSeoColor;">@panelSeo</span>
+                        </div>
+                    </div>
+                    <p class="form-seo-hint">@JournalFormSeoSuggestion</p>
+                    <input @bind="journalSeoTitle" @bind:after="OnJournalFormFieldChanged" placeholder="SEO title..." class="form-input form-input--ref form-input--seo-title" />
+                    <input value="@GetJournalSlugPreview()" readonly class="form-input form-input--ref form-input--slug" />
+                </div>
+
+                <div class="form-featured-toggle">
+                    <div class="form-featured-toggle__copy">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                        <div>
+                            <p class="form-featured-toggle__title">Set as Hero Article</p>
+                            <p class="form-featured-toggle__hint">Appears as the featured story on the Journal page.</p>
+                        </div>
+                    </div>
+                    <button type="button"
+                            class="form-toggle @(journalIsFeatured ? "form-toggle--on" : "")"
+                            @onclick="() => journalIsFeatured = !journalIsFeatured"
+                            aria-pressed="@journalIsFeatured">
+                        <span class="form-toggle__knob"></span>
+                    </button>
+                </div>
+            }
+            else
+            {
+                <div class="form-field">
+                    <label class="form-label">Title *</label>
+                    <input @bind="form.Title"
+                           placeholder="Enter title"
+                           class="form-input" />
                 </div>
             }
 
@@ -437,16 +680,7 @@
                            placeholder="e.g. Core collection, always available"
                            class="form-input" />
                 </div>
-            }
 
-            @if (ActiveCategory == ContentCategory.Events)
-            {
-                <EventPageEditorComponent Model="eventContent"
-                                          OnError="SetEventEditorError" />
-            }
-
-            @if (ActiveCategory != ContentCategory.Events)
-            {
                 <div class="form-field">
                     <label class="form-label">Content</label>
                     <textarea @bind="form.Content"
@@ -456,14 +690,37 @@
                 </div>
             }
 
+            @if (ActiveCategory == ContentCategory.Events)
+            {
+                <EventPageEditorComponent Model="eventContent"
+                                          OnError="SetEventEditorError" />
+            }
         </div>
 
-        <button type="button"
-                class="form-submit"
-                @onclick="@(isEditMode ? HandleEdit : HandleCreate)"
-                disabled="@isSaving">
-            @(isSaving ? "Saving…" : isEditMode ? "Save Changes" : "Save as Draft")
-        </button>
+        @if (ActiveCategory == ContentCategory.JournalArticles)
+        {
+            <div class="form-panel__footer-ref">
+                <button type="button" class="form-footer-btn form-footer-btn--ghost" @onclick="CloseForm">Cancel</button>
+                <div class="form-panel__footer-actions">
+                    <button type="button" class="form-footer-btn form-footer-btn--outline" @onclick="HandleJournalSaveDraftAsync" disabled="@isSaving">
+                        Save Draft
+                    </button>
+                    <button type="button" class="form-footer-btn form-footer-btn--primary" @onclick="HandleJournalPublishAsync" disabled="@(isSaving || string.IsNullOrWhiteSpace(form.Title))">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                        Publish
+                    </button>
+                </div>
+            </div>
+        }
+        else
+        {
+            <button type="button"
+                    class="form-submit"
+                    @onclick="@(isEditMode ? HandleEdit : HandleCreate)"
+                    disabled="@isSaving">
+                @(isSaving ? "Saving…" : isEditMode ? "Save Changes" : "Save as Draft")
+            </button>
+        }
 
     </div>
 }
@@ -471,23 +728,29 @@
 @if (isDeleteModalOpen && deletingItem != null)
 {
     <div class="content-delete-overlay" @onclick="CloseDeleteModal">
-        <div class="content-delete-modal" @onclick:stopPropagation="true">
-            <h3 class="content-delete-modal__title">Delete @GetTabLabel(activeView)?</h3>
-            <p class="content-delete-modal__text">
-                Are you sure you want to delete <strong>@deletingItem.Title</strong>?
-                This action cannot be undone.
-            </p>
-            <div class="content-delete-modal__actions">
-                <button type="button" class="content-action-btn content-action-btn--secondary" @onclick="CloseDeleteModal">
-                    Cancel
-                </button>
+        <div class="content-delete-modal content-delete-modal--ref" @onclick:stopPropagation="true">
+            <div class="content-delete-modal__icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+            </div>
+            <h3 class="content-delete-modal__title">Delete "@deletingItem.Title"?</h3>
+            <p class="content-delete-modal__text">This action cannot be undone.</p>
+            <div class="content-delete-modal__actions content-delete-modal__actions--ref">
+                <button type="button" class="content-delete-btn content-delete-btn--ghost" @onclick="CloseDeleteModal">Cancel</button>
                 <button type="button"
-                        class="content-action-btn content-action-btn--danger"
+                        class="content-delete-btn content-delete-btn--danger"
                         @onclick="ConfirmDelete"
                         disabled="@isDeleting">
                     @(isDeleting ? "Deleting…" : "Delete")
                 </button>
             </div>
         </div>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(toastMessage))
+{
+    <div class="content-toast">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22C55E" stroke-width="2" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+        <span>@toastMessage</span>
     </div>
 }
