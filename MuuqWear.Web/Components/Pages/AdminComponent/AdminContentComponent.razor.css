@@ -702,7 +702,7 @@ select.form-input {
     letter-spacing: 0.18em;
     text-transform: uppercase;
     font-weight: 600;
-    color: #A9B7CC;
+    color: var(--admin-muted, #A9B7CC);
     margin: 0 0 4px;
 }
 
@@ -710,14 +710,14 @@ select.form-input {
     font-family: 'Playfair Display', serif;
     font-size: 24px;
     font-weight: 600;
-    color: #1E2A47;
+    color: var(--admin-text, #1E2A47);
     margin: 0;
     line-height: 1.2;
 }
 
 .content-shell-subtitle {
     font-size: 14px;
-    color: #7A8BA8;
+    color: var(--admin-muted, #7A8BA8);
     margin: 4px 0 0;
 }
 
@@ -728,8 +728,8 @@ select.form-input {
     padding: 10px 20px;
     border: none;
     border-radius: 8px;
-    background: #1E2A47;
-    color: #fff;
+    background: var(--admin-active, #1E2A47);
+    color: var(--admin-active-text, #fff);
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
@@ -749,9 +749,9 @@ select.form-input {
     padding: 16px;
     margin-bottom: 24px;
     border-radius: 12px;
-    background: #EEF1F8;
-    border: 1px solid #D8E0EF;
-    color: #1E2A47;
+    background: var(--admin-hover, #EEF1F8);
+    border: 1px solid var(--admin-border, #D8E0EF);
+    color: var(--admin-text, #1E2A47);
 }
 
 .content-health-item {
@@ -760,14 +760,14 @@ select.form-input {
     gap: 6px;
     font-size: 12px;
     font-weight: 500;
-    color: #4A5C7A;
+    color: var(--admin-muted, #4A5C7A);
 }
 
 .content-tabs-ref {
     display: flex;
     gap: 4px;
     margin-bottom: 24px;
-    border-bottom: 1px solid #EEF1F6;
+    border-bottom: 1px solid var(--admin-border, #EEF1F6);
     overflow-x: auto;
 }
 
@@ -780,7 +780,7 @@ select.form-input {
     border: none;
     border-bottom: 2px solid transparent;
     background: transparent;
-    color: #7A8BA8;
+    color: var(--admin-muted, #7A8BA8);
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
@@ -790,12 +790,12 @@ select.form-input {
 }
 
 .content-tabs-ref__item:hover {
-    color: #1E2A47;
+    color: var(--admin-text, #1E2A47);
 }
 
 .content-tabs-ref__item--active {
-    color: #1E2A47;
-    border-bottom-color: #1E2A47;
+    color: var(--admin-text, #1E2A47);
+    border-bottom-color: var(--admin-text, #1E2A47);
 }
 
 .content-tabs-ref__count {
@@ -803,13 +803,13 @@ select.form-input {
     font-weight: 700;
     padding: 2px 6px;
     border-radius: 999px;
-    background: #F3F4F6;
-    color: #9CA3AF;
+    background: var(--admin-hover, #F3F4F6);
+    color: var(--admin-muted, #9CA3AF);
 }
 
 .content-tabs-ref__item--active .content-tabs-ref__count {
-    background: #EEF1F8;
-    color: #1E2A47;
+    background: var(--admin-hover, #EEF1F8);
+    color: var(--admin-text, #1E2A47);
 }
 
 .content-stats-grid {
@@ -834,8 +834,8 @@ select.form-input {
     gap: 16px;
     padding: 16px;
     border-radius: 12px;
-    background: #F8FAFD;
-    border: 1px solid #EEF1F6;
+    background: var(--admin-input-bg, #F8FAFD);
+    border: 1px solid var(--admin-border, #EEF1F6);
 }
 
 .content-stat-card__icon {
@@ -851,14 +851,14 @@ select.form-input {
 .content-stat-card__value {
     font-size: 20px;
     font-weight: 700;
-    color: #1E2A47;
+    color: var(--admin-text, #1E2A47);
     margin: 0;
     line-height: 1.2;
 }
 
 .content-stat-card__label {
     font-size: 12px;
-    color: #7A8BA8;
+    color: var(--admin-muted, #7A8BA8);
     margin: 0;
 }
 
@@ -881,24 +881,24 @@ select.form-input {
 .content-journal-search svg {
     position: absolute;
     left: 12px;
-    color: #A9B7CC;
+    color: var(--admin-muted, #A9B7CC);
     pointer-events: none;
 }
 
 .content-journal-search input {
     width: 100%;
     padding: 8px 16px 8px 36px;
-    border: 1px solid #D0D8E6;
+    border: 1px solid var(--admin-border, #D0D8E6);
     border-radius: 8px;
-    background: #FAFBFD;
+    background: var(--admin-input-bg, #FAFBFD);
     font-size: 14px;
-    color: #1E2A47;
+    color: var(--admin-text, #1E2A47);
     outline: none;
     font-family: inherit;
 }
 
 .content-journal-search input:focus {
-    border-color: #1E2A47;
+    border-color: var(--admin-text, #1E2A47);
 }
 
 .content-pill-group {
@@ -924,9 +924,9 @@ select.form-input {
 .content-pill {
     padding: 6px 12px;
     border-radius: 999px;
-    border: 1px solid #D0D8E6;
+    border: 1px solid var(--admin-border, #D0D8E6);
     background: transparent;
-    color: #7A8BA8;
+    color: var(--admin-muted, #7A8BA8);
     font-size: 12px;
     font-weight: 500;
     cursor: pointer;
@@ -937,15 +937,15 @@ select.form-input {
 }
 
 .content-pill--filled {
-    background: #1E2A47;
-    border-color: #1E2A47;
-    color: #fff;
+    background: var(--admin-active, #1E2A47);
+    border-color: var(--admin-active, #1E2A47);
+    color: var(--admin-active-text, #fff);
 }
 
 .content-pill--soft {
-    background: #EEF1F8;
-    border-color: #1E2A47;
-    color: #1E2A47;
+    background: var(--admin-hover, #EEF1F8);
+    border-color: var(--admin-active, #1E2A47);
+    color: var(--admin-text, #1E2A47);
 }
 
 .content-journal-list {
@@ -960,8 +960,8 @@ select.form-input {
     gap: 16px;
     padding: 12px;
     border-radius: 12px;
-    border: 1px solid #EEF1F6;
-    background: #fff;
+    border: 1px solid var(--admin-border, #EEF1F6);
+    background: var(--admin-surface, #fff);
     transition: box-shadow 0.2s;
 }
 
@@ -979,7 +979,7 @@ select.form-input {
     border-radius: 8px;
     overflow: hidden;
     flex-shrink: 0;
-    background: #E6ECF5;
+    background: var(--admin-input-bg, #E6ECF5);
 }
 
 .content-journal-row__thumb img {
@@ -1062,7 +1062,7 @@ select.form-input {
 .content-journal-row__title {
     font-size: 14px;
     font-weight: 500;
-    color: #1E2A47;
+    color: var(--admin-text, #1E2A47);
     margin: 0;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1071,7 +1071,7 @@ select.form-input {
 
 .content-journal-row__meta {
     font-size: 12px;
-    color: #A9B7CC;
+    color: var(--admin-muted, #A9B7CC);
     margin: 2px 0 0;
 }
 
@@ -1091,14 +1091,14 @@ select.form-input {
 .content-journal-row__stat-value {
     font-size: 14px;
     font-weight: 600;
-    color: #1E2A47;
+    color: var(--admin-text, #1E2A47);
     margin: 0;
     text-align: right;
 }
 
 .content-journal-row__stat-label {
     font-size: 12px;
-    color: #A9B7CC;
+    color: var(--admin-muted, #A9B7CC);
     margin: 2px 0 0;
     text-align: right;
 }
@@ -1113,7 +1113,7 @@ select.form-input {
     width: 64px;
     height: 6px;
     border-radius: 999px;
-    background: #E5E7EB;
+    background: var(--admin-border, #E5E7EB);
     overflow: hidden;
 }
 
@@ -1151,14 +1151,14 @@ select.form-input {
     border: none;
     border-radius: 8px;
     background: transparent;
-    color: #4A5C7A;
+    color: var(--admin-muted, #4A5C7A);
     cursor: pointer;
     text-decoration: none;
     transition: background 0.2s;
 }
 
 .content-row-icon-btn:hover {
-    background: #EEF1F8;
+    background: var(--admin-hover, #EEF1F8);
 }
 
 .content-row-icon-btn--danger:hover {
@@ -1169,9 +1169,9 @@ select.form-input {
 .content-row-publish-btn {
     padding: 6px 12px;
     border-radius: 8px;
-    border: 1px solid #1E2A47;
-    background: #EEF1F8;
-    color: #1E2A47;
+    border: 1px solid var(--admin-active, #1E2A47);
+    background: var(--admin-hover, #EEF1F8);
+    color: var(--admin-text, #1E2A47);
     font-size: 12px;
     font-weight: 500;
     cursor: pointer;
@@ -1180,19 +1180,19 @@ select.form-input {
 }
 
 .content-row-publish-btn--muted {
-    border-color: #D0D8E6;
+    border-color: var(--admin-border, #D0D8E6);
     background: transparent;
-    color: #7A8BA8;
+    color: var(--admin-muted, #7A8BA8);
 }
 
 .content-journal-empty {
     padding: 64px 16px;
     text-align: center;
-    color: #7A8BA8;
+    color: var(--admin-muted, #7A8BA8);
 }
 
 .content-journal-empty svg {
-    color: #D0D8E6;
+    color: var(--admin-border, #D0D8E6);
     margin: 0 auto 12px;
     display: block;
 }
@@ -1217,8 +1217,8 @@ select.form-input {
     z-index: 10;
     margin: 0;
     padding: 20px 28px;
-    background: #fff;
-    border-bottom: 1px solid #E5E9F2;
+    background: var(--admin-surface, #fff);
+    border-bottom: 1px solid var(--admin-border, #E5E9F2);
 }
 
 .form-panel--journal .form-fields--ref {
@@ -1242,7 +1242,7 @@ select.form-input {
     letter-spacing: 0.16em;
     text-transform: uppercase;
     font-weight: 600;
-    color: #A9B7CC;
+    color: var(--admin-muted, #A9B7CC);
     margin: 0;
 }
 
@@ -1250,7 +1250,7 @@ select.form-input {
     font-family: 'Playfair Display', serif;
     font-size: 18px;
     font-weight: 600;
-    color: #1E2A47;
+    color: var(--admin-text, #1E2A47);
     margin: 2px 0 0;
 }
 
@@ -1260,7 +1260,7 @@ select.form-input {
     border: none;
     border-radius: 999px;
     background: transparent;
-    color: #7A8BA8;
+    color: var(--admin-muted, #7A8BA8);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -1268,19 +1268,21 @@ select.form-input {
 }
 
 .form-panel__close-ref:hover {
-    background: #F3F4F6;
+    background: var(--admin-hover, #F3F4F6);
 }
 
 .form-input--ref,
 .form-textarea--ref {
     border-radius: 8px;
-    border-color: #D0D8E6;
+    border-color: var(--admin-border, #D0D8E6);
     padding: 10px 16px;
+    background: var(--admin-input-bg, #fff);
+    color: var(--admin-text, #1E2A47);
 }
 
 .form-input--disabled {
-    background: #F8FAFD;
-    color: #7A8BA8;
+    background: var(--admin-input-bg, #F8FAFD);
+    color: var(--admin-muted, #7A8BA8);
 }
 
 .form-grid-2 {
@@ -1296,9 +1298,9 @@ select.form-input {
 .form-image-drop {
     width: 100%;
     height: 144px;
-    border: 2px dashed #D0D8E6;
+    border: 2px dashed var(--admin-border, #D0D8E6);
     border-radius: 12px;
-    background: #F8FAFD;
+    background: var(--admin-input-bg, #F8FAFD);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1316,13 +1318,13 @@ select.form-input {
 
 .form-image-drop__title {
     font-size: 14px;
-    color: #7A8BA8;
+    color: var(--admin-muted, #7A8BA8);
     margin: 8px 0 0;
 }
 
 .form-image-drop__hint {
     font-size: 12px;
-    color: #A9B7CC;
+    color: var(--admin-muted, #A9B7CC);
     margin: 2px 0 0;
 }
 
@@ -1330,10 +1332,10 @@ select.form-input {
     display: flex;
     gap: 8px;
     padding: 8px 12px;
-    border: 1px solid #D0D8E6;
+    border: 1px solid var(--admin-border, #D0D8E6);
     border-bottom: none;
     border-radius: 8px 8px 0 0;
-    background: #F8FAFD;
+    background: var(--admin-input-bg, #F8FAFD);
 }
 
 .form-editor-toolbar__btn {
@@ -1343,13 +1345,13 @@ select.form-input {
     background: transparent;
     font-size: 12px;
     font-weight: 700;
-    color: #1E2A47;
+    color: var(--admin-text, #1E2A47);
     cursor: pointer;
     font-family: inherit;
 }
 
 .form-editor-toolbar__btn:hover {
-    background: #E6ECF5;
+    background: var(--admin-hover, #E6ECF5);
 }
 
 .form-textarea--toolbar {
@@ -1362,8 +1364,8 @@ select.form-input {
 .form-seo-block {
     padding: 20px;
     border-radius: 12px;
-    border: 1px solid #E5E9F2;
-    background: #FAFBFD;
+    border: 1px solid var(--admin-border, #E5E9F2);
+    background: var(--admin-input-bg, #FAFBFD);
 }
 
 .form-seo-block__header {
@@ -1385,7 +1387,7 @@ select.form-input {
 
 .form-seo-hint {
     font-size: 12px;
-    color: #7A8BA8;
+    color: var(--admin-muted, #7A8BA8);
     margin: 0 0 10px;
     line-height: 1.45;
 }
@@ -1401,8 +1403,8 @@ select.form-input {
     justify-content: space-between;
     padding: 16px;
     border-radius: 12px;
-    background: #F0F4FB;
-    border: 1px solid #D8E0EF;
+    background: var(--admin-hover, #F0F4FB);
+    border: 1px solid var(--admin-border, #D8E0EF);
 }
 
 .form-featured-toggle__copy {
@@ -1414,13 +1416,13 @@ select.form-input {
 .form-featured-toggle__title {
     font-size: 14px;
     font-weight: 500;
-    color: #1E2A47;
+    color: var(--admin-text, #1E2A47);
     margin: 0;
 }
 
 .form-featured-toggle__hint {
     font-size: 12px;
-    color: #7A8BA8;
+    color: var(--admin-muted, #7A8BA8);
     margin: 2px 0 0;
 }
 
@@ -1429,7 +1431,7 @@ select.form-input {
     height: 24px;
     border: none;
     border-radius: 999px;
-    background: #D0D8E6;
+    background: var(--admin-border, #D0D8E6);
     position: relative;
     cursor: pointer;
     padding: 0;
@@ -1437,7 +1439,7 @@ select.form-input {
 }
 
 .form-toggle--on {
-    background: #1E2A47;
+    background: var(--admin-active, #1E2A47);
 }
 
 .form-toggle__knob {
@@ -1465,8 +1467,8 @@ select.form-input {
     justify-content: space-between;
     gap: 12px;
     padding: 20px 28px;
-    background: #fff;
-    border-top: 1px solid #E5E9F2;
+    background: var(--admin-surface, #fff);
+    border-top: 1px solid var(--admin-border, #E5E9F2);
 }
 
 .form-panel__footer-actions {
@@ -1487,21 +1489,21 @@ select.form-input {
 }
 
 .form-footer-btn--ghost {
-    border: 1px solid #D0D8E6;
+    border: 1px solid var(--admin-border, #D0D8E6);
     background: transparent;
-    color: #7A8BA8;
+    color: var(--admin-muted, #7A8BA8);
 }
 
 .form-footer-btn--outline {
-    border: 1px solid #1E2A47;
+    border: 1px solid var(--admin-active, #1E2A47);
     background: transparent;
-    color: #1E2A47;
+    color: var(--admin-text, #1E2A47);
 }
 
 .form-footer-btn--primary {
     border: none;
-    background: #1E2A47;
-    color: #fff;
+    background: var(--admin-active, #1E2A47);
+    color: var(--admin-active-text, #fff);
 }
 
 .form-footer-btn--primary:disabled {
@@ -1587,6 +1589,21 @@ select.form-input {
     to { opacity: 1; transform: translateY(0); }
 }
 
+/* ─── JOURNAL SHELL DARK MODE (badges & accents) ───────────── */
+:global(html[data-admin-theme="dark"]) .mw-admin .content-status-badge--draft {
+    background: rgba(243, 244, 246, 0.12);
+    color: var(--admin-muted, #A9B7CC);
+}
+
+:global(html[data-admin-theme="dark"]) .mw-admin .content-status-badge--draft .content-status-badge__dot {
+    background: var(--admin-muted, #A9B7CC);
+}
+
+:global(html[data-admin-theme="dark"]) .mw-admin .content-delete-btn--ghost {
+    border-color: var(--admin-border, rgba(169, 183, 204, 0.2));
+    color: var(--admin-muted, #A9B7CC);
+}
+
 @media (max-width: 767px) {
     .content-journal-row {
         flex-wrap: wrap;
@@ -1629,7 +1646,7 @@ select.form-input {
         gap: 20px;
         padding-top: 10px;
         margin-top: 2px;
-        border-top: 1px solid #EEF1F6;
+        border-top: 1px solid var(--admin-border, #EEF1F6);
     }
 
     .content-journal-row__stat-value,
@@ -1644,7 +1661,7 @@ select.form-input {
         justify-content: space-between;
         gap: 6px;
         padding-top: 10px;
-        border-top: 1px solid #EEF1F6;
+        border-top: 1px solid var(--admin-border, #EEF1F6);
         opacity: 1;
     }
 
