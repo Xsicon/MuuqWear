@@ -20,8 +20,13 @@ public class AdminContentTabCoordinator
         {
             "events" => "events",
             "design-history" => "design-history",
+            "vote" => "vote",
+            "media" => "media",
             _ => "journal"
         };
+
+    public static bool IsContentCategoryView(string view) =>
+        NormalizeView(view) is "journal" or "events" or "design-history";
 
     public static ContentCategory ViewToCategory(string view) =>
         NormalizeView(view) switch

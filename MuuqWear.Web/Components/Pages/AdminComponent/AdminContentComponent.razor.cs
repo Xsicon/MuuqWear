@@ -2,8 +2,10 @@
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.AspNetCore.WebUtilities;
+using MuuqWear.Application.Content;
 using MuuqWear.Application.Services.ContentService;
 using MuuqWear.Application.Services.ProductService;
+using MuuqWear.Application.Services.VoteService;
 using MuuqWear.Application.Shared;
 using MuuqWear.Model.ContentItem;
 using MuuqWear.Model.Muuqsimo;
@@ -15,12 +17,14 @@ public partial class AdminContentComponent : IDisposable
     [Inject] private NavigationManager NavigationManager { get; set; } = default!;
     [Inject] private IContentService ContentService { get; set; } = default!;
     [Inject] private IProductService ProductService { get; set; } = default!;
+    [Inject] private IVoteService VoteService { get; set; } = default!;
     [Inject] private AdminContentTabCoordinator ContentTabCoordinator { get; set; } = default!;
 
     [SupplyParameterFromQuery(Name = "view")]
     public string? ViewQuery { get; set; }
 
     private string activeView = "journal";
+    private bool IsContentCategoryView => AdminContentTabCoordinator.IsContentCategoryView(activeView);
     private ContentCategory ActiveCategory => AdminContentTabCoordinator.ViewToCategory(activeView);
 
     private List<ContentItemModel> items = new();
@@ -47,11 +51,17 @@ public partial class AdminContentComponent : IDisposable
 
     private MuuqsimoPageContentModel eventContent = new();
 
+    private int healthJournalLowSeoCount;
+    private int healthJournalDraftCount;
+    private int healthVoteActiveCount;
+
     private static readonly (string View, string Label)[] TabViews =
     {
-        ("journal", "Journal Articles"),
+        ("journal", "Journal"),
+        ("design-history", "Design History"),
         ("events", "Events"),
-        ("design-history", "Design History")
+        ("vote", "Vote & Pre-Order"),
+        ("media", "Media Library")
     };
 
     protected override async Task OnInitializedAsync()
@@ -59,38 +69,65 @@ public partial class AdminContentComponent : IDisposable
         ContentTabCoordinator.ViewChanged += OnContentViewChanged;
         NavigationManager.LocationChanged += OnLocationChanged;
         ApplyViewFromQuery();
-        await LoadItems();
-        await RefreshTabCountsAsync();
+        await SyncActiveViewAsync();
     }
 
     protected override async Task OnParametersSetAsync()
     {
-        var previousView = activeView;
         ApplyViewFromQuery();
-
-        if (previousView != activeView)
-        {
-            searchQuery = string.Empty;
-            statusFilter = "all";
-            journalCategoryFilter = "All";
-            journalStatusFilter = "All";
-            CloseForm();
-            await LoadItems();
-        }
+        await SyncActiveViewAsync();
     }
 
     public void Dispose()
     {
+        disposed = true;
+        viewSyncLock.Dispose();
         ContentTabCoordinator.ViewChanged -= OnContentViewChanged;
         NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+
+    private void ResetViewFilters()
+    {
+        searchQuery = string.Empty;
+        statusFilter = "all";
+        journalCategoryFilter = "All";
+        journalStatusFilter = "All";
+        voteStatusFilter = "All";
+        mediaError = string.Empty;
+    }
+
+    private async Task SyncActiveViewAsync()
+    {
+        if (loadedView == activeView)
+            return;
+
+        await viewSyncLock.WaitAsync();
+        try
+        {
+            if (loadedView == activeView)
+                return;
+
+            await LoadItems();
+            loadedView = activeView;
+            await RefreshTabCountsAsync(allTabs: true);
+            await RefreshHealthMetricsAsync();
+        }
+        finally
+        {
+            viewSyncLock.Release();
+            StateHasChanged();
+        }
     }
 
     private IEnumerable<ContentItemModel> FilteredItems =>
         items.Where(item =>
         {
-            if (statusFilter == "published" && !item.IsPublished)
+            if (statusFilter == "published"
+                && !ContentItemStatusHelper.IsPublishedStatus(item.Status))
                 return false;
-            if (statusFilter == "draft" && item.IsPublished)
+
+            if (statusFilter == "draft"
+                && !ContentItemStatusHelper.IsDraftStatus(item.Status))
                 return false;
 
             if (string.IsNullOrWhiteSpace(searchQuery))
@@ -107,15 +144,31 @@ public partial class AdminContentComponent : IDisposable
 
         try
         {
-            var result = await ContentService.GetAll(ActiveCategory);
-            items = result.Success && result.Data != null
-                ? result.Data
-                : new();
+            switch (activeView)
+            {
+                case "vote":
+                    await LoadVoteItemsAsync();
+                    items = new();
+                    break;
+                case "media":
+                    await LoadMediaLibraryAsync();
+                    items = new();
+                    break;
+                default:
+                    var result = await ContentService.GetAll(ActiveCategory);
+                    items = result.Success && result.Data != null
+                        ? result.Data
+                        : new();
 
-            if (!result.Success)
-                pageError = result.Message ?? "Failed to load content.";
+                    if (!result.Success)
+                        pageError = result.Message ?? "Failed to load content.";
 
-            SyncActiveTabCount();
+                    if (activeView == "events")
+                        await LoadEventTicketSalesAsync();
+
+                    SyncActiveTabCount();
+                    break;
+            }
         }
         finally
         {
@@ -127,21 +180,15 @@ public partial class AdminContentComponent : IDisposable
     private void OnContentViewChanged(string view)
     {
         var normalized = AdminContentTabCoordinator.NormalizeView(view);
-        if (activeView == normalized)
+        if (activeView == normalized && loadedView == normalized)
             return;
 
         activeView = normalized;
-        searchQuery = string.Empty;
-        statusFilter = "all";
-        journalCategoryFilter = "All";
-        journalStatusFilter = "All";
+        ResetViewFilters();
         CloseForm();
+        loadedView = string.Empty;
 
-        _ = InvokeAsync(async () =>
-        {
-            await LoadItems();
-            StateHasChanged();
-        });
+        _ = InvokeAsync(SyncActiveViewAsync);
     }
 
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
@@ -150,25 +197,20 @@ public partial class AdminContentComponent : IDisposable
                 .StartsWith("admin/content", StringComparison.OrdinalIgnoreCase))
             return;
 
-        _ = InvokeAsync(HandleLocationChangedAsync);
-    }
-
-    private async Task HandleLocationChangedAsync()
-    {
-        var previousView = activeView;
-        ApplyViewFromQuery();
-
-        if (previousView != activeView)
+        _ = InvokeAsync(async () =>
         {
-            searchQuery = string.Empty;
-            statusFilter = "all";
-            journalCategoryFilter = "All";
-            journalStatusFilter = "All";
-            CloseForm();
-            await LoadItems();
-        }
+            var previousView = activeView;
+            ApplyViewFromQuery();
 
-        StateHasChanged();
+            if (previousView != activeView)
+            {
+                ResetViewFilters();
+                CloseForm();
+                loadedView = string.Empty;
+            }
+
+            await SyncActiveViewAsync();
+        });
     }
 
     private void ApplyViewFromQuery()
@@ -190,7 +232,6 @@ public partial class AdminContentComponent : IDisposable
             return;
 
         NavigationManager.NavigateTo($"/admin/content?view={normalized}");
-        ContentTabCoordinator.NotifyViewChanged(normalized);
     }
 
     private void SetStatusFilter(string filter)
@@ -235,11 +276,29 @@ public partial class AdminContentComponent : IDisposable
     private string GetTabLabel(string view) =>
         TabViews.First(t => t.View == AdminContentTabCoordinator.NormalizeView(view)).Label;
 
+    private async Task RefreshHealthMetricsAsync()
+    {
+        var journal = await ContentService.GetAll(ContentCategory.JournalArticles);
+        if (journal.Success && journal.Data != null)
+        {
+            healthJournalLowSeoCount = journal.Data.Count(x => JournalSeoScorer.Score(x) < 70);
+            healthJournalDraftCount = journal.Data.Count(x =>
+                ContentItemStatusHelper.NormalizeStatus(x.Status) == "draft");
+        }
+
+        var activeVotes = await VoteService.GetActiveItems();
+        healthVoteActiveCount = activeVotes.Success && activeVotes.Data != null
+            ? activeVotes.Data.Count
+            : 0;
+    }
+
     private string GetPageSubtitle() => activeView switch
     {
         "events" => "Manage Muuqsimo events and announcements",
         "design-history" => "Curate design archive entries for the storefront",
-        _ => "Edit website content and articles"
+        "vote" => "Manage community vote and pre-order campaigns",
+        "media" => "Upload and organize images used across the site",
+        _ => "Publish and manage all customer-facing content across the site"
     };
 
     private string GetPublicViewUrl(ContentItemModel item) => activeView switch
@@ -277,6 +336,18 @@ public partial class AdminContentComponent : IDisposable
 
     private void OpenForm()
     {
+        if (activeView == "media")
+        {
+            ShowToast("Use the upload zone on the Media Library tab.");
+            return;
+        }
+
+        if (activeView == "vote")
+        {
+            OpenVoteCampaignPanel();
+            return;
+        }
+
         form = new CreateContentItemModel();
         formProductId = string.Empty;
         formError = string.Empty;
@@ -348,7 +419,11 @@ public partial class AdminContentComponent : IDisposable
         return false;
     }
 
-    private async Task<bool> HandleCreate()
+    private Task HandleCreateSubmitAsync() => HandleCreate();
+
+    private Task HandleEditSubmitAsync() => HandleEdit();
+
+    private async Task<bool> HandleCreate(bool skipJournalPanelApply = false)
     {
         if (string.IsNullOrWhiteSpace(form.Title))
         {
@@ -365,7 +440,11 @@ public partial class AdminContentComponent : IDisposable
         if (!await TryValidateLinkedProductAsync())
             return false;
 
-        ApplyJournalPanelToForm();
+        if (!skipJournalPanelApply)
+            ApplyJournalPanelToForm();
+
+        if (!TryValidateJournalSchedule())
+            return false;
 
         isSaving = true;
         formError = string.Empty;
@@ -421,7 +500,8 @@ public partial class AdminContentComponent : IDisposable
             Tags = item.Tags,
             IsFeatured = item.IsFeatured,
             ScheduledAt = item.ScheduledAt,
-            ReadTimeMinutes = item.ReadTimeMinutes
+            ReadTimeMinutes = item.ReadTimeMinutes,
+            Status = item.Status
         };
 
         formProductId = item.ProductId?.ToString() ?? string.Empty;
@@ -436,7 +516,7 @@ public partial class AdminContentComponent : IDisposable
             InitJournalFormFields();
     }
 
-    private async Task<bool> HandleEdit()
+    private async Task<bool> HandleEdit(bool skipJournalPanelApply = false)
     {
         if (string.IsNullOrWhiteSpace(form.Title))
         {
@@ -453,7 +533,11 @@ public partial class AdminContentComponent : IDisposable
         if (!await TryValidateLinkedProductAsync())
             return false;
 
-        ApplyJournalPanelToForm();
+        if (!skipJournalPanelApply)
+            ApplyJournalPanelToForm();
+
+        if (!TryValidateJournalSchedule())
+            return false;
 
         isSaving = true;
         formError = string.Empty;
@@ -508,7 +592,8 @@ public partial class AdminContentComponent : IDisposable
             var title = deletingItem.Title;
             CloseDeleteModal();
             SyncActiveTabCount();
-            if (activeView == "journal")
+            await NotifyContentMutatedAsync();
+            if (activeView is "journal" or "design-history" or "events")
                 ShowToast($"\"{title}\" deleted");
         }
         else
