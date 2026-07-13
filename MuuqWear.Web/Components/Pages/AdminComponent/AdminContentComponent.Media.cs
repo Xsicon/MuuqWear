@@ -1,6 +1,8 @@
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.AspNetCore.Components.Web;
+using Microsoft.JSInterop;
 using MuuqWear.Application.Shared;
 using MuuqWear.Model.ContentItem;
 
@@ -11,6 +13,7 @@ public partial class AdminContentComponent
     private readonly List<AdminMediaItem> mediaItems = new();
     private readonly HashSet<Guid> selectedMediaIds = new();
     private bool mediaLoading;
+    private InputFile? mediaFileInput;
 
     private sealed class AdminMediaItem
     {
@@ -181,6 +184,20 @@ public partial class AdminContentComponent
 
     private void ClearMediaSelection() => selectedMediaIds.Clear();
 
+    private async Task OpenMediaFilePickerAsync()
+    {
+        if (mediaFileInput is null)
+            return;
+
+        await JS.InvokeVoidAsync("adminMediaUpload.openPicker", mediaFileInput.Element);
+    }
+
+    private async Task HandleMediaUploadKeydown(KeyboardEventArgs e)
+    {
+        if (e.Key is "Enter" or " ")
+            await OpenMediaFilePickerAsync();
+    }
+
     private void DeleteSelectedMedia()
     {
         if (selectedMediaIds.Count == 0)
@@ -290,11 +307,5 @@ public partial class AdminContentComponent
 
         message = string.Empty;
         return true;
-    }
-
-    private void OpenMediaUpload()
-    {
-        if (activeView != "media")
-            SwitchTab("media");
     }
 }

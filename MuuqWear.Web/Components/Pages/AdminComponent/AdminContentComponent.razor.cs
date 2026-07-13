@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.JSInterop;
 using MuuqWear.Application.Content;
 using MuuqWear.Application.Services.ContentService;
 using MuuqWear.Application.Services.ProductService;
@@ -19,6 +20,7 @@ public partial class AdminContentComponent : IDisposable
     [Inject] private IProductService ProductService { get; set; } = default!;
     [Inject] private IVoteService VoteService { get; set; } = default!;
     [Inject] private AdminContentTabCoordinator ContentTabCoordinator { get; set; } = default!;
+    [Inject] private IJSRuntime JS { get; set; } = default!;
 
     [SupplyParameterFromQuery(Name = "view")]
     public string? ViewQuery { get; set; }
@@ -336,12 +338,6 @@ public partial class AdminContentComponent : IDisposable
 
     private void OpenForm()
     {
-        if (activeView == "media")
-        {
-            ShowToast("Use the upload zone on the Media Library tab.");
-            return;
-        }
-
         if (activeView == "vote")
         {
             OpenVoteCampaignPanel();

@@ -26,13 +26,16 @@
                 <h1 class="content-shell-title">Content Management</h1>
                 <p class="content-shell-subtitle">@GetPageSubtitle()</p>
             </div>
-            <button type="button" class="content-create-btn" @onclick="OpenForm">
-                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M5 12h14"></path>
-                    <path d="M12 5v14"></path>
-                </svg>
-                @GetCreateButtonLabel()
-            </button>
+            @if (activeView != "media")
+            {
+                <button type="button" class="content-create-btn" @onclick="OpenForm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M5 12h14"></path>
+                        <path d="M12 5v14"></path>
+                    </svg>
+                    @GetCreateButtonLabel()
+                </button>
+            }
         </div>
 
         @if (!string.IsNullOrEmpty(pageError))
@@ -623,14 +626,25 @@
 
             <p class="content-media-hint">Referenced images cannot be removed here. Only unused uploads from this session can be removed from the list.</p>
 
-            <InputFile OnChange="HandleMediaUploadAsync" accept="image/*" multiple class="content-media-upload-input" id="content-media-upload-input" />
-            <label for="content-media-upload-input" class="content-media-upload">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                <div>
-                    <p class="content-media-upload__title">Drop files here or click to upload</p>
-                    <p class="content-media-upload__hint">JPEG, WebP, PNG · max 5 MB per file</p>
+            <div class="content-media-upload-host">
+                <div class="content-media-upload-input-wrap" aria-hidden="true">
+                    <InputFile @ref="mediaFileInput"
+                               OnChange="HandleMediaUploadAsync"
+                               accept="image/*"
+                               multiple />
                 </div>
-            </label>
+                <div class="content-media-upload"
+                     role="button"
+                     tabindex="0"
+                     @onclick="OpenMediaFilePickerAsync"
+                     @onkeydown="HandleMediaUploadKeydown">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    <div>
+                        <p class="content-media-upload__title">Drop files here</p>
+                        <p class="content-media-upload__hint">JPEG, WebP, PNG · max 5 MB per file</p>
+                    </div>
+                </div>
+            </div>
 
             @if (selectedMediaIds.Count > 0)
             {

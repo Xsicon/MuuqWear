@@ -132,3 +132,11 @@ window.adminHeaderReadState = {
         } catch (e) { }
     }
 };
+
+window.adminMediaUpload = {
+    openPicker: function (inputElement) {
+        if (inputElement) {
+            inputElement.click();
+        }
+    }
+};

@@ -115,7 +115,6 @@ public partial class AdminContentComponent
         "events" => "New Event",
         "design-history" => "New Design Entry",
         "vote" => "New Campaign",
-        "media" => "Upload Files",
         _ => "New Article"
     };
 
