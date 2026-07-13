@@ -6,6 +6,7 @@ namespace MuuqWear.Web.Components.Pages.MileStoneComponent
     {
         private List<MilestoneModel>? mileStones;
         private AffiliateInfoModel? affiliateInfo;
+        private List<AffiliateTierModel> publicTiers = new();
         private bool isLoading = true;
 
 
@@ -21,8 +22,21 @@ namespace MuuqWear.Web.Components.Pages.MileStoneComponent
 
             try
             {
-                // Load affiliate info
+                var tiersTask = AffiliateService.GetTiers();
                 var result = await AffiliateService.GetAffiliateInfo();
+                var tiersResult = await tiersTask;
+
+                if (tiersResult.Success && tiersResult.Data is { Count: > 0 })
+                {
+                    publicTiers = tiersResult.Data
+                        .Where(t => t.IsActive)
+                        .OrderBy(t => t.SortOrder)
+                        .ToList();
+                }
+                else
+                {
+                    publicTiers = GetDefaultTiers();
+                }
 
                 if (result.Success && result.Data != null)
                 {
@@ -64,5 +78,47 @@ namespace MuuqWear.Web.Components.Pages.MileStoneComponent
                 ItemsToGo = Math.Max(0, m.Items - currentXP)
             }).ToList();
         }
+
+        private static List<AffiliateTierModel> GetDefaultTiers() =>
+        [
+            new AffiliateTierModel
+            {
+                Slug = "bronze",
+                DisplayName = "Bronze",
+                ItemsSoldThreshold = 0,
+                CommissionRatePercent = 5,
+                ReferralDiscountPercent = 5,
+                SortOrder = 1,
+                IsActive = true
+            },
+            new AffiliateTierModel
+            {
+                Slug = "silver",
+                DisplayName = "Silver",
+                ItemsSoldThreshold = 150,
+                CommissionRatePercent = 10,
+                ReferralDiscountPercent = 10,
+                SortOrder = 2,
+                IsActive = true
+            },
+            new AffiliateTierModel
+            {
+                Slug = "gold",
+                DisplayName = "Gold",
+                ItemsSoldThreshold = 500,
+                CommissionRatePercent = 15,
+                ReferralDiscountPercent = 15,
+                SortOrder = 3,
+                IsActive = true
+            }
+        ];
+
+        private static string GetTierStrokeColor(string slug) =>
+            slug.ToLowerInvariant() switch
+            {
+                "silver" => "rgb(169, 183, 204)",
+                "gold" => "rgb(212, 168, 67)",
+                _ => "rgb(205, 127, 50)"
+            };
     }
 }

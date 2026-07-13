@@ -3,7 +3,7 @@
 @using MuuqWear.Application.Services.AffiliateService
 @using MuuqWear.Model.AffiliateApplication
 @inject IAffiliateService AffiliateService
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 @inject NavigationManager NavigationManager
 
 <PageTitle>Affiliate Program - MuuqWear</PageTitle>
@@ -210,165 +210,69 @@
 
         <!-- Tier Cards -->
         <div class="mw-tier-grid">
+            @if (!tiersLoaded)
+            {
+                <p class="mw-tier-loading">Loading tier benefits...</p>
+            }
+            else
+            {
+                @foreach (var tier in publicTiers)
+                {
+                    var featured = IsFeaturedTier(tier, publicTiers);
+                    <div class="mw-tier-card @(featured ? "mw-tier-featured" : "")">
+                        @if (featured)
+                        {
+                            <div class="mw-tier-badge">Most Popular</div>
+                        }
+                        <div class="mw-tier-icon-section">
+                            <div class="mw-tier-icon @GetTierCssClass(tier.Slug)">
+                                @if (tier.Slug.Equals("silver", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"></path>
+                                        <path d="M5 21h14"></path>
+                                    </svg>
+                                }
+                                else if (tier.Slug.Equals("gold", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path>
+                                    </svg>
+                                }
+                                else
+                                {
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path>
+                                    </svg>
+                                }
+                            </div>
+                            <h3 class="mw-tier-name">@tier.DisplayName</h3>
+                            <p class="mw-tier-requirement">@tier.ThresholdLabel</p>
+                        </div>
 
-            <!-- Bronze Tier -->
-            <div class="mw-tier-card">
-                <div class="mw-tier-icon-section">
-                    <div class="mw-tier-icon mw-tier-bronze">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path>
-                        </svg>
+                        <div class="mw-tier-discount">
+                            <p class="mw-tier-discount-label">Your Audience Gets</p>
+                            <p class="mw-tier-discount-value">@tier.ReferralDiscountLabel <span>off</span></p>
+                        </div>
+
+                        <div class="mw-tier-rewards">
+                            <p class="mw-tier-rewards-label">Your Rewards</p>
+                            <ul class="mw-tier-list">
+                                @foreach (var perk in FormatTierPerks(tier))
+                                {
+                                    <li>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
+                                            <path d="m9 11 3 3L22 4"></path>
+                                        </svg>
+                                        @perk
+                                    </li>
+                                }
+                            </ul>
+                        </div>
                     </div>
-                    <h3 class="mw-tier-name">Bronze</h3>
-                    <p class="mw-tier-requirement">50 items sold to unlock</p>
-                </div>
-
-                <div class="mw-tier-discount">
-                    <p class="mw-tier-discount-label">Your Audience Gets</p>
-                    <p class="mw-tier-discount-value">5% <span>off</span></p>
-                </div>
-
-                <div class="mw-tier-rewards">
-                    <p class="mw-tier-rewards-label">Your Rewards</p>
-                    <ul class="mw-tier-list">
-                        <li>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
-                                <path d="m9 11 3 3L22 4"></path>
-                            </svg>
-                            25% off all personal purchases
-                        </li>
-                        <li>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
-                                <path d="m9 11 3 3L22 4"></path>
-                            </svg>
-                            2.5% commission per 10 items
-                        </li>
-                        <li>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
-                                <path d="m9 11 3 3L22 4"></path>
-                            </svg>
-                            Event ticket discount
-                        </li>
-                        <li>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
-                                <path d="m9 11 3 3L22 4"></path>
-                            </svg>
-                            Access to Ambassador Dashboard
-                        </li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- Silver Tier -->
-            <div class="mw-tier-card mw-tier-featured">
-                <div class="mw-tier-badge">Most Popular</div>
-                <div class="mw-tier-icon-section">
-                    <div class="mw-tier-icon mw-tier-silver">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"></path>
-                            <path d="M5 21h14"></path>
-                        </svg>
-                    </div>
-                    <h3 class="mw-tier-name">Silver</h3>
-                    <p class="mw-tier-requirement">150 items sold to unlock</p>
-                </div>
-
-                <div class="mw-tier-discount">
-                    <p class="mw-tier-discount-label">Your Audience Gets</p>
-                    <p class="mw-tier-discount-value">10% <span>off</span></p>
-                </div>
-
-                <div class="mw-tier-rewards">
-                    <p class="mw-tier-rewards-label">Your Rewards</p>
-                    <ul class="mw-tier-list">
-                        <li>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
-                                <path d="m9 11 3 3L22 4"></path>
-                            </svg>
-                            25% off all personal purchases
-                        </li>
-                        <li>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
-                                <path d="m9 11 3 3L22 4"></path>
-                            </svg>
-                            5% commission per 10 items
-                        </li>
-                        <li>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
-                                <path d="m9 11 3 3L22 4"></path>
-                            </svg>
-                            Free Muuqsimo event tickets
-                        </li>
-                        <li>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
-                                <path d="m9 11 3 3L22 4"></path>
-                            </svg>
-                            Priority support & early access
-                        </li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- Gold Tier -->
-            <div class="mw-tier-card">
-                <div class="mw-tier-icon-section">
-                    <div class="mw-tier-icon mw-tier-gold">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path>
-                        </svg>
-                    </div>
-                    <h3 class="mw-tier-name">Gold</h3>
-                    <p class="mw-tier-requirement">500 items sold to unlock</p>
-                </div>
-
-                <div class="mw-tier-discount">
-                    <p class="mw-tier-discount-label">Your Audience Gets</p>
-                    <p class="mw-tier-discount-value">15% <span>off</span></p>
-                </div>
-
-                <div class="mw-tier-rewards">
-                    <p class="mw-tier-rewards-label">Your Rewards</p>
-                    <ul class="mw-tier-list">
-                        <li>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
-                                <path d="m9 11 3 3L22 4"></path>
-                            </svg>
-                            25% off all personal purchases
-                        </li>
-                        <li>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
-                                <path d="m9 11 3 3L22 4"></path>
-                            </svg>
-                            10% commission per 10 items
-                        </li>
-                        <li>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
-                                <path d="m9 11 3 3L22 4"></path>
-                            </svg>
-                            All-expenses-paid Muuqsimo trip
-                        </li>
-                        <li>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
-                                <path d="m9 11 3 3L22 4"></path>
-                            </svg>
-                            VIP access & exclusive experiences
-                        </li>
-                    </ul>
-                </div>
-            </div>
-
+                }
+            }
         </div>
     </div>
 </section>
@@ -396,21 +300,14 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td class="mw-tier-cell">Bronze</td>
-                            <td>2.5%</td>
-                            <td class="mw-amount-cell">$137.50</td>
-                        </tr>
-                        <tr class="mw-table-alt">
-                            <td class="mw-tier-cell">Silver</td>
-                            <td>5%</td>
-                            <td class="mw-amount-cell">$275.00</td>
-                        </tr>
-                        <tr>
-                            <td class="mw-tier-cell">Gold</td>
-                            <td>10%</td>
-                            <td class="mw-amount-cell">$550.00</td>
-                        </tr>
+                        @foreach (var (tier, rowIndex) in publicTiers.Select((t, i) => (t, i)))
+                        {
+                            <tr class="@(rowIndex % 2 == 1 ? "mw-table-alt" : "")">
+                                <td class="mw-tier-cell">@tier.DisplayName</td>
+                                <td>@tier.CommissionRatePercent.ToString("0.#")%</td>
+                                <td class="mw-amount-cell">$@tier.CommissionExampleAmount().ToString("N2")</td>
+                            </tr>
+                        }
                     </tbody>
                 </table>
             </div>
@@ -617,9 +514,10 @@
         <div class="mw-audience-discounts">
             <p class="mw-audience-discounts-label">Your Audience Receives</p>
             <div class="mw-audience-discounts-list">
-                <p><span class="mw-tier-bold">Bronze</span> ambassadors: <span class="mw-tier-bold">5% off</span> all items</p>
-                <p><span class="mw-tier-bold">Silver</span> ambassadors: <span class="mw-tier-bold">10% off</span> all items</p>
-                <p><span class="mw-tier-bold">Gold</span> ambassadors: <span class="mw-tier-bold">15% off</span> all items</p>
+                @foreach (var tier in publicTiers)
+                {
+                    <p><span class="mw-tier-bold">@tier.DisplayName</span> ambassadors: <span class="mw-tier-bold">@tier.ReferralDiscountLabel off</span> all items</p>
+                }
             </div>
         </div>
     </div>
@@ -1222,7 +1120,7 @@
         new FaqItem
         {
             Question = "How do I level up to the next tier?",
-            Answer = "Every item sold through your link counts as 1 XP. Bronze unlocks at 50 items, Silver at 150 items, and Gold at 500 items. Track your progress in real-time on your dashboard."
+            Answer = "Every item sold through your link counts as 1 XP. Track your progress in real-time on your dashboard."
         },
         new FaqItem
         {
@@ -1297,6 +1195,7 @@
             }
         }
         await LoadSpotsRemaining();
+        await LoadPublicTiersAsync();
     }
 
 

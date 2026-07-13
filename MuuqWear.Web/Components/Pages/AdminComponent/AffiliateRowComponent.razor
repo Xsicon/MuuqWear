@@ -1,40 +1,80 @@
 ﻿@using MuuqWear.Model.AffiliateApplication
-<div class="mw-affiliate-row">
-    <!-- LEFT: INFO -->
-    <div class="mw-affiliate-row__info">
-        <div class="mw-affiliate-row__name">@Application.FullName</div>
-        <div class="mw-affiliate-row__handle">
-            @GetFirstSocialHandle() · @GetFollowersDisplay()
+
+<div class="affiliate-row">
+    <div class="affiliate-row__main">
+        <div class="affiliate-row__title-row">
+            <h3 class="affiliate-row__name">@Application.FullName</h3>
+            @if (ShowActiveActions && !string.IsNullOrWhiteSpace(Application.AffiliateTier)
+                 && !Application.AffiliateTier.Equals("none", StringComparison.OrdinalIgnoreCase))
+            {
+                var tierColors = GetTierColors(Application.AffiliateTier);
+                <span class="affiliate-row__tier" style="background-color: @tierColors.Bg; color: @tierColors.Fg;">
+                    @FormatTierLabel(Application.AffiliateTier)
+                </span>
+            }
+            else if (ShowActiveActions)
+            {
+                <span class="affiliate-row__tier affiliate-row__tier--default">Approved</span>
+            }
+            else
+            {
+                <span class="affiliate-row__handle">@GetFirstSocialHandle()</span>
+            }
         </div>
-        <div class="mw-affiliate-row__meta">
-            Applied @Application.FormattedDate · Niche: @Application.ContentNiche
-        </div>
+        <p class="affiliate-row__meta">
+            @if (ShowActiveActions)
+            {
+                <span>Niche: @Application.ContentNiche</span>
+                <span> · </span>
+                <span>Approved @(Application.ReviewedAt?.ToString("MMM dd, yyyy") ?? Application.FormattedDate)</span>
+            }
+            else
+            {
+                <span>Followers: @GetFollowersDisplay()</span>
+                <span> · </span>
+                <span>Niche: @Application.ContentNiche</span>
+                <span> · </span>
+                <span>Applied: @Application.FormattedDate</span>
+            }
+        </p>
+        @if (!ShowActiveActions && Application.SocialHandles?.Any() == true)
+        {
+            <p class="affiliate-row__samples">Content samples available in full application</p>
+        }
     </div>
 
-    <!-- RIGHT: ACTIONS -->
-    <div class="mw-affiliate-row__actions">
-        <!-- VIEW (all tabs) -->
-        <button class="mw-btn-action mw-btn-action--view"
-                @onclick='() => OnAction.InvokeAsync((Application.Id, "view"))'>
-            VIEW
-        </button>
-
+    <div class="affiliate-row__actions">
         @if (!ShowActiveActions)
         {
-            <!-- PENDING ACTIONS -->
-            <button class="mw-btn-action mw-btn-action--approve"
+            <button type="button"
+                    class="affiliate-row__btn affiliate-row__btn--approve"
+                    disabled="@Disabled"
                     @onclick='() => OnAction.InvokeAsync((Application.Id, "approve"))'>
-                APPROVE
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                Approve
             </button>
-            <button class="mw-btn-action mw-btn-action--deny"
+            <button type="button"
+                    class="affiliate-row__btn affiliate-row__btn--deny"
+                    disabled="@Disabled"
                     @onclick='() => OnAction.InvokeAsync((Application.Id, "reject"))'>
-                REJECT
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                Deny
             </button>
-            <button class="mw-btn-action mw-btn-action--waitlist"
+            <button type="button"
+                    class="affiliate-row__btn affiliate-row__btn--ghost"
+                    disabled="@Disabled"
                     @onclick='() => OnAction.InvokeAsync((Application.Id, "waitlist"))'>
-                WAITLIST
+                Waitlist
             </button>
         }
+
+        <button type="button"
+                class="affiliate-row__btn affiliate-row__btn--ghost"
+                disabled="@Disabled"
+                @onclick='() => OnAction.InvokeAsync((Application.Id, "view"))'>
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            @(ShowActiveActions ? "View Details" : "View Full Application")
+        </button>
     </div>
 </div>
 
@@ -48,33 +88,42 @@
     [Parameter]
     public bool ShowActiveActions { get; set; }
 
-    /// <summary>
-    /// Get first social handle or fallback
-    /// </summary>
+    [Parameter]
+    public bool Disabled { get; set; }
+
     private string GetFirstSocialHandle()
     {
         var firstHandle = Application.SocialHandles?.FirstOrDefault();
         if (firstHandle != null && !string.IsNullOrEmpty(firstHandle.Handle))
-        {
             return $"@{firstHandle.Handle}";
-        }
-        return Application.Email; // Fallback to email
+
+        return Application.Email;
     }
 
-    /// <summary>
-    /// Format audience size as "X followers"
-    /// </summary>
     private string GetFollowersDisplay()
     {
         if (Application.AudienceSize == 0)
-            return "No followers";
+            return "0";
 
         if (Application.AudienceSize >= 1000)
-        {
-            double thousands = Application.AudienceSize / 1000.0;
-            return $"{thousands:N1}k followers";
-        }
+            return $"{Application.AudienceSize / 1000.0:N1}k";
 
-        return $"{Application.AudienceSize:N0} followers";
+        return Application.AudienceSize.ToString("N0");
     }
+
+    private static string FormatTierLabel(string tier)
+    {
+        if (string.IsNullOrWhiteSpace(tier) || tier.Equals("none", StringComparison.OrdinalIgnoreCase))
+            return "Bronze";
+
+        return char.ToUpperInvariant(tier[0]) + tier[1..].ToLowerInvariant();
+    }
+
+    private static (string Bg, string Fg) GetTierColors(string tier) =>
+        tier.ToLowerInvariant() switch
+        {
+            "silver" => ("#E5E7EB", "#374151"),
+            "gold" => ("#FEF3C7", "#92400E"),
+            _ => ("#FEE2E2", "#991B1B")
+        };
 }

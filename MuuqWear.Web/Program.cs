@@ -115,6 +115,7 @@ builder.Services.AddScoped<AdminOrdersTabCoordinator>();
 builder.Services.AddScoped<AdminProductsTabCoordinator>();
 builder.Services.AddScoped<AdminCustomersTabCoordinator>();
 builder.Services.AddScoped<AdminContentTabCoordinator>();
+builder.Services.AddScoped<AdminAffiliatesTabCoordinator>();
 builder.Services.AddScoped<CartStateService>();
 builder.Services.AddScoped<WishlistStateService>();
 builder.Services.AddCascadingAuthenticationState();

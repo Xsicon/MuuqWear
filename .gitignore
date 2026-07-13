@@ -19,4 +19,8 @@
 *.lo
 /docs/Muuqwear full design ref
 _build_out/
+_build_out2/
+_build_out3/
 _build_out_api/
+_build_verify/
+_build_verify2/

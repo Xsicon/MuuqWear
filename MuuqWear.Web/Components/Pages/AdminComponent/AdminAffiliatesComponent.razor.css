@@ -1,173 +1,669 @@
-﻿/* ================================
-   AFFILIATES PAGE
-   ================================ */
+﻿/* Affiliates admin — redesign shell */
 
-.mw-affiliates {
-    padding: 24px;
-    max-width: 1200px;
+.affiliates-page {
+    padding: 0;
+    max-width: 1400px;
 }
 
-/* HEADER */
-.mw-affiliates__header {
-    margin-bottom: 32px;
+.affiliates-shell-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
 }
 
-.mw-affiliates__title {
+.affiliates-shell-eyebrow {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--admin-muted, #7A8BA8);
+    margin: 0 0 6px;
+}
+
+.affiliates-shell-title {
     font-size: 28px;
-    font-weight: 700;
-    color: #1E2A47;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+    color: var(--admin-text, #1E2A47);
+    margin: 0 0 4px;
+    line-height: 1.2;
+}
+
+.affiliates-shell-subtitle {
+    font-size: 14px;
+    color: var(--admin-muted, #4A5C7A);
     margin: 0;
 }
 
-/* TABS */
-.mw-affiliates__tabs {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 24px;
-    border-bottom: 1px solid #E5E7EB;
-}
-
-.mw-tab {
-    padding: 12px 20px;
-    background: transparent;
-    border: none;
+.affiliates-error {
+    color: #C44545;
     font-size: 13px;
-    font-weight: 600;
-    color: #4A5C7A;
-    cursor: pointer;
-    border-bottom: 3px solid transparent;
-    transition: all 0.2s ease;
-    letter-spacing: 0.5px;
+    margin: 0 0 16px;
 }
 
-    .mw-tab:hover {
-        color: #1E2A47;
-        background: rgba(30, 42, 71, 0.03);
-    }
+.affiliates-tabs-ref {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 24px;
+    padding: 4px;
+    border-radius: 12px;
+    background: var(--admin-hover, #EEF1F8);
+    overflow-x: auto;
+}
 
-    .mw-tab.active {
-        color: #1E2A47;
-        border-bottom-color: #1E2A47;
-        background: transparent;
-    }
+.affiliates-tabs-ref__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--admin-muted, #4A5C7A);
+    font-size: 13px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s, color 0.2s;
+}
 
-/* AFFILIATE LIST */
-.mw-affiliates__list {
+.affiliates-tabs-ref__item:hover {
+    color: var(--admin-text, #1E2A47);
+}
+
+.affiliates-tabs-ref__item--active {
+    background: var(--admin-surface, #FFFFFF);
+    color: var(--admin-text, #1E2A47);
+    box-shadow: 0 1px 2px rgba(30, 42, 71, 0.08);
+}
+
+.affiliates-tabs-ref__count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: var(--admin-hover, #EEF1F8);
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.affiliates-tabs-ref__item--active .affiliates-tabs-ref__count {
+    background: var(--admin-hover, #EEF1F8);
+}
+
+.affiliates-section-header {
+    margin-bottom: 16px;
+}
+
+.affiliates-section-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--admin-text, #1E2A47);
+    margin: 0 0 4px;
+}
+
+.affiliates-section-subtitle {
+    font-size: 13px;
+    color: var(--admin-muted, #4A5C7A);
+    margin: 0;
+}
+
+.affiliates-filter-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.affiliates-filter-pill {
+    padding: 8px 14px;
+    border: none;
+    border-radius: 999px;
+    background: var(--admin-hover, #E6ECF5);
+    color: var(--admin-text, #1E2A47);
+    font-size: 13px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.affiliates-filter-pill:hover:not(:disabled) {
+    opacity: 0.85;
+}
+
+.affiliates-filter-pill--active {
+    background: var(--admin-active, #1E2A47);
+    color: #FFFFFF;
+}
+
+.affiliates-filter-pill--muted {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.affiliates-list {
     display: flex;
     flex-direction: column;
     gap: 12px;
 }
 
-
-/* Modal Overlay */
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
+.affiliates-empty,
+.affiliates-empty-state {
+    padding: 48px 16px;
+    text-align: center;
+    color: var(--admin-muted, #7A8BA8);
 }
 
-/* Modal Content */
-.modal-content {
-    background: white;
-    border-radius: 8px;
-    max-width: 600px;
-    width: 90%;
-    max-height: 80vh;
-    overflow-y: auto;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+.affiliates-empty-state svg {
+    margin-bottom: 12px;
+    opacity: 0.5;
 }
 
-/* Modal Header */
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px;
-    border-bottom: 1px solid #E6ECF5;
-}
-
-    .modal-header h2 {
-        margin: 0;
-        font-size: 20px;
-        color: #1E2A47;
-    }
-
-.modal-close {
-    background: none;
-    border: none;
-    font-size: 24px;
-    color: #4A5C7A;
-    cursor: pointer;
-    padding: 0;
-    width: 30px;
-    height: 30px;
-}
-
-    .modal-close:hover {
-        color: #1E2A47;
-    }
-
-/* Modal Body */
-.modal-body {
-    padding: 20px;
-}
-
-.modal-section {
+.affiliates-readonly-banner {
     margin-bottom: 20px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: var(--admin-hover, #EEF1F8);
+    border: 1px solid var(--admin-border, #D8E0EF);
 }
 
-    .modal-section h3 {
-        font-size: 14px;
-        font-weight: 700;
-        color: #1E2A47;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-bottom: 10px;
-    }
+.affiliates-readonly-banner p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--admin-muted, #4A5C7A);
+}
 
-    .modal-section p {
-        margin: 5px 0;
-        font-size: 14px;
-        color: #4A5C7A;
-    }
+.affiliates-tier-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+}
 
-    .modal-section strong {
-        color: #1E2A47;
+@media (min-width: 768px) {
+    .affiliates-tier-grid {
+        grid-template-columns: repeat(3, 1fr);
     }
+}
 
-/* Status Badge */
-.status-badge {
+.affiliates-tier-card {
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid var(--admin-border, #D0D8E6);
+    background: var(--admin-surface, #FFFFFF);
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.affiliates-tier-card--inactive {
+    opacity: 0.72;
+}
+
+.affiliates-tier-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.affiliates-tier-card__badge {
     display: inline-block;
-    padding: 4px 8px;
-    border-radius: 4px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.affiliates-tier-card__active {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--admin-muted, #4A5C7A);
+    cursor: pointer;
+}
+
+.affiliates-tier-card__active input {
+    accent-color: var(--admin-active, #1E2A47);
+}
+
+.affiliates-tier-card__label {
+    display: block;
+    font-size: 12px;
+    color: var(--admin-muted, #7A8BA8);
+    margin: 0 0 6px;
+}
+
+.affiliates-tier-card__hint {
+    margin: -2px 0 6px;
+    font-size: 11px;
+    line-height: 1.35;
+    color: var(--admin-muted, #7A8BA8);
+}
+
+.affiliates-tier-card__input {
+    width: 100%;
+    padding: 10px 12px;
+    margin-bottom: 14px;
+    border: 1px solid var(--admin-border, #D0D8E6);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--admin-text, #1E2A47);
+    background: var(--admin-surface, #FFFFFF);
+    box-sizing: border-box;
+}
+
+.affiliates-tier-card__input:focus {
+    outline: none;
+    border-color: var(--admin-active, #1E2A47);
+}
+
+.affiliates-tier-card__input:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+.affiliates-tier-card__value {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--admin-text, #1E2A47);
+    margin: 0 0 12px;
+}
+
+.affiliates-tier-card__feedback {
+    margin: 0 0 12px;
+    font-size: 12px;
+}
+
+.affiliates-tier-card__feedback--error {
+    color: #C44545;
+}
+
+.affiliates-tier-card__feedback--success {
+    color: #065F46;
+}
+
+.affiliates-tier-card__save {
+    margin-top: auto;
+    padding: 10px 14px;
+    border: none;
+    border-radius: 8px;
+    background: var(--admin-active, #1E2A47);
+    color: #FFFFFF;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.affiliates-tier-card__save:hover:not(:disabled) {
+    opacity: 0.9;
+}
+
+.affiliates-tier-card__save:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+/* Payout rows */
+.affiliates-payout-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 20px;
+    border: 1px solid var(--admin-border, #E5E7EB);
+    border-radius: 12px;
+    background: var(--admin-surface, #FFFFFF);
+    transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.affiliates-payout-row:hover {
+    border-color: var(--admin-border, #D0D8E6);
+    box-shadow: 0 2px 8px rgba(30, 42, 71, 0.06);
+}
+
+.affiliates-payout-row__main {
+    flex: 1;
+    min-width: 0;
+}
+
+.affiliates-payout-row__title-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.affiliates-payout-row__name {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--admin-text, #1E2A47);
+}
+
+.affiliates-payout-row__tier {
+    padding: 3px 10px;
+    border-radius: 999px;
     font-size: 11px;
     font-weight: 600;
-    text-transform: uppercase;
+    text-transform: capitalize;
 }
 
-.status-pending {
+.affiliates-payout-row__status {
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: capitalize;
     background: #FEF3C7;
     color: #92400E;
 }
 
-.status-approved {
+.affiliates-payout-row__status--paid {
     background: #D1FAE5;
     color: #065F46;
 }
 
-.status-rejected {
+.affiliates-payout-row--history {
+    cursor: default;
+}
+
+.affiliates-payout-row__ref {
+    margin: 6px 0 0;
+    font-size: 11px;
+    color: var(--admin-muted, #9CA3AF);
+}
+
+.affiliates-payout-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 20px;
+}
+
+.affiliates-payout-pagination__btn {
+    padding: 8px 14px;
+    border: 1px solid var(--admin-border, #D0D8E6);
+    border-radius: 8px;
+    background: var(--admin-surface, #FFFFFF);
+    color: var(--admin-text, #1E2A47);
+    font-size: 13px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.affiliates-payout-pagination__btn:hover:not(:disabled) {
+    background: var(--admin-hover, #EEF1F8);
+}
+
+.affiliates-payout-pagination__btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.affiliates-payout-pagination__label {
+    font-size: 13px;
+    color: var(--admin-muted, #6B7280);
+}
+
+.affiliates-payout-row__meta {
+    margin: 0;
+    font-size: 13px;
+    color: var(--admin-muted, #6B7280);
+}
+
+.affiliates-payout-row__process {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border: none;
+    border-radius: 8px;
+    background: #2E7D32;
+    color: #FFFFFF;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: opacity 0.2s;
+}
+
+.affiliates-payout-row__process:hover:not(:disabled) {
+    opacity: 0.9;
+}
+
+.affiliates-payout-row__process:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.affiliates-payout-row__actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.affiliates-payout-row__details {
+    padding: 8px 14px;
+    border: 1px solid var(--admin-border, #D0D8E6);
+    border-radius: 8px;
+    background: var(--admin-surface, #FFFFFF);
+    color: var(--admin-text, #1E2A47);
+    font-size: 13px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.affiliates-payout-row__details:hover:not(:disabled) {
+    background: var(--admin-hover, #EEF1F8);
+}
+
+.affiliates-payout-row__details:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.affiliates-payout-row--expanded {
+    border-color: var(--admin-active, #1E2A47);
+}
+
+.affiliates-payout-referrals {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--admin-border, #E6ECF5);
+}
+
+.affiliates-payout-referrals__loading,
+.affiliates-payout-referrals__item {
+    margin: 0 0 6px;
+    font-size: 12px;
+    color: var(--admin-muted, #6B7280);
+}
+
+.affiliates-modal--confirm {
+    width: min(440px, 100%);
+}
+
+.affiliates-modal__hint {
+    margin: 12px 0 0;
+    font-size: 13px;
+    color: var(--admin-muted, #6B7280);
+}
+
+.affiliates-modal__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.affiliates-modal__btn {
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
+}
+
+.affiliates-modal__btn--ghost {
+    background: var(--admin-hover, #EEF1F8);
+    color: var(--admin-text, #1E2A47);
+}
+
+.affiliates-modal__btn--confirm {
+    background: #2E7D32;
+    color: #FFFFFF;
+}
+
+.affiliates-modal__btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+@media (max-width: 767px) {
+    .affiliates-payout-row {
+        flex-direction: column;
+    }
+
+    .affiliates-payout-row__actions {
+        width: 100%;
+        align-items: stretch;
+    }
+
+    .affiliates-payout-row__process,
+    .affiliates-payout-row__details {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Modal */
+.affiliates-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 16px;
+}
+
+.affiliates-modal {
+    width: min(600px, 100%);
+    max-height: 85vh;
+    overflow-y: auto;
+    border-radius: 12px;
+    background: var(--admin-surface, #FFFFFF);
+    box-shadow: 0 20px 40px rgba(30, 42, 71, 0.18);
+}
+
+.affiliates-modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px;
+    border-bottom: 1px solid var(--admin-border, #E6ECF5);
+}
+
+.affiliates-modal__header h2 {
+    margin: 0;
+    font-size: 18px;
+    color: var(--admin-text, #1E2A47);
+}
+
+.affiliates-modal__close {
+    border: none;
+    background: transparent;
+    font-size: 24px;
+    line-height: 1;
+    color: var(--admin-muted, #4A5C7A);
+    cursor: pointer;
+}
+
+.affiliates-modal__body {
+    padding: 20px;
+}
+
+.affiliates-modal__section {
+    margin-bottom: 20px;
+}
+
+.affiliates-modal__section h3 {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--admin-text, #1E2A47);
+    margin: 0 0 10px;
+}
+
+.affiliates-modal__section p {
+    margin: 4px 0;
+    font-size: 14px;
+    color: var(--admin-muted, #4A5C7A);
+}
+
+.affiliates-modal__section a {
+    color: var(--admin-active, #1E2A47);
+}
+
+.affiliates-status-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.affiliates-status-badge--pending {
+    background: #FEF3C7;
+    color: #92400E;
+}
+
+.affiliates-status-badge--approved {
+    background: #D1FAE5;
+    color: #065F46;
+}
+
+.affiliates-status-badge--rejected {
     background: #FEE2E2;
     color: #991B1B;
 }
 
-.status-waitlisted {
+.affiliates-status-badge--waitlisted {
     background: #E0E7FF;
     color: #3730A3;
+}
+
+@media (max-width: 767px) {
+    .affiliates-shell-title {
+        font-size: 24px;
+    }
+
+    .affiliates-tabs-ref {
+        flex-wrap: nowrap;
+    }
 }

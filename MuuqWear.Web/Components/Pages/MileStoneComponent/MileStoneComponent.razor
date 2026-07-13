@@ -64,43 +64,20 @@
             <p class="tier-benefits-title">TIER BENEFITS</p>
 
             <div class="tier-cards-grid">
-
-                <!-- Bronze Tier -->
-                <div class="tier-card @(affiliateInfo?.Tier?.ToLower() == "bronze" ? "active" : "inactive")">
-                    <svg class="tier-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="rgb(205, 127, 50)" stroke-width="2">
-                        <path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"></path>
-                        <circle cx="12" cy="8" r="6"></circle>
-                    </svg>
-                    <p class="tier-name">Bronze</p>
-                    <p class="tier-detail">50+ items</p>
-                    <p class="tier-detail">2.5% commission</p>
-                    <p class="tier-detail">5% referral discount</p>
-                </div>
-
-                <!-- Silver Tier -->
-                <div class="tier-card @(affiliateInfo?.Tier?.ToLower() == "silver" ? "active" : "inactive")">
-                    <svg class="tier-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="rgb(169, 183, 204)" stroke-width="2">
-                        <path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"></path>
-                        <circle cx="12" cy="8" r="6"></circle>
-                    </svg>
-                    <p class="tier-name">Silver</p>
-                    <p class="tier-detail">150+ items</p>
-                    <p class="tier-detail">5% commission</p>
-                    <p class="tier-detail">10% referral discount</p>
-                </div>
-
-                <!-- Gold Tier -->
-                <div class="tier-card @(affiliateInfo?.Tier?.ToLower() == "gold" ? "active" : "inactive")">
-                    <svg class="tier-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="rgb(212, 168, 67)" stroke-width="2">
-                        <path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"></path>
-                        <circle cx="12" cy="8" r="6"></circle>
-                    </svg>
-                    <p class="tier-name">Gold</p>
-                    <p class="tier-detail">500+ items</p>
-                    <p class="tier-detail">10% commission</p>
-                    <p class="tier-detail">15% referral discount</p>
-                </div>
-
+                @foreach (var tier in publicTiers)
+                {
+                    var isActive = affiliateInfo?.Tier?.Equals(tier.Slug, StringComparison.OrdinalIgnoreCase) == true;
+                    <div class="tier-card @(isActive ? "active" : "inactive")">
+                        <svg class="tier-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="@GetTierStrokeColor(tier.Slug)" stroke-width="2">
+                            <path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"></path>
+                            <circle cx="12" cy="8" r="6"></circle>
+                        </svg>
+                        <p class="tier-name">@tier.DisplayName</p>
+                        <p class="tier-detail">@tier.ItemsDetailLabel</p>
+                        <p class="tier-detail">@tier.CommissionRatePercent.ToString("0.#")% commission</p>
+                        <p class="tier-detail">@tier.ReferralDiscountPercent.ToString("0.#")% referral discount</p>
+                    </div>
+                }
             </div>
         </div>
     }

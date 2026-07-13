@@ -30,5 +30,20 @@ public interface IAffiliateService
     Task<Response<List<RecentReferralModel>>> GetRecentReferrals();
     Task<Response<bool>> ApproveApplication(Guid applicationId);
 
+    // Admin tier settings
+    Task<Response<List<AffiliateTierModel>>> GetAdminTiers();
+    Task<Response<AffiliateTierModel>> GetAdminTier(string slug);
+    Task<Response<AffiliateTierModel>> UpdateAdminTier(string slug, UpdateAffiliateTierModel request);
+
+    // Public tier list (active only)
+    Task<Response<List<AffiliateTierModel>>> GetTiers();
+
+    // Admin payouts
+    Task<Response<List<AffiliatePendingPayoutModel>>> GetAdminPendingPayouts();
+    Task<Response<List<AffiliatePendingReferralModel>>> GetAdminPendingReferrals(string affiliateCode);
+    Task<Response<AffiliatePayoutResultModel>> ProcessAdminPayout(
+        string affiliateCode, ProcessAffiliatePayoutModel? request = null);
+    Task<Response<PaginatedResponse<AffiliatePayoutResultModel>>> GetAdminPayoutHistory(
+        int page = 1, int pageSize = 20);
 }
 

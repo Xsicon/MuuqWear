@@ -123,12 +123,13 @@ public class AffiliateService : IAffiliateService
         try
         {
             var response = await _httpClient.PostAsJsonAsync(
-     $"api/Affiliate/admin/approve/{applicationId}",
-     new { });
+                $"api/Affiliate/admin/approve/{applicationId}",
+                new { });
 
             if (!response.IsSuccessStatusCode)
             {
-                return Response<bool>.Fail("Failed to validate purchase");
+                var error = await response.Content.ReadFromJsonAsync<Response<bool>>();
+                return error ?? Response<bool>.Fail("Failed to approve application");
             }
 
             var result = await response.Content.ReadFromJsonAsync<Response<bool>>();
@@ -136,11 +137,150 @@ public class AffiliateService : IAffiliateService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[Frontend] CanPurchaseQuantity error: {ex.Message}");
-            return Response<bool>.Fail($"Error validating purchase: {ex.Message}");
+            Console.WriteLine($"[AffiliateService] ApproveApplication error: {ex.Message}");
+            return Response<bool>.Fail($"Error approving application: {ex.Message}");
         }
     }
 
+
+    public async Task<Response<List<AffiliateTierModel>>> GetAdminTiers()
+    {
+        try
+        {
+            var result = await _httpClient.GetFromJsonAsync<Response<List<AffiliateTierModel>>>(
+                "api/Affiliate/admin/tiers");
+
+            return result ?? Response<List<AffiliateTierModel>>.Fail("Failed to fetch tier settings");
+        }
+        catch (Exception ex)
+        {
+            return Response<List<AffiliateTierModel>>.Fail($"Error: {ex.Message}");
+        }
+    }
+
+    public async Task<Response<AffiliateTierModel>> GetAdminTier(string slug)
+    {
+        try
+        {
+            var result = await _httpClient.GetFromJsonAsync<Response<AffiliateTierModel>>(
+                $"api/Affiliate/admin/tiers/{Uri.EscapeDataString(slug)}");
+
+            return result ?? Response<AffiliateTierModel>.Fail("Failed to fetch tier");
+        }
+        catch (Exception ex)
+        {
+            return Response<AffiliateTierModel>.Fail($"Error: {ex.Message}");
+        }
+    }
+
+    public async Task<Response<AffiliateTierModel>> UpdateAdminTier(
+        string slug, UpdateAffiliateTierModel request)
+    {
+        try
+        {
+            var response = await _httpClient.PutAsJsonAsync(
+                $"api/Affiliate/admin/tiers/{Uri.EscapeDataString(slug)}", request);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadFromJsonAsync<Response<AffiliateTierModel>>();
+                return error ?? Response<AffiliateTierModel>.Fail("Failed to update tier");
+            }
+
+            var result = await response.Content.ReadFromJsonAsync<Response<AffiliateTierModel>>();
+            return result ?? Response<AffiliateTierModel>.Fail("Invalid response");
+        }
+        catch (Exception ex)
+        {
+            return Response<AffiliateTierModel>.Fail($"Error: {ex.Message}");
+        }
+    }
+
+    public async Task<Response<List<AffiliateTierModel>>> GetTiers()
+    {
+        try
+        {
+            var result = await _httpClient.GetFromJsonAsync<Response<List<AffiliateTierModel>>>(
+                "api/Affiliate/tiers");
+
+            return result ?? Response<List<AffiliateTierModel>>.Fail("Failed to fetch tiers");
+        }
+        catch (Exception ex)
+        {
+            return Response<List<AffiliateTierModel>>.Fail($"Error: {ex.Message}");
+        }
+    }
+
+    public async Task<Response<List<AffiliatePendingPayoutModel>>> GetAdminPendingPayouts()
+    {
+        try
+        {
+            var result = await _httpClient.GetFromJsonAsync<Response<List<AffiliatePendingPayoutModel>>>(
+                "api/Affiliate/admin/payouts");
+
+            return result ?? Response<List<AffiliatePendingPayoutModel>>.Fail("Failed to fetch pending payouts");
+        }
+        catch (Exception ex)
+        {
+            return Response<List<AffiliatePendingPayoutModel>>.Fail($"Error: {ex.Message}");
+        }
+    }
+
+    public async Task<Response<List<AffiliatePendingReferralModel>>> GetAdminPendingReferrals(
+        string affiliateCode)
+    {
+        try
+        {
+            var result = await _httpClient.GetFromJsonAsync<Response<List<AffiliatePendingReferralModel>>>(
+                $"api/Affiliate/admin/payouts/{Uri.EscapeDataString(affiliateCode)}/referrals");
+
+            return result ?? Response<List<AffiliatePendingReferralModel>>.Fail("Failed to fetch referral details");
+        }
+        catch (Exception ex)
+        {
+            return Response<List<AffiliatePendingReferralModel>>.Fail($"Error: {ex.Message}");
+        }
+    }
+
+    public async Task<Response<AffiliatePayoutResultModel>> ProcessAdminPayout(
+        string affiliateCode, ProcessAffiliatePayoutModel? request = null)
+    {
+        try
+        {
+            var response = await _httpClient.PostAsJsonAsync(
+                $"api/Affiliate/admin/payouts/{Uri.EscapeDataString(affiliateCode)}/process",
+                request ?? new ProcessAffiliatePayoutModel { PaymentMethod = "manual" });
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadFromJsonAsync<Response<AffiliatePayoutResultModel>>();
+                return error ?? Response<AffiliatePayoutResultModel>.Fail("Failed to process payout");
+            }
+
+            var result = await response.Content.ReadFromJsonAsync<Response<AffiliatePayoutResultModel>>();
+            return result ?? Response<AffiliatePayoutResultModel>.Fail("Invalid response");
+        }
+        catch (Exception ex)
+        {
+            return Response<AffiliatePayoutResultModel>.Fail($"Error: {ex.Message}");
+        }
+    }
+
+    public async Task<Response<PaginatedResponse<AffiliatePayoutResultModel>>> GetAdminPayoutHistory(
+        int page = 1, int pageSize = 20)
+    {
+        try
+        {
+            var result = await _httpClient.GetFromJsonAsync<Response<PaginatedResponse<AffiliatePayoutResultModel>>>(
+                $"api/Affiliate/admin/payouts/history?page={page}&pageSize={pageSize}");
+
+            return result ?? Response<PaginatedResponse<AffiliatePayoutResultModel>>.Fail("Failed to fetch payout history");
+        }
+        catch (Exception ex)
+        {
+            return Response<PaginatedResponse<AffiliatePayoutResultModel>>.Fail($"Error: {ex.Message}");
+        }
+    }
 
     /// End Admin Methods////
     public async Task<Response<int>> GetPendingCount()
@@ -148,9 +288,9 @@ public class AffiliateService : IAffiliateService
         try
         {
             var result = await _httpClient.GetFromJsonAsync<Response<int>>(
-                "api/Affiliate/spots-remaining");
+                "api/Affiliate/admin/pending-count");
 
-            return result ?? Response<int>.Fail("Failed to fetch count");
+            return result ?? Response<int>.Fail("Failed to fetch pending count");
         }
         catch (Exception ex)
         {
@@ -163,7 +303,7 @@ public class AffiliateService : IAffiliateService
         try
         {
             var result = await _httpClient.GetFromJsonAsync<Response<int>>(
-                "api/Affiliate/");
+                "api/Affiliate/spots-remaining");
 
             return result ?? Response<int>.Fail("Failed to fetch count");
         }

@@ -14,6 +14,7 @@
 @inject AdminProductsTabCoordinator ProductsTabCoordinator
 @inject AdminCustomersTabCoordinator CustomersTabCoordinator
 @inject AdminContentTabCoordinator ContentTabCoordinator
+@inject AdminAffiliatesTabCoordinator AffiliatesTabCoordinator
 @rendermode InteractiveServer
 @implements IDisposable
 
@@ -242,25 +243,66 @@
         }
     </div>
 
-    <NavLink href="/admin/affiliates"
-             class="an-nav__item"
-             title="Affiliates"
-             onclick="window.adminSidebar.close()">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
-             viewBox="0 0 24 24" fill="none" stroke="currentColor"
-             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="m11 17 2 2a1 1 0 1 0 3-3"></path>
-            <path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"></path>
-            <path d="m21 3 1 11h-2"></path>
-            <path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3"></path>
-            <path d="M3 4h8"></path>
-        </svg>
-        <span class="an-nav__label">Affiliates</span>
-        @if (counts is not null && counts.AffiliateCounts.Pending > 0)
+    <!-- Affiliates (expandable) -->
+    <div class="an-nav-group @(affiliatesOpen ? "an-nav-group--open" : "")">
+        <button type="button"
+                class="an-nav-group__header @(IsAffiliatesSectionActive ? "an-nav-group__header--active" : "")"
+                aria-expanded="@affiliatesOpen"
+                @onclick="ToggleAffiliates">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m11 17 2 2a1 1 0 1 0 3-3"></path>
+                <path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"></path>
+                <path d="m21 3 1 11h-2"></path>
+                <path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3"></path>
+                <path d="M3 4h8"></path>
+            </svg>
+            <span class="an-nav__label">Affiliates</span>
+            @if (counts is not null && counts.AffiliateCounts.Pending > 0)
+            {
+                <span class="an-nav__badge an-nav__badge--red">@counts.AffiliateCounts.Pending</span>
+            }
+            <svg class="an-nav-group__chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m6 9 6 6 6-6"></path>
+            </svg>
+        </button>
+        @if (affiliatesOpen)
         {
-            <span class="an-nav__badge an-nav__badge--red">@counts.AffiliateCounts.Pending</span>
+            <div class="an-nav-group__children">
+                <button type="button"
+                        class="an-nav__subitem @(IsAffiliatesTabActive("pending") ? "an-nav__subitem--active" : "")"
+                        @onclick='() => NavigateToAffiliatesTab("pending")'>
+                    Pending Applications
+                    @if (counts is not null && counts.AffiliateCounts.Pending > 0)
+                    {
+                        <span class="an-nav__badge an-nav__badge--red">@counts.AffiliateCounts.Pending</span>
+                    }
+                </button>
+                <button type="button"
+                        class="an-nav__subitem @(IsAffiliatesTabActive("active") ? "an-nav__subitem--active" : "")"
+                        @onclick='() => NavigateToAffiliatesTab("active")'>
+                    Active Affiliates
+                </button>
+                <button type="button"
+                        class="an-nav__subitem @(IsAffiliatesTabActive("payouts") ? "an-nav__subitem--active" : "")"
+                        @onclick='() => NavigateToAffiliatesTab("payouts")'>
+                    Payouts
+                    @if (counts is not null && counts.AffiliateCounts.PendingPayouts > 0)
+                    {
+                        <span class="an-nav__badge an-nav__badge--red">@counts.AffiliateCounts.PendingPayouts</span>
+                    }
+                </button>
+                <button type="button"
+                        class="an-nav__subitem @(IsAffiliatesTabActive("tiers") ? "an-nav__subitem--active" : "")"
+                        @onclick='() => NavigateToAffiliatesTab("tiers")'>
+                    Tier Settings
+                </button>
+            </div>
         }
-    </NavLink>
+    </div>
 
 
     <NavLink href="/admin/live-chat"
@@ -355,6 +397,7 @@
     private bool productsInventoryOpen;
     private bool customersOpen;
     private bool contentOpen;
+    private bool affiliatesOpen;
 
     protected override async Task OnInitializedAsync()
     {
@@ -386,6 +429,7 @@
         SyncProductsInventoryGroup();
         SyncCustomersGroup();
         SyncContentGroup();
+        SyncAffiliatesGroup();
     }
 
     private void OnBadgeCountsRefreshRequested()
@@ -442,6 +486,7 @@
         SyncProductsInventoryGroup();
         SyncCustomersGroup();
         SyncContentGroup();
+        SyncAffiliatesGroup();
         await LoadBadgeCountsAsync();
         await LoadLowStockCountAsync();
         await InvokeAsync(StateHasChanged);
@@ -469,6 +514,42 @@
     {
         if (IsContentSectionActive)
             contentOpen = true;
+    }
+
+    private void SyncAffiliatesGroup()
+    {
+        if (IsAffiliatesSectionActive)
+            affiliatesOpen = true;
+    }
+
+    private void ToggleAffiliates()
+    {
+        affiliatesOpen = !affiliatesOpen;
+    }
+
+    private void NavigateToAffiliatesTab(string tab)
+    {
+        var normalized = AdminAffiliatesTabCoordinator.NormalizeTab(tab);
+        NavigationManager.NavigateTo($"/admin/affiliates?tab={normalized}");
+        AffiliatesTabCoordinator.NotifyTabChanged(normalized);
+    }
+
+    private bool IsAffiliatesSectionActive =>
+        NavigationManager.ToBaseRelativePath(NavigationManager.Uri)
+            .StartsWith("admin/affiliates", StringComparison.OrdinalIgnoreCase);
+
+    private bool IsAffiliatesTabActive(string tab)
+    {
+        if (!IsAffiliatesSectionActive)
+            return false;
+
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        var query = QueryHelpers.ParseQuery(uri.Query);
+
+        if (!query.TryGetValue("tab", out var value) || string.IsNullOrEmpty(value))
+            return tab == "pending";
+
+        return value.ToString().Equals(tab, StringComparison.OrdinalIgnoreCase);
     }
 
     private void ToggleCustomers()

@@ -1,130 +1,408 @@
 ﻿@page "/admin/affiliates"
 @layout Layout.AdminLayoutComponent.AdminDashboardLayoutComponent
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 @using Microsoft.AspNetCore.Authorization
-@using MuuqWear.Application.Services.AffiliateService
-@using MuuqWear.Web.Components.Shared
-@inject IAffiliateService AffiliateService
 @attribute [Authorize(Roles = "admin")]
+@implements IDisposable
 
-@if (isLoading)
+<PageTitle>Affiliate Program</PageTitle>
+
+@if (isLoading && loadedCacheKey == null)
 {
-    <p class="mw-section-loading">Loading affiliates...</p>
+    <p class="mw-section-loading">Loading affiliates…</p>
 }
 
+<div class="affiliates-page">
+    <div class="affiliates-shell-header">
+        <div>
+            <p class="affiliates-shell-eyebrow">Sales &amp; Operations</p>
+            <h1 class="affiliates-shell-title">Affiliate Program</h1>
+            <p class="affiliates-shell-subtitle">@GetPageSubtitle()</p>
+        </div>
+    </div>
 
-<div class="mw-affiliates">
-    <!-- HEADER -->
-    <div class="mw-affiliates__header">
-        <h1 class="mw-affiliates__title">Affiliate Management</h1>
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <p class="affiliates-error">@errorMessage</p>
+    }
+
+    <div class="affiliates-tabs-ref" role="tablist" aria-label="Affiliate sections">
+        @foreach (var tab in TabViews)
+        {
+            <button type="button"
+                    role="tab"
+                    aria-selected="@(activeTab == tab.Tab)"
+                    class="affiliates-tabs-ref__item @(activeTab == tab.Tab ? "affiliates-tabs-ref__item--active" : "")"
+                    @onclick="() => SwitchTab(tab.Tab)">
+                @tab.Label
+                @if (tab.Tab is "pending" or "active" or "payouts")
+                {
+                    var count = GetTabCount(tab.Tab);
+                    @if (count > 0 || tab.Tab != "payouts")
+                    {
+                        <span class="affiliates-tabs-ref__count">@count</span>
+                    }
+                }
+            </button>
+        }
     </div>
 
     @if (isLoading)
     {
-        <p>Loading applications...</p>
+        <p class="affiliates-empty">Loading…</p>
     }
-    else if (!string.IsNullOrEmpty(errorMessage))
+    else if (activeTab == "pending")
     {
-        <p class="error">@errorMessage</p>
-    }
-    else
-    {
-        <!-- TABS -->
-        <div class="mw-affiliates__tabs">
-            <button class="mw-tab @(activeTab == "pending" ? "active" : "")"
-                    @onclick='() => activeTab = "pending"'>
-                PENDING (@pendingApplications.Count)
+        <div class="affiliates-section-header">
+            <h2 class="affiliates-section-title">@GetTabHeading()</h2>
+            <p class="affiliates-section-subtitle">Review and approve affiliate applications</p>
+        </div>
+
+        <div class="affiliates-filter-pills">
+            <button type="button"
+                    class="affiliates-filter-pill @(pendingFilter == "pending" ? "affiliates-filter-pill--active" : "")"
+                    @onclick='() => SetPendingFilter("pending")'>
+                Pending (@pendingApplications.Count)
             </button>
-            <button class="mw-tab @(activeTab == "active" ? "active" : "")"
-                    @onclick='() => activeTab = "active"'>
-                ACTIVE (@activeApplications.Count/@totalActiveDays d)
+            <button type="button"
+                    class="affiliates-filter-pill @(pendingFilter == "waitlisted" ? "affiliates-filter-pill--active" : "")"
+                    @onclick='() => SetPendingFilter("waitlisted")'>
+                Waitlisted (@waitListApplications.Count)
             </button>
-            <button class="mw-tab @(activeTab == "waitlist" ? "active" : "")"
-                    @onclick='() => activeTab = "waitlist"'>
-                WAITLIST (@waitListApplications.Count)
+            <button type="button" class="affiliates-filter-pill affiliates-filter-pill--muted" disabled>
+                All Niches ▾
             </button>
         </div>
 
-        <!-- AFFILIATE LIST -->
-        <div class="mw-affiliates__list">
-            @if (activeTab == "pending")
+        <div class="affiliates-list">
+            @if (!FilteredPendingApplications.Any())
             {
-                @if (!pendingApplications.Any())
-                {
-                    <p>No pending applications</p>
-                }
-                else
-                {
-                    @foreach (var application in pendingApplications)
-                    {
-                        <AffiliateRowComponent Application="@application"
-                                               OnAction="HandleAction" />
-                    }
-                }
+                <div class="affiliates-empty-state">
+                    <p>No @(pendingFilter == "waitlisted" ? "waitlisted" : "pending") applications</p>
+                </div>
             }
-            else if (activeTab == "active")
+            else
             {
-                @if (!activeApplications.Any())
+                @foreach (var application in FilteredPendingApplications)
                 {
-                    <p>No active affiliates</p>
-                }
-                else
-                {
-                    @foreach (var application in activeApplications)
-                    {
-                        <AffiliateRowComponent Application="@application"
-                                      OnAction="HandleAction"
-                                      ShowActiveActions="true" />
-                    }
-                }
-            }
-            else if (activeTab == "waitlist")
-            {
-                @if (!waitListApplications.Any())
-                {
-                    <p>No waitlisted applications</p>
-                }
-                else
-                {
-                    @foreach (var application in waitListApplications)
-                    {
-                        <AffiliateRow Application="@application"
-                                      OnAction="HandleAction" />
-                    }
+                    <AffiliateRowComponent Application="@application"
+                                           OnAction="HandleAction"
+                                           Disabled="@isActionInProgress" />
                 }
             }
         </div>
+    }
+    else if (activeTab == "active")
+    {
+        <div class="affiliates-section-header">
+            <h2 class="affiliates-section-title">@GetTabHeading()</h2>
+            <p class="affiliates-section-subtitle">Manage active affiliate accounts</p>
+        </div>
+
+        <div class="affiliates-list">
+            @if (!activeApplications.Any())
+            {
+                <div class="affiliates-empty-state">
+                    <p>No active affiliates yet</p>
+                </div>
+            }
+            else
+            {
+                @foreach (var application in activeApplications)
+                {
+                    <AffiliateRowComponent Application="@application"
+                                           OnAction="HandleAction"
+                                           ShowActiveActions="true"
+                                           Disabled="@isActionInProgress" />
+                }
+            }
+        </div>
+    }
+    else if (activeTab == "payouts")
+    {
+        <div class="affiliates-section-header">
+            <h2 class="affiliates-section-title">@GetTabHeading()</h2>
+            <p class="affiliates-section-subtitle">
+                @(payoutView == "history"
+                    ? "View processed affiliate commission payouts"
+                    : "Process affiliate commission payouts")
+            </p>
+        </div>
+
+        <div class="affiliates-filter-pills">
+            <button type="button"
+                    class="affiliates-filter-pill @(payoutView == "pending" ? "affiliates-filter-pill--active" : "")"
+                    @onclick='() => SetPayoutView("pending")'>
+                Pending (@PendingPayoutCount)
+            </button>
+            <button type="button"
+                    class="affiliates-filter-pill @(payoutView == "history" ? "affiliates-filter-pill--active" : "")"
+                    @onclick='() => SetPayoutView("history")'>
+                History
+            </button>
+        </div>
+
+        @if (payoutView == "pending")
+        {
+            <div class="affiliates-list">
+                @if (!pendingPayouts.Any())
+                {
+                    <div class="affiliates-empty-state">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                        <p>No pending payouts to process</p>
+                    </div>
+                }
+                else
+                {
+                    @foreach (var payout in pendingPayouts)
+                    {
+                        var tierColors = GetTierBadgeColors(payout.AffiliateTier);
+                        var isProcessing = processingPayoutCode == payout.AffiliateCode;
+                        var isExpanded = expandedPayoutCode == payout.AffiliateCode;
+
+                        <article class="affiliates-payout-row @(isExpanded ? "affiliates-payout-row--expanded" : "")">
+                            <div class="affiliates-payout-row__main">
+                                <div class="affiliates-payout-row__title-row">
+                                    <h3 class="affiliates-payout-row__name">@payout.AffiliateName</h3>
+                                    <span class="affiliates-payout-row__tier"
+                                          style="background-color: @tierColors.Bg; color: @tierColors.Fg;">
+                                        @FormatTierLabel(payout.AffiliateTier)
+                                    </span>
+                                    <span class="affiliates-payout-row__status">@payout.Status</span>
+                                </div>
+                                <p class="affiliates-payout-row__meta">
+                                    Amount: @payout.FormattedAmount · Date: @payout.FormattedDate
+                                    @if (payout.ReferralCount > 1)
+                                    {
+                                        <span> · @payout.ReferralCount referrals</span>
+                                    }
+                                </p>
+                                @if (isExpanded)
+                                {
+                                    <div class="affiliates-payout-referrals">
+                                        @if (isLoadingReferrals)
+                                        {
+                                            <p class="affiliates-payout-referrals__loading">Loading referrals…</p>
+                                        }
+                                        else if (!expandedReferrals.Any())
+                                        {
+                                            <p class="affiliates-payout-referrals__loading">No referral line items found.</p>
+                                        }
+                                        else
+                                        {
+                                            @foreach (var referral in expandedReferrals)
+                                            {
+                                                <p class="affiliates-payout-referrals__item">
+                                                    @referral.CreatedAt.ToString("MMM dd, yyyy")
+                                                    · Order @referral.OrderNumber
+                                                    · $@referral.CommissionAmount.ToString("F2")
+                                                    commission
+                                                    @if (!string.IsNullOrEmpty(referral.MaskedCustomer))
+                                                    {
+                                                        <span> · @referral.MaskedCustomer</span>
+                                                    }
+                                                </p>
+                                            }
+                                        }
+                                    </div>
+                                }
+                            </div>
+                            <div class="affiliates-payout-row__actions">
+                                <button type="button"
+                                        class="affiliates-payout-row__details"
+                                        disabled="@isProcessing"
+                                        @onclick="() => TogglePayoutDetailsAsync(payout.AffiliateCode)">
+                                    @(isExpanded ? "Hide details" : "View referrals")
+                                </button>
+                                <button type="button"
+                                        class="affiliates-payout-row__process"
+                                        disabled="@(isProcessing || !string.IsNullOrEmpty(processingPayoutCode))"
+                                        @onclick="() => OpenPayoutConfirm(payout)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                                    @(isProcessing ? "Processing…" : "Process Payout")
+                                </button>
+                            </div>
+                        </article>
+                    }
+                }
+            </div>
+        }
+        else
+        {
+            <div class="affiliates-list">
+                @if (!payoutHistory.Any())
+                {
+                    <div class="affiliates-empty-state">
+                        <p>No payout history yet</p>
+                    </div>
+                }
+                else
+                {
+                    @foreach (var batch in payoutHistory)
+                    {
+                        <article class="affiliates-payout-row affiliates-payout-row--history">
+                            <div class="affiliates-payout-row__main">
+                                <div class="affiliates-payout-row__title-row">
+                                    <h3 class="affiliates-payout-row__name">@batch.AffiliateName</h3>
+                                    <span class="affiliates-payout-row__status affiliates-payout-row__status--paid">
+                                        @batch.Status
+                                    </span>
+                                </div>
+                                <p class="affiliates-payout-row__meta">
+                                    Amount: @batch.FormattedAmount · Processed: @batch.FormattedDate
+                                    · @batch.ReferralCount referral@(batch.ReferralCount == 1 ? "" : "s")
+                                    · @batch.FormattedPaymentMethod
+                                </p>
+                                <p class="affiliates-payout-row__ref">Batch @batch.PayoutId.ToString()[..8]… · @batch.AffiliateCode</p>
+                            </div>
+                        </article>
+                    }
+                }
+            </div>
+
+            @if (payoutHistoryTotalPages > 1)
+            {
+                <div class="affiliates-payout-pagination">
+                    <button type="button"
+                            class="affiliates-payout-pagination__btn"
+                            disabled="@(!payoutHistoryHasPrevious || isLoading)"
+                            @onclick="() => GoToPayoutHistoryPage(payoutHistoryPage - 1)">
+                        Previous
+                    </button>
+                    <span class="affiliates-payout-pagination__label">
+                        Page @payoutHistoryPage of @payoutHistoryTotalPages
+                    </span>
+                    <button type="button"
+                            class="affiliates-payout-pagination__btn"
+                            disabled="@(!payoutHistoryHasNext || isLoading)"
+                            @onclick="() => GoToPayoutHistoryPage(payoutHistoryPage + 1)">
+                        Next
+                    </button>
+                </div>
+            }
+        }
+    }
+    else if (activeTab == "tiers")
+    {
+        <div class="affiliates-section-header">
+            <h2 class="affiliates-section-title">@GetTabHeading()</h2>
+            <p class="affiliates-section-subtitle">Configure affiliate tier thresholds and commission rates</p>
+        </div>
+
+        @if (!affiliateTiers.Any())
+        {
+            <div class="affiliates-empty-state">
+                <p>No tier settings found. Run the API migration and seed, then refresh.</p>
+            </div>
+        }
+        else
+        {
+            <div class="affiliates-tier-grid">
+                @foreach (var tier in affiliateTiers)
+                {
+                    var colors = GetTierBadgeColors(tier.Slug);
+                    var edit = tierEdits.GetValueOrDefault(tier.Slug);
+                    if (edit == null)
+                    {
+                        continue;
+                    }
+
+                    var isBronze = tier.Slug.Equals("bronze", StringComparison.OrdinalIgnoreCase);
+
+                    <article class="affiliates-tier-card @(edit.IsActive ? "" : "affiliates-tier-card--inactive")">
+                        <div class="affiliates-tier-card__header">
+                            <span class="affiliates-tier-card__badge" style="background-color: @colors.Bg; color: @colors.Fg;">
+                                @tier.DisplayName
+                            </span>
+                            <label class="affiliates-tier-card__active">
+                                <input type="checkbox"
+                                       @bind="edit.IsActive"
+                                       disabled="@(isBronze || edit.IsSaving)" />
+                                Active
+                            </label>
+                        </div>
+
+                        <label class="affiliates-tier-card__label" for="@($"tier-commission-{tier.Slug}")">Commission rate (%)</label>
+                        <p class="affiliates-tier-card__hint">Paid to the affiliate per 10 items sold.</p>
+                        <input id="@($"tier-commission-{tier.Slug}")"
+                               type="number"
+                               min="0"
+                               max="100"
+                               step="0.01"
+                               class="affiliates-tier-card__input"
+                               disabled="@edit.IsSaving"
+                               @bind="edit.CommissionRatePercent"
+                               @bind:event="oninput" />
+
+                        <label class="affiliates-tier-card__label" for="@($"tier-discount-{tier.Slug}")">Audience discount (% off)</label>
+                        <p class="affiliates-tier-card__hint">Shown on /affiliate as “Your Audience Gets X% off”.</p>
+                        <input id="@($"tier-discount-{tier.Slug}")"
+                               type="number"
+                               min="0"
+                               max="100"
+                               step="0.01"
+                               class="affiliates-tier-card__input"
+                               disabled="@edit.IsSaving"
+                               @bind="edit.ReferralDiscountPercent"
+                               @bind:event="oninput" />
+
+                        <label class="affiliates-tier-card__label" for="@($"tier-threshold-{tier.Slug}")">Items sold threshold</label>
+                        <input id="@($"tier-threshold-{tier.Slug}")"
+                               type="number"
+                               min="0"
+                               step="1"
+                               class="affiliates-tier-card__input"
+                               disabled="@edit.IsSaving"
+                               @bind="edit.ItemsSoldThreshold"
+                               @bind:event="oninput" />
+
+                        @if (!string.IsNullOrEmpty(edit.Error))
+                        {
+                            <p class="affiliates-tier-card__feedback affiliates-tier-card__feedback--error">@edit.Error</p>
+                        }
+                        else if (!string.IsNullOrEmpty(edit.Success))
+                        {
+                            <p class="affiliates-tier-card__feedback affiliates-tier-card__feedback--success">@edit.Success</p>
+                        }
+
+                        <button type="button"
+                                class="affiliates-tier-card__save"
+                                disabled="@edit.IsSaving"
+                                @onclick="() => SaveTierAsync(tier.Slug)">
+                            @(edit.IsSaving ? "Saving…" : "Save changes")
+                        </button>
+                    </article>
+                }
+            </div>
+        }
     }
 </div>
 
-<!-- ? VIEW MODAL -->
 @if (showViewModal && selectedApplication != null)
 {
-    <div class="modal-overlay" @onclick="CloseViewModal">
-        <div class="modal-content" @onclick:stopPropagation="true">
-            <div class="modal-header">
+    <div class="affiliates-modal-overlay" @onclick="CloseViewModal">
+        <div class="affiliates-modal" @onclick:stopPropagation="true">
+            <div class="affiliates-modal__header">
                 <h2>Application Details</h2>
-                <button class="modal-close" @onclick="CloseViewModal">?</button>
+                <button type="button" class="affiliates-modal__close" @onclick="CloseViewModal" aria-label="Close">×</button>
             </div>
 
-            <div class="modal-body">
-                <!-- Personal Info -->
-                <div class="modal-section">
+            <div class="affiliates-modal__body">
+                <div class="affiliates-modal__section">
                     <h3>Personal Information</h3>
                     <p><strong>Name:</strong> @selectedApplication.FullName</p>
                     <p><strong>Email:</strong> @selectedApplication.Email</p>
-                    <p><strong>Status:</strong> <span class="status-badge status-@selectedApplication.Status">@selectedApplication.Status</span></p>
+                    <p><strong>Status:</strong> <span class="affiliates-status-badge affiliates-status-badge--@selectedApplication.Status.ToLowerInvariant()">@selectedApplication.Status</span></p>
                     <p><strong>Applied:</strong> @selectedApplication.FormattedDate</p>
                 </div>
 
-                <!-- Social Handles -->
-                <div class="modal-section">
+                <div class="affiliates-modal__section">
                     <h3>Social Media</h3>
                     @if (selectedApplication.SocialHandles != null && selectedApplication.SocialHandles.Any())
                     {
                         @foreach (var social in selectedApplication.SocialHandles)
                         {
-                            <p><strong>@social.Platform:</strong> @@social.Handle</p>
+                            <p><strong>@social.Platform:</strong> @social.Handle</p>
                         }
                     }
                     else
@@ -134,33 +412,62 @@
                     <p><strong>Total Audience:</strong> @selectedApplication.AudienceSize.ToString("N0") followers</p>
                 </div>
 
-                <!-- Content Info -->
-                <div class="modal-section">
+                <div class="affiliates-modal__section">
                     <h3>Content Information</h3>
                     <p><strong>Niche:</strong> @selectedApplication.ContentNiche</p>
                     @if (!string.IsNullOrEmpty(selectedApplication.PortfolioUrl))
                     {
-                        <p><strong>Portfolio:</strong> <a href="@selectedApplication.PortfolioUrl" target="_blank">@selectedApplication.PortfolioUrl</a></p>
+                        <p><strong>Portfolio:</strong> <a href="@selectedApplication.PortfolioUrl" target="_blank" rel="noopener noreferrer">@selectedApplication.PortfolioUrl</a></p>
                     }
                 </div>
 
-                <!-- Why Muuqwear -->
                 @if (!string.IsNullOrEmpty(selectedApplication.WhyMuuqwear))
                 {
-                    <div class="modal-section">
+                    <div class="affiliates-modal__section">
                         <h3>Why Muuqwear?</h3>
                         <p>@selectedApplication.WhyMuuqwear</p>
                     </div>
                 }
 
-                <!-- Admin Notes -->
                 @if (!string.IsNullOrEmpty(selectedApplication.AdminNotes))
                 {
-                    <div class="modal-section">
+                    <div class="affiliates-modal__section">
                         <h3>Admin Notes</h3>
                         <p>@selectedApplication.AdminNotes</p>
                     </div>
                 }
+            </div>
+        </div>
+    </div>
+}
+
+@if (payoutToConfirm != null)
+{
+    <div class="affiliates-modal-overlay" @onclick="ClosePayoutConfirm">
+        <div class="affiliates-modal affiliates-modal--confirm" @onclick:stopPropagation="true">
+            <div class="affiliates-modal__header">
+                <h2>Confirm payout</h2>
+                <button type="button" class="affiliates-modal__close" @onclick="ClosePayoutConfirm" aria-label="Close">×</button>
+            </div>
+            <div class="affiliates-modal__body">
+                <p>
+                    Process <strong>@payoutToConfirm.FormattedAmount</strong> payout for
+                    <strong>@payoutToConfirm.AffiliateName</strong>?
+                </p>
+                <p class="affiliates-modal__hint">
+                    This marks @payoutToConfirm.ReferralCount pending referral@(payoutToConfirm.ReferralCount == 1 ? "" : "s") as paid. This action cannot be undone.
+                </p>
+                <div class="affiliates-modal__actions">
+                    <button type="button" class="affiliates-modal__btn affiliates-modal__btn--ghost" @onclick="ClosePayoutConfirm">
+                        Cancel
+                    </button>
+                    <button type="button"
+                            class="affiliates-modal__btn affiliates-modal__btn--confirm"
+                            disabled="@(!string.IsNullOrEmpty(processingPayoutCode))"
+                            @onclick="ConfirmProcessPayoutAsync">
+                        Process Payout
+                    </button>
+                </div>
             </div>
         </div>
     </div>

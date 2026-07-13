@@ -16,6 +16,7 @@ public class AffiliateApplicationModel
     public string Email { get; set; } = string.Empty;
     public string? WhyMuuqwear { get; set; }
     public List<string>? SampleFiles { get; set; }
+    public string AffiliateTier { get; set; } = "none";
     public string FormattedDate => SubmittedAt.ToString("MMM dd, yyyy");
 
 }
