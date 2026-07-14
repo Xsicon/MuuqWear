@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Components;
+using System.Threading;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.AspNetCore.Components.Web;
-using Microsoft.AspNetCore.WebUtilities;using MuuqWear.Application.Services.RefundService;
+using Microsoft.AspNetCore.WebUtilities;
+using MuuqWear.Application.Services.RefundService;
 using MuuqWear.Application.Shared;
 using MuuqWear.Model.OrderReturn;
 using MuuqWear.Model.Orders;
@@ -23,13 +25,15 @@ public partial class AdminOrdersComponent : IDisposable
     [SupplyParameterFromQuery(Name = "status")]
     public string? StatusQuery { get; set; }
 
-    private string? _dataLoadedForTab;
+    private string? loadedCacheKey;
 
     private string searchTerm = string.Empty;
 
     // ─── STATE ────────────────────────────────────────────────
     private List<OrderModel> orders = new();
-    private bool isLoading = true;
+    private bool isLoading;
+    private bool isLoadingTabContent;
+    private int _loadGate;
     private string activeMainTab = "orders";
     private string activeStatus = "";
     private int currentPage = 1;
@@ -77,7 +81,7 @@ public partial class AdminOrdersComponent : IDisposable
     private bool isBulkUpdating = false;
 
     private List<OrderReturnModel> returns = new();
-    private bool isLoadingReturns = true;
+    private bool isLoadingReturns;
     private string activeReturnStatus = "";
     private int returnsCurrentPage = 1;
     private int returnsTotalCount = 0;
@@ -93,7 +97,7 @@ new("Denied",   "denied")
 };
 
     private List<RefundModel> refunds = new();
-    private bool isLoadingRefunds = true;
+    private bool isLoadingRefunds;
     private string activeRefundStatus = "";
     private int refundsCurrentPage = 1;
     private int refundsTotalCount = 0;
@@ -199,8 +203,79 @@ new("Denied",   "denied")
 
     protected override async Task OnParametersSetAsync()
     {
+        ApplyTabFromQuery();
         ApplyFiltersFromQuery();
-        await EnsureTabDataLoadedAsync();
+        await LoadTabDataAsync();
+    }
+
+    private string GetTabCacheKey() => activeMainTab switch
+    {
+        "returns" => $"returns:{activeReturnStatus}:{returnsCurrentPage}",
+        "refunds" => $"refunds:{activeRefundStatus}:{refundsCurrentPage}",
+        _ => $"orders:{activeStatus}:{searchTerm}:{currentPage}:{pageSize}"
+    };
+
+    private void OnOrdersTabChanged(string tab)
+    {
+        var normalized = AdminOrdersTabCoordinator.NormalizeTab(tab);
+        if (activeMainTab == normalized && loadedCacheKey == GetTabCacheKey())
+            return;
+
+        activeMainTab = normalized;
+        loadedCacheKey = null;
+        exportMenuOpen = false;
+        exportMessage = string.Empty;
+        returnActionError = string.Empty;
+        returnSuccessMessage = null;
+
+        _ = InvokeAsync(async () =>
+        {
+            await LoadTabDataAsync(force: true);
+            StateHasChanged();
+        });
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        if (!NavigationManager.ToBaseRelativePath(NavigationManager.Uri)
+                .StartsWith("admin/orders", StringComparison.OrdinalIgnoreCase))
+            return;
+
+        _ = InvokeAsync(async () =>
+        {
+            ApplyTabFromQuery();
+            ApplyFiltersFromQuery();
+            await LoadTabDataAsync();
+            StateHasChanged();
+        });
+    }
+
+    private async Task LoadTabDataAsync(bool force = false)
+    {
+        if (!force && loadedCacheKey == GetTabCacheKey())
+            return;
+
+        if (Interlocked.CompareExchange(ref _loadGate, 1, 0) != 0)
+            return;
+
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            if (activeMainTab == "orders")
+                await LoadOrders();
+            else if (activeMainTab == "returns")
+                await LoadReturns();
+            else if (activeMainTab == "refunds")
+                await LoadRefunds();
+
+            loadedCacheKey = GetTabCacheKey();
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _loadGate, 0);
+            await InvokeAsync(StateHasChanged);
+        }
     }
 
     private void ApplyFiltersFromQuery()
@@ -221,7 +296,7 @@ new("Denied",   "denied")
         {
             searchTerm = fromSearch;
             if (tab == "orders")
-                _dataLoadedForTab = null;
+                loadedCacheKey = null;
         }
 
         if (query.TryGetValue("status", out var statusVal) && !string.IsNullOrEmpty(statusVal))
@@ -246,55 +321,6 @@ new("Denied",   "denied")
         }
     }
 
-    private void OnOrdersTabChanged(string tab)
-    {
-        var normalized = AdminOrdersTabCoordinator.NormalizeTab(tab);
-        if (activeMainTab == normalized && _dataLoadedForTab == normalized)
-            return;
-
-        activeMainTab = normalized;
-        _dataLoadedForTab = null;
-        exportMenuOpen = false;
-        exportMessage = string.Empty;
-        returnActionError = string.Empty;
-        returnSuccessMessage = null;
-
-        _ = InvokeAsync(async () =>
-        {
-            await EnsureTabDataLoadedAsync(force: true);
-            StateHasChanged();
-        });
-    }
-
-    private async void OnLocationChanged(object? sender, LocationChangedEventArgs e)
-    {
-        if (!NavigationManager.ToBaseRelativePath(NavigationManager.Uri)
-                .StartsWith("admin/orders", StringComparison.OrdinalIgnoreCase))
-            return;
-
-        _dataLoadedForTab = null;
-
-        await InvokeAsync(async () =>
-        {
-            ApplyTabFromQuery();
-            ApplyFiltersFromQuery();
-            await EnsureTabDataLoadedAsync(force: true);
-            StateHasChanged();
-        });
-    }
-
-    private async Task EnsureTabDataLoadedAsync(bool force = false)
-    {
-        var previousTab = activeMainTab;
-        ApplyTabFromQuery();
-
-        if (!force && _dataLoadedForTab == activeMainTab && previousTab == activeMainTab)
-            return;
-
-        _dataLoadedForTab = activeMainTab;
-        await LoadTabData();
-    }
-
     public void Dispose()
     {
         NavigationManager.LocationChanged -= OnLocationChanged;
@@ -316,36 +342,18 @@ new("Denied",   "denied")
         TabQuery = tab;
     }
 
-    private async Task LoadTabData()
-    {
-        if (activeMainTab == "orders")
-            await LoadOrders();
-        else if (activeMainTab == "returns")
-            await LoadReturns();
-        else if (activeMainTab == "refunds")
-            await LoadRefunds();
-    }
-
-    private string PageSubtitle => activeMainTab switch
-    {
-        "returns" => "Review and approve return requests",
-        "refunds" => "Manage refund processing",
-        _ => "Manage customer orders"
-    };
-
     private async Task RefreshCurrentTab()
     {
         if (isRefreshing)
             return;
 
         isRefreshing = true;
-        _dataLoadedForTab = null;
+        loadedCacheKey = null;
         StateHasChanged();
 
         try
         {
-            await LoadTabData();
-            _dataLoadedForTab = activeMainTab;
+            await LoadTabDataAsync(force: true);
         }
         finally
         {
@@ -357,26 +365,44 @@ new("Denied",   "denied")
     // ─── LOAD ─────────────────────────────────────────────────
     private async Task LoadOrders()
     {
-        isLoading = true;
+        if (!orders.Any())
+            isLoading = true;
+        else
+            isLoadingTabContent = true;
+
         selectedOrderIds.Clear();
-        StateHasChanged();
+        await InvokeAsync(StateHasChanged);
 
-        var result = await OrderService.GetAllOrders(
-            string.IsNullOrEmpty(activeStatus) ? null : activeStatus,
-            string.IsNullOrEmpty(searchTerm) ? null : searchTerm,
-            currentPage,
-            pageSize);
-
-        if (result.Success && result.Data != null)
+        try
         {
-            orders = result.Data.Data;
-            totalCount = result.Data.TotalCount;
-            currentPage = result.Data.Page;
-        }
+            var result = await OrderService.GetAllOrders(
+                string.IsNullOrEmpty(activeStatus) ? null : activeStatus,
+                string.IsNullOrEmpty(searchTerm) ? null : searchTerm,
+                currentPage,
+                pageSize);
 
-        isLoading = false;
-        StateHasChanged();
+            if (result.Success && result.Data != null)
+            {
+                orders = result.Data.Data;
+                totalCount = result.Data.TotalCount;
+                currentPage = result.Data.Page;
+            }
+        }
+        finally
+        {
+            isLoading = false;
+            isLoadingTabContent = false;
+            loadedCacheKey = GetTabCacheKey();
+            await InvokeAsync(StateHasChanged);
+        }
     }
+
+    private string PageSubtitle => activeMainTab switch
+    {
+        "returns" => "Review and approve return requests",
+        "refunds" => "Manage refund processing",
+        _ => "Manage customer orders"
+    };
 
     // ─── FILTERS ──────────────────────────────────────────────
     private async Task SetStatus(string status)
@@ -600,26 +626,36 @@ new("Denied",   "denied")
 
     private async Task LoadReturns()
     {
-        isLoadingReturns = true;
-        isLoading = false;
-        StateHasChanged();
+        if (!returns.Any())
+            isLoadingReturns = true;
+        else
+            isLoadingTabContent = true;
 
-        var result = await OrderReturnService.GetAllReturns(
-            string.IsNullOrEmpty(activeReturnStatus)
-                ? null
-                : activeReturnStatus,
-            returnsCurrentPage,
-            returnsPageSize);
+        await InvokeAsync(StateHasChanged);
 
-        if (result.Success && result.Data != null)
+        try
         {
-            returns = result.Data.Data;
-            returnsTotalCount = result.Data.TotalCount;
-            returnsCurrentPage = result.Data.Page;
-        }
+            var result = await OrderReturnService.GetAllReturns(
+                string.IsNullOrEmpty(activeReturnStatus)
+                    ? null
+                    : activeReturnStatus,
+                returnsCurrentPage,
+                returnsPageSize);
 
-        isLoadingReturns = false;
-        StateHasChanged();
+            if (result.Success && result.Data != null)
+            {
+                returns = result.Data.Data;
+                returnsTotalCount = result.Data.TotalCount;
+                returnsCurrentPage = result.Data.Page;
+            }
+        }
+        finally
+        {
+            isLoadingReturns = false;
+            isLoadingTabContent = false;
+            loadedCacheKey = GetTabCacheKey();
+            await InvokeAsync(StateHasChanged);
+        }
     }
 
     private async Task SetReturnStatus(string status)
@@ -700,7 +736,7 @@ new("Denied",   "denied")
         returnSuccessMessage = null;
         activeMainTab = "refunds";
         activeRefundStatus = "pending";
-        _dataLoadedForTab = null;
+        loadedCacheKey = null;
         NavigationManager.NavigateTo("/admin/orders?tab=refunds&status=pending");
         OrdersTabCoordinator.NotifyTabChanged("refunds");
     }
@@ -716,10 +752,13 @@ new("Denied",   "denied")
 
     private async Task LoadRefunds()
     {
-        isLoadingRefunds = true;
-        isLoading = false;
+        if (!refunds.Any())
+            isLoadingRefunds = true;
+        else
+            isLoadingTabContent = true;
+
         refundsError = string.Empty;
-        StateHasChanged();
+        await InvokeAsync(StateHasChanged);
 
         try
         {
@@ -752,9 +791,13 @@ new("Denied",   "denied")
             refundsTotalCount = 0;
             refundsError = ex.Message;
         }
-
-        isLoadingRefunds = false;
-        StateHasChanged();
+        finally
+        {
+            isLoadingRefunds = false;
+            isLoadingTabContent = false;
+            loadedCacheKey = GetTabCacheKey();
+            await InvokeAsync(StateHasChanged);
+        }
     }
 
     private async Task SetRefundStatus(string status)

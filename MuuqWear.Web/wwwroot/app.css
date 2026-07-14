@@ -121,6 +121,14 @@ input:invalid,
 }
 
 
+/* Blazor default reconnect UI — replaced by blazor-boot.js + nav progress bar */
+#components-reconnect-modal,
+#components-reconnect-dialog,
+.components-reconnect-container,
+.components-rejoin-modal {
+    display: none !important;
+}
+
 /* Instant feedback while Blazor navigates between pages */
 body.mw-nav-loading::before {
     content: "";
@@ -153,6 +161,34 @@ body.mw-nav-loading::before {
     }
 }
 
+@keyframes mw-nav-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.mw-nav__link.mw-nav--loading,
+.mw-mobile-nav__link.mw-nav--loading {
+    position: relative;
+    opacity: 0.85;
+    padding-right: 28px;
+}
+
+.mw-nav__link.mw-nav--loading::after,
+.mw-mobile-nav__link.mw-nav--loading::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    top: 50%;
+    width: 12px;
+    height: 12px;
+    margin-top: -6px;
+    border: 2px solid rgba(30, 42, 71, 0.15);
+    border-top-color: #1E2A47;
+    border-radius: 50%;
+    animation: mw-nav-spin 0.65s linear infinite;
+}
+
 .mw-section-loading {
     color: #4A5C7A;
     padding: 24px 16px;
@@ -175,6 +211,67 @@ body.mw-nav-loading::before {
     100% {
         background-position: -100% 0;
     }
+}
+
+/* Reusable skeleton primitives (MwSkeleton / MwSkeletonSection) */
+.mw-skeleton {
+    display: block;
+    background: linear-gradient(90deg, #E6ECF5 25%, #f5f7fa 50%, #E6ECF5 75%);
+    background-size: 200% 100%;
+    animation: mw-skeleton-shimmer 1.2s ease-in-out infinite;
+    border-radius: 6px;
+}
+
+.mw-skeleton--line {
+    height: 14px;
+    width: 100%;
+}
+
+.mw-skeleton--line-sm {
+    height: 10px;
+    width: 55%;
+}
+
+.mw-skeleton--line-md {
+    height: 14px;
+    width: 75%;
+}
+
+.mw-skeleton--line-lg {
+    height: 18px;
+    width: 40%;
+}
+
+.mw-skeleton--circle {
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+}
+
+.mw-skeleton--pill {
+    height: 26px;
+    width: 88px;
+    border-radius: 999px;
+}
+
+.mw-skeleton--block {
+    width: 100%;
+    min-height: 120px;
+}
+
+.mw-skeleton--btn {
+    height: 36px;
+    width: 72px;
+    border-radius: 6px;
+}
+
+.mw-skeleton-section {
+    width: 100%;
+}
+
+.mw-skeleton-section[aria-busy="true"] {
+    pointer-events: none;
 }
 
 

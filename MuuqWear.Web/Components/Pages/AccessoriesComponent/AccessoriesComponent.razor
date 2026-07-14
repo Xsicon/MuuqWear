@@ -37,17 +37,9 @@
     {
         <div class="acc-carousel-section">
             <div class="acc-carousel-section__inner">
-                <div class="acc-skeleton-header"></div>
-                <div class="acc-skeleton-row">
-                    @for (var i = 0; i < 4; i++)
-                    {
-                        <div class="acc-card acc-card--skeleton">
-                            <div class="acc-card__media"></div>
-                            <div class="acc-card__skel-line acc-card__skel-line--sm"></div>
-                            <div class="acc-card__skel-line"></div>
-                        </div>
-                    }
-                </div>
+                <MwSkeletonSection Layout="MwSkeletonSection.SkeletonLayout.StorefrontCarousel"
+                                   Count="4"
+                                   AriaLabel="Loading accessories" />
             </div>
         </div>
     }
@@ -304,6 +296,8 @@
     </section>
 
 </section>
+
+<PageReadyNotifier IsLoading="@(isLoading && allProducts.Count == 0)" />
 
 @code {
     private RenderFragment RenderProductCard(ProductModel item) => __builder =>

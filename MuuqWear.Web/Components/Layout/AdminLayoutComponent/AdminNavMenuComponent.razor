@@ -1,4 +1,4 @@
-﻿@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Components.Routing
 @using Microsoft.AspNetCore.WebUtilities
 @using MuuqWear.Application.Services.AdminBadgeService
@@ -6,9 +6,10 @@
 @using MuuqWear.Application.Shared
 @using MuuqWear.Model.AdminBadgeCount
 @using MuuqWear.Model.Products
+@using MuuqWear.Web.Services
 @inject AuthenticationStateProvider AuthStateProvider
-@inject IAdminBadgeService BadgeService
-@inject IProductService ProductService
+@inject AdminBadgeCountsCacheService BadgeCountsCache
+@inject AdminLowStockCacheService LowStockCache
 @inject NavigationManager NavigationManager
 @inject AdminOrdersTabCoordinator OrdersTabCoordinator
 @inject AdminProductsTabCoordinator ProductsTabCoordinator
@@ -416,11 +417,9 @@
             ? $"{parts[0][0]}{parts[^1][0]}".ToUpper()
             : parts[0][..Math.Min(2, parts[0].Length)].ToUpper();
 
-        var result = await LoadBadgeCountsAsync();
-        if (result)
-            openTickets = counts!.OpenTickets;
-
-        await LoadLowStockCountAsync();
+        var badgeTask = RefreshBadgeCountsAsync();
+        var lowStockTask = RefreshLowStockCountAsync();
+        await Task.WhenAll(badgeTask, lowStockTask);
 
         NavigationManager.LocationChanged += OnLocationChanged;
         OrdersTabCoordinator.BadgeCountsRefreshRequested += OnBadgeCountsRefreshRequested;
@@ -436,8 +435,8 @@
     {
         _ = InvokeAsync(async () =>
         {
-            if (await LoadBadgeCountsAsync())
-                openTickets = counts!.OpenTickets;
+            BadgeCountsCache.Invalidate();
+            await RefreshBadgeCountsAsync(forceRefresh: true);
             StateHasChanged();
         });
     }
@@ -446,50 +445,32 @@
     {
         _ = InvokeAsync(async () =>
         {
-            await LoadLowStockCountAsync();
+            LowStockCache.Invalidate();
+            await RefreshLowStockCountAsync(forceRefresh: true);
             StateHasChanged();
         });
     }
 
-    private async Task<bool> LoadBadgeCountsAsync()
+    private async Task RefreshBadgeCountsAsync(bool forceRefresh = false)
     {
-        var result = await BadgeService.GetCounts();
-        if (result.Success && result.Data != null)
-        {
-            counts = result.Data;
-            return true;
-        }
-
-        return false;
+        counts = await BadgeCountsCache.GetCountsAsync(forceRefresh);
+        if (counts != null)
+            openTickets = counts.OpenTickets;
     }
 
-    private async Task LoadLowStockCountAsync()
+    private async Task RefreshLowStockCountAsync(bool forceRefresh = false)
     {
-        var result = await ProductService.GetAll(new ProductFilterModel
-        {
-            Page = 1,
-            PageSize = 1000
-        });
-
-        if (!result.Success || result.Data?.Data == null)
-            return;
-
-        foreach (var product in result.Data.Data)
-            ProductStockHelper.SyncStockFromSizes(product);
-
-        lowStockCount = result.Data.Data.Count(ProductStockHelper.IsLowStock);
+        lowStockCount = await LowStockCache.GetCountAsync(forceRefresh);
     }
 
-    private async void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {
         SyncSalesOrdersGroup();
         SyncProductsInventoryGroup();
         SyncCustomersGroup();
         SyncContentGroup();
         SyncAffiliatesGroup();
-        await LoadBadgeCountsAsync();
-        await LoadLowStockCountAsync();
-        await InvokeAsync(StateHasChanged);
+        _ = InvokeAsync(StateHasChanged);
     }
 
     private void SyncSalesOrdersGroup()

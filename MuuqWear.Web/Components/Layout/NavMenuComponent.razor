@@ -1,4 +1,4 @@
-﻿@rendermode InteractiveServer
+@rendermode InteractiveServer
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JS
 @using Microsoft.AspNetCore.Components.Authorization
@@ -771,36 +771,21 @@
 
             if (isAuthenticated)
             {
-                var cookieJson = await JS.InvokeAsync<string?>("getCartCookie");
-                var hadGuestCart = !string.IsNullOrEmpty(cookieJson);
+                var cartCookieTask = JS.InvokeAsync<string?>("getCartCookie");
+                var wishlistCookieTask = JS.InvokeAsync<string?>("getWishlistCookie");
+                await Task.WhenAll(cartCookieTask.AsTask(), wishlistCookieTask.AsTask());
 
-                if (hadGuestCart)
-                {
-                    await CartStateService.LoadGuestCartFromCookie();
-                    await CartStateService.MergeGuestCartAsync();
-                }
-                else
-                {
-                    await CartStateService.InitializeAsync(isAuthenticated, userId);
-                }
-
-                var wishlistCookieJson = await JS.InvokeAsync<string?>("getWishlistCookie");
-                var hadGuestWishlist = !string.IsNullOrEmpty(wishlistCookieJson);
-
-                if (hadGuestWishlist)
-                {
-                    await WishlistStateService.LoadGuestWishlistFromCookie();
-                    await WishlistStateService.MergeGuestWishlistAsync();
-                }
-                else
-                {
-                    await WishlistStateService.InitializeAsync(isAuthenticated, userId);
-                }
+                var cartInit = InitializeCartForUserAsync(
+                    isAuthenticated, userId, cartCookieTask.Result);
+                var wishlistInit = InitializeWishlistForUserAsync(
+                    isAuthenticated, userId, wishlistCookieTask.Result);
+                await Task.WhenAll(cartInit, wishlistInit);
             }
             else
             {
-                await CartStateService.InitializeAsync(isAuthenticated, userId);
-                await WishlistStateService.InitializeAsync(isAuthenticated, userId);
+                await Task.WhenAll(
+                    CartStateService.InitializeAsync(false, null),
+                    WishlistStateService.InitializeAsync(false, null));
             }
 
             StateHasChanged();
@@ -1105,6 +1090,32 @@
     private void CloseProfile()
     {
         isProfileOpen = false;
+    }
+
+    private async Task InitializeCartForUserAsync(
+        bool isAuthenticated, string? userId, string? cookieJson)
+    {
+        if (!string.IsNullOrEmpty(cookieJson))
+        {
+            await CartStateService.LoadGuestCartFromCookie();
+            await CartStateService.MergeGuestCartAsync();
+            return;
+        }
+
+        await CartStateService.InitializeAsync(isAuthenticated, userId);
+    }
+
+    private async Task InitializeWishlistForUserAsync(
+        bool isAuthenticated, string? userId, string? cookieJson)
+    {
+        if (!string.IsNullOrEmpty(cookieJson))
+        {
+            await WishlistStateService.LoadGuestWishlistFromCookie();
+            await WishlistStateService.MergeGuestWishlistAsync();
+            return;
+        }
+
+        await WishlistStateService.InitializeAsync(isAuthenticated, userId);
     }
 
     // sign out

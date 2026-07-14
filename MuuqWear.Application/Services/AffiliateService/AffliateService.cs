@@ -1,4 +1,4 @@
-﻿using MuuqWear.Application.Shared;
+using MuuqWear.Application.Shared;
 using MuuqWear.Model.AffiliateApplication;
 using MuuqWear.Model.PartnerStoreProduct;
 using MuuqWear.Model.Shared;
@@ -279,6 +279,68 @@ public class AffiliateService : IAffiliateService
         catch (Exception ex)
         {
             return Response<PaginatedResponse<AffiliatePayoutResultModel>>.Fail($"Error: {ex.Message}");
+        }
+    }
+
+    public async Task<Response<AffiliateAdminStatsModel>> GetAdminStats()
+    {
+        try
+        {
+            var result = await _httpClient.GetFromJsonAsync<Response<AffiliateAdminStatsModel>>(
+                "api/Affiliate/admin/stats");
+
+            return result ?? Response<AffiliateAdminStatsModel>.Fail("Failed to fetch affiliate stats");
+        }
+        catch (Exception ex)
+        {
+            return Response<AffiliateAdminStatsModel>.Fail($"Error: {ex.Message}");
+        }
+    }
+
+    public async Task<Response<AffiliateApplicationModel>> UpdateAffiliateActiveStatus(
+        Guid userId, UpdateAffiliateActiveStatusModel request)
+    {
+        try
+        {
+            var response = await _httpClient.PutAsJsonAsync(
+                $"api/Affiliate/admin/affiliates/{userId}/status", request);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadFromJsonAsync<Response<AffiliateApplicationModel>>();
+                return error ?? Response<AffiliateApplicationModel>.Fail("Failed to update affiliate status");
+            }
+
+            var result = await response.Content.ReadFromJsonAsync<Response<AffiliateApplicationModel>>();
+            return result ?? Response<AffiliateApplicationModel>.Fail("Invalid response");
+        }
+        catch (Exception ex)
+        {
+            return Response<AffiliateApplicationModel>.Fail($"Error: {ex.Message}");
+        }
+    }
+
+    public async Task<Response<ProcessAllAffiliatePayoutsResultModel>> ProcessAllAdminPayouts(
+        ProcessAllAffiliatePayoutsModel? request = null)
+    {
+        try
+        {
+            var response = await _httpClient.PostAsJsonAsync(
+                "api/Affiliate/admin/payouts/process-all",
+                request ?? new ProcessAllAffiliatePayoutsModel());
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadFromJsonAsync<Response<ProcessAllAffiliatePayoutsResultModel>>();
+                return error ?? Response<ProcessAllAffiliatePayoutsResultModel>.Fail("Failed to process payouts");
+            }
+
+            var result = await response.Content.ReadFromJsonAsync<Response<ProcessAllAffiliatePayoutsResultModel>>();
+            return result ?? Response<ProcessAllAffiliatePayoutsResultModel>.Fail("Invalid response");
+        }
+        catch (Exception ex)
+        {
+            return Response<ProcessAllAffiliatePayoutsResultModel>.Fail($"Error: {ex.Message}");
         }
     }
 

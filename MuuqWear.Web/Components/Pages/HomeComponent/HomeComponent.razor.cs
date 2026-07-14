@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
-using MuuqWear.Application.Services.JobPostingService;
+using MuuqWear.Web.Services;
+
 namespace MuuqWear.Web.Components.Pages.HomeComponent;
 
 public partial class HomeComponent : IAsyncDisposable
@@ -8,6 +9,10 @@ public partial class HomeComponent : IAsyncDisposable
     private const int HeroAutoplayMs = 5500;
 
     private record HeroSlide(string Image, string Eyebrow, string Headline, string Cta, string Link);
+
+    private record CategoryCard(string Name, string Image, string Link);
+
+    [Inject] private StorefrontHomeCacheService HomeCache { get; set; } = default!;
 
     private List<HeroSlide> HeroSlides { get; } = new()
     {
@@ -32,10 +37,15 @@ public partial class HomeComponent : IAsyncDisposable
     };
 
     private List<CategoryCard> Categories = new();
+    private List<MuuqWear.Model.Products.ProductModel> NewArrivals = new();
+    private List<MuuqWear.Model.Products.ProductModel> FeaturedProducts = new();
+    private List<MuuqWear.Model.Products.ProductModel> BestSellerProducts = new();
 
-    private record CategoryCard(string Name, string Image, string Link);
+    private bool _homeCarouselsReady;
+    private bool isLoadingProducts = true;
+    private bool isLoadingCategories = true;
 
-    private Dictionary<string, string> CategoryImages = new()
+    private Dictionary<string, string> CategoryImages { get; } = new()
     {
         { "Mens", "https://images.unsplash.com/photo-1762232975039-7b36432bcac6?w=600" },
         { "Womens", "https://images.unsplash.com/photo-1506619928596-bb8c201545cc?w=600" },
@@ -43,11 +53,6 @@ public partial class HomeComponent : IAsyncDisposable
         { "Accessories", "https://images.unsplash.com/photo-1693592401248-c9544518318a?w=600" },
         { "Outerwear", "https://images.unsplash.com/photo-1704716720991-cf3197cfb190?w=600" }
     };
-
-    private List<MuuqWear.Model.Products.ProductModel> NewArrivals = new();
-    private List<MuuqWear.Model.Products.ProductModel> FeaturedProducts = new();
-    private List<MuuqWear.Model.Products.ProductModel> BestSellerProducts = new();
-    private bool _homeCarouselsReady;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -99,35 +104,67 @@ public partial class HomeComponent : IAsyncDisposable
 
     protected override async Task OnInitializedAsync()
     {
-        await Task.WhenAll(LoadHomeProducts(), LoadCategories());
+        var cachedProducts = HomeCache.GetHomeProductsCached();
+        if (cachedProducts != null)
+        {
+            ApplyHomeProducts(cachedProducts);
+            isLoadingProducts = false;
+        }
+
+        var cachedCategories = HomeCache.GetCategoriesCached();
+        if (cachedCategories != null)
+        {
+            ApplyCategories(cachedCategories);
+            isLoadingCategories = false;
+        }
+
+        var tasks = new List<Task>();
+
+        if (isLoadingProducts)
+            tasks.Add(LoadHomeProductsAsync());
+
+        if (isLoadingCategories)
+            tasks.Add(LoadCategoriesAsync());
+
+        if (tasks.Count > 0)
+            await Task.WhenAll(tasks);
     }
 
-    private async Task LoadHomeProducts()
+    private async Task LoadHomeProductsAsync()
     {
-        var result = await ProductService.GetHomeProducts();
-
-        if (result.Success && result.Data != null)
-        {
-            NewArrivals = result.Data.NewArrivals;
-            FeaturedProducts = result.Data.Featured;
-            BestSellerProducts = result.Data.BestSellers;
-        }
+        isLoadingProducts = true;
+        var data = await HomeCache.GetHomeProductsAsync(allowStale: false);
+        if (data != null)
+            ApplyHomeProducts(data);
+        isLoadingProducts = false;
     }
 
-    private async Task LoadCategories()
+    private async Task LoadCategoriesAsync()
     {
-        var result = await CategoryService.GetAll();
+        isLoadingCategories = true;
+        var data = await HomeCache.GetCategoriesAsync(allowStale: false);
+        if (data != null)
+            ApplyCategories(data);
+        isLoadingCategories = false;
+    }
 
-        if (result.Success && result.Data != null)
-        {
-            Categories = result.Data
-                .Select(c => new CategoryCard(
-                    Name: c.Name!,
-                    Image: CategoryImages.GetValueOrDefault(c.Name!,
-                        "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=600"),
-                    Link: $"/shop/apparel?categoryId={c.Id}"
-                ))
-                .ToList();
-        }
+    private void ApplyHomeProducts(MuuqWear.Model.Products.HomeProductsModel data)
+    {
+        NewArrivals = data.NewArrivals;
+        FeaturedProducts = data.Featured;
+        BestSellerProducts = data.BestSellers;
+        _homeCarouselsReady = false;
+    }
+
+    private void ApplyCategories(List<MuuqWear.Model.Products.CategoryModel> data)
+    {
+        Categories = data
+            .Select(c => new CategoryCard(
+                Name: c.Name!,
+                Image: CategoryImages.GetValueOrDefault(c.Name!,
+                    "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=600"),
+                Link: $"/shop/apparel?categoryId={c.Id}"))
+            .ToList();
+        _homeCarouselsReady = false;
     }
 }

@@ -1,8 +1,12 @@
-﻿/* Sales & Orders — Phase 2 (uses admin shell CSS variables) */
+/* Sales & Orders — Phase 2 (uses admin shell CSS variables) */
 
 .orders-page {
     padding: 0;
     max-width: 1200px;
+}
+
+.orders-page--refreshing {
+    opacity: 0.92;
 }
 
 /* ─── HEADER ──────────────────────────────────────────────── */

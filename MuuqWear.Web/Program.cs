@@ -31,6 +31,7 @@ using MuuqWear.Application.Services.ProfileService;
 using MuuqWear.Application.Services.VoteService;
 using MuuqWear.Application.Shared;
 using MuuqWear.Web.Components;
+using MuuqWear.Web.Services;
 using System.Security.Claims;
 
 
@@ -116,6 +117,11 @@ builder.Services.AddScoped<AdminProductsTabCoordinator>();
 builder.Services.AddScoped<AdminCustomersTabCoordinator>();
 builder.Services.AddScoped<AdminContentTabCoordinator>();
 builder.Services.AddScoped<AdminAffiliatesTabCoordinator>();
+builder.Services.AddScoped<AdminLowStockCacheService>();
+builder.Services.AddScoped<AdminBadgeCountsCacheService>();
+builder.Services.AddScoped<AdminContentCountsCacheService>();
+builder.Services.AddScoped<NavigationLoadingService>();
+builder.Services.AddScoped<StorefrontHomeCacheService>();
 builder.Services.AddScoped<CartStateService>();
 builder.Services.AddScoped<WishlistStateService>();
 builder.Services.AddCascadingAuthenticationState();
@@ -236,6 +242,10 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseStaticFiles();
+app.UseWebSockets(new WebSocketOptions
+{
+    KeepAliveInterval = TimeSpan.FromMinutes(2)
+});
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();

@@ -10,20 +10,15 @@
 
 <PageTitle>Analytics & Reports — Admin</PageTitle>
 
-@if (isLoading)
-{
-    <p class="mw-section-loading">Loading analytics...</p>
-}
-
-<div class="analytics-page">
+<div class="analytics-page @(isRefreshing ? "analytics-page--refreshing" : "")">
 
     <!-- Header -->
     <div class="analytics-page__header">
         <h2 class="analytics-page__title">Analytics &amp; Reports</h2>
         <button class="btn-refresh"
                 @onclick="HandleRefresh"
-                disabled="@isLoading">
-            @(isLoading ? "Refreshing..." : "↻ Refresh")
+                disabled="@(isLoading || isRefreshing)">
+            @(isLoading || isRefreshing ? "Refreshing..." : "↻ Refresh")
         </button>
     </div>
 
@@ -39,9 +34,10 @@
             </button>
         </div>
 
-        @if (revenue is null)
+        @if (revenue is null && isLoading)
         {
-            <p class="card__empty">Loading revenue data...</p>
+            <MwSkeletonSection Layout="MwSkeletonSection.SkeletonLayout.AdminAnalytics"
+                               AriaLabel="Loading analytics" />
         }
         else
         {
@@ -85,9 +81,11 @@
                 <p class="card__eyebrow">Top Selling Products</p>
             </div>
 
-            @if (topProducts is null)
+            @if (topProducts is null && isLoading)
             {
-                <p class="card__empty">Loading...</p>
+                <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Line" />
+                <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineSm" />
+                <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineSm" />
             }
             else if (!topProducts.Any())
             {
@@ -122,9 +120,11 @@
                 <p class="card__eyebrow">Affiliate Performance</p>
             </div>
 
-            @if (affiliatePerformance is null)
+            @if (affiliatePerformance is null && isLoading)
             {
-                <p class="card__empty">Loading...</p>
+                <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Line" />
+                <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineSm" />
+                <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineSm" />
             }
             else if (!affiliatePerformance.Any())
             {

@@ -10,6 +10,7 @@ using MuuqWear.Application.Services.VoteService;
 using MuuqWear.Application.Shared;
 using MuuqWear.Model.ContentItem;
 using MuuqWear.Model.Muuqsimo;
+using MuuqWear.Web.Services;
 
 namespace MuuqWear.Web.Components.Pages.AdminComponent;
 
@@ -20,6 +21,7 @@ public partial class AdminContentComponent : IDisposable
     [Inject] private IProductService ProductService { get; set; } = default!;
     [Inject] private IVoteService VoteService { get; set; } = default!;
     [Inject] private AdminContentTabCoordinator ContentTabCoordinator { get; set; } = default!;
+    [Inject] private AdminContentCountsCacheService ContentCountsCache { get; set; } = default!;
     [Inject] private IJSRuntime JS { get; set; } = default!;
 
     [SupplyParameterFromQuery(Name = "view")]
@@ -47,6 +49,9 @@ public partial class AdminContentComponent : IDisposable
     private string searchQuery = string.Empty;
     private string statusFilter = "all";
 
+    private bool IsCurrentViewLoading =>
+        isLoading || voteItemsLoading || mediaLoading || loadedView != activeView;
+
     private bool isDeleteModalOpen;
     private ContentItemModel? deletingItem;
     private bool isDeleting;
@@ -66,26 +71,76 @@ public partial class AdminContentComponent : IDisposable
         ("media", "Media Library")
     };
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
         ContentTabCoordinator.ViewChanged += OnContentViewChanged;
-        NavigationManager.LocationChanged += OnLocationChanged;
-        ApplyViewFromQuery();
-        await SyncActiveViewAsync();
     }
 
     protected override async Task OnParametersSetAsync()
     {
+        var previousView = activeView;
         ApplyViewFromQuery();
+
+        if (!string.IsNullOrEmpty(loadedView) && previousView != activeView)
+            BeginViewTransition();
+
         await SyncActiveViewAsync();
     }
 
     public void Dispose()
     {
         disposed = true;
-        viewSyncLock.Dispose();
         ContentTabCoordinator.ViewChanged -= OnContentViewChanged;
-        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+
+    private void ExitViewSync(bool lockAcquired)
+    {
+        if (!lockAcquired)
+            return;
+
+        try
+        {
+            viewSyncLock.Release();
+        }
+        catch (ObjectDisposedException)
+        {
+            // Component torn down while sync was in flight.
+        }
+    }
+
+    private async Task RefreshBackgroundMetricsAsync()
+    {
+        if (disposed)
+            return;
+
+        try
+        {
+            await ApplyCachedCountsAndHealthAsync(forceRefresh: false);
+        }
+        catch
+        {
+            // Background refresh — never break the page.
+        }
+    }
+
+    private async Task ApplyCachedCountsAndHealthAsync(bool forceRefresh = false)
+    {
+        var snapshot = await ContentCountsCache.GetSnapshotAsync(forceRefresh);
+
+        if (disposed)
+            return;
+
+        foreach (var (view, count) in snapshot.TabCounts)
+            tabCounts[view] = count;
+
+        healthJournalLowSeoCount = snapshot.HealthJournalLowSeoCount;
+        healthJournalDraftCount = snapshot.HealthJournalDraftCount;
+        healthVoteActiveCount = snapshot.HealthVoteActiveCount;
+
+        if (activeView == "media")
+            tabCounts["media"] = mediaItems.Count;
+
+        await InvokeAsync(StateHasChanged);
     }
 
     private void ResetViewFilters()
@@ -98,26 +153,51 @@ public partial class AdminContentComponent : IDisposable
         mediaError = string.Empty;
     }
 
+    private void BeginViewTransition()
+    {
+        isLoading = true;
+        loadedView = string.Empty;
+        pageError = string.Empty;
+        items.Clear();
+        voteCampaigns.Clear();
+        voteStats = null;
+    }
+
     private async Task SyncActiveViewAsync()
     {
-        if (loadedView == activeView)
+        if (disposed || loadedView == activeView)
             return;
 
-        await viewSyncLock.WaitAsync();
+        var lockAcquired = false;
         try
         {
-            if (loadedView == activeView)
+            await viewSyncLock.WaitAsync();
+            lockAcquired = true;
+        }
+        catch (ObjectDisposedException)
+        {
+            return;
+        }
+
+        try
+        {
+            if (disposed || loadedView == activeView)
                 return;
 
             await LoadItems();
+            if (disposed)
+                return;
+
             loadedView = activeView;
-            await RefreshTabCountsAsync(allTabs: true);
-            await RefreshHealthMetricsAsync();
+            SyncActiveTabCount();
+            _ = RefreshBackgroundMetricsAsync();
         }
         finally
         {
-            viewSyncLock.Release();
-            StateHasChanged();
+            ExitViewSync(lockAcquired);
+
+            if (!disposed)
+                await InvokeAsync(StateHasChanged);
         }
     }
 
@@ -140,9 +220,11 @@ public partial class AdminContentComponent : IDisposable
 
     private async Task LoadItems()
     {
+        if (disposed)
+            return;
+
         isLoading = true;
         pageError = string.Empty;
-        StateHasChanged();
 
         try
         {
@@ -150,14 +232,19 @@ public partial class AdminContentComponent : IDisposable
             {
                 case "vote":
                     await LoadVoteItemsAsync();
-                    items = new();
+                    if (!disposed)
+                        items = new();
                     break;
                 case "media":
                     await LoadMediaLibraryAsync();
-                    items = new();
+                    if (!disposed)
+                        items = new();
                     break;
                 default:
                     var result = await ContentService.GetAll(ActiveCategory);
+                    if (disposed)
+                        return;
+
                     items = result.Success && result.Data != null
                         ? result.Data
                         : new();
@@ -167,20 +254,21 @@ public partial class AdminContentComponent : IDisposable
 
                     if (activeView == "events")
                         await LoadEventTicketSalesAsync();
-
-                    SyncActiveTabCount();
                     break;
             }
         }
         finally
         {
-            isLoading = false;
-            StateHasChanged();
+            if (!disposed)
+                isLoading = false;
         }
     }
 
     private void OnContentViewChanged(string view)
     {
+        if (disposed)
+            return;
+
         var normalized = AdminContentTabCoordinator.NormalizeView(view);
         if (activeView == normalized && loadedView == normalized)
             return;
@@ -188,30 +276,12 @@ public partial class AdminContentComponent : IDisposable
         activeView = normalized;
         ResetViewFilters();
         CloseForm();
-        loadedView = string.Empty;
-
-        _ = InvokeAsync(SyncActiveViewAsync);
-    }
-
-    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
-    {
-        if (!NavigationManager.ToBaseRelativePath(NavigationManager.Uri)
-                .StartsWith("admin/content", StringComparison.OrdinalIgnoreCase))
-            return;
+        BeginViewTransition();
 
         _ = InvokeAsync(async () =>
         {
-            var previousView = activeView;
-            ApplyViewFromQuery();
-
-            if (previousView != activeView)
-            {
-                ResetViewFilters();
-                CloseForm();
-                loadedView = string.Empty;
-            }
-
-            await SyncActiveViewAsync();
+            if (!disposed)
+                await SyncActiveViewAsync();
         });
     }
 
@@ -248,7 +318,9 @@ public partial class AdminContentComponent : IDisposable
         if (result.Success && result.Data != null)
         {
             ReplaceItemInList(items, result.Data);
-            tabCounts[activeView] = items.Count;
+            SyncActiveTabCount();
+            InvalidateContentCounts();
+            _ = RefreshBackgroundMetricsAsync();
             StateHasChanged();
             return true;
         }
@@ -265,7 +337,9 @@ public partial class AdminContentComponent : IDisposable
         if (result.Success && result.Data != null)
         {
             ReplaceItemInList(items, result.Data);
-            tabCounts[activeView] = items.Count;
+            SyncActiveTabCount();
+            InvalidateContentCounts();
+            _ = RefreshBackgroundMetricsAsync();
             StateHasChanged();
             return true;
         }
@@ -278,21 +352,7 @@ public partial class AdminContentComponent : IDisposable
     private string GetTabLabel(string view) =>
         TabViews.First(t => t.View == AdminContentTabCoordinator.NormalizeView(view)).Label;
 
-    private async Task RefreshHealthMetricsAsync()
-    {
-        var journal = await ContentService.GetAll(ContentCategory.JournalArticles);
-        if (journal.Success && journal.Data != null)
-        {
-            healthJournalLowSeoCount = journal.Data.Count(x => JournalSeoScorer.Score(x) < 70);
-            healthJournalDraftCount = journal.Data.Count(x =>
-                ContentItemStatusHelper.NormalizeStatus(x.Status) == "draft");
-        }
-
-        var activeVotes = await VoteService.GetActiveItems();
-        healthVoteActiveCount = activeVotes.Success && activeVotes.Data != null
-            ? activeVotes.Data.Count
-            : 0;
-    }
+    private void InvalidateContentCounts() => ContentCountsCache.Invalidate();
 
     private string GetPageSubtitle() => activeView switch
     {
@@ -453,6 +513,8 @@ public partial class AdminContentComponent : IDisposable
             items.Insert(0, result.Data);
             isFormOpen = false;
             SyncActiveTabCount();
+            InvalidateContentCounts();
+            _ = RefreshBackgroundMetricsAsync();
             isSaving = false;
             StateHasChanged();
             return true;
@@ -549,6 +611,8 @@ public partial class AdminContentComponent : IDisposable
             ReplaceItemInList(items, result.Data);
             isFormOpen = false;
             SyncActiveTabCount();
+            InvalidateContentCounts();
+            _ = RefreshBackgroundMetricsAsync();
             isSaving = false;
             StateHasChanged();
             return true;

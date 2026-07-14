@@ -6,21 +6,47 @@
 **/bin/
 **/obj/
 
-# Visual Studio
-.vs/
-*.user
-*.suo
-
-# Rider / VS Code
-.idea/
-.vscode/
-
-# Logs
-*.lo
-/docs/Muuqwear full design ref
+# Alternate build output dirs (used when VS locks bin/obj)
+.build-out/
 _build_out/
 _build_out2/
 _build_out3/
 _build_out_api/
 _build_verify/
 _build_verify2/
+_build_verify3/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Rider / VS Code / Cursor
+.idea/
+.vscode/
+.cursor/
+
+# Logs and diagnostics
+*.log
+*.lo
+
+# Test results
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+
+# NuGet
+*.nupkg
+**/packages/
+project.lock.json
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Local / design reference (not part of the app)
+/docs/Muuqwear full design ref

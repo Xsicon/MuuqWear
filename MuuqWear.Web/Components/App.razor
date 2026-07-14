@@ -28,7 +28,6 @@
     </script>
     <link rel="stylesheet" href="bootstrap/bootstrap.min.css" />
     <link rel="stylesheet" href="app.css" />
-    <link rel="stylesheet" href="css/admin-shell.css" />
     <link rel="stylesheet" href="MuuqWear.Web.styles.css" />
     <link rel="stylesheet" href="lib/swiper/swiper-bundle.min.css" />
     <link rel="icon" type="image/png" href="/images/muuqwearlogo.png" />
@@ -39,24 +38,9 @@
     <script src="lib/swiper/swiper-bundle.min.js"></script>
     <script src="js/carousel.js"></script>
     <script src="js/site.js"></script>
-    <script src="js/admin.js"></script>
-    <script src="js/admin-export.js"></script>
-    <script src="_framework/blazor.web.js"></script>
-    <script>
-        Blazor.addEventListener('enhancedload', function () {
-            if (window.initAdminShell) {
-                window.initAdminShell();
-                requestAnimationFrame(function () {
-                    window.initAdminShell();
-                });
-            }
-        });
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-    <script src="js/chartHelpers.js"></script>
-    <script src="js/stripe-interop.js"></script>
+    <script src="_framework/blazor.web.js" autostart="false"></script>
+    <script src="js/blazor-boot.js"></script>
     <script src="js/image-load.js"></script>
-    <script src="https://js.stripe.com/v3/" async></script>
 
 
 </body>

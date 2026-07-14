@@ -18,7 +18,8 @@
 @inject IOrderService OrderService
 @inject IHelpCenterService HelpService
 @inject IAdminBadgeService BadgeService
-@inject IProductService ProductService
+@using MuuqWear.Web.Services
+@inject AdminLowStockCacheService LowStockCache
 @inject IAffiliateService AffiliateService
 @inject AuthenticationStateProvider AuthStateProvider
 
@@ -28,7 +29,8 @@
 
     @if (isLoading)
     {
-        <p class="ov-loading">Loading dashboard…</p>
+        <MwSkeletonSection Layout="MwSkeletonSection.SkeletonLayout.AdminOverview"
+                           AriaLabel="Loading dashboard" />
     }
     else
     {
@@ -161,6 +163,8 @@
 
 </div>
 
+<PageReadyNotifier IsLoading="isLoading" />
+
 @code {
     private bool isLoading = true;
     private string userFirstName = "Admin";
@@ -192,24 +196,7 @@
 
     private async Task LoadLowStockProducts()
     {
-        var productResult = await ProductService.GetAll(new ProductFilterModel
-        {
-            Page = 1,
-            PageSize = 1000
-        });
-
-        if (!productResult.Success || productResult.Data?.Data == null)
-            return;
-
-        foreach (var product in productResult.Data.Data)
-            ProductStockHelper.SyncStockFromSizes(product);
-
-        lowStockProducts = productResult.Data.Data
-            .Where(ProductStockHelper.IsLowStock)
-            .OrderBy(p => ProductStockHelper.GetEffectiveStock(p))
-            .ThenBy(p => p.Name)
-            .ToList();
-
+        lowStockProducts = (await LowStockCache.GetLowStockProductsAsync()).ToList();
         lowStockCount = lowStockProducts.Count;
     }
 

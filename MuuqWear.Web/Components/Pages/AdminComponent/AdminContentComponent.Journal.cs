@@ -148,53 +148,15 @@ public partial class AdminContentComponent
 
     private async Task RefreshTabCountsAsync(bool allTabs = true)
     {
-        var tabs = allTabs
-            ? TabViews.Select(t => t.View)
-            : new[] { activeView };
-
-        foreach (var tabView in tabs)
+        if (allTabs)
         {
-            if (tabView == "vote")
-            {
-                if (allTabs || activeView == "vote")
-                {
-                    var active = await VoteService.GetActiveItems();
-                    var finished = await VoteService.GetFinishedItems();
-
-                    var ids = new HashSet<Guid>();
-                    if (active.Success && active.Data != null)
-                    {
-                        foreach (var item in active.Data)
-                            ids.Add(item.Id);
-                    }
-
-                    if (finished.Success && finished.Data != null)
-                    {
-                        foreach (var item in finished.Data)
-                            ids.Add(item.Id);
-                    }
-
-                    tabCounts[tabView] = ids.Count;
-                }
-
-                continue;
-            }
-
-            if (tabView == "media")
-            {
-                tabCounts[tabView] = activeView == "media"
-                    ? mediaItems.Count
-                    : await CountMediaLibraryAsync();
-                continue;
-            }
-
-            var result = await ContentService.GetAll(
-                AdminContentTabCoordinator.ViewToCategory(tabView));
-
-            tabCounts[tabView] = result.Success && result.Data != null
-                ? result.Data.Count
-                : 0;
+            await ApplyCachedCountsAndHealthAsync(forceRefresh: false);
+            return;
         }
+
+        SyncActiveTabCount();
+        if (activeView == "media")
+            tabCounts["media"] = mediaItems.Count;
     }
 
     private async Task NotifyContentMutatedAsync()
@@ -203,8 +165,9 @@ public partial class AdminContentComponent
             await LoadEventTicketSalesAsync();
 
         SyncActiveTabCount();
+        InvalidateContentCounts();
         await RefreshTabCountsAsync(allTabs: false);
-        await RefreshHealthMetricsAsync();
+        _ = RefreshBackgroundMetricsAsync();
     }
 
     private void SyncActiveTabCount() => tabCounts[activeView] = items.Count;

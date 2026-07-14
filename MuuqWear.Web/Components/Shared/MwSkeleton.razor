@@ -1,0 +1,54 @@
+<span class="mw-skeleton @GetVariantClass() @Class"
+      style="@InlineStyle"
+      aria-hidden="true"></span>
+
+@code {
+    [Parameter]
+    public SkeletonVariant Variant { get; set; } = SkeletonVariant.Line;
+
+    [Parameter]
+    public string? Class { get; set; }
+
+    [Parameter]
+    public string? Width { get; set; }
+
+    [Parameter]
+    public string? Height { get; set; }
+
+    private string GetVariantClass() => Variant switch
+    {
+        SkeletonVariant.LineSm => "mw-skeleton--line-sm",
+        SkeletonVariant.LineMd => "mw-skeleton--line-md",
+        SkeletonVariant.LineLg => "mw-skeleton--line-lg",
+        SkeletonVariant.Circle => "mw-skeleton--circle",
+        SkeletonVariant.Pill => "mw-skeleton--pill",
+        SkeletonVariant.Block => "mw-skeleton--block",
+        SkeletonVariant.Btn => "mw-skeleton--btn",
+        _ => "mw-skeleton--line"
+    };
+
+    private string InlineStyle
+    {
+        get
+        {
+            var parts = new List<string>();
+            if (!string.IsNullOrWhiteSpace(Width))
+                parts.Add($"width:{Width}");
+            if (!string.IsNullOrWhiteSpace(Height))
+                parts.Add($"height:{Height}");
+            return parts.Count == 0 ? string.Empty : string.Join(';', parts);
+        }
+    }
+
+    public enum SkeletonVariant
+    {
+        Line,
+        LineSm,
+        LineMd,
+        LineLg,
+        Circle,
+        Pill,
+        Block,
+        Btn
+    }
+}

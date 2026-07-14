@@ -1,3 +1,4 @@
+using System.Threading;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.AspNetCore.Components.Web;
@@ -19,6 +20,10 @@ public partial class AdminCustomerComponent : IDisposable
 
     private List<CustomerModel> customers = new();
     private bool isLoading;
+    private bool isLoadingTabContent;
+    private bool hasLoadedOnce;
+    private string? loadedCacheKey;
+    private int _loadGate;
     private string searchQuery = string.Empty;
     private string errorMessage = string.Empty;
     private int currentPage = 1;
@@ -36,15 +41,11 @@ public partial class AdminCustomerComponent : IDisposable
     private CustomerModel? selectedCustomerForDetails;
     private bool isDetailPanelOpen;
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
         CustomersTabCoordinator.ViewChanged += OnCustomersViewChanged;
         CustomersTabCoordinator.CustomerFocusRequested += OnCustomerFocusRequested;
         NavigationManager.LocationChanged += OnLocationChanged;
-        ApplyViewFromQuery();
-        ApplyCustomerFocusFromQuery();
-        await LoadCustomers();
-        await TryFocusCustomerAsync();
     }
 
     protected override async Task OnParametersSetAsync()
@@ -60,25 +61,42 @@ public partial class AdminCustomerComponent : IDisposable
             CloseCustomerDetail();
             selectedCustomerForDetails = null;
             ClearNotesState();
-            await LoadCustomers();
+            loadedCacheKey = null;
         }
+
+        await LoadCustomersAsync();
 
         if (pendingFocusCustomerId.HasValue && pendingFocusCustomerId != previousFocus)
         {
             if (activeView != "notes")
+            {
                 activeView = "notes";
+                loadedCacheKey = null;
+            }
 
             currentPage = 1;
-            await LoadCustomers();
+            await LoadCustomersAsync(force: true);
             await TryFocusCustomerAsync();
         }
     }
 
-    private async Task LoadCustomers()
+    private string GetCacheKey() => $"{activeView}:{searchQuery}:{currentPage}:{pageSize}";
+
+    private async Task LoadCustomersAsync(bool force = false)
     {
-        isLoading = true;
+        if (!force && loadedCacheKey == GetCacheKey())
+            return;
+
+        if (Interlocked.CompareExchange(ref _loadGate, 1, 0) != 0)
+            return;
+
+        if (!hasLoadedOnce)
+            isLoading = true;
+        else
+            isLoadingTabContent = true;
+
         errorMessage = string.Empty;
-        StateHasChanged();
+        await InvokeAsync(StateHasChanged);
 
         try
         {
@@ -87,8 +105,12 @@ public partial class AdminCustomerComponent : IDisposable
             if (!result.Success || result.Data == null)
             {
                 errorMessage = result.Message ?? "Failed to load customers.";
-                customers = new();
-                totalCount = 0;
+                if (!customers.Any())
+                {
+                    customers = new();
+                    totalCount = 0;
+                }
+
                 await ShowToast(errorMessage, success: false);
                 return;
             }
@@ -97,30 +119,35 @@ public partial class AdminCustomerComponent : IDisposable
             totalCount = result.Data.TotalCount;
             currentPage = result.Data.Page;
             pageSize = result.Data.PageSize > 0 ? result.Data.PageSize : pageSize;
+            loadedCacheKey = GetCacheKey();
             await EnsureDetailsSelectionAsync();
         }
         finally
         {
             isLoading = false;
-            StateHasChanged();
+            isLoadingTabContent = false;
+            hasLoadedOnce = true;
+            Interlocked.Exchange(ref _loadGate, 0);
+            await InvokeAsync(StateHasChanged);
         }
     }
 
     private void OnCustomersViewChanged(string view)
     {
         var normalized = AdminCustomersTabCoordinator.NormalizeView(view);
-        if (activeView == normalized)
+        if (activeView == normalized && loadedCacheKey == GetCacheKey())
             return;
 
         activeView = normalized;
         currentPage = 1;
+        loadedCacheKey = null;
         CloseCustomerDetail();
         selectedCustomerForDetails = null;
         ClearNotesState();
 
         _ = InvokeAsync(async () =>
         {
-            await LoadCustomers();
+            await LoadCustomersAsync(force: true);
             StateHasChanged();
         });
     }
@@ -138,14 +165,35 @@ public partial class AdminCustomerComponent : IDisposable
     {
         try
         {
+            var previousView = activeView;
+            var previousFocus = pendingFocusCustomerId;
             ApplyViewFromQuery();
             ApplyCustomerFocusFromQuery();
-            currentPage = 1;
-            CloseCustomerDetail();
-            selectedCustomerForDetails = null;
-            ClearNotesState();
-            await LoadCustomers();
-            await TryFocusCustomerAsync();
+
+            if (previousView != activeView)
+            {
+                currentPage = 1;
+                CloseCustomerDetail();
+                selectedCustomerForDetails = null;
+                ClearNotesState();
+                loadedCacheKey = null;
+            }
+
+            await LoadCustomersAsync();
+
+            if (pendingFocusCustomerId.HasValue && pendingFocusCustomerId != previousFocus)
+            {
+                if (activeView != "notes")
+                {
+                    activeView = "notes";
+                    loadedCacheKey = null;
+                }
+
+                currentPage = 1;
+                await LoadCustomersAsync(force: true);
+                await TryFocusCustomerAsync();
+            }
+
             StateHasChanged();
         }
         catch (Exception ex)
@@ -192,7 +240,8 @@ public partial class AdminCustomerComponent : IDisposable
             currentPage = 1;
             selectedCustomerForDetails = null;
             ClearNotesState();
-            await LoadCustomers();
+            loadedCacheKey = null;
+            await LoadCustomersAsync(force: true);
         }
         catch (TaskCanceledException) { }
     }
@@ -205,7 +254,8 @@ public partial class AdminCustomerComponent : IDisposable
             currentPage = 1;
             selectedCustomerForDetails = null;
             ClearNotesState();
-            await LoadCustomers();
+            loadedCacheKey = null;
+            await LoadCustomersAsync(force: true);
         }
     }
 
@@ -215,7 +265,8 @@ public partial class AdminCustomerComponent : IDisposable
         pageSize = args.PageSize;
         selectedCustomerForDetails = null;
         ClearNotesState();
-        await LoadCustomers();
+        loadedCacheKey = null;
+        await LoadCustomersAsync(force: true);
     }
 
     private void OpenCustomerDetail(CustomerModel customer)

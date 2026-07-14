@@ -6,6 +6,7 @@
 @using MuuqWear.Application.Services.HelpCenterService
 @using MuuqWear.Model.Chat
 @using MuuqWear.Model.HelpCenter
+@using MuuqWear.Web.Components.Shared
 @inject IHelpCenterService HelpCenterService
 @inject IChatService ChatService
 @inject IJSRuntime JS
@@ -241,7 +242,9 @@
 
                 @if (isLoadingHistory)
                 {
-                    <div class="hc-widget__chat-loading">Loading…</div>
+                    <MwSkeletonSection Layout="MwSkeletonSection.SkeletonLayout.HelpChat"
+                                       Count="3"
+                                       AriaLabel="Loading chat" />
                 }
 
                 @* GUEST FORM — shown before first message when not logged in *@

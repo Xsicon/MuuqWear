@@ -42,7 +42,8 @@ public partial class AdminCustomerComponent
                 activeView = "notes";
 
             currentPage = 1;
-            await LoadCustomers();
+            loadedCacheKey = null;
+            await LoadCustomersAsync(force: true);
             await TryFocusCustomerAsync();
             StateHasChanged();
         });

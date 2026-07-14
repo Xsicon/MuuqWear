@@ -1,4 +1,4 @@
-﻿/* =============================================
+/* =============================================
    MILESTONES TAB
    ============================================= */
 
@@ -151,4 +151,18 @@
     color: #4A5C7A;
     font-size: 11px;
     margin: 0;
+}
+
+.tier-perks {
+    list-style: none;
+    margin: 8px 0 0;
+    padding: 0;
+    text-align: left;
+}
+
+.tier-perks li {
+    color: #7A8BA8;
+    font-size: 10px;
+    line-height: 1.4;
+    margin-bottom: 2px;
 }

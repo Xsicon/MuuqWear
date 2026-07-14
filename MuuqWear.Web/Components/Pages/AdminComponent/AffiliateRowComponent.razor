@@ -1,129 +1,321 @@
-﻿@using MuuqWear.Model.AffiliateApplication
+@using MuuqWear.Model.AffiliateApplication
 
-<div class="affiliate-row">
-    <div class="affiliate-row__main">
-        <div class="affiliate-row__title-row">
-            <h3 class="affiliate-row__name">@Application.FullName</h3>
-            @if (ShowActiveActions && !string.IsNullOrWhiteSpace(Application.AffiliateTier)
-                 && !Application.AffiliateTier.Equals("none", StringComparison.OrdinalIgnoreCase))
+
+
+<article class="aff-row @(ShowActiveActions && !Application.IsActive ? "aff-row--inactive" : "")">
+
+    <div class="aff-row__avatar" aria-hidden="true">
+
+        @AffiliateAdminDesignHelper.GetInitials(Application.FullName)
+
+    </div>
+
+
+
+    <div class="aff-row__body">
+
+        <div class="aff-row__title-line">
+
+            <span class="aff-row__name">@Application.FullName</span>
+
+            @if (!ShowActiveActions)
+
             {
-                var tierColors = GetTierColors(Application.AffiliateTier);
-                <span class="affiliate-row__tier" style="background-color: @tierColors.Bg; color: @tierColors.Fg;">
-                    @FormatTierLabel(Application.AffiliateTier)
+
+                <span class="aff-row__handle">@GetPrimaryHandle()</span>
+
+                <span class="aff-row__status" style="background-color:@GetStatusBg();color:@GetStatusFg();">
+
+                    @Application.Status.ToUpperInvariant()
+
                 </span>
+
             }
-            else if (ShowActiveActions)
-            {
-                <span class="affiliate-row__tier affiliate-row__tier--default">Approved</span>
-            }
+
             else
+
             {
-                <span class="affiliate-row__handle">@GetFirstSocialHandle()</span>
+
+                <span class="aff-row__handle">@GetPrimaryHandle()</span>
+
+                <span class="aff-row__tier-badge" style="background-color:@GetTierBg();color:@GetTierFg();">
+
+                    <span class="aff-row__tier-dot" style="background-color:@GetTierDot();"></span>
+
+                    @AffiliateAdminDesignHelper.FormatTierLabel(Application.AffiliateTier)
+
+                </span>
+
+                @if (!Application.IsActive)
+
+                {
+
+                    <span class="aff-row__status" style="background-color:#FEE2E2;color:#991B1B;">INACTIVE</span>
+
+                }
+
             }
+
         </div>
-        <p class="affiliate-row__meta">
-            @if (ShowActiveActions)
-            {
-                <span>Niche: @Application.ContentNiche</span>
-                <span> · </span>
-                <span>Approved @(Application.ReviewedAt?.ToString("MMM dd, yyyy") ?? Application.FormattedDate)</span>
-            }
-            else
-            {
-                <span>Followers: @GetFollowersDisplay()</span>
-                <span> · </span>
-                <span>Niche: @Application.ContentNiche</span>
-                <span> · </span>
-                <span>Applied: @Application.FormattedDate</span>
-            }
-        </p>
-        @if (!ShowActiveActions && Application.SocialHandles?.Any() == true)
+
+
+
+        @if (ShowActiveActions)
+
         {
-            <p class="affiliate-row__samples">Content samples available in full application</p>
+
+            <div class="aff-row__stats">
+
+                <div class="aff-row__stat">
+
+                    <span class="aff-row__stat-value">@Application.ItemsSold</span>
+
+                    <span class="aff-row__stat-label">Items sold</span>
+
+                </div>
+
+                <div class="aff-row__stat">
+
+                    <span class="aff-row__stat-value">@Application.FormattedEarned</span>
+
+                    <span class="aff-row__stat-label">Earned</span>
+
+                </div>
+
+                <div class="aff-row__stat">
+
+                    <span class="aff-row__stat-value">@Application.CommissionRatePercent.ToString("0.#")%</span>
+
+                    <span class="aff-row__stat-label">Commission</span>
+
+                </div>
+
+                <div class="aff-row__stat">
+
+                    <span class="aff-row__stat-value">@Application.FormattedLastSale</span>
+
+                    <span class="aff-row__stat-label">Last sale</span>
+
+                </div>
+
+                <div class="aff-row__stat">
+
+                    <span class="aff-row__stat-value">@Application.FormattedJoinDate</span>
+
+                    <span class="aff-row__stat-label">Joined</span>
+
+                </div>
+
+            </div>
+
+
+
+            <p class="aff-row__meta">
+
+                <span><strong>@Application.ContentNiche</strong></span>
+
+                @if (!string.IsNullOrWhiteSpace(Application.Email))
+
+                {
+
+                    <span> · @Application.Email</span>
+
+                }
+
+            </p>
+
         }
+
+        else
+
+        {
+
+            <p class="aff-row__meta">
+
+                <span><strong>@AffiliateAdminDesignHelper.FormatFollowers(Application.AudienceSize)</strong> followers</span>
+
+                <span> · @Application.ContentNiche</span>
+
+                <span> · Applied @Application.FormattedDate</span>
+
+            </p>
+
+
+
+            @if (Application.SocialHandles?.Any() == true)
+
+            {
+
+                <div class="aff-row__socials">
+
+                    @foreach (var social in Application.SocialHandles.Where(s => !string.IsNullOrWhiteSpace(s.Handle)))
+
+                    {
+
+                        <span class="aff-row__social-link">@social.Platform</span>
+
+                    }
+
+                </div>
+
+            }
+
+        }
+
     </div>
 
-    <div class="affiliate-row__actions">
+
+
+    <div class="aff-row__actions">
+
         @if (!ShowActiveActions)
+
         {
-            <button type="button"
-                    class="affiliate-row__btn affiliate-row__btn--approve"
-                    disabled="@Disabled"
-                    @onclick='() => OnAction.InvokeAsync((Application.Id, "approve"))'>
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                Approve
-            </button>
-            <button type="button"
-                    class="affiliate-row__btn affiliate-row__btn--deny"
-                    disabled="@Disabled"
-                    @onclick='() => OnAction.InvokeAsync((Application.Id, "reject"))'>
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
-                Deny
-            </button>
-            <button type="button"
-                    class="affiliate-row__btn affiliate-row__btn--ghost"
-                    disabled="@Disabled"
-                    @onclick='() => OnAction.InvokeAsync((Application.Id, "waitlist"))'>
-                Waitlist
-            </button>
+
+            var canReview = Application.Status.Equals("pending", StringComparison.OrdinalIgnoreCase)
+
+                || Application.Status.Equals("waitlisted", StringComparison.OrdinalIgnoreCase);
+
+
+
+            @if (canReview)
+
+            {
+
+                <button type="button" class="aff-row__btn aff-row__btn--ghost" disabled="@Disabled"
+
+                        @onclick='() => OnAction.InvokeAsync((Application.Id, "view"))'>
+
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+
+                    View
+
+                </button>
+
+                <button type="button" class="aff-row__btn aff-row__btn--waitlist" disabled="@Disabled"
+
+                        @onclick='() => OnAction.InvokeAsync((Application.Id, "waitlist"))'>
+
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+
+                    Waitlist
+
+                </button>
+
+                <button type="button" class="aff-row__btn aff-row__btn--deny" disabled="@Disabled"
+
+                        @onclick='() => OnAction.InvokeAsync((Application.Id, "reject"))'>
+
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+
+                    Deny
+
+                </button>
+
+                <button type="button" class="aff-row__btn aff-row__btn--approve" disabled="@Disabled"
+
+                        @onclick='() => OnAction.InvokeAsync((Application.Id, "approve"))'>
+
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+
+                    Approve
+
+                </button>
+
+                @if (ShowUndo)
+
+                {
+
+                    <button type="button" class="aff-row__btn aff-row__btn--ghost" disabled="@Disabled"
+
+                            @onclick="OnUndo">
+
+                        Undo
+
+                    </button>
+
+                }
+
+            }
+
+            else
+
+            {
+
+                <button type="button" class="aff-row__btn aff-row__btn--ghost" disabled="@Disabled"
+
+                        @onclick='() => OnAction.InvokeAsync((Application.Id, "view"))'>
+
+                    View
+
+                </button>
+
+            }
+
         }
 
-        <button type="button"
-                class="affiliate-row__btn affiliate-row__btn--ghost"
-                disabled="@Disabled"
-                @onclick='() => OnAction.InvokeAsync((Application.Id, "view"))'>
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-            @(ShowActiveActions ? "View Details" : "View Full Application")
-        </button>
+        else
+
+        {
+
+            <button type="button" class="aff-row__btn aff-row__btn--ghost" disabled="@Disabled"
+
+                    @onclick='() => OnAction.InvokeAsync((Application.Id, "view"))'>
+
+                View Details
+
+            </button>
+
+            <button type="button" class="aff-row__btn @(Application.IsActive ? "aff-row__btn--deny" : "aff-row__btn--approve")"
+
+                    disabled="@Disabled"
+
+                    @onclick='() => OnAction.InvokeAsync((Application.Id, "toggle-active"))'>
+
+                @(Application.IsActive ? "Deactivate" : "Activate")
+
+            </button>
+
+        }
+
     </div>
-</div>
+
+</article>
+
+
 
 @code {
-    [Parameter]
-    public AffiliateApplicationModel Application { get; set; } = new();
 
-    [Parameter]
-    public EventCallback<(Guid Id, string Action)> OnAction { get; set; }
+    [Parameter] public AffiliateApplicationModel Application { get; set; } = new();
 
-    [Parameter]
-    public bool ShowActiveActions { get; set; }
+    [Parameter] public EventCallback<(Guid Id, string Action)> OnAction { get; set; }
 
-    [Parameter]
-    public bool Disabled { get; set; }
+    [Parameter] public EventCallback OnUndo { get; set; }
 
-    private string GetFirstSocialHandle()
-    {
-        var firstHandle = Application.SocialHandles?.FirstOrDefault();
-        if (firstHandle != null && !string.IsNullOrEmpty(firstHandle.Handle))
-            return $"@{firstHandle.Handle}";
+    [Parameter] public bool ShowActiveActions { get; set; }
 
-        return Application.Email;
-    }
+    [Parameter] public bool ShowUndo { get; set; }
 
-    private string GetFollowersDisplay()
-    {
-        if (Application.AudienceSize == 0)
-            return "0";
+    [Parameter] public bool Disabled { get; set; }
 
-        if (Application.AudienceSize >= 1000)
-            return $"{Application.AudienceSize / 1000.0:N1}k";
 
-        return Application.AudienceSize.ToString("N0");
-    }
 
-    private static string FormatTierLabel(string tier)
-    {
-        if (string.IsNullOrWhiteSpace(tier) || tier.Equals("none", StringComparison.OrdinalIgnoreCase))
-            return "Bronze";
+    private string GetPrimaryHandle() =>
 
-        return char.ToUpperInvariant(tier[0]) + tier[1..].ToLowerInvariant();
-    }
+        AffiliateAdminDesignHelper.GetPrimaryHandle(Application.SocialHandles);
 
-    private static (string Bg, string Fg) GetTierColors(string tier) =>
-        tier.ToLowerInvariant() switch
-        {
-            "silver" => ("#E5E7EB", "#374151"),
-            "gold" => ("#FEF3C7", "#92400E"),
-            _ => ("#FEE2E2", "#991B1B")
-        };
+
+
+    private string GetStatusBg() => AffiliateAdminDesignHelper.GetStatusColors(Application.Status).Bg;
+
+    private string GetStatusFg() => AffiliateAdminDesignHelper.GetStatusColors(Application.Status).Fg;
+
+    private string GetTierBg() => AffiliateAdminDesignHelper.GetTierTheme(Application.AffiliateTier).BgColor;
+
+    private string GetTierFg() => AffiliateAdminDesignHelper.GetTierTheme(Application.AffiliateTier).TextColor;
+
+    private string GetTierDot() => AffiliateAdminDesignHelper.GetTierTheme(Application.AffiliateTier).DotColor;
+
 }
+
+

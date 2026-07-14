@@ -69,6 +69,16 @@ public partial class AffiliateApplicationComponent
             ReferralDiscountPercent = 15,
             SortOrder = 3,
             IsActive = true
+        },
+        new AffiliateTierModel
+        {
+            Slug = "platinum",
+            DisplayName = "Platinum",
+            ItemsSoldThreshold = 1000,
+            CommissionRatePercent = 20,
+            ReferralDiscountPercent = 20,
+            SortOrder = 4,
+            IsActive = true
         }
     ];
 
@@ -98,6 +108,7 @@ public partial class AffiliateApplicationComponent
         {
             "silver" => "mw-tier-silver",
             "gold" => "mw-tier-gold",
+            "platinum" => "mw-tier-platinum",
             _ => "mw-tier-bronze"
         };
 
@@ -106,10 +117,14 @@ public partial class AffiliateApplicationComponent
         if (tier.Slug.Equals("silver", StringComparison.OrdinalIgnoreCase))
             return true;
 
-        return tiers.Count == 3 && tier.SortOrder == 2;
+        if (tiers.Count <= 1)
+            return false;
+
+        var middleIndex = (tiers.Count - 1) / 2;
+        return tier.SortOrder == tiers.OrderBy(t => t.SortOrder).ElementAt(middleIndex).SortOrder;
     }
 
-    private static IEnumerable<string> GetTierPerks(string slug) =>
+    private static IEnumerable<string> GetFallbackTierPerks(string slug) =>
         slug.ToLowerInvariant() switch
         {
             "silver" =>
@@ -126,6 +141,14 @@ public partial class AffiliateApplicationComponent
                 "All-expenses-paid Muuqsimo trip",
                 "VIP access & exclusive experiences"
             ],
+            "platinum" =>
+            [
+                "25% off all personal purchases",
+                "{commission} commission per 10 items",
+                "Revenue share program",
+                "Product collaboration rights",
+                "Annual retreat invite"
+            ],
             _ =>
             [
                 "25% off all personal purchases",
@@ -135,7 +158,9 @@ public partial class AffiliateApplicationComponent
             ]
         };
 
-    private static IEnumerable<string> FormatTierPerks(AffiliateTierModel tier) =>
-        GetTierPerks(tier.Slug)
-            .Select(p => p.Replace("{commission}", tier.CommissionPerTenLabel, StringComparison.Ordinal));
+    private static IEnumerable<string> FormatTierPerks(AffiliateTierModel tier)
+    {
+        var perks = tier.Perks?.Count > 0 ? tier.Perks : GetFallbackTierPerks(tier.Slug);
+        return perks.Select(p => p.Replace("{commission}", tier.CommissionPerTenLabel, StringComparison.Ordinal));
+    }
 }

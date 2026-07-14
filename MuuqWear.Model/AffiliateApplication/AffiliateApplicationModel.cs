@@ -1,4 +1,4 @@
-﻿namespace MuuqWear.Model.AffiliateApplication;
+namespace MuuqWear.Model.AffiliateApplication;
 
 public class AffiliateApplicationModel
 {
@@ -17,7 +17,15 @@ public class AffiliateApplicationModel
     public string? WhyMuuqwear { get; set; }
     public List<string>? SampleFiles { get; set; }
     public string AffiliateTier { get; set; } = "none";
+    public int ItemsSold { get; set; }
+    public decimal CommissionEarned { get; set; }
+    public decimal CommissionRatePercent { get; set; }
+    public DateTime? LastSaleAt { get; set; }
+    public DateTime? JoinDate { get; set; }
+    public bool IsActive { get; set; } = true;
     public string FormattedDate => SubmittedAt.ToString("MMM dd, yyyy");
-
+    public string FormattedEarned => $"${CommissionEarned:N2}";
+    public string FormattedLastSale => LastSaleAt?.ToString("MMM dd, yyyy") ?? "—";
+    public string FormattedJoinDate => (JoinDate ?? ReviewedAt)?.ToString("MMM dd, yyyy") ?? FormattedDate;
 }
 

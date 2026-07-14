@@ -1,0 +1,15 @@
+<link rel="stylesheet" href="css/admin-shell.css" />
+<script src="js/admin.js"></script>
+<script src="js/admin-export.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="js/chartHelpers.js"></script>
+<script>
+    if (window.Blazor) {
+        Blazor.addEventListener('enhancedload', function () {
+            if (window.initAdminShell) {
+                window.initAdminShell();
+                requestAnimationFrame(function () { window.initAdminShell(); });
+            }
+        });
+    }
+</script>

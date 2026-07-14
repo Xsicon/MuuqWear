@@ -1,6 +1,7 @@
 ﻿@page "/muuqsimo"
 @page "/muuqsimo/{EventSlug}"
 @using MuuqWear.Model.Muuqsimo
+@using MuuqWear.Web.Components.Shared
 @rendermode InteractiveServer
 
 <PageTitle>@(eventPage?.Title ?? "Muuqsimo") — Muuqwear</PageTitle>
@@ -9,7 +10,11 @@
 
 @if (isLoading)
 {
-    <p class="mw-section-loading" style="padding: 48px 16px; text-align: center;">Loading Muuqsimo…</p>
+    <div class="ms">
+        <MwSkeletonSection Layout="MwSkeletonSection.SkeletonLayout.EventPage"
+                           Count="3"
+                           AriaLabel="Loading Muuqsimo" />
+    </div>
 }
 else if (!string.IsNullOrEmpty(loadError))
 {
@@ -599,3 +604,5 @@ else if (eventPage?.Content != null)
 
 <script src="lib/swiper/swiper-bundle.min.js"></script>
 }
+
+<PageReadyNotifier IsLoading="isLoading" />

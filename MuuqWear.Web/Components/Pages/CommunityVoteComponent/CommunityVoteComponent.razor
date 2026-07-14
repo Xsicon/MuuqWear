@@ -7,6 +7,7 @@
 @using MuuqWear.Application.Interfaces
 @using MuuqWear.Application.Services.VoteService
 @using MuuqWear.Model.Vote
+@using MuuqWear.Web.Components.Shared
 @inject IConfiguration Configuration
 @inject AuthenticationStateProvider AuthStateProvider
 @implements IAsyncDisposable
@@ -164,7 +165,10 @@
 
             @if (isLoading)
             {
-                <p class="mw-section-loading">Loading designs...</p>
+                <MwSkeletonSection Layout="MwSkeletonSection.SkeletonLayout.ProductGrid"
+                                   Count="3"
+                                   ProductColumns="3"
+                                   AriaLabel="Loading designs" />
             }
             else if (!activeItems.Any())
             {
@@ -324,7 +328,10 @@
 
             @if (isLoadingFinished)
             {
-                <p class="mw-section-loading">Loading finished designs...</p>
+                <MwSkeletonSection Layout="MwSkeletonSection.SkeletonLayout.ProductGrid"
+                                   Count="3"
+                                   ProductColumns="3"
+                                   AriaLabel="Loading finished designs" />
             }
             else if (!finishedItems.Any())
             {
@@ -367,6 +374,8 @@
     </section>
 
 </div>
+
+<PageReadyNotifier IsLoading="@(isLoading || isLoadingFinished)" />
 
 @if (showToast)
 {

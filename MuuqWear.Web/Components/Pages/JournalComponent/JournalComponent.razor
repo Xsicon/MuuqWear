@@ -5,6 +5,7 @@
 @using MuuqWear.Application.Interfaces
 @using MuuqWear.Application.Services.JournalService
 @using MuuqWear.Model.ContentItem
+@using MuuqWear.Web.Components.Shared
 
 <PageTitle>Journal</PageTitle>
 
@@ -14,7 +15,9 @@
     <div class="mw-journal-hero__container">
         @if (isLoading && heroArticle == null)
         {
-            <div class="mw-journal-hero__card mw-journal-hero__card--loading"></div>
+            <MwSkeletonSection Layout="MwSkeletonSection.SkeletonLayout.JournalPage"
+                               Count="6"
+                               AriaLabel="Loading journal" />
         }
         else if (heroArticle != null)
         {
@@ -77,7 +80,10 @@
 
         @if (isLoading && !filteredArticles.Any())
         {
-            <div class="mw-articles-loading">Loading articles...</div>
+            <MwSkeletonSection Layout="MwSkeletonSection.SkeletonLayout.ProductGrid"
+                               Count="6"
+                               ProductColumns="3"
+                               AriaLabel="Loading articles" />
         }
         else
         {
@@ -185,6 +191,8 @@
         </div>
     </div>
 }
+
+<PageReadyNotifier IsLoading="isLoading" />
 
 @code {
     [SupplyParameterFromQuery(Name = "article")]

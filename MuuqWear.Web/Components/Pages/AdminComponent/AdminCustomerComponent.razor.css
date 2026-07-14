@@ -1,8 +1,12 @@
-﻿/* Customers — Phase 4 admin shell */
+/* Customers — Phase 4 admin shell */
 
 .customers-page {
     padding: 0;
     max-width: 1400px;
+}
+
+.customers-page--refreshing {
+    opacity: 0.92;
 }
 
 .customers-header {

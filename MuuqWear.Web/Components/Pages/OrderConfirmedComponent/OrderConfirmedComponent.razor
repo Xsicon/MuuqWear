@@ -3,6 +3,7 @@
 @using Microsoft.AspNetCore.Components.Authorization
 @using MuuqWear.Application.Services.OrderService
 @using MuuqWear.Model.Orders
+@using MuuqWear.Web.Components.Shared
 @inject IOrderService OrderService
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthStateProvider
@@ -11,9 +12,10 @@
 
 @if (isLoading)
 {
-    <!-- LOADING STATE -->
-    <div class="mw-oc-loading">
-        <div class="mw-spinner"></div>
+    <div class="mw-oc">
+        <MwSkeletonSection Layout="MwSkeletonSection.SkeletonLayout.ProfilePanel"
+                           Count="5"
+                           AriaLabel="Loading order confirmation" />
     </div>
 }
 else if (order == null)
@@ -178,6 +180,8 @@ else
 
     </div>
 }
+
+<PageReadyNotifier IsLoading="isLoading" />
 
 @code {
     [Parameter]

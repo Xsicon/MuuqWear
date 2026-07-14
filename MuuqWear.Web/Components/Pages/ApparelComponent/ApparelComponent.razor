@@ -5,6 +5,8 @@
 @inject IProductService ProductService
 @inject ICategoryService CategoryService
 @inject NavigationManager NavigationManager
+@inject StorefrontHomeCacheService HomeCache
+@using MuuqWear.Web.Services
 @using MuuqWear.Application.Services.ProductService
 @using MuuqWear.Application.Services.CategoryService
 @using MuuqWear.Model.Products
@@ -84,14 +86,12 @@
                     </div>
                 </div>
 
-                @if (isLoading)
+                @if (isLoading && !Products.Any())
                 {
-                    <div class="mw-shop__grid">
-                        @for (int i = 0; i < filter.PageSize; i++)
-                        {
-                            <div class="mw-shop-product-skeleton"></div>
-                        }
-                    </div>
+                    <MwSkeletonSection Layout="MwSkeletonSection.SkeletonLayout.ProductGrid"
+                                       Count="8"
+                                       ProductColumns="3"
+                                       AriaLabel="Loading products" />
                 }
                 else if (!Products.Any())
                 {
@@ -303,7 +303,7 @@
         filter.SortBy = NormalizeSortBy(sortBy);
     }
 
-    private async void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {
         if (_syncingUrl)
         {
@@ -311,10 +311,14 @@
             return;
         }
 
+        _ = InvokeAsync(HandleLocationChangedAsync);
+    }
+
+    private async Task HandleLocationChangedAsync()
+    {
         LoadFiltersFromUrl();
         SyncSlidersFromFilter();
         await LoadProducts();
-        await InvokeAsync(StateHasChanged);
     }
 
     public void Dispose()
@@ -336,7 +340,12 @@
                 <h4 class="mw-shop-filters__label">Categories</h4>
                 @if (isLoadingCategories)
                 {
-                    <p class="mw-shop-filters__loading">Loading...</p>
+                    <div class="mw-shop-filters__loading">
+                        @for (var i = 0; i < 5; i++)
+                        {
+                            <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Pill" Width="100%" />
+                        }
+                    </div>
                 }
                 else
                 {
@@ -406,9 +415,18 @@
     private async Task LoadCategories()
     {
         isLoadingCategories = true;
-        var result = await CategoryService.GetAll();
-        if (result.Success && result.Data != null)
-            Categories = result.Data;
+
+        var cached = HomeCache.GetCategoriesCached();
+        if (cached != null)
+        {
+            Categories = cached;
+            isLoadingCategories = false;
+        }
+
+        var data = await HomeCache.GetCategoriesAsync(allowStale: cached != null);
+        if (data != null)
+            Categories = data;
+
         isLoadingCategories = false;
     }
 
@@ -567,3 +585,5 @@
         isFilterOpen = false;
     }
 }
+
+<PageReadyNotifier IsLoading="@(isLoading && !Products.Any())" />

@@ -2,6 +2,7 @@
 @using MuuqWear.Application.Services.JobPostingService
 @using MuuqWear.Model.JobApplication
 @using MuuqWear.Model.JobPosting
+@using MuuqWear.Web.Components.Shared
 @rendermode InteractiveServer
 @inject IJobPostingService JobPostingService
 
@@ -34,7 +35,9 @@
             <div class="career-jobs">
                 @if (isJobsLoading)
                 {
-                    <p class="career-jobs__loading">Loading open positions…</p>
+                    <MwSkeletonSection Layout="MwSkeletonSection.SkeletonLayout.CareerJobs"
+                                       Count="4"
+                                       AriaLabel="Loading open positions" />
                 }
                 else if (!jobs.Any())
                 {
@@ -250,6 +253,8 @@
         </aside>
     </div>
 }
+<PageReadyNotifier IsLoading="isJobsLoading" />
+
 @code {
 
     private JobPostingModel? applyingFor = null;

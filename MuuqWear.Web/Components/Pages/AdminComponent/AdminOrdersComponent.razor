@@ -16,12 +16,8 @@
 @attribute [Authorize(Roles = "admin")]
 
 <PageTitle>Sales & Orders</PageTitle>
-@if (activeMainTab == "orders" && isLoading)
-{
-    <p class="mw-section-loading">Loading orders...</p>
-}
 
-<div class="orders-page">
+<div class="orders-page @(isLoadingTabContent ? "orders-page--refreshing" : "")">
 
     <div class="orders-header">
         <div>
@@ -160,9 +156,11 @@
 
         <!-- ─── ORDER CARDS ───────────────────────────────── -->
         <div class="orders-list">
-            @if (isLoading)
+            @if (isLoading && !orders.Any())
             {
-                <p class="orders-empty">Loading...</p>
+                <MwSkeletonSection Layout="MwSkeletonSection.SkeletonLayout.AdminCardList"
+                                   Count="4"
+                                   AriaLabel="Loading orders" />
             }
             else if (!orders.Any())
             {
@@ -272,9 +270,11 @@
 
         <!-- ─── RETURN CARDS ─────────────────────────────── -->
         <div class="orders-list">
-            @if (isLoadingReturns)
+            @if (isLoadingReturns && !returns.Any())
             {
-                <p class="orders-empty">Loading...</p>
+                <MwSkeletonSection Layout="MwSkeletonSection.SkeletonLayout.AdminCardList"
+                                   Count="4"
+                                   AriaLabel="Loading returns" />
             }
             else if (!returns.Any())
             {
@@ -376,9 +376,11 @@
 
         <!-- ─── REFUND CARDS ─────────────────────────────── -->
         <div class="orders-list">
-            @if (isLoadingRefunds)
+            @if (isLoadingRefunds && !refunds.Any())
             {
-                <p class="orders-empty">Loading...</p>
+                <MwSkeletonSection Layout="MwSkeletonSection.SkeletonLayout.AdminCardList"
+                                   Count="4"
+                                   AriaLabel="Loading refunds" />
             }
             else if (refundsTotalCount == 0 && string.IsNullOrEmpty(refundsError))
             {
@@ -846,4 +848,4 @@
     </div>
 }
 
-
+<PageReadyNotifier IsLoading="@(isLoading && !orders.Any())" />

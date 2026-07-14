@@ -140,3 +140,64 @@ window.adminMediaUpload = {
         }
     }
 };
+
+window.mwAdminNav = {
+    _initialized: false,
+    _loadingEl: null,
+    _fallbackTimer: null,
+
+    init: function () {
+        if (this._initialized) return;
+        this._initialized = true;
+
+        var self = this;
+
+        document.addEventListener('click', function (e) {
+            var target = e.target.closest('.an-nav__item, .an-nav__subitem');
+            if (!target) return;
+
+            if (target.classList.contains('an-nav-group__header')) return;
+
+            self.setLoading(target);
+            if (window.mwNavProgress) window.mwNavProgress.start();
+        }, true);
+
+        if (window.mwNavProgress && window.mwNavProgress._bindNavigationEnd) {
+            // End handlers are registered once from mwNavProgress.init.
+        }
+    },
+
+    setLoading: function (el) {
+        this.clearLoading();
+        el.classList.add('an-nav--loading');
+        this._loadingEl = el;
+    },
+
+    clearLoading: function () {
+        if (this._fallbackTimer) {
+            clearTimeout(this._fallbackTimer);
+            this._fallbackTimer = null;
+        }
+
+        if (this._loadingEl) {
+            this._loadingEl.classList.remove('an-nav--loading');
+            this._loadingEl = null;
+        }
+
+        document.querySelectorAll('.an-nav--loading').forEach(function (el) {
+            el.classList.remove('an-nav--loading');
+        });
+    },
+
+    startFallbackTimeout: function () {
+        var self = this;
+        if (this._fallbackTimer) clearTimeout(this._fallbackTimer);
+        this._fallbackTimer = setTimeout(function () {
+            if (window.mwNavProgress) {
+                window.mwNavProgress.pageReady();
+            } else {
+                self.clearLoading();
+            }
+        }, 12000);
+    }
+};

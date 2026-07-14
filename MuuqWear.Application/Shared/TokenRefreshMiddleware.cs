@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Caching.Memory;
@@ -78,6 +78,7 @@ public class TokenRefreshMiddleware
                 if (_cache.TryGetValue(cacheKey, out string? cachedToken)
                     && !IsTokenExpired(cachedToken!))
                 {
+                    TryScheduleLastActive(userId);
                     await _next(context);
                     return;
                 }
@@ -100,11 +101,26 @@ public class TokenRefreshMiddleware
                 _lock.Release();
             }
         }
-        _ = UpdateLastActive(userId);
+        TryScheduleLastActive(userId);
 
         await _next(context);
     }
-    // ... rest unchanged}
+
+    private static readonly TimeSpan LastActiveInterval = TimeSpan.FromMinutes(5);
+
+    private void TryScheduleLastActive(string? userId)
+    {
+        if (string.IsNullOrEmpty(userId))
+            return;
+
+        var cacheKey = $"last-active-throttle-{userId}";
+        if (_cache.TryGetValue(cacheKey, out _))
+            return;
+
+        _cache.Set(cacheKey, true, LastActiveInterval);
+        _ = UpdateLastActive(userId);
+    }
+
     private bool IsTokenExpired(string token)
     {
         try

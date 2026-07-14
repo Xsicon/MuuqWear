@@ -17,7 +17,8 @@
 @if (isLoading)
 {
     <div class="container py-5">
-        <div class="mw-product-detail-skeleton"></div>
+        <MwSkeletonSection Layout="MwSkeletonSection.SkeletonLayout.ProductDetail"
+                           AriaLabel="Loading product" />
     </div>
 }
 else if (product == null)
@@ -291,7 +292,7 @@ else
     private string SelectedSize = "";
     private string SelectedColor = "";
     private List<ProductModel> RelatedProducts = new();
-    private bool isLoading = false;
+    private bool isLoading = true;
     private Guid? _loadedProductId;
 
     private bool isAddingToCart = false;
@@ -488,3 +489,5 @@ else
         StateHasChanged();
     }
 }
+
+<PageReadyNotifier IsLoading="isLoading" />

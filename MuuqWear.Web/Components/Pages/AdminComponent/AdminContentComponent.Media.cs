@@ -85,28 +85,6 @@ public partial class AdminContentComponent
         }
     }
 
-    private async Task<int> CountMediaLibraryAsync()
-    {
-        var usage = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-
-        foreach (var category in new[]
-                 {
-                     ContentCategory.JournalArticles,
-                     ContentCategory.Events,
-                     ContentCategory.DesignHistory
-                 })
-        {
-            var result = await ContentService.GetAll(category);
-            if (!result.Success || result.Data == null)
-                continue;
-
-            foreach (var item in result.Data)
-                RegisterMediaUsage(usage, item.ImageUrl, item.SecondImageUrl, item.Content);
-        }
-
-        return usage.Keys.Count(IsAllowedMediaUrl);
-    }
-
     private static void RegisterMediaUsage(
         Dictionary<string, int> usage,
         params string?[] urlsAndJson)

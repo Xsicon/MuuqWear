@@ -1,0 +1,464 @@
+<div class="mw-skeleton-section mw-skeleton-section--@Layout.ToString().ToLowerInvariant()"
+     role="status"
+     aria-busy="true"
+     aria-label="@AriaLabel">
+    @switch (Layout)
+    {
+        case SkeletonLayout.AdminCardList:
+            @for (var i = 0; i < Count; i++)
+            {
+                <div class="mw-sk-card">
+                    <div class="mw-sk-card__top">
+                        <div class="mw-sk-card__left">
+                            <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Pill" />
+                            <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineLg" />
+                        </div>
+                        <div class="mw-sk-card__actions">
+                            <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Btn" />
+                            <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Btn" Width="96px" />
+                        </div>
+                    </div>
+                    <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineMd" />
+                    <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineSm" />
+                </div>
+            }
+            break;
+
+        case SkeletonLayout.AdminTable:
+            <div class="mw-sk-table" style="@($"--mw-sk-table-cols:{Columns}")">
+                <div class="mw-sk-table__head">
+                    @for (var c = 0; c < Columns; c++)
+                    {
+                        <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Line" Class="mw-sk-table__cell" />
+                    }
+                </div>
+                @for (var r = 0; r < Count; r++)
+                {
+                    <div class="mw-sk-table__row">
+                        @for (var c = 0; c < Columns; c++)
+                        {
+                            <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Line"
+                                        Class="mw-sk-table__cell"
+                                        Width="@(c == 0 ? "85%" : c == Columns - 1 ? "48px" : "70%")" />
+                        }
+                    </div>
+                }
+            </div>
+            break;
+
+        case SkeletonLayout.AdminStatGrid:
+            <div class="mw-sk-stat-grid" style="@($"--mw-sk-stat-cols:{StatColumns}")">
+                @for (var i = 0; i < Count; i++)
+                {
+                    <div class="mw-sk-stat">
+                        <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Circle" Width="44px" Height="44px" />
+                        <div class="mw-sk-stat__text">
+                            <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineLg" Width="48px" />
+                            <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineSm" />
+                        </div>
+                    </div>
+                }
+            </div>
+            break;
+
+        case SkeletonLayout.AdminAnalytics:
+            <div class="mw-sk-analytics">
+                <div class="mw-sk-analytics__hero">
+                    <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineLg" Width="160px" />
+                    <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineSm" Width="120px" />
+                    <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Block" Height="220px" />
+                </div>
+                <div class="mw-sk-analytics__grid">
+                    @for (var i = 0; i < 2; i++)
+                    {
+                        <div class="mw-sk-analytics__panel">
+                            <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineMd" Width="140px" />
+                            @for (var r = 0; r < 4; r++)
+                            {
+                                <div class="mw-sk-analytics__row">
+                                    <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Circle" Width="32px" Height="32px" />
+                                    <div class="mw-sk-analytics__row-text">
+                                        <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Line" />
+                                        <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineSm" />
+                                    </div>
+                                    <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Line" Width="64px" />
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+            break;
+
+        case SkeletonLayout.AdminAffiliateTab:
+            <div class="mw-sk-stat-grid" style="@($"--mw-sk-stat-cols:{StatColumns}")">
+                @for (var s = 0; s < StatColumns; s++)
+                {
+                    <div class="mw-sk-stat">
+                        <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Circle" Width="44px" Height="44px" />
+                        <div class="mw-sk-stat__text">
+                            <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineLg" Width="48px" />
+                            <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineSm" />
+                        </div>
+                    </div>
+                }
+            </div>
+            <div class="mw-sk-aff-toolbar">
+                <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Block" Height="40px" Class="mw-sk-aff-toolbar__search" />
+                <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Pill" />
+                <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Pill" />
+                <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Pill" />
+            </div>
+            @for (var i = 0; i < Count; i++)
+            {
+                <div class="mw-sk-aff-row">
+                    <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Circle" Width="40px" Height="40px" />
+                    <div class="mw-sk-aff-row__main">
+                        <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Line" />
+                        <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineSm" />
+                    </div>
+                    <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Btn" />
+                </div>
+            }
+            break;
+
+        case SkeletonLayout.AdminOverview:
+            <div class="mw-sk-overview">
+                <div class="mw-sk-overview__welcome">
+                    <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineLg" Width="280px" />
+                    <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineMd" Width="420px" />
+                </div>
+                <div class="mw-sk-stat-grid mw-sk-stat-grid--overview">
+                    @for (var s = 0; s < 4; s++)
+                    {
+                        <div class="mw-sk-stat">
+                            <div class="mw-sk-stat__top">
+                                <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Circle" Width="36px" Height="36px" />
+                                <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Pill" Width="56px" />
+                            </div>
+                            <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineLg" Width="72px" />
+                            <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineSm" Width="100px" />
+                        </div>
+                    }
+                </div>
+                <div class="mw-sk-overview__grid">
+                    @for (var p = 0; p < 2; p++)
+                    {
+                        <div class="mw-sk-overview__panel">
+                            <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineMd" Width="140px" />
+                            @for (var r = 0; r < (p == 0 ? 6 : 5); r++)
+                            {
+                                <div class="mw-sk-overview__row">
+                                    <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Circle" Width="36px" Height="36px" />
+                                    <div class="mw-sk-overview__row-text">
+                                        <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Line" />
+                                        <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineSm" />
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+                <div class="mw-sk-overview__panel">
+                    <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineMd" Width="120px" />
+                    <div class="mw-sk-overview__actions">
+                        @for (var b = 0; b < 5; b++)
+                        {
+                            <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Btn" Width="120px" />
+                        }
+                    </div>
+                </div>
+            </div>
+            break;
+
+        case SkeletonLayout.AdminAffiliateRows:
+            @for (var i = 0; i < Count; i++)
+            {
+                <div class="mw-sk-aff-row">
+                    <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Circle" Width="40px" Height="40px" />
+                    <div class="mw-sk-aff-row__main">
+                        <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Line" />
+                        <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineSm" />
+                    </div>
+                    <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Btn" />
+                </div>
+            }
+            break;
+
+        case SkeletonLayout.ProductGrid:
+            <div class="mw-sk-product-grid" style="@($"--mw-sk-product-cols:{ProductColumns}")">
+                @for (var i = 0; i < Count; i++)
+                {
+                    <div class="mw-sk-product">
+                        <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Block" Height="0" Class="mw-sk-product__media" />
+                        <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineSm" />
+                        <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Line" Width="55%" />
+                    </div>
+                }
+            </div>
+            break;
+
+        case SkeletonLayout.StorefrontCarousel:
+            <div class="mw-sk-store-carousel">
+                <div class="mw-sk-store-carousel__head">
+                    <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineLg" Width="180px" />
+                    <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Block" Height="36px" Width="72px" Class="mw-sk-store-carousel__nav" />
+                </div>
+                <div class="mw-sk-store-carousel__row">
+                    @for (var i = 0; i < Count; i++)
+                    {
+                        <div class="mw-sk-store-carousel__item">
+                            <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Block" Height="0" Class="mw-sk-store-carousel__media" />
+                            <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Line" />
+                            <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineSm" Width="40%" />
+                        </div>
+                    }
+                </div>
+            </div>
+            break;
+
+        case SkeletonLayout.StoreShop:
+            <div class="mw-sk-store-shop">
+                <aside class="mw-sk-store-shop__sidebar">
+                    @for (var g = 0; g < 3; g++)
+                    {
+                        <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineMd" Width="80px" />
+                        @for (var p = 0; p < 4; p++)
+                        {
+                            <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Pill" Width="100%" />
+                        }
+                    }
+                </aside>
+                <div class="mw-sk-store-shop__main">
+                    <div class="mw-sk-store-shop__toolbar">
+                        <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Line" Width="120px" />
+                        <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Block" Height="36px" Width="140px" />
+                    </div>
+                    <div class="mw-sk-product-grid" style="@($"--mw-sk-product-cols:{ProductColumns}")">
+                        @for (var i = 0; i < Count; i++)
+                        {
+                            <div class="mw-sk-product">
+                                <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Block" Height="0" Class="mw-sk-product__media" />
+                                <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineSm" />
+                                <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Line" Width="55%" />
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+            break;
+
+        case SkeletonLayout.ProductDetail:
+            <div class="mw-sk-pd">
+                <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineSm" Width="220px" />
+                <div class="mw-sk-pd__grid">
+                    <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Block" Height="0" Class="mw-sk-pd__image" />
+                    <div class="mw-sk-pd__info">
+                        <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Pill" />
+                        <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineLg" Width="70%" />
+                        <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Line" Width="100px" />
+                        <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineMd" />
+                        <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineMd" Width="85%" />
+                        @for (var s = 0; s < 4; s++)
+                        {
+                            <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Pill" Width="48px" />
+                        }
+                        <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Btn" Width="160px" />
+                    </div>
+                </div>
+            </div>
+            break;
+
+        case SkeletonLayout.JournalPage:
+            <div class="mw-sk-journal">
+                <div class="mw-sk-journal__hero">
+                    <div class="mw-sk-journal__hero-text">
+                        <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Pill" Width="80px" />
+                        <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineLg" Width="90%" />
+                        <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineMd" />
+                        <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineMd" Width="75%" />
+                        <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Btn" Width="120px" />
+                    </div>
+                    <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Block" Height="0" Class="mw-sk-journal__hero-img" />
+                </div>
+                <div class="mw-sk-journal__grid">
+                    @for (var i = 0; i < Count; i++)
+                    {
+                        <div class="mw-sk-journal__card">
+                            <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Block" Height="0" Class="mw-sk-journal__card-img" />
+                            <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Pill" Width="64px" />
+                            <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Line" />
+                            <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineSm" />
+                        </div>
+                    }
+                </div>
+            </div>
+            break;
+
+        case SkeletonLayout.ArchiveSections:
+            @for (var s = 0; s < StatColumns; s++)
+            {
+                <div class="mw-sk-archive-section">
+                    <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineLg" Width="200px" />
+                    <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineMd" Width="320px" />
+                    <div class="mw-sk-store-carousel__row">
+                        @for (var i = 0; i < Count; i++)
+                        {
+                            <div class="mw-sk-store-carousel__item">
+                                <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Block" Height="0" Class="mw-sk-store-carousel__media" />
+                                <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Line" />
+                                <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineSm" />
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+            break;
+
+        case SkeletonLayout.EventPage:
+            <div class="mw-sk-event">
+                <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Block" Height="0" Class="mw-sk-event__hero" />
+                <div class="mw-sk-event__body">
+                    <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineLg" Width="280px" />
+                    <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineMd" Width="420px" />
+                    @for (var b = 0; b < Count; b++)
+                    {
+                        <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Block" Height="120px" />
+                    }
+                </div>
+            </div>
+            break;
+
+        case SkeletonLayout.CareerJobs:
+            @for (var i = 0; i < Count; i++)
+            {
+                <div class="mw-sk-job">
+                    <div class="mw-sk-job__main">
+                        <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Line" Width="220px" />
+                        <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineSm" Width="160px" />
+                    </div>
+                    <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Pill" Width="72px" />
+                </div>
+            }
+            break;
+
+        case SkeletonLayout.ProfilePanel:
+            <div class="mw-sk-profile">
+                <div class="mw-sk-stat-grid mw-sk-stat-grid--profile">
+                    @for (var s = 0; s < 4; s++)
+                    {
+                        <div class="mw-sk-stat">
+                            <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineLg" Width="48px" />
+                            <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineSm" />
+                        </div>
+                    }
+                </div>
+                @for (var r = 0; r < Count; r++)
+                {
+                    <div class="mw-sk-profile__row">
+                        <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Line" />
+                        <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineSm" Width="60%" />
+                    </div>
+                }
+            </div>
+            break;
+
+        case SkeletonLayout.HelpChat:
+            <div class="mw-sk-chat">
+                @for (var i = 0; i < Count; i++)
+                {
+                    <div class="mw-sk-chat__bubble @(i % 2 == 0 ? "mw-sk-chat__bubble--left" : "mw-sk-chat__bubble--right")">
+                        <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Line" />
+                        <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineSm" Width="70%" />
+                    </div>
+                }
+                <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Block" Height="44px" Class="mw-sk-chat__input" />
+            </div>
+            break;
+
+        case SkeletonLayout.MilestoneList:
+            @for (var i = 0; i < Count; i++)
+            {
+                <div class="mw-sk-milestone">
+                    <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Circle" Width="40px" Height="40px" />
+                    <div class="mw-sk-milestone__text">
+                        <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Line" Width="160px" />
+                        <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineSm" Width="100px" />
+                    </div>
+                    <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Line" Width="64px" />
+                </div>
+            }
+            <div class="mw-sk-product-grid mw-sk-tier-grid" style="--mw-sk-product-cols: 4">
+                @for (var t = 0; t < 4; t++)
+                {
+                    <div class="mw-sk-tier-card">
+                        <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Circle" Width="36px" Height="36px" />
+                        <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Line" />
+                        <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineSm" />
+                        <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineSm" />
+                    </div>
+                }
+            </div>
+            break;
+
+        case SkeletonLayout.TierCards:
+            <div class="mw-sk-product-grid mw-sk-tier-grid" style="@($"--mw-sk-product-cols:{ProductColumns}")">
+                @for (var i = 0; i < Count; i++)
+                {
+                    <div class="mw-sk-tier-card mw-sk-tier-card--lg">
+                        <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Circle" Width="48px" Height="48px" />
+                        <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineLg" Width="80px" />
+                        @for (var l = 0; l < 4; l++)
+                        {
+                            <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineSm" Width="@($"{60 + l * 8}%")" />
+                        }
+                    </div>
+                }
+            </div>
+            break;
+    }
+    <span class="visually-hidden">@AriaLabel</span>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public SkeletonLayout Layout { get; set; }
+
+    [Parameter]
+    public int Count { get; set; } = 4;
+
+    [Parameter]
+    public int Columns { get; set; } = 7;
+
+    [Parameter]
+    public int StatColumns { get; set; } = 3;
+
+    [Parameter]
+    public int ProductColumns { get; set; } = 4;
+
+    [Parameter]
+    public string AriaLabel { get; set; } = "Loading content";
+
+    public enum SkeletonLayout
+    {
+        AdminCardList,
+        AdminTable,
+        AdminStatGrid,
+        AdminAnalytics,
+        AdminAffiliateTab,
+        AdminAffiliateRows,
+        AdminOverview,
+        ProductGrid,
+        StorefrontCarousel,
+        StoreShop,
+        ProductDetail,
+        JournalPage,
+        ArchiveSections,
+        EventPage,
+        CareerJobs,
+        ProfilePanel,
+        HelpChat,
+        MilestoneList,
+        TierCards
+    }
+}

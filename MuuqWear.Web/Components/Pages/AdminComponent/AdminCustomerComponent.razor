@@ -9,12 +9,7 @@
 
 <PageTitle>Customers</PageTitle>
 
-@if (isLoading && customers.Count == 0)
-{
-    <p class="mw-section-loading">Loading customers…</p>
-}
-
-<div class="customers-page">
+<div class="customers-page @(isLoadingTabContent ? "customers-page--refreshing" : "")">
 
     <div class="customers-header">
         <div>
@@ -96,9 +91,12 @@
             </div>
 
             <div class="customers-table-card__body">
-                @if (isLoading)
+                @if (isLoading && !customers.Any())
                 {
-                    <p class="customers-empty">Loading…</p>
+                    <MwSkeletonSection Layout="MwSkeletonSection.SkeletonLayout.AdminTable"
+                                       Count="8"
+                                       Columns="7"
+                                       AriaLabel="Loading customers" />
                 }
                 else if (!customers.Any())
                 {
@@ -163,9 +161,12 @@
                         <h2 class="customers-table-card__title">Select Customer</h2>
                     </div>
                     <div class="customers-table-card__body customers-table-card__body--compact">
-                        @if (isLoading)
+                        @if (isLoading && !customers.Any())
                         {
-                            <p class="customers-empty">Loading…</p>
+                            <MwSkeletonSection Layout="MwSkeletonSection.SkeletonLayout.AdminTable"
+                                               Count="6"
+                                               Columns="3"
+                                               AriaLabel="Loading customers" />
                         }
                         else if (!customers.Any())
                         {
@@ -271,9 +272,12 @@
             </div>
 
             <div class="customers-table-card__body">
-                @if (isLoading)
+                @if (isLoading && !customers.Any())
                 {
-                    <p class="customers-empty">Loading…</p>
+                    <MwSkeletonSection Layout="MwSkeletonSection.SkeletonLayout.AdminTable"
+                                       Count="8"
+                                       Columns="7"
+                                       AriaLabel="Loading customers" />
                 }
                 else if (!customers.Any())
                 {
@@ -459,3 +463,5 @@
         @toastMessage
     </div>
 }
+
+<PageReadyNotifier IsLoading="@(isLoading && !hasLoadedOnce)" />

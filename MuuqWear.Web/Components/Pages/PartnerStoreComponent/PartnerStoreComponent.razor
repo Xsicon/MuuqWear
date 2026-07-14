@@ -10,9 +10,10 @@
 
     @if (isLoading)
     {
-        <div class="loading-state">
-            <p>Loading partner store...</p>
-        </div>
+        <MwSkeletonSection Layout="MwSkeletonSection.SkeletonLayout.ProductGrid"
+                           Count="8"
+                           ProductColumns="4"
+                           AriaLabel="Loading partner store" />
     }
     else if (limitStatus?.LimitReached == true)
     {
@@ -148,3 +149,5 @@
         </div>
     }
 </div>
+
+<PageReadyNotifier IsLoading="isLoading" />

@@ -1,4 +1,5 @@
 ﻿@using MuuqWear.Application.Services.AffiliateService
+@using MuuqWear.Web.Components.Shared
 @inject IAffiliateService AffiliateService
 
 
@@ -6,7 +7,9 @@
 
     @if (isLoading)
     {
-        <p>Loading milestones...</p>
+        <MwSkeletonSection Layout="MwSkeletonSection.SkeletonLayout.MilestoneList"
+                           Count="5"
+                           AriaLabel="Loading milestones" />
     }
     else if (affiliateInfo != null && mileStones != null)
     {
@@ -76,6 +79,15 @@
                         <p class="tier-detail">@tier.ItemsDetailLabel</p>
                         <p class="tier-detail">@tier.CommissionRatePercent.ToString("0.#")% commission</p>
                         <p class="tier-detail">@tier.ReferralDiscountPercent.ToString("0.#")% referral discount</p>
+                        @if (tier.Perks?.Count > 0)
+                        {
+                            <ul class="tier-perks">
+                                @foreach (var perk in tier.Perks.Take(3))
+                                {
+                                    <li>@perk</li>
+                                }
+                            </ul>
+                        }
                     </div>
                 }
             </div>

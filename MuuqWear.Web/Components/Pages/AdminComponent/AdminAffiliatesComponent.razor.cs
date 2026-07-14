@@ -11,7 +11,7 @@ namespace MuuqWear.Web.Components.Pages.AdminComponent;
 
 public partial class AdminAffiliatesComponent : IDisposable
 {
-    private const int MaxActiveAffiliates = 500;
+    internal const int MaxActiveAffiliates = 500;
 
     [Inject] private IAffiliateService AffiliateService { get; set; } = default!;
     [Inject] private IAdminBadgeService BadgeService { get; set; } = default!;
@@ -22,7 +22,6 @@ public partial class AdminAffiliatesComponent : IDisposable
     public string? TabQuery { get; set; }
 
     private string activeTab = "pending";
-    private string pendingFilter = "pending";
 
     private List<AffiliateApplicationModel> pendingApplications = new();
     private List<AffiliateApplicationModel> activeApplications = new();
@@ -37,10 +36,13 @@ public partial class AdminAffiliatesComponent : IDisposable
     private bool payoutHistoryHasNext;
     private bool payoutHistoryHasPrevious;
     private AffiliateCountsModel affiliateCounts = new();
+    private AffiliateAdminStatsModel? adminStats;
 
     private bool showViewModal;
     private AffiliateApplicationModel? selectedApplication;
     private bool isLoading = true;
+    private bool isLoadingTabContent;
+    private bool hasLoadedOnce;
     private bool isActionInProgress;
     private string? processingPayoutCode;
     private string? errorMessage;
@@ -50,6 +52,21 @@ public partial class AdminAffiliatesComponent : IDisposable
     private string? expandedPayoutCode;
     private List<AffiliatePendingReferralModel> expandedReferrals = new();
     private bool isLoadingReferrals;
+    private List<AffiliateApplicationModel> allApplications = new();
+    private string pendingSearch = string.Empty;
+    private string pendingStatusFilter = "pending";
+    private string activeSearch = string.Empty;
+    private string activeTierFilter = "All";
+    private bool activeShowInactiveOnly;
+    private string? toastMessage;
+    private Guid? undoApplicationId;
+    private string? editingTierSlug;
+    private bool showProcessAllConfirm;
+    private bool showTierResetConfirm;
+    private bool tierHasUnsavedChanges;
+
+    private CancellationTokenSource? toastCts;
+    private int _loadGate;
 
     private static readonly (string Tab, string Label)[] TabViews =
     {
@@ -59,17 +76,19 @@ public partial class AdminAffiliatesComponent : IDisposable
         ("tiers", "Tier Settings")
     };
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
         AffiliatesTabCoordinator.TabChanged += OnAffiliatesTabChanged;
         NavigationManager.LocationChanged += OnLocationChanged;
-        ApplyTabFromQuery();
-        await LoadTabDataAsync(force: true);
     }
 
     protected override async Task OnParametersSetAsync()
     {
         ApplyTabFromQuery();
+
+        if (hasLoadedOnce && loadedCacheKey != GetTabCacheKey())
+            isLoadingTabContent = true;
+
         await LoadTabDataAsync();
     }
 
@@ -77,6 +96,8 @@ public partial class AdminAffiliatesComponent : IDisposable
     {
         AffiliatesTabCoordinator.TabChanged -= OnAffiliatesTabChanged;
         NavigationManager.LocationChanged -= OnLocationChanged;
+        toastCts?.Cancel();
+        toastCts?.Dispose();
     }
 
     private void OnAffiliatesTabChanged(string tab)
@@ -90,7 +111,7 @@ public partial class AdminAffiliatesComponent : IDisposable
 
         _ = InvokeAsync(async () =>
         {
-            await LoadTabDataAsync(force: true);
+            await LoadTabDataAsync();
             StateHasChanged();
         });
     }
@@ -104,8 +125,11 @@ public partial class AdminAffiliatesComponent : IDisposable
         _ = InvokeAsync(async () =>
         {
             ApplyTabFromQuery();
-            loadedCacheKey = null;
-            await LoadTabDataAsync(force: true);
+
+            if (hasLoadedOnce && loadedCacheKey != GetTabCacheKey())
+                isLoadingTabContent = true;
+
+            await LoadTabDataAsync();
             StateHasChanged();
         });
     }
@@ -131,10 +155,7 @@ public partial class AdminAffiliatesComponent : IDisposable
         NavigationManager.NavigateTo($"/admin/affiliates?tab={normalized}");
     }
 
-    private void SetPendingFilter(string filter)
-    {
-        pendingFilter = filter;
-    }
+    private void SetPendingFilter(string filter) => pendingStatusFilter = filter;
 
     private void SetPayoutView(string view)
     {
@@ -146,7 +167,7 @@ public partial class AdminAffiliatesComponent : IDisposable
             payoutHistoryPage = 1;
 
         loadedCacheKey = null;
-        _ = LoadTabDataAsync(force: true);
+        _ = LoadTabDataAsync();
     }
 
     private string GetTabCacheKey() =>
@@ -154,30 +175,371 @@ public partial class AdminAffiliatesComponent : IDisposable
             ? $"{activeTab}:{payoutView}:{payoutHistoryPage}"
             : activeTab;
 
-    private IEnumerable<AffiliateApplicationModel> FilteredPendingApplications =>
-        pendingFilter == "waitlisted"
-            ? waitListApplications
-            : pendingApplications;
+    private bool IsCurrentTabLoading =>
+        isLoading || isLoadingTabContent || loadedCacheKey != GetTabCacheKey();
+
+    private IEnumerable<AffiliateApplicationModel> FilteredPendingApplications
+    {
+        get
+        {
+            var q = pendingSearch.Trim();
+            return allApplications.Where(a =>
+            {
+                if (!string.IsNullOrEmpty(q))
+                {
+                    var handle = AffiliateAdminDesignHelper.GetPrimaryHandle(a.SocialHandles);
+                    if (!a.FullName.Contains(q, StringComparison.OrdinalIgnoreCase) &&
+                        !handle.Contains(q, StringComparison.OrdinalIgnoreCase) &&
+                        !a.ContentNiche.Contains(q, StringComparison.OrdinalIgnoreCase))
+                        return false;
+                }
+
+                if (pendingStatusFilter == "all")
+                    return true;
+
+                var status = a.Status.ToLowerInvariant();
+                return pendingStatusFilter switch
+                {
+                    "pending" => status == "pending",
+                    "waitlisted" => status == "waitlisted",
+                    "approved" => status == "approved",
+                    "denied" => status is "rejected" or "denied",
+                    _ => true
+                };
+            });
+        }
+    }
+
+    private IEnumerable<AffiliateApplicationModel> FilteredActiveApplications
+    {
+        get
+        {
+            var q = activeSearch.Trim();
+            return activeApplications.Where(a =>
+            {
+                if (!string.IsNullOrEmpty(q))
+                {
+                    var handle = AffiliateAdminDesignHelper.GetPrimaryHandle(a.SocialHandles);
+                    if (!a.FullName.Contains(q, StringComparison.OrdinalIgnoreCase) &&
+                        !handle.Contains(q, StringComparison.OrdinalIgnoreCase))
+                        return false;
+                }
+
+                var tierSlug = a.AffiliateTier ?? string.Empty;
+                var tierLabel = AffiliateAdminDesignHelper.FormatTierLabel(tierSlug);
+                if (activeTierFilter != "All" &&
+                    !activeTierFilter.Equals(tierSlug, StringComparison.OrdinalIgnoreCase) &&
+                    !activeTierFilter.Equals(tierLabel, StringComparison.OrdinalIgnoreCase))
+                    return false;
+
+                if (activeShowInactiveOnly)
+                    return !a.IsActive;
+
+                return a.IsActive;
+            });
+        }
+    }
+
+    private int PendingReviewCount => affiliateCounts.Pending > 0
+        ? affiliateCounts.Pending
+        : pendingApplications.Count;
+
+    private int WaitlistedCount => affiliateCounts.Waitlisted > 0
+        ? affiliateCounts.Waitlisted
+        : waitListApplications.Count;
+
+    private int ApplicationsThisMonth => allApplications.Count(a =>
+        a.SubmittedAt.Month == DateTime.UtcNow.Month &&
+        a.SubmittedAt.Year == DateTime.UtcNow.Year);
+
+    private decimal TotalPendingPayoutAmount => adminStats?.PendingPayoutAmount
+        ?? pendingPayouts.Sum(p => p.TotalAmount);
+
+    private int PendingPayoutCountDisplay => adminStats?.PendingPayoutCount ?? pendingPayouts.Count;
+
+    private decimal ProcessedThisMonthAmount => adminStats?.ProcessedThisMonthAmount
+        ?? payoutHistory.Where(p =>
+            p.ProcessedAt.Month == DateTime.UtcNow.Month &&
+            p.ProcessedAt.Year == DateTime.UtcNow.Year).Sum(p => p.TotalAmount);
+
+    private int ProcessedThisMonthCount => adminStats?.ProcessedThisMonthCount
+        ?? payoutHistory.Count(p =>
+            p.ProcessedAt.Month == DateTime.UtcNow.Month &&
+            p.ProcessedAt.Year == DateTime.UtcNow.Year);
+
+    private decimal TotalDisbursedYtd => adminStats?.TotalDisbursedYtd
+        ?? payoutHistory.Sum(p => p.TotalAmount);
+
+    private decimal TotalCommissionsPaid => adminStats?.TotalCommissionsPaid ?? 0;
+    private int TotalItemsSold => adminStats?.TotalItemsSold ?? 0;
+    private int ActiveAffiliateCountDisplay => adminStats?.ActiveAffiliates ?? activeApplications.Count(a => a.IsActive);
+
+    private int GetTierAffiliateCount(string tierKey)
+    {
+        if (adminStats?.AffiliatesByTier != null)
+        {
+            var match = adminStats.AffiliatesByTier.FirstOrDefault(kv =>
+                kv.Key.Equals(tierKey, StringComparison.OrdinalIgnoreCase) ||
+                AffiliateAdminDesignHelper.FormatTierLabel(kv.Key)
+                    .Equals(tierKey, StringComparison.OrdinalIgnoreCase));
+            if (!string.IsNullOrEmpty(match.Key))
+                return match.Value;
+        }
+
+        var tier = affiliateTiers.FirstOrDefault(t =>
+            t.DisplayName.Equals(tierKey, StringComparison.OrdinalIgnoreCase) ||
+            t.Slug.Equals(tierKey, StringComparison.OrdinalIgnoreCase));
+        if (tier != null)
+            return tier.CurrentAffiliateCount;
+
+        return activeApplications.Count(a =>
+            AffiliateAdminDesignHelper.FormatTierLabel(a.AffiliateTier)
+                .Equals(tierKey, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private IEnumerable<(string Key, string Label)> GetTierFilterOptions()
+    {
+        if (adminStats?.AffiliatesByTier?.Count > 0)
+        {
+            return adminStats.AffiliatesByTier
+                .OrderBy(kv => kv.Key)
+                .Select(kv => (kv.Key, AffiliateAdminDesignHelper.FormatTierLabel(kv.Key)));
+        }
+
+        if (affiliateTiers.Count > 0)
+        {
+            return affiliateTiers
+                .OrderBy(t => t.SortOrder)
+                .Select(t => (t.Slug, t.DisplayName));
+        }
+
+        return AffiliateAdminDesignHelper.TierThemes.Select(t => (t.Name.ToLowerInvariant(), t.Name));
+    }
+
+    private IEnumerable<(string Key, string Label, int Count)> GetTierStatCards()
+    {
+        if (adminStats?.AffiliatesByTier?.Count > 0)
+        {
+            return adminStats.AffiliatesByTier
+                .OrderBy(kv => kv.Key)
+                .Select(kv => (kv.Key, AffiliateAdminDesignHelper.FormatTierLabel(kv.Key), kv.Value));
+        }
+
+        if (affiliateTiers.Count > 0)
+        {
+            return affiliateTiers
+                .OrderBy(t => t.SortOrder)
+                .Select(t => (t.Slug, t.DisplayName, t.CurrentAffiliateCount));
+        }
+
+        return AffiliateAdminDesignHelper.TierThemes
+            .Select(t => (t.Name.ToLowerInvariant(), t.Name, GetTierAffiliateCount(t.Name)));
+    }
+
+    private async Task ShowToastAsync(string message)
+    {
+        toastCts?.Cancel();
+        toastCts?.Dispose();
+        toastCts = new CancellationTokenSource();
+        toastMessage = message;
+        StateHasChanged();
+
+        try
+        {
+            await Task.Delay(2400, toastCts.Token);
+            toastMessage = null;
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (TaskCanceledException)
+        {
+        }
+    }
+
+    private void StartTierEdit(string slug)
+    {
+        if (!tierEdits.ContainsKey(slug))
+            return;
+
+        editingTierSlug = slug;
+        tierHasUnsavedChanges = false;
+    }
+
+    private void CancelTierEdit()
+    {
+        if (editingTierSlug != null &&
+            affiliateTiers.FirstOrDefault(t =>
+                t.Slug.Equals(editingTierSlug, StringComparison.OrdinalIgnoreCase)) is { } tier)
+        {
+            tierEdits[editingTierSlug] = TierEditForm.FromTier(tier);
+        }
+
+        editingTierSlug = null;
+        tierHasUnsavedChanges = false;
+    }
+
+    private void MarkTierDirty() => tierHasUnsavedChanges = true;
+
+    private async Task SaveEditingTierAsync()
+    {
+        if (string.IsNullOrEmpty(editingTierSlug))
+            return;
+
+        var slug = editingTierSlug;
+        await SaveTierAsync(slug);
+        if (tierEdits.TryGetValue(slug, out var edit) && string.IsNullOrEmpty(edit.Error))
+        {
+            var label = AffiliateAdminDesignHelper.FormatTierLabel(slug);
+            editingTierSlug = null;
+            tierHasUnsavedChanges = false;
+            await ShowToastAsync($"{label} tier settings saved");
+        }
+    }
+
+    private void ResetTierFormsToLoaded()
+    {
+        tierEdits = affiliateTiers.ToDictionary(
+            t => t.Slug,
+            t => TierEditForm.FromTier(t),
+            StringComparer.OrdinalIgnoreCase);
+        editingTierSlug = null;
+        tierHasUnsavedChanges = false;
+    }
+
+    private async Task ProcessAllPayoutsAsync()
+    {
+        showProcessAllConfirm = false;
+        isActionInProgress = true;
+        StateHasChanged();
+
+        try
+        {
+            var result = await AffiliateService.ProcessAllAdminPayouts(new ProcessAllAffiliatePayoutsModel
+            {
+                PaymentMethod = "manual"
+            });
+
+            if (result.Success && result.Data != null)
+            {
+                await RefreshAfterMutationAsync(MutationScope.Payout);
+                await ShowToastAsync(
+                    $"{result.Data.ProcessedCount} payouts processed — ${result.Data.TotalAmount:N0} disbursed");
+            }
+            else
+            {
+                errorMessage = result.Message ?? "Failed to process all payouts.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Failed to process all payouts.";
+            Console.WriteLine($"[AdminAffiliates] ProcessAllPayouts error: {ex.Message}");
+        }
+        finally
+        {
+            isActionInProgress = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ToggleAffiliateActiveAsync(Guid userId, bool isActive)
+    {
+        if (isActionInProgress)
+            return;
+
+        isActionInProgress = true;
+        errorMessage = null;
+        StateHasChanged();
+
+        try
+        {
+            var result = await AffiliateService.UpdateAffiliateActiveStatus(userId,
+                new UpdateAffiliateActiveStatusModel { IsActive = isActive });
+
+            if (result.Success)
+            {
+                await RefreshAfterMutationAsync(MutationScope.ActiveAffiliate);
+                await ShowToastAsync(isActive ? "Affiliate activated" : "Affiliate deactivated");
+            }
+            else
+            {
+                errorMessage = result.Message ?? "Failed to update affiliate status.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Failed to update affiliate status.";
+            Console.WriteLine($"[AdminAffiliates] ToggleAffiliateActive error: {ex.Message}");
+        }
+        finally
+        {
+            isActionInProgress = false;
+            StateHasChanged();
+        }
+    }
+
+    private void AddTierPerk(string slug)
+    {
+        if (!tierEdits.TryGetValue(slug, out var edit) || string.IsNullOrWhiteSpace(edit.NewPerk))
+            return;
+
+        edit.Perks.Add(edit.NewPerk.Trim());
+        edit.NewPerk = string.Empty;
+        MarkTierDirty();
+    }
+
+    private void RemoveTierPerk(string slug, int index)
+    {
+        if (!tierEdits.TryGetValue(slug, out var edit) || index < 0 || index >= edit.Perks.Count)
+            return;
+
+        edit.Perks.RemoveAt(index);
+        MarkTierDirty();
+    }
+
+    private async Task UndoLastApplicationActionAsync(Guid applicationId)
+    {
+        undoApplicationId = null;
+        var result = await UpdateStatusAsync(applicationId, "pending");
+        if (result.Success)
+        {
+            await RefreshAfterMutationAsync(MutationScope.PendingApplication);
+            await ShowToastAsync("Action undone");
+        }
+    }
+
+    private static (string Bg, string Fg) GetTierBadgeColors(string slug) =>
+        AffiliateAdminDesignHelper.GetTierTheme(slug) switch
+        {
+            var t => (t.BgColor, t.TextColor)
+        };
+
+    private enum MutationScope
+    {
+        PendingApplication,
+        ActiveAffiliate,
+        Payout,
+        Tier
+    }
 
     private async Task LoadTabDataAsync(bool force = false)
     {
         if (!force && loadedCacheKey == GetTabCacheKey())
             return;
 
-        isLoading = true;
+        if (Interlocked.CompareExchange(ref _loadGate, 1, 0) != 0)
+            return;
+
+        if (!hasLoadedOnce)
+            isLoading = true;
+        else
+            isLoadingTabContent = true;
+
         errorMessage = null;
         await InvokeAsync(StateHasChanged);
 
         try
         {
-            await LoadBadgeCountsAsync();
-
-            if (activeTab is "pending" or "active")
-                await LoadApplicationsAsync();
-            else if (activeTab == "payouts")
-                await LoadPayoutsAsync();
-            else if (activeTab == "tiers")
-                await LoadTiersAsync();
+            await LoadTabDataCoreAsync();
         }
         catch (Exception ex)
         {
@@ -187,9 +549,87 @@ public partial class AdminAffiliatesComponent : IDisposable
         finally
         {
             isLoading = false;
+            isLoadingTabContent = false;
+            hasLoadedOnce = true;
             loadedCacheKey = GetTabCacheKey();
+            Interlocked.Exchange(ref _loadGate, 0);
             await InvokeAsync(StateHasChanged);
         }
+    }
+
+    private async Task LoadTabDataCoreAsync()
+    {
+        var tasks = new List<Task> { LoadBadgeCountsAsync() };
+
+        switch (activeTab)
+        {
+            case "pending":
+                tasks.Add(LoadPendingApplicationsAsync());
+                break;
+            case "active":
+                tasks.Add(LoadAdminStatsAsync());
+                tasks.Add(LoadActiveApplicationsAsync());
+                break;
+            case "payouts":
+                tasks.Add(LoadAdminStatsAsync());
+                tasks.Add(LoadPayoutsAsync());
+                break;
+            case "tiers":
+                tasks.Add(LoadTiersAsync());
+                break;
+        }
+
+        await Task.WhenAll(tasks);
+    }
+
+    private async Task RefreshAfterMutationAsync(MutationScope scope)
+    {
+        isLoadingTabContent = true;
+        errorMessage = null;
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            var tasks = new List<Task> { LoadBadgeCountsAsync() };
+
+            switch (scope)
+            {
+                case MutationScope.PendingApplication:
+                    tasks.Add(LoadPendingApplicationsAsync());
+                    break;
+                case MutationScope.ActiveAffiliate:
+                    tasks.Add(LoadAdminStatsAsync());
+                    tasks.Add(LoadActiveApplicationsAsync());
+                    break;
+                case MutationScope.Payout:
+                    tasks.Add(LoadAdminStatsAsync());
+                    tasks.Add(LoadPayoutsAsync());
+                    break;
+                case MutationScope.Tier:
+                    tasks.Add(LoadTiersAsync());
+                    break;
+            }
+
+            await Task.WhenAll(tasks);
+            loadedCacheKey = GetTabCacheKey();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Failed to refresh affiliate data.";
+            Console.WriteLine($"[AdminAffiliates] Refresh error: {ex.Message}");
+        }
+        finally
+        {
+            isLoadingTabContent = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task LoadAdminStatsAsync()
+    {
+        var result = await AffiliateService.GetAdminStats();
+        if (result.Success && result.Data != null)
+            adminStats = result.Data;
     }
 
     private async Task LoadBadgeCountsAsync()
@@ -199,26 +639,37 @@ public partial class AdminAffiliatesComponent : IDisposable
             affiliateCounts = result.Data.AffiliateCounts;
     }
 
-    private async Task LoadApplicationsAsync()
+    private async Task LoadPendingApplicationsAsync()
     {
         var pendingTask = AffiliateService.GetAllApplications("pending");
-        var activeTask = AffiliateService.GetAllApplications("approved");
-        var waitListTask = AffiliateService.GetAllApplications("waitlisted");
+        var waitlistTask = AffiliateService.GetAllApplications("waitlisted");
+        var approvedTask = AffiliateService.GetAllApplications("approved");
+        var rejectedTask = AffiliateService.GetAllApplications("rejected");
 
-        await Task.WhenAll(pendingTask, activeTask, waitListTask);
+        await Task.WhenAll(pendingTask, waitlistTask, approvedTask, rejectedTask);
 
-        var pendingResult = await pendingTask;
-        if (pendingResult.Success && pendingResult.Data != null)
-            pendingApplications = pendingResult.Data;
+        pendingApplications = GetApplicationList(await pendingTask);
+        waitListApplications = GetApplicationList(await waitlistTask);
+        var approved = GetApplicationList(await approvedTask);
+        var rejected = GetApplicationList(await rejectedTask);
 
-        var activeResult = await activeTask;
-        if (activeResult.Success && activeResult.Data != null)
-            activeApplications = activeResult.Data;
-
-        var waitlistResult = await waitListTask;
-        if (waitlistResult.Success && waitlistResult.Data != null)
-            waitListApplications = waitlistResult.Data;
+        allApplications = pendingApplications
+            .Concat(waitListApplications)
+            .Concat(approved)
+            .Concat(rejected)
+            .ToList();
     }
+
+    private async Task LoadActiveApplicationsAsync()
+    {
+        var result = await AffiliateService.GetAllApplications("approved");
+        if (result.Success && result.Data != null)
+            activeApplications = result.Data;
+    }
+
+    private static List<AffiliateApplicationModel> GetApplicationList(
+        Response<List<AffiliateApplicationModel>> result) =>
+        result.Success && result.Data != null ? result.Data : new List<AffiliateApplicationModel>();
 
     private async Task LoadPayoutsAsync()
     {
@@ -233,10 +684,11 @@ public partial class AdminAffiliatesComponent : IDisposable
         {
             errorMessage = result.Message ?? "Failed to load pending payouts.";
             pendingPayouts = new();
-            return;
         }
-
-        pendingPayouts = result.Data;
+        else
+        {
+            pendingPayouts = result.Data;
+        }
     }
 
     private async Task LoadPayoutHistoryAsync()
@@ -340,8 +792,8 @@ public partial class AdminAffiliatesComponent : IDisposable
             {
                 expandedPayoutCode = null;
                 expandedReferrals = new();
-                loadedCacheKey = null;
-                await LoadTabDataAsync(force: true);
+                await RefreshAfterMutationAsync(MutationScope.Payout);
+                await ShowToastAsync("Payout processed successfully");
             }
             else
             {
@@ -358,14 +810,6 @@ public partial class AdminAffiliatesComponent : IDisposable
             processingPayoutCode = null;
             StateHasChanged();
         }
-    }
-
-    private static string FormatTierLabel(string tier)
-    {
-        if (string.IsNullOrWhiteSpace(tier) || tier.Equals("none", StringComparison.OrdinalIgnoreCase))
-            return "Bronze";
-
-        return char.ToUpperInvariant(tier[0]) + tier[1..].ToLowerInvariant();
     }
 
     private async Task LoadTiersAsync()
@@ -411,6 +855,9 @@ public partial class AdminAffiliatesComponent : IDisposable
                 ItemsSoldThreshold = edit.ItemsSoldThreshold,
                 CommissionRatePercent = edit.CommissionRatePercent,
                 ReferralDiscountPercent = edit.ReferralDiscountPercent,
+                QuarterlyBonusPercent = edit.QuarterlyBonusPercent,
+                MaxAffiliates = edit.MaxAffiliates,
+                Perks = edit.Perks.ToList(),
                 IsActive = edit.IsActive
             });
 
@@ -454,6 +901,12 @@ public partial class AdminAffiliatesComponent : IDisposable
         if (edit.ReferralDiscountPercent is < 0 or > 100)
         {
             error = "Referral discount must be between 0 and 100.";
+            return false;
+        }
+
+        if (edit.QuarterlyBonusPercent is < 0 or > 100)
+        {
+            error = "Quarterly bonus must be between 0 and 100.";
             return false;
         }
 
@@ -507,19 +960,15 @@ public partial class AdminAffiliatesComponent : IDisposable
         return true;
     }
 
-    private static (string Bg, string Fg) GetTierBadgeColors(string slug) =>
-        slug.ToLowerInvariant() switch
-        {
-            "silver" => ("#E5E7EB", "#374151"),
-            "gold" => ("#FEF3C7", "#92400E"),
-            _ => ("#FEE2E2", "#991B1B")
-        };
-
     private sealed class TierEditForm
     {
         public int ItemsSoldThreshold { get; set; }
         public decimal CommissionRatePercent { get; set; }
         public decimal ReferralDiscountPercent { get; set; }
+        public decimal QuarterlyBonusPercent { get; set; }
+        public int? MaxAffiliates { get; set; }
+        public List<string> Perks { get; set; } = new();
+        public string NewPerk { get; set; } = string.Empty;
         public bool IsActive { get; set; } = true;
         public bool IsSaving { get; set; }
         public string? Error { get; set; }
@@ -530,6 +979,9 @@ public partial class AdminAffiliatesComponent : IDisposable
             ItemsSoldThreshold = tier.ItemsSoldThreshold,
             CommissionRatePercent = tier.CommissionRatePercent,
             ReferralDiscountPercent = tier.ReferralDiscountPercent,
+            QuarterlyBonusPercent = tier.QuarterlyBonusPercent,
+            MaxAffiliates = tier.MaxAffiliates,
+            Perks = tier.Perks?.ToList() ?? new List<string>(),
             IsActive = tier.IsActive
         };
     }
@@ -541,6 +993,14 @@ public partial class AdminAffiliatesComponent : IDisposable
         if (action.Equals("view", StringComparison.OrdinalIgnoreCase))
         {
             OpenViewModal(applicationId);
+            return;
+        }
+
+        if (action.Equals("toggle-active", StringComparison.OrdinalIgnoreCase))
+        {
+            var app = activeApplications.FirstOrDefault(a => a.Id == applicationId);
+            if (app != null)
+                await ToggleAffiliateActiveAsync(app.UserId, !app.IsActive);
             return;
         }
 
@@ -569,8 +1029,15 @@ public partial class AdminAffiliatesComponent : IDisposable
 
             if (result.Success)
             {
-                loadedCacheKey = null;
-                await LoadTabDataAsync(force: true);
+                await RefreshAfterMutationAsync(MutationScope.PendingApplication);
+                await ShowToastAsync(action.ToLowerInvariant() switch
+                {
+                    "approve" => "Application approved",
+                    "reject" => "Application denied",
+                    "waitlist" => "Added to waitlist",
+                    _ => "Application updated"
+                });
+                undoApplicationId = applicationId;
             }
             else
             {
@@ -606,9 +1073,8 @@ public partial class AdminAffiliatesComponent : IDisposable
 
     private void OpenViewModal(Guid applicationId)
     {
-        selectedApplication = pendingApplications.FirstOrDefault(a => a.Id == applicationId)
-            ?? activeApplications.FirstOrDefault(a => a.Id == applicationId)
-            ?? waitListApplications.FirstOrDefault(a => a.Id == applicationId);
+        selectedApplication = allApplications.FirstOrDefault(a => a.Id == applicationId)
+            ?? activeApplications.FirstOrDefault(a => a.Id == applicationId);
 
         if (selectedApplication != null)
             showViewModal = true;
@@ -619,6 +1085,16 @@ public partial class AdminAffiliatesComponent : IDisposable
         showViewModal = false;
         selectedApplication = null;
     }
+
+    private async Task ConfirmResetTiersAsync()
+    {
+        showTierResetConfirm = false;
+        await LoadTiersAsync();
+        ResetTierFormsToLoaded();
+        await ShowToastAsync("Tiers reset to defaults");
+    }
+
+    private string FormatTierLabel(string tier) => AffiliateAdminDesignHelper.FormatTierLabel(tier);
 
     private int GetTabCount(string tab) => tab switch
     {

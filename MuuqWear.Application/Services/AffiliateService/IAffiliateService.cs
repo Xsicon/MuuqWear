@@ -1,4 +1,4 @@
-﻿using MuuqWear.Application.Shared;
+using MuuqWear.Application.Shared;
 using MuuqWear.Model.AffiliateApplication;
 using MuuqWear.Model.PartnerStoreProduct;
 using MuuqWear.Model.Shared;
@@ -45,5 +45,11 @@ public interface IAffiliateService
         string affiliateCode, ProcessAffiliatePayoutModel? request = null);
     Task<Response<PaginatedResponse<AffiliatePayoutResultModel>>> GetAdminPayoutHistory(
         int page = 1, int pageSize = 20);
+
+    Task<Response<AffiliateAdminStatsModel>> GetAdminStats();
+    Task<Response<AffiliateApplicationModel>> UpdateAffiliateActiveStatus(
+        Guid userId, UpdateAffiliateActiveStatusModel request);
+    Task<Response<ProcessAllAffiliatePayoutsResultModel>> ProcessAllAdminPayouts(
+        ProcessAllAffiliatePayoutsModel? request = null);
 }
 

@@ -901,7 +901,7 @@
 }
 
 .mw-tier-container {
-    max-width: 1100px;
+    max-width: 1280px;
     margin: 0 auto;
     padding: 55px 16px;
 }
@@ -950,9 +950,16 @@
     gap: 21px;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 640px) {
     .mw-tier-grid {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 1024px) {
+    .mw-tier-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 16px;
     }
 }
 
@@ -962,6 +969,12 @@
     border: 1px solid rgba(169, 183, 204, 0.4);
     padding: 34px;
     position: relative;
+}
+
+@media (min-width: 1024px) {
+    .mw-tier-card {
+        padding: 28px 20px;
+    }
 }
 
 .mw-tier-featured {
@@ -1008,6 +1021,10 @@
 
 .mw-tier-gold {
     color: #FFD700;
+}
+
+.mw-tier-platinum {
+    color: #6366F1;
 }
 
 .mw-tier-name {

@@ -1,4 +1,4 @@
-﻿using Microsoft.JSInterop;
+using Microsoft.JSInterop;
 using MuuqWear.Model.AffiliatePerfomanceModel;
 using MuuqWear.Model.RevenueOverTime;
 using MuuqWear.Model.TopSellingProduct;
@@ -7,7 +7,9 @@ namespace MuuqWear.Web.Components.Pages.AdminComponent;
 
 public partial class AdminAnalyticsComponent
 {
-    private bool isLoading = false;
+    private bool isLoading;
+    private bool isRefreshing;
+    private bool hasLoadedOnce;
     private RevenueOverTimeModel? revenue = null;
     private List<TopSellingProductModel>? topProducts = null;
     private List<AffiliatePerformanceModel>? affiliatePerformance = null;
@@ -31,8 +33,12 @@ public partial class AdminAnalyticsComponent
 
     private async Task LoadAllData()
     {
-        isLoading = true;
-        StateHasChanged();
+        if (!hasLoadedOnce)
+            isLoading = true;
+        else
+            isRefreshing = true;
+
+        await InvokeAsync(StateHasChanged);
 
         var revenueTask = AnalyticsService.GetRevenue();
         var productsTask = AnalyticsService.GetTopProducts(5);
@@ -42,22 +48,23 @@ public partial class AdminAnalyticsComponent
 
         revenue = revenueTask.Result.Success
             ? revenueTask.Result.Data
-            : null;
+            : revenue;
 
         topProducts = productsTask.Result.Success && productsTask.Result.Data != null
             ? productsTask.Result.Data
-            : new List<TopSellingProductModel>();
+            : topProducts ?? new List<TopSellingProductModel>();
 
         affiliatePerformance = affiliatesTask.Result.Success && affiliatesTask.Result.Data != null
             ? affiliatesTask.Result.Data
-            : new List<AffiliatePerformanceModel>();
+            : affiliatePerformance ?? new List<AffiliatePerformanceModel>();
 
         isLoading = false;
+        isRefreshing = false;
+        hasLoadedOnce = true;
 
-        // Signal that we want the chart to render after the next render cycle
         pendingChartRender = true;
 
-        StateHasChanged();
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task RenderChart()

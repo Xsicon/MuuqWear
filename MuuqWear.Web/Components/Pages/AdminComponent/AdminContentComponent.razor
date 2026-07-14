@@ -11,11 +11,6 @@
 
 <PageTitle>Content Management</PageTitle>
 
-@if (isLoading && !isFormOpen && items.Count == 0)
-{
-    <p class="mw-section-loading">Loading content…</p>
-}
-
 @if (!isFormOpen)
 {
     <div class="content-page">
@@ -168,9 +163,11 @@
             </div>
 
             <div class="content-journal-list">
-                @if (isLoading)
+                @if (IsCurrentViewLoading && !FilteredJournalItems.Any())
                 {
-                    <p class="content-empty">Loading…</p>
+                    <MwSkeletonSection Layout="MwSkeletonSection.SkeletonLayout.AdminAffiliateRows"
+                                       Count="5"
+                                       AriaLabel="Loading journal articles" />
                 }
                 else if (!FilteredJournalItems.Any())
                 {
@@ -291,9 +288,11 @@
                        @bind:event="oninput" />
             </div>
 
-            @if (isLoading)
+            @if (IsCurrentViewLoading && !FilteredDesignItems.Any())
             {
-                <p class="content-empty">Loading…</p>
+                <MwSkeletonSection Layout="MwSkeletonSection.SkeletonLayout.AdminAffiliateRows"
+                                   Count="5"
+                                   AriaLabel="Loading design history" />
             }
             else if (!FilteredDesignItems.Any())
             {
@@ -418,9 +417,11 @@
             </div>
 
             <div class="content-event-list">
-                @if (isLoading)
+                @if (IsCurrentViewLoading && !FilteredEventItems.Any())
                 {
-                    <p class="content-empty">Loading…</p>
+                    <MwSkeletonSection Layout="MwSkeletonSection.SkeletonLayout.AdminCardList"
+                                       Count="4"
+                                       AriaLabel="Loading events" />
                 }
                 else if (!FilteredEventItems.Any())
                 {
@@ -549,9 +550,12 @@
                 }
             </div>
 
-            @if (voteItemsLoading || isLoading)
+            @if (IsCurrentViewLoading && !FilteredVoteCampaigns.Any())
             {
-                <p class="content-empty">Loading campaigns…</p>
+                <MwSkeletonSection Layout="MwSkeletonSection.SkeletonLayout.ProductGrid"
+                                   Count="6"
+                                   ProductColumns="3"
+                                   AriaLabel="Loading vote campaigns" />
             }
             else if (!FilteredVoteCampaigns.Any())
             {
@@ -655,9 +659,12 @@
                 </div>
             }
 
-            @if (mediaLoading || isLoading)
+            @if (IsCurrentViewLoading && mediaItems.Count == 0)
             {
-                <p class="content-empty">Loading media library…</p>
+                <MwSkeletonSection Layout="MwSkeletonSection.SkeletonLayout.ProductGrid"
+                                   Count="8"
+                                   ProductColumns="4"
+                                   AriaLabel="Loading media library" />
             }
             else if (mediaItems.Count == 0)
             {

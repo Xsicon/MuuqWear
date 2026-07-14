@@ -9,8 +9,12 @@ public class AffiliatePendingPayoutModel
     public int ReferralCount { get; set; }
     public DateTime OldestPendingDate { get; set; }
     public string Status { get; set; } = "pending";
+    public string? PaymentMethod { get; set; }
     public string FormattedDate => OldestPendingDate.ToString("MMM dd, yyyy");
     public string FormattedAmount => $"${TotalAmount:F2}";
+    public string FormattedPaymentMethod => string.IsNullOrWhiteSpace(PaymentMethod)
+        ? "Manual"
+        : PaymentMethod.Replace("_", " ", StringComparison.Ordinal);
 }
 
 public class AffiliatePendingReferralModel

@@ -1,6 +1,7 @@
 ﻿@page "/design-history"
 @using MuuqWear.Model.Archive
 @using MuuqWear.Model.ContentItem
+@using MuuqWear.Web.Components.Shared
 @rendermode InteractiveServer
 
 
@@ -23,7 +24,12 @@
     </section>
     @if (isLoading)
     {
-        <div class="ar-loading">Loading the archive…</div>
+        <div class="ar-section__inner">
+            <MwSkeletonSection Layout="MwSkeletonSection.SkeletonLayout.ArchiveSections"
+                               Count="4"
+                               StatColumns="3"
+                               AriaLabel="Loading the archive" />
+        </div>
     }
     else
     {
@@ -104,6 +110,9 @@
 
 
 </div>
+
+<PageReadyNotifier IsLoading="isLoading" />
+
 <!-- STORY DETAIL PANEL -->
 @if (viewingItem is not null)
 {

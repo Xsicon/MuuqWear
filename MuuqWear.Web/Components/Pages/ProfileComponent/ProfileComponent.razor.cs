@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.JSInterop;
@@ -13,6 +13,12 @@ namespace MuuqWear.Web.Components.Pages.ProfileComponent;
 
 public partial class ProfileComponent
 {
+    private static readonly string[] ChartScriptUrls =
+    [
+        "https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js",
+        "js/chartHelpers.js"
+    ];
+
     private string activeTab = "overview"; // default tab
     private List<AddressModel> addresses = new();
     private string activeAffiliateTab = "dashboard";

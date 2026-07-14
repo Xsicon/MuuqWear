@@ -1,4 +1,4 @@
-﻿using MuuqWear.Model.AffiliateApplication;
+using MuuqWear.Model.AffiliateApplication;
 
 namespace MuuqWear.Web.Components.Pages.MileStoneComponent
 {
@@ -110,6 +110,16 @@ namespace MuuqWear.Web.Components.Pages.MileStoneComponent
                 ReferralDiscountPercent = 15,
                 SortOrder = 3,
                 IsActive = true
+            },
+            new AffiliateTierModel
+            {
+                Slug = "platinum",
+                DisplayName = "Platinum",
+                ItemsSoldThreshold = 1000,
+                CommissionRatePercent = 20,
+                ReferralDiscountPercent = 20,
+                SortOrder = 4,
+                IsActive = true
             }
         ];
 
@@ -118,6 +128,7 @@ namespace MuuqWear.Web.Components.Pages.MileStoneComponent
             {
                 "silver" => "rgb(169, 183, 204)",
                 "gold" => "rgb(212, 168, 67)",
+                "platinum" => "rgb(99, 102, 241)",
                 _ => "rgb(205, 127, 50)"
             };
     }

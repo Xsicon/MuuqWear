@@ -471,19 +471,54 @@ window.mwScrollLock = {
 
 window.mwNavProgress = {
     _initialized: false,
+    _awaitingPageReady: false,
+    _staticFallback: null,
 
     start: function () {
+        window.mwNavProgress._awaitingPageReady = true;
         window.mwNavProgress._startedAt = Date.now();
         document.body.classList.add("mw-nav-loading");
+        clearTimeout(window.mwNavProgress._staticFallback);
+    },
+
+    pageReady: function () {
+        if (!window.mwNavProgress._awaitingPageReady) {
+            return;
+        }
+
+        window.mwNavProgress._awaitingPageReady = false;
+        clearTimeout(window.mwNavProgress._staticFallback);
+
+        if (window.mwAdminNav) {
+            window.mwAdminNav.clearLoading();
+        }
+
+        if (window.mwStorefrontNav) {
+            window.mwStorefrontNav.clearLoading();
+        }
+
+        window.mwNavProgress.done();
     },
 
     done: function () {
         var elapsed = Date.now() - (window.mwNavProgress._startedAt || 0);
-        var remaining = Math.max(0, 500 - elapsed);
+        var remaining = Math.max(0, 150 - elapsed);
 
         window.setTimeout(function () {
             document.body.classList.remove("mw-nav-loading");
         }, remaining);
+    },
+
+    onEnhancedLoad: function () {
+        var self = window.mwNavProgress;
+        clearTimeout(self._staticFallback);
+
+        // Static pages that never signal readiness auto-complete quickly.
+        self._staticFallback = window.setTimeout(function () {
+            if (self._awaitingPageReady) {
+                self.pageReady();
+            }
+        }, 400);
     },
 
     init: function () {
@@ -492,9 +527,14 @@ window.mwNavProgress = {
 
         document.addEventListener("click", function (e) {
             var link = e.target.closest("a[href]");
-            if (!link || link.target === "_blank" || link.hasAttribute("download")) return;
+            var navBtn = e.target.closest(".an-nav__subitem, .an-nav__item[href]");
 
-            var href = link.getAttribute("href");
+            if (!link && !navBtn) return;
+
+            var el = link || navBtn;
+            if (el.target === "_blank" || el.hasAttribute("download")) return;
+
+            var href = el.getAttribute("href");
             if (!href || href.charAt(0) === "#") return;
             if (href.indexOf("javascript:") === 0) return;
 
@@ -513,6 +553,75 @@ window.mwNavProgress = {
 
             window.mwNavProgress.start();
         }, true);
+
+        window.mwNavProgress._bindNavigationEnd();
+    },
+
+    _bindNavigationEnd: function () {
+        if (window.Blazor) {
+            Blazor.addEventListener("enhancedload", function () {
+                window.mwNavProgress.onEnhancedLoad();
+            });
+        }
+
+        window.addEventListener("pageshow", function () {
+            window.mwNavProgress.pageReady();
+        });
+    }
+};
+
+window.mwStorefrontNav = {
+    _initialized: false,
+    _loadingEl: null,
+
+    init: function () {
+        if (this._initialized) return;
+        this._initialized = true;
+
+        var self = this;
+
+        document.addEventListener("click", function (e) {
+            var link = e.target.closest(".mw-nav__link, .mw-mobile-nav__link");
+            if (!link) return;
+
+            if (link.target === "_blank" || link.hasAttribute("download")) return;
+
+            var href = link.getAttribute("href");
+            if (!href || href.charAt(0) === "#") return;
+
+            if (href.indexOf("http") === 0 || href.indexOf("//") === 0) {
+                try {
+                    var url = new URL(href);
+                    if (url.origin !== window.location.origin) return;
+                    href = url.pathname + url.search + url.hash;
+                } catch (_) {
+                    return;
+                }
+            }
+
+            var current = window.location.pathname + window.location.search;
+            if (href === current || href === current + window.location.hash) return;
+
+            self.setLoading(link);
+            if (window.mwNavProgress) window.mwNavProgress.start();
+        }, true);
+    },
+
+    setLoading: function (el) {
+        this.clearLoading();
+        el.classList.add("mw-nav--loading");
+        this._loadingEl = el;
+    },
+
+    clearLoading: function () {
+        if (this._loadingEl) {
+            this._loadingEl.classList.remove("mw-nav--loading");
+            this._loadingEl = null;
+        }
+
+        document.querySelectorAll(".mw-nav--loading").forEach(function (el) {
+            el.classList.remove("mw-nav--loading");
+        });
     }
 };
 
@@ -750,5 +859,37 @@ window.mwCopyToClipboard = async function (text) {
         return ok;
     } catch (_) {
         return false;
+    }
+};
+
+window.mwLoadScripts = {
+    ensure: function (src) {
+        return new Promise(function (resolve, reject) {
+            if (document.querySelector('script[src="' + src + '"]')) {
+                resolve();
+                return;
+            }
+            var script = document.createElement('script');
+            script.src = src;
+            script.onload = function () { resolve(); };
+            script.onerror = function () { reject(new Error('Failed to load ' + src)); };
+            document.body.appendChild(script);
+        });
+    },
+    ensureMany: function (sources) {
+        var list = sources || [];
+        return Promise.all(list.map(function (src) { return window.mwLoadScripts.ensure(src); }));
+    },
+    ensureStripe: function () {
+        return window.mwLoadScripts.ensureMany([
+            'https://js.stripe.com/v3/',
+            'js/stripe-interop.js'
+        ]);
+    },
+    ensureCharts: function () {
+        return window.mwLoadScripts.ensureMany([
+            'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js',
+            'js/chartHelpers.js'
+        ]);
     }
 };

@@ -12,7 +12,7 @@
 @using MuuqWear.Application.Shared
 @using MuuqWear.Model.Authentication
 @using Microsoft.AspNetCore.Components.Authorization
-@using MuuqWear.Model.Orders
+@using MuuqWear.Web.Components.Shared
 @inject IOrderService OrderService
 @inject CustomAuthenticationStateProvider AuthStateProvider
 @inject IAuthService IAuthService
@@ -30,7 +30,6 @@
 @using MuuqWear.Web.Components.Pages.MileStoneComponent
 @using MuuqWear.Web.Components.Pages.OrderConfirmedComponent
 @using MuuqWear.Web.Components.Pages.PartnerStoreComponent
-@using MuuqWear.Web.Components.Shared
 @inject IHttpClientFactory HttpClientFactory
 @inject AuthSessionService AuthSession
 @inject IAffiliateService AffiliateService
@@ -40,6 +39,7 @@
 
 
 <PageTitle>Profile</PageTitle>
+<PageScripts Scripts="@ChartScriptUrls" />
 
 <section class="mw-profile container py-4 py-md-5">
 
@@ -234,8 +234,8 @@
             {
                 <!-- Loading state -->
                 <div class="mw-affiliate">
-                    <p class="mw-affiliate-label">Affiliate Status</p>
-                    <p class="mw-affiliate-value">Loading...</p>
+                    <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineSm" Width="100px" />
+                    <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Line" Width="120px" />
                 </div>
             }
 
@@ -463,7 +463,9 @@
                 <div class="mw-tab-content">
                     @if (affiliateStatus == null)
                     {
-                        <p>Loading affiliate status...</p>
+                        <MwSkeletonSection Layout="MwSkeletonSection.SkeletonLayout.ProfilePanel"
+                                           Count="3"
+                                           AriaLabel="Loading affiliate status" />
                     }
                     else if (affiliateStatus.ApplicationStatus == "not_applied")
                     {
@@ -717,7 +719,7 @@
             
             @if (isLoadingChart)
             {
-                <p>Loading chart...</p>
+                <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Block" Height="220px" />
             }
             else if (chartError != null)
             {
@@ -805,7 +807,9 @@
          }
          else if (isLoadingAffiliateInfo)
          {
-             <p>Loading affiliate dashboard...</p>
+             <MwSkeletonSection Layout="MwSkeletonSection.SkeletonLayout.ProfilePanel"
+                                Count="6"
+                                AriaLabel="Loading affiliate dashboard" />
          }
          else if (!string.IsNullOrEmpty(affiliateInfoError))
          {

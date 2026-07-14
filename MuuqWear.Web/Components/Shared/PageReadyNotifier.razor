@@ -1,0 +1,30 @@
+@inject NavigationLoadingService NavigationLoading
+@using MuuqWear.Web.Services
+
+@code {
+    [Parameter]
+    public bool IsLoading { get; set; }
+
+    private bool _signaled;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!IsLoading)
+            await SignalReadyAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !IsLoading)
+            await SignalReadyAsync();
+    }
+
+    private async Task SignalReadyAsync()
+    {
+        if (_signaled)
+            return;
+
+        _signaled = true;
+        await NavigationLoading.MarkContentReadyAsync();
+    }
+}
