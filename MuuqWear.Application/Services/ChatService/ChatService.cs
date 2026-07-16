@@ -68,6 +68,22 @@ public class ChatService : IChatService
         }
     }
 
+    public async Task<Response<ChatSessionModel>> GetSession(Guid sessionId)
+    {
+        try
+        {
+            var result = await _httpClient
+                .GetFromJsonAsync<Response<ChatSessionModel>>($"api/Chat/session/{sessionId}");
+
+            return result ?? Response<ChatSessionModel>.Fail("Invalid response");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Frontend Chat] GetSession error: {ex.Message}");
+            return Response<ChatSessionModel>.Fail($"Error: {ex.Message}");
+        }
+    }
+
     public async Task<Response<bool>> CloseSession(Guid sessionId)
     {
         try

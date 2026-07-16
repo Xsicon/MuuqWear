@@ -117,6 +117,7 @@ builder.Services.AddScoped<AdminProductsTabCoordinator>();
 builder.Services.AddScoped<AdminCustomersTabCoordinator>();
 builder.Services.AddScoped<AdminContentTabCoordinator>();
 builder.Services.AddScoped<AdminAffiliatesTabCoordinator>();
+builder.Services.AddScoped<AdminSupportTabCoordinator>();
 builder.Services.AddScoped<AdminLowStockCacheService>();
 builder.Services.AddScoped<AdminBadgeCountsCacheService>();
 builder.Services.AddScoped<AdminContentCountsCacheService>();

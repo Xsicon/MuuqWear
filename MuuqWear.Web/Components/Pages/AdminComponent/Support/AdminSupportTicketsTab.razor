@@ -1,0 +1,122 @@
+@using MuuqWear.Application.Services.HelpCenterService
+@using MuuqWear.Model.HelpCenter
+@inject IHelpCenterService HelpCenterService
+
+<div>
+    <div class="cs-tab-header-row">
+        <div class="cs-tab-header" style="margin-bottom:0">
+            <p class="cs-tab-eyebrow">Customer Support</p>
+            <h2 class="cs-tab-title">Support Tickets</h2>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <p class="cs-loading">Loading tickets…</p>
+    }
+
+    <div class="cs-stats cs-stats--3">
+        <div class="cs-stat-card" style="background:#DBEAFE;border-color:#3B82F630">
+            <div class="cs-stat-card__bar" style="background:#3B82F6"></div>
+            <div>
+                <p class="cs-stat-card__value">@(stats?.OpenCount ?? tickets.Count(t => t.Status == "open"))</p>
+                <p class="cs-stat-card__label">Open</p>
+            </div>
+        </div>
+        <div class="cs-stat-card" style="background:#FEF3C7;border-color:#F59E0B30">
+            <div class="cs-stat-card__bar" style="background:#F59E0B"></div>
+            <div>
+                <p class="cs-stat-card__value">@(stats?.InProgressCount ?? tickets.Count(t => t.Status == "in_progress"))</p>
+                <p class="cs-stat-card__label">In Progress</p>
+            </div>
+        </div>
+        <div class="cs-stat-card" style="background:#D1FAE5;border-color:#22C55E30">
+            <div class="cs-stat-card__bar" style="background:#22C55E"></div>
+            <div>
+                <p class="cs-stat-card__value">@tickets.Count(t => t.Status == "resolved")</p>
+                <p class="cs-stat-card__label">Resolved</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="cs-filter-bar">
+        <div class="cs-search">
+            <svg class="cs-search__icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input class="cs-search__input" placeholder="Search tickets…" @bind="search" @bind:event="oninput" />
+        </div>
+        <div class="cs-pills">
+            @foreach (var s in StatusFilters)
+            {
+                <button type="button"
+                        class="cs-pill @(filterStatus == s.Key ? "cs-pill--active-dark" : "")"
+                        @onclick="() => filterStatus = s.Key">
+                    @s.Label
+                </button>
+            }
+        </div>
+        <div class="cs-pills">
+            @foreach (var p in PriorityFilters)
+            {
+                <button type="button"
+                        class="cs-pill @(filterPriority == p ? "cs-pill--active-light" : "")"
+                        @onclick="() => filterPriority = p">
+                    @(p == "All" ? "All" : char.ToUpper(p[0]) + p[1..])
+                </button>
+            }
+        </div>
+    </div>
+
+    <div class="cs-list">
+        @foreach (var ticket in FilteredTickets)
+        {
+            var ss = GetStatusStyle(ticket.Status);
+            var ps = GetPriorityStyle(ticket.Priority);
+            <div class="cs-row">
+                <div class="cs-row__body">
+                    <div class="cs-row__badges">
+                        <span class="cs-row__meta" style="font-family:monospace">@ticket.TicketNumber</span>
+                        <span class="cs-badge cs-badge--round" style="background:@ps.Bg;color:@ps.Text">@GetPriorityLabel(ticket.Priority)</span>
+                        <span class="cs-badge cs-badge--round" style="background:@ss.Bg;color:@ss.Text">
+                            <span class="cs-badge__dot" style="background:@ss.Dot"></span>
+                            @GetStatusLabel(ticket.Status)
+                        </span>
+                    </div>
+                    <p class="cs-row__title">@ticket.Subject</p>
+                    <p class="cs-row__meta">
+                        @ticket.Name
+                        @if (!string.IsNullOrWhiteSpace(ticket.Email))
+                        {
+                            <span> · </span>
+                            <a href="mailto:@ticket.Email" class="cs-contact-email" @onclick:stopPropagation="true">@ticket.Email</a>
+                        }
+                        <span> · @ticket.Category · @FormatDate(ticket.CreatedAt)</span>
+                    </p>
+                </div>
+                <div class="cs-row__actions">
+                    <button type="button"
+                            class="cs-btn cs-btn--outline cs-btn--sm"
+                            disabled="@(updatingId == ticket.Id)"
+                            @onclick="() => CycleStatus(ticket)">
+                        @GetActionLabel(ticket.Status)
+                    </button>
+                </div>
+            </div>
+        }
+
+        @if (!isLoading && !FilteredTickets.Any())
+        {
+            <div class="cs-empty">
+                <svg class="cs-empty__icon" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+                <p>No tickets match your filters.</p>
+            </div>
+        }
+    </div>
+
+    @if (!string.IsNullOrEmpty(toast))
+    {
+        <div class="cs-toast">
+            <svg class="cs-toast__icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.801 10A10 10 0 1 1 17 3.335"/><path d="m9 11 3 3L22 4"/></svg>
+            @toast
+        </div>
+    }
+</div>

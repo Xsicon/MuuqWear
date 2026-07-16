@@ -1,0 +1,174 @@
+@using MuuqWear.Application.Services.ChatService
+@using MuuqWear.Model.Chat
+@implements IDisposable
+@inject IChatService ChatService
+
+<div>
+    <div class="cs-tab-header">
+        <p class="cs-tab-eyebrow">Customer Support</p>
+        <h2 class="cs-tab-title">Live Chat</h2>
+    </div>
+
+    @if (isLoading)
+    {
+        <p class="cs-loading">Loading conversations…</p>
+    }
+
+    <div class="cs-stats cs-stats--3">
+        <div class="cs-stat-card cs-stat-card--accent">
+            <div class="cs-stat-card__bar" style="background:#22C55E"></div>
+            <div>
+                <p class="cs-stat-card__value">@activeCount</p>
+                <p class="cs-stat-card__label">Active Chats</p>
+            </div>
+        </div>
+        <div class="cs-stat-card cs-stat-card--accent">
+            <div class="cs-stat-card__bar" style="background:#F59E0B"></div>
+            <div>
+                <p class="cs-stat-card__value">@waitingCount</p>
+                <p class="cs-stat-card__label">Waiting</p>
+            </div>
+        </div>
+        <div class="cs-stat-card cs-stat-card--accent">
+            <div class="cs-stat-card__bar" style="background:#6366F1"></div>
+            <div>
+                <p class="cs-stat-card__value">@resolvedToday</p>
+                <p class="cs-stat-card__label">Resolved Today</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="cs-chat-layout">
+        <aside class="cs-chat-sidebar">
+            <div class="cs-chat-sidebar__header">Conversations (@sessions.Count)</div>
+            <div class="cs-chat-sidebar__list">
+                @if (sessions.Count == 0)
+                {
+                    <div class="cs-empty" style="padding:40px 16px">
+                        <svg class="cs-empty__icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
+                        <p>No active chats</p>
+                    </div>
+                }
+                else
+                {
+                    @foreach (var s in sessions)
+                    {
+                        <button type="button"
+                                class="cs-conv-item @(selectedSessionId == s.Id ? "cs-conv-item--active" : "")"
+                                @onclick="() => SelectSession(s.Id)"
+                                @key="s.Id">
+                            <div class="cs-conv-item__top">
+                                <span class="cs-conv-item__name">@s.CustomerName</span>
+                                <span class="cs-conv-item__time">@GetRelativeTime(s.LastActivity)</span>
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace(s.ContactEmail))
+                            {
+                                <a href="mailto:@s.ContactEmail" class="cs-contact-email cs-conv-item__email" @onclick:stopPropagation="true">@s.ContactEmail</a>
+                            }
+                            @if (!string.IsNullOrEmpty(s.LastMessagePreview))
+                            {
+                                <p class="cs-conv-item__preview">@s.LastMessagePreview</p>
+                            }
+                            <div class="cs-conv-item__status">
+                                <span class="cs-status-dot" style="background:@(IsWaiting(s) ? "#F59E0B" : "#22C55E")"></span>
+                                @(IsWaiting(s) ? "waiting" : "active")
+                            </div>
+                        </button>
+                    }
+                }
+            </div>
+        </aside>
+
+        @if (sessions.Count == 0 || !selectedSessionId.HasValue)
+        {
+            <div class="cs-chat-empty">
+                <div>
+                    <svg class="cs-empty__icon" xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
+                    <p>No active conversations</p>
+                </div>
+            </div>
+        }
+        else
+        {
+            <section class="cs-chat-panel">
+                <header class="cs-chat-panel__header">
+                    <div class="cs-chat-panel__customer">
+                        <div class="cs-chat-panel__customer-top">
+                            <div>
+                                <h3 class="cs-chat-panel__name">@selectedSession?.CustomerName</h3>
+                                <p class="cs-row__meta">
+                                    @(IsWaiting(selectedSession!) ? "Waiting" : "Active")
+                                    · last message @GetRelativeTime(selectedSession?.LastActivity ?? DateTime.UtcNow) ago
+                                </p>
+                            </div>
+                            @if (selectedSession?.Status == "active")
+                            {
+                                <button type="button" class="cs-btn cs-btn--danger cs-btn--sm"
+                                        @onclick="CloseSelectedSession"
+                                        disabled="@isClosingSession">
+                                    @(isClosingSession ? "Closing…" : "Close Chat")
+                                </button>
+                            }
+                        </div>
+
+                        <div class="cs-chat-panel__contact">
+                            <svg class="cs-chat-panel__contact-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+                            </svg>
+                            @if (!string.IsNullOrWhiteSpace(selectedSession?.ContactEmail))
+                            {
+                                <a href="mailto:@selectedSession!.ContactEmail" class="cs-contact-email cs-chat-panel__email-link">@selectedSession.ContactEmail</a>
+                                <button type="button" class="cs-btn cs-btn--outline cs-btn--sm" @onclick="CopyCustomerEmail">
+                                    Copy
+                                </button>
+                            }
+                            else
+                            {
+                                <span class="cs-chat-panel__email-missing">No email provided</span>
+                            }
+                        </div>
+                    </div>
+                </header>
+
+                <div class="cs-chat-panel__messages">
+                    @if (isLoadingMessages)
+                    {
+                        <p class="cs-row__meta">Loading messages…</p>
+                    }
+                    else if (messages.Count == 0)
+                    {
+                        <p class="cs-row__meta">No messages yet.</p>
+                    }
+                    else
+                    {
+                        @foreach (var m in messages)
+                        {
+                            var isAgent = m.SenderType is "admin" or "agent";
+                            <div class="cs-bubble @(isAgent ? "cs-bubble--agent" : "cs-bubble--customer")">
+                                <p style="margin:0">@m.Message</p>
+                                <span class="cs-bubble__time">@m.CreatedAt.ToLocalTime().ToString("h:mm tt")</span>
+                            </div>
+                        }
+                    }
+                </div>
+
+                <div class="cs-chat-panel__input">
+                    <input type="text"
+                           class="cs-chat-panel__input-field"
+                           placeholder="Type a message…"
+                           @bind="adminMessageInput"
+                           @bind:event="oninput"
+                           @onkeydown="HandleAdminKeyDown"
+                           disabled="@(selectedSession?.Status == "closed" || isSendingAdminMessage)" />
+                    <button type="button"
+                            class="cs-btn cs-btn--primary"
+                            @onclick="SendAdminMessage"
+                            disabled="@(selectedSession?.Status == "closed" || isSendingAdminMessage || string.IsNullOrWhiteSpace(adminMessageInput))">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+                        Send
+                    </button>
+                </div>
+            </section>
+        }
+    </div>
+</div>

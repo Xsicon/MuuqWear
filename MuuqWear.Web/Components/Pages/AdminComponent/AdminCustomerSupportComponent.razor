@@ -1,0 +1,55 @@
+@page "/admin/support"
+@page "/admin/live-chat"
+@page "/admin/tickets"
+@layout Layout.AdminLayoutComponent.AdminDashboardLayoutComponent
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.WebUtilities
+@using MuuqWear.Application.Shared
+@using MuuqWear.Web.Components.Pages.AdminComponent.Support
+@using MuuqWear.Web.Components.Shared
+@attribute [Authorize(Roles = "admin")]
+@implements IDisposable
+@inject NavigationManager NavigationManager
+@inject AdminSupportTabCoordinator SupportTabCoordinator
+
+<PageTitle>Customer Support</PageTitle>
+
+<div class="cs-page">
+    <div class="cs-tabs" role="tablist" aria-label="Customer support sections">
+        @foreach (var tab in TabViews)
+        {
+            <button type="button"
+                    role="tab"
+                    aria-selected="@(activeTab == tab.Id)"
+                    class="cs-tabs__item @(activeTab == tab.Id ? "cs-tabs__item--active" : "")"
+                    @onclick="() => SwitchTab(tab.Id)">
+                @tab.Label
+                @if (tab.Id == "live-chat" && activeChats > 0)
+                {
+                    <span class="cs-tabs__badge cs-tabs__badge--green">@activeChats</span>
+                }
+                @if (tab.Id == "tickets" && openTickets > 0)
+                {
+                    <span class="cs-tabs__badge cs-tabs__badge--yellow">@openTickets</span>
+                }
+            </button>
+        }
+    </div>
+
+    @if (activeTab == "live-chat")
+    {
+        <AdminSupportLiveChatTab OnCountsChanged="HandleCountsChanged" />
+    }
+    else if (activeTab == "tickets")
+    {
+        <AdminSupportTicketsTab OnCountsChanged="HandleCountsChanged" />
+    }
+    else
+    {
+        <AdminSupportKnowledgeBaseTab />
+    }
+</div>
+
+<PageReadyNotifier IsLoading="false" />

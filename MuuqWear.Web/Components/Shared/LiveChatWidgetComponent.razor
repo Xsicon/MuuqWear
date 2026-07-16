@@ -1,0 +1,232 @@
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Routing
+@using MuuqWear.Application.Services.ChatService
+@using MuuqWear.Application.Services.HelpCenterService
+@using MuuqWear.Model.Chat
+@using MuuqWear.Model.HelpCenter
+@implements IDisposable
+
+@if (!isChatOpen)
+{
+<div class="hc-chat-launcher">
+        <button type="button"
+                class="hc-chat-launcher__btn"
+                @onclick="OpenChatWidget"
+                aria-label="Open MuuqWear support chat"
+                aria-haspopup="dialog">
+            <span class="hc-chat-launcher__icon-wrap">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"></path>
+                </svg>
+            </span>
+        </button>
+</div>
+}
+
+@if (isChatOpen)
+{
+    <div class="hc-widget" role="dialog" aria-label="MuuqWear support chat">
+
+        <div class="hc-widget__header">
+            <div class="hc-widget__brand">
+                <div class="hc-widget__avatar" aria-hidden="true">M</div>
+                <div class="hc-widget__brand-copy">
+                    <p class="hc-widget__heading">MuuqWear Support</p>
+                    <p class="hc-widget__subheading">
+                        <span class="hc-widget__status-dot" aria-hidden="true"></span>
+                        Online · typical reply under 5 min
+                    </p>
+                </div>
+            </div>
+            <button type="button" class="hc-widget__close" @onclick="CloseChatWidget" aria-label="Close chat">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                    <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        @if (widgetState == "menu")
+        {
+            <div class="hc-widget__menu">
+                <p class="hc-widget__menu-intro">How would you like to reach us?</p>
+                <button type="button" class="hc-widget__option" @onclick='() => widgetState = "ticket"'>
+                    <span class="hc-widget__option-icon hc-widget__option-icon--ticket">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                             viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path>
+                            <path d="M14 2v4a2 2 0 0 0 2 2h4"></path>
+                        </svg>
+                    </span>
+                    <span class="hc-widget__option-copy">
+                        <span class="hc-widget__option-title">Submit a support ticket</span>
+                        <span class="hc-widget__option-desc">Best for order issues and returns</span>
+                    </span>
+                </button>
+                <button type="button" class="hc-widget__option hc-widget__option--primary"
+                        @onclick='() => widgetState = "chat"'>
+                    <span class="hc-widget__option-icon hc-widget__option-icon--chat">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                             viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"></path>
+                        </svg>
+                    </span>
+                    <span class="hc-widget__option-copy">
+                        <span class="hc-widget__option-title">Chat with a representative</span>
+                        <span class="hc-widget__option-desc">Get quick answers in real time</span>
+                    </span>
+                </button>
+            </div>
+        }
+        else if (widgetState == "ticket")
+        {
+            @if (ticketSubmitted)
+            {
+                <div class="hc-widget__success">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"
+                         viewBox="0 0 24 24" fill="none" stroke="#2D9C5A"
+                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
+                        <path d="m9 11 3 3L22 4"></path>
+                    </svg>
+                    <p class="hc-widget__success-title">Ticket Submitted!</p>
+                    <p class="hc-widget__success-sub">
+                        We'll get back to you within 24 hours.
+                        Your ticket number is <strong>@submittedTicketNumber</strong>.
+                    </p>
+                    <button type="button" class="hc-widget__back" @onclick="ResetTicketForm">
+                        Submit Another
+                    </button>
+                </div>
+            }
+            else
+            {
+                <div class="hc-widget__form">
+                    <button type="button" class="hc-widget__back-link" @onclick='() => widgetState = "menu"'>
+                        ← Back
+                    </button>
+
+                    @if (!string.IsNullOrEmpty(ticketError))
+                    {
+                        <p class="hc-widget__error">@ticketError</p>
+                    }
+
+                    <div class="hc-widget__field">
+                        <input @bind="ticketForm.Name" placeholder="Your name" class="hc-widget__input" />
+                    </div>
+                    <div class="hc-widget__field">
+                        <input @bind="ticketForm.Email" type="email" placeholder="Email address" class="hc-widget__input" />
+                    </div>
+                    <div class="hc-widget__field">
+                        <select @bind="ticketForm.Category" class="hc-widget__input">
+                            <option value="">Select category</option>
+                            <option value="Orders">Orders</option>
+                            <option value="Shipping">Shipping</option>
+                            <option value="Returns">Returns</option>
+                            <option value="Payments">Payments</option>
+                            <option value="Account">Account</option>
+                            <option value="Product Info">Product Info</option>
+                        </select>
+                    </div>
+                    <div class="hc-widget__field">
+                        <input @bind="ticketForm.Subject" placeholder="Subject" class="hc-widget__input" />
+                    </div>
+                    <div class="hc-widget__field">
+                        <textarea @bind="ticketForm.Message" placeholder="Describe your issue..." rows="4"
+                                  class="hc-widget__input hc-widget__textarea"></textarea>
+                    </div>
+                    <button type="button" class="hc-widget__submit" @onclick="HandleSubmitTicket" disabled="@isSubmitting">
+                        @(isSubmitting ? "Submitting..." : "Submit Ticket")
+                    </button>
+                </div>
+            }
+        }
+        else if (widgetState == "chat")
+        {
+            <div class="hc-widget__chat">
+                <button type="button" class="hc-widget__back-link" @onclick='() => widgetState = "menu"'>
+                    ← Back
+                </button>
+
+                @if (isLoadingHistory)
+                {
+                    <MwSkeletonSection Layout="MwSkeletonSection.SkeletonLayout.HelpChat"
+                                       Count="3"
+                                       AriaLabel="Loading chat" />
+                }
+
+                @if (showGuestForm)
+                {
+                    <div class="hc-widget__guest-form">
+                        <p class="hc-widget__guest-title">Tell us who you are to start:</p>
+                        <input @bind="guestName" placeholder="Your name" class="hc-widget__input" />
+                        <input @bind="guestEmail" type="email" placeholder="Email address" class="hc-widget__input" />
+                        <button type="button" class="hc-widget__submit" @onclick="SubmitGuestInfo" disabled="@isSendingMessage">
+                            Start Chat
+                        </button>
+                    </div>
+                }
+
+                <div class="hc-widget__chat-messages">
+                    @if (chatMessages.Count == 0 && !isLoadingHistory && !showGuestForm)
+                    {
+                        <div class="hc-widget__chat-bubble hc-widget__chat-bubble--admin">
+                            Hi! Welcome to Muuqwear support. How can I help you today?
+                        </div>
+                    }
+
+                    @foreach (var msg in chatMessages)
+                    {
+                        <div class="hc-widget__chat-bubble hc-widget__chat-bubble--@msg.SenderType">
+                            <span class="hc-widget__chat-sender">@msg.SenderName</span>
+                            <p class="hc-widget__chat-text">@msg.Message</p>
+                            <span class="hc-widget__chat-time">@msg.CreatedAt.ToLocalTime().ToString("h:mm tt")</span>
+                        </div>
+                    }
+                </div>
+
+                @if (!string.IsNullOrEmpty(chatErrorMessage))
+                {
+                    <p class="hc-widget__chat-error">@chatErrorMessage</p>
+                }
+
+                @if (isChatClosed)
+                {
+                    <div class="hc-widget__chat-closed">
+                        <p>This chat has been closed.</p>
+                        <button type="button" class="hc-widget__submit" @onclick="StartNewChat">
+                            Start New Chat
+                        </button>
+                    </div>
+                }
+
+                @if (!showGuestForm && !isChatClosed)
+                {
+                    <div class="hc-widget__chat-input-row">
+                        <input @bind="messageInput"
+                               @bind:event="oninput"
+                               @onkeydown="HandleKeyDown"
+                               placeholder="Type a message..."
+                               class="hc-widget__chat-input"
+                               disabled="@isSendingMessage" />
+                        <button type="button"
+                                class="hc-widget__chat-send"
+                                @onclick="SendMessage"
+                                disabled="@(isSendingMessage || string.IsNullOrWhiteSpace(messageInput))">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="m22 2-7 20-4-9-9-4Z"></path>
+                                <path d="M22 2 11 13"></path>
+                            </svg>
+                        </button>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+}

@@ -8,6 +8,7 @@ public interface IChatService
     Task<Response<ChatMessageModel>> SendMessage(SendMessageRequest request);
     Task<Response<List<ChatMessageModel>>> GetMessages(Guid sessionId);
     Task<Response<List<ChatSessionModel>>> GetActiveSessions();
+    Task<Response<ChatSessionModel>> GetSession(Guid sessionId);
     Task<Response<bool>> CloseSession(Guid sessionId);
     Task<Response<string>> GetSessionStatus(Guid sessionId);
 }

@@ -1,0 +1,228 @@
+@using MuuqWear.Model.HelpCenter
+
+<div>
+    <div class="cs-tab-header-row">
+        <div class="cs-tab-header" style="margin-bottom:0">
+            <p class="cs-tab-eyebrow">Customer Support</p>
+            <h2 class="cs-tab-title">Knowledge Base</h2>
+            <p class="cs-tab-subtitle">Manage help articles shown on the public Help Center page</p>
+        </div>
+        <div class="cs-tab-actions">
+            <button type="button" class="cs-btn cs-btn--outline" @onclick="OpenHelpCenter">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>
+                View Help Center
+            </button>
+            <button type="button" class="cs-btn cs-btn--primary" @onclick="OpenNewPanel">
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                New Article
+            </button>
+        </div>
+    </div>
+
+    <div class="cs-stats cs-stats--4">
+        @foreach (var stat in StatCards)
+        {
+            <div class="cs-stat-card">
+                <div class="cs-stat-card__icon" style="background:@(stat.Color)18">
+                    @((MarkupString)stat.IconSvg)
+                </div>
+                <div>
+                    <p class="cs-stat-card__value">@stat.Value</p>
+                    <p class="cs-stat-card__label">@stat.Label</p>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="cs-cat-grid">
+        @foreach (var cat in HelpArticleSeed.Categories)
+        {
+            var meta = HelpCategoryMeta.Get(cat);
+            var total = articles.Count(a => a.Category == cat);
+            var pub = articles.Count(a => a.Category == cat && a.Status == "Published");
+            var active = catFilter == cat;
+            <button type="button"
+                    class="cs-cat-card"
+                    style="background:@(active ? meta.Bg : "#fff");border-color:@(active ? meta.Dot : "#EEF1F6")"
+                    @onclick="() => ToggleCatFilter(cat)">
+                <div class="cs-row__icon" style="background:@meta.Bg">
+                    @((MarkupString)GetCategoryIconSvg(meta.IconKey, meta.Dot))
+                </div>
+                <div class="cs-row__body">
+                    <p class="cs-row__title">@cat</p>
+                    <p class="cs-row__meta">@pub/@total published</p>
+                </div>
+            </button>
+        }
+    </div>
+
+    <div class="cs-filter-bar">
+        <div class="cs-search">
+            <svg class="cs-search__icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input class="cs-search__input" placeholder="Search articles…" @bind="search" @bind:event="oninput" />
+        </div>
+        <div class="cs-pills">
+            @foreach (var c in CategoryPills)
+            {
+                <button type="button"
+                        class="cs-pill @(catFilter == c ? "cs-pill--active-dark" : "")"
+                        @onclick="() => catFilter = c">
+                    @c
+                </button>
+            }
+        </div>
+        <div class="cs-pills">
+            @foreach (var s in StatusPills)
+            {
+                <button type="button"
+                        class="cs-pill @(statusFilter == s ? "cs-pill--active-light" : "")"
+                        @onclick="() => statusFilter = s">
+                    @s
+                </button>
+            }
+        </div>
+    </div>
+
+    <div class="cs-list">
+        @foreach (var article in FilteredArticles)
+        {
+            var meta = HelpCategoryMeta.Get(article.Category);
+            <div class="cs-row">
+                <div class="cs-row__icon" style="background:@meta.Bg">
+                    @((MarkupString)GetCategoryIconSvg(meta.IconKey, meta.Dot))
+                </div>
+                <div class="cs-row__body">
+                    <div class="cs-row__badges">
+                        <span class="cs-badge" style="background:@meta.Bg;color:@meta.Text">@article.Category</span>
+                        <span class="cs-badge cs-badge--round" style="background:@(article.Status == "Published" ? "#D1FAE5" : "#F3F4F6");color:@(article.Status == "Published" ? "#065F46" : "#374151")">
+                            @article.Status
+                        </span>
+                    </div>
+                    <p class="cs-row__title">@article.Title</p>
+                    <p class="cs-row__meta">Updated @article.LastUpdated</p>
+                </div>
+                <div class="cs-row__stats">
+                    <div>
+                        <p class="cs-row__stat-value">@article.Views.ToString("N0")</p>
+                        <p class="cs-row__stat-label">views</p>
+                    </div>
+                    <div>
+                        <p class="cs-row__stat-value cs-row__stat-value--green">@article.Helpful</p>
+                        <p class="cs-row__stat-label">helpful</p>
+                    </div>
+                </div>
+                <div class="cs-row__actions">
+                    <button type="button" class="cs-btn cs-btn--icon" title="Edit" @onclick="() => OpenEditPanel(article)">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"/></svg>
+                    </button>
+                    <button type="button"
+                            class="cs-btn cs-btn--outline cs-btn--sm"
+                            @onclick="() => TogglePublish(article)">
+                        @(article.Status == "Published" ? "Unpublish" : "Publish")
+                    </button>
+                    <button type="button" class="cs-btn cs-btn--icon cs-btn--icon-danger" title="Delete" @onclick="() => deleteTarget = article">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                    </button>
+                </div>
+            </div>
+        }
+
+        @if (!FilteredArticles.Any())
+        {
+            <div class="cs-empty">
+                <svg class="cs-empty__icon" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>
+                <p>No articles match your filters.</p>
+            </div>
+        }
+    </div>
+</div>
+
+@if (panelOpen)
+{
+    <div class="cs-overlay" @onclick="ClosePanel"></div>
+    <aside class="cs-drawer">
+        <header class="cs-drawer__header">
+            <div>
+                <p class="cs-drawer__eyebrow">Knowledge Base</p>
+                <h3 class="cs-drawer__title">@(editingArticle == null ? "New Article" : "Edit Article")</h3>
+            </div>
+            <button type="button" class="cs-btn cs-btn--icon" @onclick="ClosePanel">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+        </header>
+        <div class="cs-drawer__body">
+            <div>
+                <label class="cs-field__label">Question / Title</label>
+                <input class="cs-field__input" placeholder="e.g. How do I track my order?" @bind="draftTitle" />
+            </div>
+            <div class="cs-field-grid">
+                <div>
+                    <label class="cs-field__label">Category</label>
+                    <div class="cs-select-wrap">
+                        <select class="cs-field__select" @bind="draftCategory">
+                            @foreach (var c in HelpArticleSeed.Categories)
+                            {
+                                <option value="@c">@c</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="cs-field__label">Status</label>
+                    <div class="cs-select-wrap">
+                        <select class="cs-field__select" @bind="draftStatus">
+                            <option>Draft</option>
+                            <option>Published</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <label class="cs-field__label">Answer / Content</label>
+                <textarea class="cs-field__textarea" rows="8" placeholder="Write the full answer that customers will see…" @bind="draftContent"></textarea>
+            </div>
+            <div class="cs-preview-box">
+                <p class="cs-preview-box__label">Customer-facing preview</p>
+                <p class="cs-preview-box__title">@(string.IsNullOrWhiteSpace(draftTitle) ? "Article title…" : draftTitle)</p>
+                <p class="cs-preview-box__content">@(string.IsNullOrWhiteSpace(draftContent) ? "Article content will appear here…" : draftContent)</p>
+            </div>
+        </div>
+        <footer class="cs-drawer__footer">
+            <button type="button" class="cs-btn cs-btn--ghost" @onclick="ClosePanel">Cancel</button>
+            <div class="cs-tab-actions">
+                <button type="button" class="cs-btn cs-btn--outline" @onclick="() => SaveArticle(false)">Save Draft</button>
+                <button type="button" class="cs-btn cs-btn--primary"
+                        disabled="@(string.IsNullOrWhiteSpace(draftTitle) || string.IsNullOrWhiteSpace(draftContent))"
+                        @onclick="() => SaveArticle(true)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+                    Publish
+                </button>
+            </div>
+        </footer>
+    </aside>
+}
+
+@if (deleteTarget != null)
+{
+    <div class="cs-modal-overlay">
+        <div class="cs-modal">
+            <div class="cs-modal__icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/></svg>
+            </div>
+            <h3 class="cs-modal__title">Delete article?</h3>
+            <p class="cs-modal__text">"@deleteTarget.Title" will be permanently removed from the Help Center.</p>
+            <div class="cs-modal__actions">
+                <button type="button" class="cs-btn cs-btn--ghost" @onclick="() => deleteTarget = null">Cancel</button>
+                <button type="button" class="cs-btn cs-btn--primary" style="background:#C44545;border-color:#C44545" @onclick="ConfirmDelete">Delete</button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(toast))
+{
+    <div class="cs-toast">
+        <svg class="cs-toast__icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.801 10A10 10 0 1 1 17 3.335"/><path d="m9 11 3 3L22 4"/></svg>
+        @toast
+    </div>
+}
