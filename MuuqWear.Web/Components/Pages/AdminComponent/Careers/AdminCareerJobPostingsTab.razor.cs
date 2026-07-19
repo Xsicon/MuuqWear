@@ -1,28 +1,27 @@
-﻿using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components;
+using MuuqWear.Application.Services.JobPostingService;
 using MuuqWear.Model.JobPosting;
 
-namespace MuuqWear.Web.Components.Pages.AdminComponent;
-public partial class AdminJobsComponent
-{
-    private List<JobPostingModel> jobs = new();
-    private bool isLoading = false;
+namespace MuuqWear.Web.Components.Pages.AdminComponent.Careers;
 
-    // Form state
-    private bool isFormOpen = false;
-    private bool isEditMode = false;
-    private bool isSaving = false;
-    private bool slugManuallyEdited = false;
+public partial class AdminCareerJobPostingsTab
+{
+    [Parameter] public EventCallback<Guid> OnViewApplications { get; set; }
+
+    [Inject] private IJobPostingService JobPostingService { get; set; } = default!;
+
+    private List<JobPostingModel> jobs = [];
+    private bool isLoading;
+    private bool isFormOpen;
+    private bool isEditMode;
+    private bool isSaving;
+    private bool slugManuallyEdited;
     private string formError = string.Empty;
     private CreateJobPostingModel form = new();
-    private JobPostingModel? editingJob = null;
+    private JobPostingModel? editingJob;
+    private JobPostingModel? deletingJob;
 
-    // Delete state
-    private JobPostingModel? deletingJob = null;
-
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadJobs();
-    }
+    protected override async Task OnInitializedAsync() => await LoadJobs();
 
     private async Task LoadJobs()
     {
@@ -30,17 +29,11 @@ public partial class AdminJobsComponent
         StateHasChanged();
 
         var result = await JobPostingService.GetAll();
-        jobs = result.Success && result.Data != null
-            ? result.Data
-            : new();
+        jobs = result.Success && result.Data != null ? result.Data : [];
 
         isLoading = false;
         StateHasChanged();
     }
-
-    // =============================================
-    // FORM — OPEN, CLOSE, SLUG-FROM-TITLE
-    // =============================================
 
     private void OpenCreateForm()
     {
@@ -66,7 +59,7 @@ public partial class AdminJobsComponent
             Description = job.Description
         };
         formError = string.Empty;
-        slugManuallyEdited = true; // existing record — don't auto-replace
+        slugManuallyEdited = true;
         isFormOpen = true;
     }
 
@@ -80,12 +73,8 @@ public partial class AdminJobsComponent
     private void OnTitleChanged(ChangeEventArgs e)
     {
         form.Title = e.Value?.ToString() ?? string.Empty;
-
-        // Only auto-generate slug if user hasn't manually edited it
         if (!slugManuallyEdited)
-        {
             form.Slug = GenerateSlug(form.Title);
-        }
     }
 
     private static string GenerateSlug(string title)
@@ -110,10 +99,6 @@ public partial class AdminJobsComponent
             .Replace(")", "");
     }
 
-    // =============================================
-    // CREATE
-    // =============================================
-
     private async Task HandleCreate()
     {
         if (!ValidateForm()) return;
@@ -122,34 +107,26 @@ public partial class AdminJobsComponent
         StateHasChanged();
 
         var result = await JobPostingService.Create(form);
-
         if (result.Success && result.Data != null)
         {
             jobs.Insert(0, result.Data);
             isFormOpen = false;
         }
         else
-        {
             formError = result.Message ?? "Failed to create job posting";
-        }
 
         isSaving = false;
         StateHasChanged();
     }
 
-    // =============================================
-    // EDIT
-    // =============================================
-
     private async Task HandleEdit()
     {
-        if (!ValidateForm()) return;
-        if (editingJob is null) return;
+        if (!ValidateForm() || editingJob is null) return;
 
         isSaving = true;
         StateHasChanged();
 
-        var updateRequest = new UpdateJobPostingModel
+        var result = await JobPostingService.Update(editingJob.Id, new UpdateJobPostingModel
         {
             Slug = form.Slug,
             Title = form.Title,
@@ -157,9 +134,7 @@ public partial class AdminJobsComponent
             Location = form.Location,
             Type = form.Type,
             Description = form.Description
-        };
-
-        var result = await JobPostingService.Update(editingJob.Id, updateRequest);
+        });
 
         if (result.Success && result.Data != null)
         {
@@ -168,23 +143,16 @@ public partial class AdminJobsComponent
             isFormOpen = false;
         }
         else
-        {
             formError = result.Message ?? "Failed to update job posting";
-        }
 
         isSaving = false;
         StateHasChanged();
     }
 
-    // =============================================
-    // DUPLICATE
-    // =============================================
-
     private void DuplicateJob(JobPostingModel job)
     {
         isEditMode = false;
         editingJob = null;
-
         form = new CreateJobPostingModel
         {
             Slug = $"{job.Slug}-copy",
@@ -194,15 +162,10 @@ public partial class AdminJobsComponent
             Type = job.Type,
             Description = job.Description
         };
-
         formError = string.Empty;
-        slugManuallyEdited = true; // pre-filled, don't overwrite
+        slugManuallyEdited = true;
         isFormOpen = true;
     }
-
-    // =============================================
-    // CLOSE / REOPEN
-    // =============================================
 
     private async Task HandleClose(Guid id)
     {
@@ -226,38 +189,20 @@ public partial class AdminJobsComponent
         }
     }
 
-    // =============================================
-    // DELETE
-    // =============================================
-
-    private void OpenDeleteConfirm(JobPostingModel job)
-    {
-        deletingJob = job;
-    }
-
-    private void CancelDelete()
-    {
-        deletingJob = null;
-    }
+    private void OpenDeleteConfirm(JobPostingModel job) => deletingJob = job;
+    private void CancelDelete() => deletingJob = null;
 
     private async Task ConfirmDelete()
     {
         if (deletingJob is null) return;
 
         var result = await JobPostingService.Delete(deletingJob.Id);
-
         if (result.Success)
-        {
             jobs.RemoveAll(j => j.Id == deletingJob.Id);
-        }
 
         deletingJob = null;
         StateHasChanged();
     }
-
-    // =============================================
-    // VALIDATION
-    // =============================================
 
     private bool ValidateForm()
     {
@@ -276,8 +221,9 @@ public partial class AdminJobsComponent
         return true;
     }
 
-    private void ViewApplications(Guid jobId)
+    private async Task ViewApplications(Guid jobId)
     {
-        NavigationManager.NavigateTo($"/admin/jobs/{jobId}/applications");
+        if (OnViewApplications.HasDelegate)
+            await OnViewApplications.InvokeAsync(jobId);
     }
 }

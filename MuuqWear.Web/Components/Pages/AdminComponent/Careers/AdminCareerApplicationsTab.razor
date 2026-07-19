@@ -1,0 +1,154 @@
+@using MuuqWear.Application.Services.JobPostingService
+@using MuuqWear.Model.JobApplication
+
+<div class="apps-page">
+    <div class="cr-tab-header">
+        <p class="cr-tab-eyebrow">Career Management</p>
+        <h2 class="cr-tab-title">Applications Inbox</h2>
+        <p class="cr-tab-subtitle">Review and manage job applications</p>
+    </div>
+
+    @if (!string.IsNullOrEmpty(actionError))
+    {
+        <p class="cr-inbox-error" role="alert">@actionError</p>
+    }
+
+    <div class="cr-inbox-toolbar">
+        <select class="form-input cr-inbox-filter" @bind="jobFilter" @bind:after="ApplyFilters">
+            <option value="">All Jobs</option>
+            @foreach (var job in jobs)
+            {
+                <option value="@job.Id">@job.Title</option>
+            }
+        </select>
+        <select class="form-input cr-inbox-filter" @bind="statusFilter" @bind:after="ApplyFilters">
+            <option value="all">All Status</option>
+            <option value="new">New</option>
+            <option value="reviewing">Reviewed</option>
+            <option value="interviewing">Interview</option>
+            <option value="rejected">Rejected</option>
+            <option value="hired">Hired</option>
+        </select>
+        <input type="text" class="form-input cr-inbox-search" placeholder="Search by name..." value="@search" @oninput="OnSearchInput" />
+    </div>
+
+    <div class="apps-list">
+        @if (isLoading)
+        {
+            <p class="apps-empty">Loading applications...</p>
+        }
+        else if (!filteredItems.Any())
+        {
+            <p class="apps-empty">No applications match your filters.</p>
+        }
+        else
+        {
+            @foreach (var item in filteredItems)
+            {
+                <article class="app-card app-card--inbox" @key="item.Application.Id">
+                    <div class="app-card__info">
+                        <div class="app-card__heading">
+                            <span class="badge @GetStatusBadgeClass(item.Application.Status)">@GetStatusLabel(item.Application.Status)</span>
+                            <h3 class="app-card__name">@item.Application.Name</h3>
+                            <span class="app-card__divider">|</span>
+                            <span class="app-card__position">@item.JobTitle</span>
+                            <span class="app-card__divider">|</span>
+                            <span class="app-card__meta-inline">@FormatDate(item.Application.CreatedAt)</span>
+                        </div>
+                        @if (IsSafeHttpUrl(item.Application.PortfolioUrl, out var portfolioUri))
+                        {
+                            <p class="app-card__portfolio">
+                                Portfolio:
+                                <a href="@portfolioUri" target="_blank" rel="noopener noreferrer">@GetPortfolioLabel(item.Application.PortfolioUrl!)</a>
+                            </p>
+                        }
+                        else if (!string.IsNullOrWhiteSpace(item.Application.PortfolioUrl))
+                        {
+                            <p class="app-card__portfolio">Portfolio: @item.Application.PortfolioUrl</p>
+                        }
+                        <div class="app-card__attachments">
+                            @if (!string.IsNullOrWhiteSpace(item.Application.ResumeUrl))
+                            {
+                                <span class="app-card__attachment">Resume attached</span>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(item.Application.Notes))
+                            {
+                                <span class="app-card__has-notes">Internal notes</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="app-card__actions app-card__actions--stack">
+                        <button class="btn-ghost" @onclick="() => OpenDetail(item.Application)">View Full Application</button>
+                        @if (item.Application.Status == "new")
+                        {
+                            <button class="btn-ghost" @onclick='() => UpdateStatus(item.Application, "reviewing")'>Mark Reviewed</button>
+                        }
+                        @if (item.Application.Status is not "interviewing" and not "rejected" and not "hired")
+                        {
+                            <button class="btn-primary" @onclick='() => UpdateStatus(item.Application, "interviewing")'>Interview</button>
+                        }
+                        @if (item.Application.Status != "rejected")
+                        {
+                            <button class="btn-danger" @onclick='() => UpdateStatus(item.Application, "rejected")'>Reject</button>
+                        }
+                    </div>
+                </article>
+            }
+        }
+    </div>
+</div>
+
+@if (detailApp is not null)
+{
+    <div class="form-overlay" @onclick="CloseDetail"></div>
+    <div class="form-panel" @onclick:stopPropagation="true">
+        <div class="form-panel__header">
+            <p class="form-panel__title">@detailApp.Name</p>
+            <button class="form-panel__close" @onclick="CloseDetail">✕</button>
+        </div>
+        @if (!string.IsNullOrEmpty(detailError))
+        {
+            <p class="form-error">@detailError</p>
+        }
+        <div class="form-fields">
+            <div class="app-detail__meta">
+                <div class="app-detail__row"><span class="app-detail__label">Position</span><span class="app-detail__value">@GetJobTitle(detailApp.JobId)</span></div>
+                <div class="app-detail__row"><span class="app-detail__label">Email</span><span class="app-detail__value">@detailApp.Email</span></div>
+                <div class="app-detail__row"><span class="app-detail__label">Applied</span><span class="app-detail__value">@FormatDate(detailApp.CreatedAt)</span></div>
+                @if (IsSafeHttpUrl(detailApp.PortfolioUrl, out var detailPortfolioUri))
+                {
+                    <div class="app-detail__row"><span class="app-detail__label">Portfolio</span><a href="@detailPortfolioUri" target="_blank" rel="noopener noreferrer" class="app-detail__link">@detailApp.PortfolioUrl ↗</a></div>
+                }
+                else if (!string.IsNullOrWhiteSpace(detailApp.PortfolioUrl))
+                {
+                    <div class="app-detail__row"><span class="app-detail__label">Portfolio</span><span class="app-detail__value">@detailApp.PortfolioUrl</span></div>
+                }
+                @if (IsSafeHttpUrl(detailApp.ResumeUrl, out var detailResumeUri))
+                {
+                    <div class="app-detail__row"><span class="app-detail__label">Resume</span><a href="@detailResumeUri" target="_blank" rel="noopener noreferrer" class="app-detail__link">Download resume ↗</a></div>
+                }
+                else if (!string.IsNullOrWhiteSpace(detailApp.ResumeUrl))
+                {
+                    <div class="app-detail__row"><span class="app-detail__label">Resume</span><span class="app-detail__value">@detailApp.ResumeUrl</span></div>
+                }
+            </div>
+            <div class="form-field">
+                <label class="form-label">Status</label>
+                <select class="form-input" @bind="detailStatus">
+                    <option value="new">New</option>
+                    <option value="reviewing">Reviewing</option>
+                    <option value="interviewing">Interviewing</option>
+                    <option value="rejected">Rejected</option>
+                    <option value="hired">Hired</option>
+                </select>
+            </div>
+            <div class="form-field">
+                <label class="form-label">Internal notes</label>
+                <textarea class="form-textarea" rows="5" @bind="detailNotes"></textarea>
+            </div>
+        </div>
+        <div class="form-panel__actions">
+            <button class="form-submit" @onclick="SaveDetail" disabled="@isSavingDetail">@(isSavingDetail ? "Saving..." : "Save Changes")</button>
+        </div>
+    </div>
+}

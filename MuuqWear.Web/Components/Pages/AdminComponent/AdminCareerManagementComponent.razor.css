@@ -1,0 +1,94 @@
+/* Career Management admin — tab shell (matches Customer Support pattern) */
+
+.cr-page {
+    padding: 0;
+    max-width: 1400px;
+}
+
+.cr-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 24px;
+    padding: 5px;
+    border-radius: 14px;
+    background: var(--admin-hover, #EEF1F8);
+    border: 1px solid var(--admin-border, rgba(169, 183, 204, 0.25));
+    overflow-x: auto;
+    scrollbar-width: thin;
+}
+
+.cr-tabs__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--admin-muted, #4A5C7A);
+    font-size: 13px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cr-tabs__item:hover:not(.cr-tabs__item--active) {
+    color: var(--admin-text, #1E2A47);
+    background: rgba(255, 255, 255, 0.55);
+}
+
+.cr-tabs__item--active {
+    background: #fff;
+    color: var(--admin-text, #1E2A47);
+    border-color: rgba(169, 183, 204, 0.35);
+    box-shadow: 0 1px 3px rgba(30, 42, 71, 0.08);
+}
+
+.cr-tabs__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+    background: #DBEAFE;
+    color: #1E3A8A;
+}
+
+::deep .jobs-page,
+::deep .apps-page,
+::deep .cr-settings {
+    padding: 0;
+}
+
+::deep .cr-tab-header {
+    margin-bottom: 20px;
+}
+
+::deep .cr-tab-eyebrow {
+    margin: 0 0 4px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #7A8BA8;
+}
+
+::deep .cr-tab-title {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 600;
+    color: #1E2A47;
+}
+
+::deep .cr-tab-subtitle {
+    margin: 4px 0 0;
+    font-size: 13px;
+    color: #4A5C7A;
+}

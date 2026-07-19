@@ -111,13 +111,12 @@
     private List<TopicItem> Topics =>
     [
         new("Orders", "Orders", "Track, cancel, or manage your orders."),
-        new("Shipping", "Shipping", "Delivery times, tracking, and international options."),
-        new("Returns", "Returns", "Start a return, exchange, or refund."),
+        new("Shipping", "Shipping", "Delivery times, tracking, and international options.", "/shipping-return#shipping"),
+        new("Returns", "Returns", "Start a return, exchange, or refund.", "/shipping-return#returns"),
         new("Payments", "Payments", "Billing issues, payment methods, and gift cards."),
         new("Account", "Account", "Profile settings, password, and preferences."),
         new("Product Info", "Product Info", "Materials, care instructions, and product details."),
-        new("Size Guide", "Size Guide", "Measurements, fit tips, and size charts.", "/size-guide"),
-        new("Shipping & Returns", "Shipping & Returns", "Rates, delivery timelines, and return policies.", "/shipping-return")
+        new("Size Guide", "Size Guide", "Measurements, fit tips, and size charts.", "/size-guide")
     ];
     // ─── FAQ DATA ─────────────────────────────────────────────
     private record FaqItem(string Question, string Answer);
@@ -132,24 +131,6 @@
                 "Orders can be cancelled within 1 hour of placement. After that, we begin processing immediately."),
             new("How long does processing take?",
                 "Most orders are processed and shipped within 24 hours during business days.")
-        },
-        ["Shipping"] = new()
-        {
-            new("How long does shipping take?",
-                "Standard shipping takes 3-5 business days. Express shipping takes 1-2 business days."),
-            new("Do you ship internationally?",
-                "Yes, we ship to over 50 countries. International shipping takes 7-14 business days."),
-            new("Is free shipping available?",
-                "We offer free standard shipping on all orders over $75.")
-        },
-        ["Returns"] = new()
-        {
-            new("What is your return policy?",
-                "We accept returns within 30 days of delivery. Items must be unworn and in original condition."),
-            new("How do I start a return?",
-                "Log into your account, open Order History, and start a return from the order details page."),
-            new("When will I receive my refund?",
-                "Refunds are processed within 5-7 business days after we receive your return.")
         },
         ["Payments"] = new()
         {
@@ -209,16 +190,14 @@
 
     // ─── CAROUSEL SCROLL ──────────────────────────────────────
 
-    private async Task ScrollTopicsLeft()
-    {
-        await JS.InvokeVoidAsync("eval",
-            "document.querySelector('.hc-topics__track').scrollBy({left:-300,behavior:'smooth'})");
-    }
+    private async Task ScrollTopicsLeft() => await ScrollTopics(-1);
 
-    private async Task ScrollTopicsRight()
+    private async Task ScrollTopicsRight() => await ScrollTopics(1);
+
+    private async Task ScrollTopics(int direction)
     {
         await JS.InvokeVoidAsync("eval",
-            "document.querySelector('.hc-topics__track').scrollBy({left:300,behavior:'smooth'})");
+            $"(function(){{const track=document.querySelector('.hc-topics__track');const card=track?.querySelector('.hc-topic-card');if(!track||!card)return;const gap=parseFloat(getComputedStyle(track).columnGap||getComputedStyle(track).gap)||0;track.scrollBy({{left:{direction}*(card.offsetWidth+gap),behavior:'smooth'}});}})();");
     }
 
     private RenderFragment GetTopicIcon(string key) => key switch
@@ -234,8 +213,6 @@
     "Account" => @<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>,
 
     "Size Guide" => @<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.4 2.4 0 0 1 0-3.4l2.6-2.6a2.4 2.4 0 0 1 3.4 0Z"/><path d="m14.5 12.5 2-2"/><path d="m11.5 9.5 2-2"/><path d="m8.5 6.5 2-2"/><path d="m17.5 15.5 2-2"/></svg>,
-
-    "Shipping & Returns" => @<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>,
 
     _ => @<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><path d="M12 17h.01"></path></svg>
 };

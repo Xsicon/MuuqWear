@@ -301,8 +301,9 @@ public partial class AdminAffiliatesComponent : IDisposable
     {
         if (adminStats?.AffiliatesByTier?.Count > 0)
         {
-            return adminStats.AffiliatesByTier
-                .OrderBy(kv => kv.Key)
+            return AffiliateTierCatalog.AggregateCanonicalCounts(adminStats.AffiliatesByTier)
+                .OrderBy(kv => AffiliateTierCatalog.DefaultTiers
+                    .FirstOrDefault(t => t.Slug.Equals(kv.Key, StringComparison.OrdinalIgnoreCase))?.SortOrder ?? 99)
                 .Select(kv => (kv.Key, AffiliateAdminDesignHelper.FormatTierLabel(kv.Key)));
         }
 
@@ -320,8 +321,9 @@ public partial class AdminAffiliatesComponent : IDisposable
     {
         if (adminStats?.AffiliatesByTier?.Count > 0)
         {
-            return adminStats.AffiliatesByTier
-                .OrderBy(kv => kv.Key)
+            return AffiliateTierCatalog.AggregateCanonicalCounts(adminStats.AffiliatesByTier)
+                .OrderBy(kv => AffiliateTierCatalog.DefaultTiers
+                    .FirstOrDefault(t => t.Slug.Equals(kv.Key, StringComparison.OrdinalIgnoreCase))?.SortOrder ?? 99)
                 .Select(kv => (kv.Key, AffiliateAdminDesignHelper.FormatTierLabel(kv.Key), kv.Value));
         }
 
@@ -823,7 +825,7 @@ public partial class AdminAffiliatesComponent : IDisposable
             return;
         }
 
-        affiliateTiers = result.Data.OrderBy(t => t.SortOrder).ToList();
+        affiliateTiers = AffiliateTierCatalog.FilterCanonical(result.Data);
         tierEdits = affiliateTiers.ToDictionary(
             t => t.Slug,
             t => TierEditForm.FromTier(t),

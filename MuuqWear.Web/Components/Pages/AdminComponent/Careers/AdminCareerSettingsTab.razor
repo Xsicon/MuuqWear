@@ -1,0 +1,37 @@
+<div class="cr-settings">
+    <div class="cr-tab-header">
+        <p class="cr-tab-eyebrow">Career Management</p>
+        <h2 class="cr-tab-title">Career Page Settings</h2>
+        <p class="cr-tab-subtitle">Configure the public careers page content</p>
+    </div>
+
+    @if (!string.IsNullOrEmpty(validationError))
+    {
+        <p class="cr-settings__error" role="alert">@validationError</p>
+    }
+    else if (!string.IsNullOrEmpty(toast))
+    {
+        <p class="cr-settings__toast">@toast</p>
+    }
+
+    <div class="cr-settings__form">
+        <div class="form-field">
+            <label class="form-label">Hero Eyebrow</label>
+            <input class="form-input" @bind="heroEyebrow" placeholder="Join the Atelier" />
+        </div>
+        <div class="form-field">
+            <label class="form-label">Hero Title</label>
+            <input class="form-input" @bind="heroTitle" placeholder="Craft the Future." />
+        </div>
+        <div class="form-field">
+            <label class="form-label">Culture Description</label>
+            <textarea class="form-textarea" rows="4" @bind="cultureDescription"
+                      placeholder="Join the team shaping minimalist luxury..."></textarea>
+        </div>
+        <p class="cr-settings__note">
+            Changes apply immediately to the public <a href="/careers" target="_blank">/careers</a> page.
+            Connect the careers settings API to persist across server restarts.
+        </p>
+        <button class="form-submit" @onclick="SaveSettings">Save Changes</button>
+    </div>
+</div>

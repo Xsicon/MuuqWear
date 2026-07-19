@@ -102,18 +102,20 @@
 
 /* ─── TOPIC CARD ────────────────────────────────────────────── */
 .hc-topic-card {
-    flex: 0 0 280px;
+    flex: 0 0 100%;
     scroll-snap-align: start;
+    scroll-snap-stop: always;
     text-align: left;
     padding: 21px;
     border: 1px solid rgba(169, 183, 204, 0.4);
     background: white;
-    height: 160px;
+    min-height: 160px;
     display: flex;
     flex-direction: column;
     justify-content: center;
     cursor: pointer;
     transition: border-color 0.2s, background 0.2s;
+    box-sizing: border-box;
 }
 
     .hc-topic-card:hover {
@@ -166,6 +168,8 @@
 
     .hc-topic-card {
         flex: 0 0 300px;
+        height: 160px;
+        min-height: 0;
     }
 }
 

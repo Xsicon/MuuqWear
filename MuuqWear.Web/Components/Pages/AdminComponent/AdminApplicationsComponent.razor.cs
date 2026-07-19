@@ -150,7 +150,7 @@ public partial class AdminApplicationsComponent
 
     private void GoBack()
     {
-        Navigation.NavigateTo("/admin/jobs");
+        Navigation.NavigateTo($"/admin/careers?tab=applications&jobId={JobId}");
     }
 
     // =============================================

@@ -1,3 +1,4 @@
+using MuuqWear.Application.Shared;
 using MuuqWear.Model.AffiliateApplication;
 
 namespace MuuqWear.Web.Components.Pages.AffiliateApplicationComponent;
@@ -14,22 +15,20 @@ public partial class AffiliateApplicationComponent
             var result = await AffiliateService.GetTiers();
             if (result?.Data is { Count: > 0 })
             {
-                publicTiers = result.Data
-                    .Where(t => t.IsActive)
-                    .OrderBy(t => t.SortOrder)
-                    .ToList();
+                publicTiers = AffiliateTierCatalog.FilterActiveCanonical(result.Data);
             }
-            else
+
+            if (publicTiers.Count == 0)
             {
                 Console.WriteLine(
                     $"[Affiliate] LoadPublicTiers fallback: Success={result?.Success}, Message={result?.Message}");
-                publicTiers = GetDefaultTiers();
+                publicTiers = AffiliateTierCatalog.DefaultTiers.ToList();
             }
         }
         catch (Exception ex)
         {
             Console.WriteLine($"[Affiliate] LoadPublicTiers error: {ex.Message}");
-            publicTiers = GetDefaultTiers();
+            publicTiers = AffiliateTierCatalog.DefaultTiers.ToList();
         }
         finally
         {
@@ -37,50 +36,6 @@ public partial class AffiliateApplicationComponent
             UpdateTierFaqAnswer();
         }
     }
-
-    private static List<AffiliateTierModel> GetDefaultTiers() =>
-    [
-        new AffiliateTierModel
-        {
-            Slug = "bronze",
-            DisplayName = "Bronze",
-            ItemsSoldThreshold = 0,
-            CommissionRatePercent = 5,
-            ReferralDiscountPercent = 5,
-            SortOrder = 1,
-            IsActive = true
-        },
-        new AffiliateTierModel
-        {
-            Slug = "silver",
-            DisplayName = "Silver",
-            ItemsSoldThreshold = 150,
-            CommissionRatePercent = 10,
-            ReferralDiscountPercent = 10,
-            SortOrder = 2,
-            IsActive = true
-        },
-        new AffiliateTierModel
-        {
-            Slug = "gold",
-            DisplayName = "Gold",
-            ItemsSoldThreshold = 500,
-            CommissionRatePercent = 15,
-            ReferralDiscountPercent = 15,
-            SortOrder = 3,
-            IsActive = true
-        },
-        new AffiliateTierModel
-        {
-            Slug = "platinum",
-            DisplayName = "Platinum",
-            ItemsSoldThreshold = 1000,
-            CommissionRatePercent = 20,
-            ReferralDiscountPercent = 20,
-            SortOrder = 4,
-            IsActive = true
-        }
-    ];
 
     private void UpdateTierFaqAnswer()
     {
@@ -108,7 +63,6 @@ public partial class AffiliateApplicationComponent
         {
             "silver" => "mw-tier-silver",
             "gold" => "mw-tier-gold",
-            "platinum" => "mw-tier-platinum",
             _ => "mw-tier-bronze"
         };
 
@@ -140,14 +94,6 @@ public partial class AffiliateApplicationComponent
                 "{commission} commission per 10 items",
                 "All-expenses-paid Muuqsimo trip",
                 "VIP access & exclusive experiences"
-            ],
-            "platinum" =>
-            [
-                "25% off all personal purchases",
-                "{commission} commission per 10 items",
-                "Revenue share program",
-                "Product collaboration rights",
-                "Annual retreat invite"
             ],
             _ =>
             [

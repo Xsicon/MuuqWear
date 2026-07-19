@@ -1,0 +1,51 @@
+@page "/admin/careers"
+@page "/admin/jobs"
+@layout Layout.AdminLayoutComponent.AdminDashboardLayoutComponent
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.WebUtilities
+@using MuuqWear.Application.Shared
+@using MuuqWear.Web.Components.Pages.AdminComponent.Careers
+@using MuuqWear.Web.Components.Shared
+@attribute [Authorize(Roles = "admin")]
+@implements IDisposable
+@inject NavigationManager NavigationManager
+@inject AdminCareersTabCoordinator CareersTabCoordinator
+
+<PageTitle>Career Management</PageTitle>
+
+<div class="cr-page">
+    <div class="cr-tabs" role="tablist" aria-label="Career management sections">
+        @foreach (var tab in TabViews)
+        {
+            <button type="button"
+                    role="tab"
+                    aria-selected="@(activeTab == tab.Id)"
+                    class="cr-tabs__item @(activeTab == tab.Id ? "cr-tabs__item--active" : "")"
+                    @onclick="() => SwitchTab(tab.Id)">
+                @tab.Label
+                @if (tab.Id == "applications" && newApplications > 0)
+                {
+                    <span class="cr-tabs__badge">@newApplications</span>
+                }
+            </button>
+        }
+    </div>
+
+    @if (activeTab == "postings")
+    {
+        <AdminCareerJobPostingsTab OnViewApplications="ViewApplicationsForJob" />
+    }
+    else if (activeTab == "applications")
+    {
+        <AdminCareerApplicationsTab JobFilterId="applicationsJobFilter"
+                                    OnCountsChanged="HandleApplicationCounts" />
+    }
+    else
+    {
+        <AdminCareerSettingsTab />
+    }
+</div>
+
+<PageReadyNotifier IsLoading="false" />

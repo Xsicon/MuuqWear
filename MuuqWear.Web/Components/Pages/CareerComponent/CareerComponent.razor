@@ -1,10 +1,14 @@
 ﻿@page "/careers"
+@using MuuqWear.Model.CareerPage
+@using MuuqWear.Application.Services.CareerPageSettingsService
 @using MuuqWear.Application.Services.JobPostingService
 @using MuuqWear.Model.JobApplication
 @using MuuqWear.Model.JobPosting
 @using MuuqWear.Web.Components.Shared
 @rendermode InteractiveServer
 @inject IJobPostingService JobPostingService
+@inject ICareerPageSettingsService CareerPageSettings
+@implements IDisposable
 
 <PageTitle>Careers — Muuqwear</PageTitle>
 
@@ -13,12 +17,9 @@
     <!-- Section 1: Hero -->
     <section class="career-hero">
         <div class="career-hero__text">
-            <p class="career-eyebrow">Join the Atelier</p>
-            <h1 class="career-hero__title">Craft the Future.</h1>
-            <p class="career-hero__lede">
-                Join the team shaping minimalist luxury. We&rsquo;re looking
-                for people who believe that the constraint is the freedom.
-            </p>
+            <p class="career-eyebrow">@pageSettings.HeroEyebrow</p>
+            <h1 class="career-hero__title">@pageSettings.HeroTitle</h1>
+            <p class="career-hero__lede">@pageSettings.CultureDescription</p>
         </div>
         <div class="career-hero__media">
             <img src="https://images.unsplash.com/photo-1745095034955-1019067b7ce4?w=800&h=500&fit=crop"
@@ -256,7 +257,7 @@
 <PageReadyNotifier IsLoading="isJobsLoading" />
 
 @code {
-
+    private CareerPageSettingsModel pageSettings = new();
     private JobPostingModel? applyingFor = null;
 
     private string applyName = string.Empty;
@@ -287,8 +288,18 @@
 
     protected override async Task OnInitializedAsync()
     {
+        pageSettings = CareerPageSettings.GetSettings();
+        CareerPageSettings.SettingsChanged += OnPageSettingsChanged;
         await LoadJobs();
     }
+
+    private void OnPageSettingsChanged()
+    {
+        pageSettings = CareerPageSettings.GetSettings();
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose() => CareerPageSettings.SettingsChanged -= OnPageSettingsChanged;
 
 
     private async Task LoadJobs()

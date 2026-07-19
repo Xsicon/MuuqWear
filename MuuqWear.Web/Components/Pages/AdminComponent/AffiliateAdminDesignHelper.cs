@@ -1,5 +1,7 @@
 namespace MuuqWear.Web.Components.Pages.AdminComponent;
 
+using MuuqWear.Application.Shared;
+
 public static class AffiliateAdminDesignHelper
 {
     public record TierTheme(
@@ -13,8 +15,7 @@ public static class AffiliateAdminDesignHelper
     [
         new("Bronze", "#CD7F32", "#FEF3E8", "#7A3F00", "#CD7F32"),
         new("Silver", "#8A8A8A", "#F3F4F6", "#374151", "#9CA3AF"),
-        new("Gold", "#F59E0B", "#FEF3C7", "#92400E", "#F59E0B"),
-        new("Platinum", "#6366F1", "#EDE9FE", "#5B21B6", "#6366F1")
+        new("Gold", "#F59E0B", "#FEF3C7", "#92400E", "#F59E0B")
     ];
 
     public static TierTheme GetTierTheme(string? slugOrName)
@@ -22,7 +23,7 @@ public static class AffiliateAdminDesignHelper
         if (string.IsNullOrWhiteSpace(slugOrName))
             return TierThemes[0];
 
-        var key = slugOrName.Trim();
+        var key = AffiliateTierCatalog.NormalizeTierSlug(slugOrName);
         return TierThemes.FirstOrDefault(t =>
                    t.Name.Equals(key, StringComparison.OrdinalIgnoreCase) ||
                    t.Name.Equals(FormatTierLabel(key), StringComparison.OrdinalIgnoreCase))
@@ -31,10 +32,11 @@ public static class AffiliateAdminDesignHelper
 
     public static string FormatTierLabel(string tier)
     {
-        if (string.IsNullOrWhiteSpace(tier) || tier.Equals("none", StringComparison.OrdinalIgnoreCase))
+        var normalized = AffiliateTierCatalog.NormalizeTierSlug(tier);
+        if (normalized.Equals("none", StringComparison.OrdinalIgnoreCase))
             return "Bronze";
 
-        return char.ToUpperInvariant(tier[0]) + tier[1..].ToLowerInvariant();
+        return char.ToUpperInvariant(normalized[0]) + normalized[1..].ToLowerInvariant();
     }
 
     public static string GetInitials(string name)
@@ -80,14 +82,6 @@ public static class AffiliateAdminDesignHelper
                 "Dedicated account manager",
                 "Exclusive campaign invites",
                 "Co-branded content"
-            ],
-            "platinum" =>
-            [
-                "All Gold perks",
-                "Revenue share program",
-                "Product collaboration rights",
-                "Annual retreat invite",
-                "First look at new collections"
             ],
             _ =>
             [
