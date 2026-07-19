@@ -1,4 +1,4 @@
-/* Career Management admin — tab shell (matches Customer Support pattern) */
+/* Career Management admin — tab shell */
 
 .cr-page {
     padding: 0;
@@ -40,9 +40,9 @@
 }
 
 .cr-tabs__item--active {
-    background: #fff;
+    background: var(--admin-surface, #fff);
     color: var(--admin-text, #1E2A47);
-    border-color: rgba(169, 183, 204, 0.35);
+    border-color: var(--admin-border, rgba(169, 183, 204, 0.35));
     box-shadow: 0 1px 3px rgba(30, 42, 71, 0.08);
 }
 
@@ -77,18 +77,69 @@
     font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    color: #7A8BA8;
+    color: var(--admin-muted, #7A8BA8);
 }
 
 ::deep .cr-tab-title {
     margin: 0;
     font-size: 22px;
     font-weight: 600;
-    color: #1E2A47;
+    color: var(--admin-text, #1E2A47);
 }
 
 ::deep .cr-tab-subtitle {
     margin: 4px 0 0;
     font-size: 13px;
-    color: #4A5C7A;
+    color: var(--admin-muted, #4A5C7A);
+}
+
+/* Dark admin theme — career tabs */
+:global(html[data-admin-theme="dark"]) .mw-admin .cr-tabs {
+    background: rgba(230, 236, 245, 0.08);
+    border-color: rgba(169, 183, 204, 0.15);
+}
+
+:global(html[data-admin-theme="dark"]) .mw-admin .cr-tabs__item:hover:not(.cr-tabs__item--active) {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--admin-text, #F4F6F9);
+}
+
+:global(html[data-admin-theme="dark"]) .mw-admin .cr-tabs__item--active {
+    background: var(--admin-text, #F4F6F9);
+    color: var(--admin-active, #1E2A47);
+    border-color: var(--admin-text, #F4F6F9);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+}
+
+:global(html[data-admin-theme="dark"]) .mw-admin .cr-tabs__badge {
+    background: rgba(219, 234, 254, 0.2);
+    color: #93C5FD;
+}
+
+:global(html[data-admin-theme="dark"]) .mw-admin .cr-tabs__item--active .cr-tabs__badge {
+    background: rgba(30, 42, 71, 0.15);
+    color: #1E3A8A;
+}
+
+/* Dark admin theme — shared career tab content */
+:global(html[data-admin-theme="dark"]) .mw-admin .badge--closed {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--admin-muted, #A9B7CC);
+}
+
+:global(html[data-admin-theme="dark"]) .mw-admin .app-card__portfolio a,
+:global(html[data-admin-theme="dark"]) .mw-admin .app-detail__link,
+:global(html[data-admin-theme="dark"]) .mw-admin .cr-settings__note a {
+    color: #93C5FD;
+}
+
+:global(html[data-admin-theme="dark"]) .mw-admin .job-card:hover,
+:global(html[data-admin-theme="dark"]) .mw-admin .app-card:hover {
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+}
+
+:global(html[data-admin-theme="dark"]) .mw-admin .form-input:focus,
+:global(html[data-admin-theme="dark"]) .mw-admin .form-textarea:focus {
+    outline-color: rgba(230, 236, 245, 0.15);
+    border-color: var(--admin-text, #F4F6F9);
 }

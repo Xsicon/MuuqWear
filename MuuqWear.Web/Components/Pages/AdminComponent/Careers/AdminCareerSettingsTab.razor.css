@@ -8,12 +8,12 @@
 .cr-settings__note {
     margin: 0;
     font-size: 13px;
-    color: #4A5C7A;
+    color: var(--admin-muted, #4A5C7A);
     line-height: 1.5;
 }
 
 .cr-settings__note a {
-    color: #1E2A47;
+    color: #2563EB;
 }
 
 .cr-settings__toast {
@@ -42,7 +42,7 @@
 .form-label {
     font-size: 12px;
     font-weight: 600;
-    color: #1E2A47;
+    color: var(--admin-text, #1E2A47);
     margin-bottom: 6px;
     letter-spacing: 0.3px;
     text-transform: uppercase;
@@ -51,32 +51,49 @@
 .form-input {
     padding: 10px 12px;
     font-size: 14px;
-    color: #1E2A47;
-    background: #FFFFFF;
-    border: 1px solid rgba(169, 183, 204, 0.6);
+    color: var(--admin-text, #1E2A47);
+    background: var(--admin-input-bg, #FFFFFF);
+    border: 1px solid var(--admin-border, rgba(169, 183, 204, 0.6));
     border-radius: 6px;
     font-family: inherit;
+}
+
+.form-input:focus {
+    outline: 2px solid rgba(30, 42, 71, 0.15);
+    outline-offset: -1px;
+    border-color: var(--admin-active, #1E2A47);
 }
 
 .form-textarea {
     padding: 10px 12px;
     font-size: 14px;
-    color: #1E2A47;
-    background: #FFFFFF;
-    border: 1px solid rgba(169, 183, 204, 0.6);
+    color: var(--admin-text, #1E2A47);
+    background: var(--admin-input-bg, #FFFFFF);
+    border: 1px solid var(--admin-border, rgba(169, 183, 204, 0.6));
     border-radius: 6px;
     font-family: inherit;
     resize: vertical;
 }
 
+.form-textarea:focus {
+    outline: 2px solid rgba(30, 42, 71, 0.15);
+    outline-offset: -1px;
+    border-color: var(--admin-active, #1E2A47);
+}
+
 .form-submit {
     align-self: flex-start;
     padding: 12px 24px;
-    background: #1E2A47;
-    color: #FFFFFF;
+    background: var(--admin-active, #1E2A47);
+    color: var(--admin-active-text, #FFFFFF);
     border: none;
     border-radius: 8px;
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
+    transition: opacity 0.15s ease;
+}
+
+.form-submit:hover {
+    opacity: 0.9;
 }
