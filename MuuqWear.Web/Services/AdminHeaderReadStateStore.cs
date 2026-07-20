@@ -5,7 +5,7 @@ using MuuqWear.Web.Helpers;
 namespace MuuqWear.Web.Services;
 
 /// <summary>
-/// Persists admin header read state in session storage for the current browser tab.
+/// Persists admin header dismissed/read state in local storage, scoped per user.
 /// </summary>
 public sealed class AdminHeaderReadStateStore
 {
@@ -14,10 +14,12 @@ public sealed class AdminHeaderReadStateStore
     private const string LowStockFirstSeenKey = "admin-low-stock-first-seen";
 
     private readonly IJSRuntime _js;
+    private readonly string _userScope;
 
-    public AdminHeaderReadStateStore(IJSRuntime js)
+    public AdminHeaderReadStateStore(IJSRuntime js, string? userId)
     {
         _js = js;
+        _userScope = string.IsNullOrWhiteSpace(userId) ? "anonymous" : userId.Trim();
     }
 
     public async Task<HashSet<Guid>> LoadNotificationIdsAsync()
@@ -73,11 +75,13 @@ public sealed class AdminHeaderReadStateStore
                 })
                 .ToList());
 
+    private string ScopeKey(string key) => $"{key}:{_userScope}";
+
     private async Task<T?> LoadJsonAsync<T>(string key)
     {
         try
         {
-            var json = await _js.InvokeAsync<string?>("adminHeaderReadState.load", key);
+            var json = await _js.InvokeAsync<string?>("adminHeaderReadState.load", ScopeKey(key));
             if (string.IsNullOrWhiteSpace(json))
                 return default;
 
@@ -94,7 +98,7 @@ public sealed class AdminHeaderReadStateStore
         try
         {
             var json = JsonSerializer.Serialize(value);
-            await _js.InvokeVoidAsync("adminHeaderReadState.save", key, json);
+            await _js.InvokeVoidAsync("adminHeaderReadState.save", ScopeKey(key), json);
         }
         catch
         {

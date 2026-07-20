@@ -14,7 +14,7 @@
 @using MuuqWear.Model.Products
 @layout Components.Layout.AdminLayoutComponent.AdminDashboardLayoutComponent
 @rendermode InteractiveServer
-@attribute [Authorize(Roles = "admin")]
+@attribute [Authorize(Roles = AdminPortalRoles.All)]
 @inject IOrderService OrderService
 @inject IHelpCenterService HelpService
 @inject IAdminBadgeService BadgeService

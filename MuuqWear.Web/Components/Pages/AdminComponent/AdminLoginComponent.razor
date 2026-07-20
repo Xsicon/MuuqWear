@@ -15,8 +15,9 @@
 <section class="mw-auth">
     <div class="container">
         <div class="row justify-content-center">
-            <div class="col-12 col-sm-10 col-md-7 col-lg-5">
+            <div class="col-12 col-lg-10 col-xl-9">
                 <div class="mw-admin-login">
+                    <div class="mw-admin-login__layout">
                     <div class="mw-admin-login__card">
 
                         <!-- ICON -->
@@ -91,6 +92,42 @@
                         </div>
 
                     </div>
+
+                    <div class="mw-admin-login__demo">
+                        <div class="mw-admin-login__demo-header">
+                            <h2 class="mw-admin-login__demo-title">Demo accounts</h2>
+                            <p class="mw-admin-login__demo-subtitle">Click a row to fill the login form.</p>
+                        </div>
+
+                        <div class="mw-admin-login__demo-table-wrap">
+                            <table class="mw-admin-login__demo-table">
+                                <thead>
+                                    <tr>
+                                        <th>Email</th>
+                                        <th>Password</th>
+                                        <th>Role (profile)</th>
+                                        <th>Display name</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var account in DemoAccounts)
+                                    {
+                                        <tr class="mw-admin-login__demo-row"
+                                            tabindex="0"
+                                            role="button"
+                                            @onclick="() => UseDemoAccount(account)"
+                                            @onkeydown="(e) => HandleDemoRowKeyDown(e, account)">
+                                            <td>@account.Email</td>
+                                            <td><code>@account.Password</code></td>
+                                            <td><span class="mw-admin-login__role-tag">@account.Role</span></td>
+                                            <td>@account.DisplayName</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -98,11 +135,39 @@
 </section>
 
 @code {
+    private sealed record AdminDemoAccount(
+        string Email,
+        string Password,
+        string Role,
+        string DisplayName);
+
+    private static readonly AdminDemoAccount[] DemoAccounts =
+    [
+        new("admin@muuqwear.com", "admin123", "admin", "Admin"),
+        new("ops@muuqwear.com", "ops123", "operations_manager", "Operations Manager"),
+        new("support@muuqwear.com", "support123", "support_team", "Customer Support"),
+        new("merch@muuqwear.com", "merch123", "merchandising", "Merchandising"),
+        new("creative@muuqwear.com", "creative123", "content_team", "Creative & Content"),
+        new("tech@muuqwear.com", "tech123", "technology_systems", "Technology & Systems")
+    ];
+
     private LoginModel loginModel = new();
     private string message = string.Empty;
     private string messageCssClass = string.Empty;
     private bool isSubmitting = false;
 
+    private void UseDemoAccount(AdminDemoAccount account)
+    {
+        loginModel.Email = account.Email;
+        loginModel.Password = account.Password;
+        message = string.Empty;
+    }
+
+    private void HandleDemoRowKeyDown(KeyboardEventArgs e, AdminDemoAccount account)
+    {
+        if (e.Key is "Enter" or " ")
+            UseDemoAccount(account);
+    }
 
     private async Task HandleLogin()
     {
@@ -130,7 +195,7 @@
         {
 
             var authData = result.Data;
-            if (authData.Role != "admin")
+            if (!AdminPortalRoles.IsAllowed(authData.Role))
             {
                 message = "Access denied.";
                 messageCssClass = "text-danger";

@@ -9,7 +9,7 @@
 @using MuuqWear.Application.Shared
 @using MuuqWear.Web.Components.Pages.AdminComponent.Support
 @using MuuqWear.Web.Components.Shared
-@attribute [Authorize(Roles = "admin")]
+@attribute [Authorize(Roles = AdminPortalRoles.All)]
 @implements IDisposable
 @inject NavigationManager NavigationManager
 @inject AdminSupportTabCoordinator SupportTabCoordinator

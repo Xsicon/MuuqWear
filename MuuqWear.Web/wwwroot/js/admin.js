@@ -117,7 +117,7 @@ window.adminScroll = {
 window.adminHeaderReadState = {
     load: function (key) {
         try {
-            return sessionStorage.getItem(key);
+            return localStorage.getItem(key);
         } catch (e) {
             return null;
         }
@@ -125,9 +125,9 @@ window.adminHeaderReadState = {
     save: function (key, value) {
         try {
             if (value == null || value === '') {
-                sessionStorage.removeItem(key);
+                localStorage.removeItem(key);
             } else {
-                sessionStorage.setItem(key, value);
+                localStorage.setItem(key, value);
             }
         } catch (e) { }
     }

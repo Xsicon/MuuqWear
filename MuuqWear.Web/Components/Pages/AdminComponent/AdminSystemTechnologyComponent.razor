@@ -7,7 +7,7 @@
 @using MuuqWear.Application.Shared
 @using MuuqWear.Web.Components.Pages.AdminComponent.SystemTech
 @using MuuqWear.Web.Components.Shared
-@attribute [Authorize(Roles = "admin")]
+@attribute [Authorize(Roles = AdminPortalRoles.All)]
 @implements IDisposable
 
 <PageTitle>System &amp; Technology</PageTitle>

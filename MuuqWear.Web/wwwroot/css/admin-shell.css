@@ -734,6 +734,16 @@ html[data-admin-theme="dark"] .mw-admin .at-topbar__avatar {
 
 .at-notif-dropdown {
     width: 320px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.at-notif-dropdown__body {
+    height: 400px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
 }
 
 .at-user-dropdown {
@@ -937,5 +947,9 @@ html[data-admin-theme="dark"] .mw-admin .at-topbar__avatar {
     .at-notif-dropdown {
         width: min(320px, calc(100vw - 32px));
         right: -8px;
+    }
+
+    .at-notif-dropdown__body {
+        height: min(400px, calc(100vh - 120px));
     }
 }

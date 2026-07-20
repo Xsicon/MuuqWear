@@ -13,7 +13,7 @@
 @inject IOrderReturnService OrderReturnService
 @inject NavigationManager NavigationManager
 @implements IDisposable
-@attribute [Authorize(Roles = "admin")]
+@attribute [Authorize(Roles = AdminPortalRoles.All)]
 
 <PageTitle>Sales & Orders</PageTitle>
 

@@ -2,13 +2,14 @@
 
 public class NotificationModel
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid Id { get; set; }
     public string Type { get; set; } = string.Empty;
     public string Message { get; set; } = string.Empty;
     public string? Link { get; set; }
     public Guid? ProductId { get; set; }
     public string? SizeLabel { get; set; }
     public Guid? SizeStockId { get; set; }
+    public Guid? CustomerId { get; set; }
     public string TimeAgo { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public bool IsRead { get; set; } = false;
@@ -34,4 +35,6 @@ public static class NotificationType
     public const string Return = "return";
     public const string LowStock = "low_stock";
     public const string Stock = "stock";
+    public const string Affiliate = "affiliate";
+    public const string CustomerMessage = "customer_message";
 }

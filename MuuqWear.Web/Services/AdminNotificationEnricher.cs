@@ -11,8 +11,7 @@ public static class AdminNotificationEnricher
 {
     public static bool IsLowStockNotification(NotificationModel notification) =>
         notification.Type.Equals(NotificationType.LowStock, StringComparison.OrdinalIgnoreCase)
-        || notification.Type.Equals(NotificationType.Stock, StringComparison.OrdinalIgnoreCase)
-        || notification.Message.Contains("low stock", StringComparison.OrdinalIgnoreCase);
+        || notification.Type.Equals(NotificationType.Stock, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
     /// Normalizes low-stock notifications and validates product links against the loaded catalog.

@@ -8,9 +8,17 @@
     background: white;
 }
 
+.mw-admin-login__layout {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+
 .mw-admin-login__card {
     width: 100%;
     max-width: 520px;
+    margin: 0 auto;
 }
 
 /* SHIELD ICON - circle  */
@@ -49,8 +57,6 @@
     font-weight: 500;
     margin-bottom: 8px;
 }
-
-/* INPUTS */
 
 /* BUTTON - also more rounded  */
 .mw-admin-login__btn {
@@ -92,6 +98,100 @@
         color: #1E2A47;
     }
 
+/* DEMO ACCOUNTS */
+.mw-admin-login__demo {
+    width: 100%;
+    max-width: 960px;
+    margin: 0 auto;
+    border: 1px solid rgba(30, 42, 71, 0.12);
+    border-radius: 12px;
+    background: #f8f9fb;
+    overflow: hidden;
+}
+
+.mw-admin-login__demo-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(30, 42, 71, 0.1);
+    background: white;
+}
+
+.mw-admin-login__demo-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: #1E2A47;
+}
+
+.mw-admin-login__demo-subtitle {
+    margin: 4px 0 0;
+    font-size: 13px;
+    color: #7A8BA8;
+}
+
+.mw-admin-login__demo-table-wrap {
+    overflow-x: auto;
+}
+
+.mw-admin-login__demo-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.mw-admin-login__demo-table th {
+    padding: 10px 16px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    color: #7A8BA8;
+    background: rgba(30, 42, 71, 0.04);
+    border-bottom: 1px solid rgba(30, 42, 71, 0.1);
+    white-space: nowrap;
+}
+
+.mw-admin-login__demo-table td {
+    padding: 12px 16px;
+    color: #1E2A47;
+    border-bottom: 1px solid rgba(30, 42, 71, 0.08);
+    vertical-align: middle;
+}
+
+.mw-admin-login__demo-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.mw-admin-login__demo-row {
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.mw-admin-login__demo-row:hover,
+.mw-admin-login__demo-row:focus {
+    background: rgba(30, 42, 71, 0.06);
+    outline: none;
+}
+
+.mw-admin-login__demo-table code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 12px;
+    background: rgba(30, 42, 71, 0.08);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.mw-admin-login__role-tag {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    background: rgba(30, 42, 71, 0.1);
+    color: #1E2A47;
+    white-space: nowrap;
+}
+
 /* MOBILE */
 @media (max-width: 480px) {
     .mw-admin-login__title {
@@ -100,5 +200,14 @@
 
     .mw-admin-login__card {
         padding: 0 8px;
+    }
+
+    .mw-admin-login__demo-header {
+        padding: 14px 16px;
+    }
+
+    .mw-admin-login__demo-table th,
+    .mw-admin-login__demo-table td {
+        padding: 10px 12px;
     }
 }

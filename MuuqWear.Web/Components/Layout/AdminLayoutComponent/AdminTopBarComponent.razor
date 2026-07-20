@@ -2,9 +2,10 @@
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Components.Web
 @using Microsoft.JSInterop
+@using MuuqWear.Application.Services.AffiliateService
 @using MuuqWear.Application.Services.CustomerService
 @using MuuqWear.Application.Services.NotificationService
-@using MuuqWear.Application.Services.ProductService
+@using MuuqWear.Application.Services.OrderService
 @using MuuqWear.Application.Shared
 @using MuuqWear.Model.Customer
 @using MuuqWear.Model.Messages
@@ -13,7 +14,9 @@
 @using MuuqWear.Web.Helpers
 @using MuuqWear.Web.Services
 @inject INotificationService NotificationService
-@inject IProductService ProductService
+@inject AdminLowStockCacheService LowStockCache
+@inject IOrderService OrderService
+@inject IAffiliateService AffiliateService
 @inject ICustomerService CustomerService
 @inject IJSRuntime JS
 @inject AdminProductsTabCoordinator ProductsTabCoordinator
@@ -120,7 +123,7 @@
                 <div class="at-notif-dropdown">
                     <div class="at-notif-dropdown__header">
                         <span class="at-notif-dropdown__title">Notifications</span>
-                        @if (notifications.Any(n => !n.IsRead))
+                        @if (notifications.Any())
                         {
                             <button type="button" class="at-notif-dropdown__mark-read" @onclick="MarkAllRead">
                                 Mark All Read
@@ -128,34 +131,28 @@
                         }
                     </div>
 
+                    <div class="at-notif-dropdown__body">
                     @if (isLoadingNotifications)
                     {
                         <div class="at-notif-dropdown__empty">Loading…</div>
                     }
                     else if (!notifications.Any())
                     {
-                        <div class="at-notif-dropdown__empty">No notifications — all products are well stocked.</div>
+                        <div class="at-notif-dropdown__empty">No new notifications.</div>
                     }
                     else
                     {
-                        @if (lowStockCount > 0)
+                        @foreach (var entry in GetNotificationsWithSections())
                         {
-                            <p class="at-notif-dropdown__section">Low stock (@lowStockCount)</p>
-                        }
+                            @if (entry.SectionLabel is not null)
+                            {
+                                <p class="at-notif-dropdown__section">@entry.SectionLabel</p>
+                            }
 
-                        @if (productsFeedTruncated)
-                        {
-                            <p class="at-notif-dropdown__truncation">
-                                Showing the first @AdminHeaderFeedLoader.MaxRecords of @productsTotalCount products.
-                                Counts may be incomplete.
-                            </p>
-                        }
-
-                        @foreach (var notif in notifications)
-                        {
+                            var notif = entry.Notification;
                             <button type="button"
                                     class="at-notif-item @(notif.IsRead ? "" : "at-notif-item--unread")"
-                                    @key="notif.Id"
+                                    @key="@($"{notif.Type}:{notif.Id}:{notif.CustomerId}")"
                                     @onclick="() => HandleNotificationClick(notif)">
                                 <div class="at-notif-item__icon @GetNotifIconClass(notif.Type)">
                                     @GetNotifIcon(notif.Type)
@@ -167,7 +164,35 @@
                             </button>
                         }
 
-                        @if (lowStockCount > notifications.Count)
+                        @if (pendingOrderCount > AdminHeaderOperationalNotificationsBuilder.MaxPendingOrders)
+                        {
+                            <button type="button"
+                                    class="at-notif-dropdown__view-all"
+                                    @onclick="ViewAllPendingOrders">
+                                View all @pendingOrderCount pending orders
+                            </button>
+                        }
+
+                        @if (pendingAffiliateCount > AdminHeaderOperationalNotificationsBuilder.MaxPendingAffiliates)
+                        {
+                            <button type="button"
+                                    class="at-notif-dropdown__view-all"
+                                    @onclick="ViewAllPendingAffiliates">
+                                View all @pendingAffiliateCount affiliate applications
+                            </button>
+                        }
+
+                        @if (customerMessageCount > AdminHeaderOperationalNotificationsBuilder.MaxCustomerMessages)
+                        {
+                            <button type="button"
+                                    class="at-notif-dropdown__view-all"
+                                    @onclick="ViewAllCustomerNotes">
+                                View all customer notes
+                            </button>
+                        }
+
+                        @if (lowStockCount > notifications.Count(n =>
+                                 AdminNotificationEnricher.IsLowStockNotification(n)))
                         {
                             <button type="button"
                                     class="at-notif-dropdown__view-all"
@@ -176,6 +201,7 @@
                             </button>
                         }
                     }
+                    </div>
                 </div>
             }
         </div>
@@ -212,6 +238,7 @@
                         }
                     </div>
 
+                    <div class="at-notif-dropdown__body">
                     @if (isLoadingMessages)
                     {
                         <div class="at-notif-dropdown__empty">Loading…</div>
@@ -257,6 +284,7 @@
                             </button>
                         }
                     }
+                    </div>
                 </div>
             }
         </div>
@@ -315,10 +343,11 @@
     private int unreadCount;
     private int unreadMessageCount;
     private int lowStockCount;
+    private int pendingOrderCount;
+    private int pendingAffiliateCount;
+    private int customerMessageCount;
     private int messageCount;
-    private bool productsFeedTruncated;
     private bool customersFeedTruncated;
-    private int productsTotalCount;
     private int customersTotalCount;
     private readonly HashSet<Guid> lowStockProductIds = new();
     private readonly HashSet<Guid> readNotificationIds = new();
@@ -339,6 +368,8 @@
                    ?? user.FindFirst("name")?.Value
                    ?? "Admin";
 
+        var userId = user.FindFirst("UserId")?.Value ?? string.Empty;
+
         var parts = userName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
         userInitials = parts.Length >= 2
             ? $"{parts[0][0]}{parts[^1][0]}".ToUpper()
@@ -348,7 +379,7 @@
         CustomersTabCoordinator.MessagesRefreshRequested += OnCustomerNotesChanged;
         OrdersTabCoordinator.BadgeCountsRefreshRequested += OnOrdersChanged;
 
-        readStateStore = new AdminHeaderReadStateStore(JS);
+        readStateStore = new AdminHeaderReadStateStore(JS, userId);
         await LoadPersistedReadStateAsync();
 
         _refreshTimer = new System.Threading.Timer(
@@ -388,40 +419,46 @@
 
     private void OnProductsChanged()
     {
-        _ = InvokeAsync(LoadNotifications);
+        LowStockCache.Invalidate();
+        _ = InvokeAsync(async () =>
+        {
+            if (isNotificationsOpen)
+                await LoadNotifications();
+            else
+                await RefreshBadgeCountsAsync();
+        });
     }
 
     private void OnOrdersChanged()
     {
-        _ = InvokeAsync(RefreshBadgeCountsAsync);
+        _ = InvokeAsync(async () =>
+        {
+            if (isNotificationsOpen)
+                await LoadNotifications();
+            else
+                await RefreshBadgeCountsAsync();
+        });
     }
 
     private void OnCustomerNotesChanged()
     {
-        _ = InvokeAsync(LoadMessages);
+        _ = InvokeAsync(async () =>
+        {
+            if (isMessagesOpen)
+                await LoadMessages();
+
+            if (isNotificationsOpen)
+                await LoadNotifications();
+            else
+                await RefreshBadgeCountsAsync();
+        });
     }
 
     private async Task RefreshBadgeCountsAsync()
     {
         try
         {
-            var apiResult = await NotificationService.GetRecent();
-            if (apiResult.Success && apiResult.Data is { Count: > 0 })
-            {
-                var apiNotifs = apiResult.Data
-                    .Where(n => AdminNotificationEnricher.Enrich(n, EmptyProductCatalog))
-                    .ToList();
-
-                unreadCount = apiNotifs.Count(n => !IsNotificationRead(n));
-                lowStockCount = apiNotifs.Count(AdminNotificationEnricher.IsLowStockNotification);
-
-                lowStockProductIds.Clear();
-                foreach (var notif in apiNotifs.Where(AdminNotificationEnricher.IsLowStockNotification))
-                {
-                    if (notif.ProductId is Guid productId)
-                        lowStockProductIds.Add(productId);
-                }
-            }
+            await ApplyNotificationFeedAsync(forceRefreshLowStock: false, updateDropdownList: false);
         }
         catch
         {
@@ -430,11 +467,6 @@
 
         StateHasChanged();
     }
-
-    private bool IsNotificationRead(NotificationModel notif) =>
-        readNotificationIds.Contains(notif.Id)
-        || (notif.SizeStockId is Guid sizeStockId && readNotificationIds.Contains(sizeStockId))
-        || (notif.ProductId is Guid productId && readNotificationIds.Contains(productId));
 
     private async Task LoadMessages()
     {
@@ -487,70 +519,37 @@
         isLoadingNotifications = true;
         StateHasChanged();
 
-        var productFeedTask = AdminHeaderFeedLoader.LoadProductsAsync(ProductService);
-        var apiResultTask = NotificationService.GetRecent();
-        await Task.WhenAll(productFeedTask, apiResultTask);
-
-        var productFeed = await productFeedTask;
-        productsFeedTruncated = productFeed.IsTruncated;
-        productsTotalCount = productFeed.TotalCount;
-
-        var allProducts = productFeed.Items;
-        var productsById = allProducts.ToDictionary(p => p.Id);
-
-        var lowStockProducts = AdminHeaderNotificationsBuilder.OrderLowStockProducts(allProducts);
-        AdminHeaderNotificationsBuilder.UpdateFirstSeenTimes(lowStockProducts, lowStockFirstSeenAt);
-
-        lowStockCount = lowStockProducts.Count;
-        lowStockProductIds.Clear();
-        foreach (var product in lowStockProducts)
-            lowStockProductIds.Add(product.Id);
-
-        var merged = new List<NotificationModel>();
-        var apiLowStockProductIds = new HashSet<Guid>();
-
-        var apiResult = await apiResultTask;
-        if (apiResult.Success && apiResult.Data is { Count: > 0 })
-        {
-            foreach (var apiNotif in apiResult.Data)
-            {
-                if (!AdminNotificationEnricher.Enrich(apiNotif, productsById))
-                    continue;
-
-                if (AdminNotificationEnricher.IsLowStockNotification(apiNotif)
-                    && apiNotif.ProductId is Guid productId)
-                    apiLowStockProductIds.Add(productId);
-
-                apiNotif.IsRead = IsNotificationRead(apiNotif);
-                merged.Add(apiNotif);
-            }
-        }
-
-        var lowStockNotifications = AdminHeaderNotificationsBuilder
-            .FromLowStockProducts(lowStockProducts, readNotificationIds, lowStockFirstSeenAt);
-
-        foreach (var clientNotif in lowStockNotifications)
-        {
-            if (clientNotif.ProductId is Guid productId && apiLowStockProductIds.Contains(productId))
-                continue;
-
-            if (merged.Any(n => n.Id == clientNotif.Id))
-                continue;
-
-            merged.Add(clientNotif);
-        }
-
-        notifications = merged
-            .OrderBy(n => n.IsRead)
-            .ThenBy(n => n.Type == NotificationType.LowStock ? 0 : 1)
-            .ThenByDescending(n => n.CreatedAt)
-            .ToList();
-
-        unreadCount = notifications.Count(n => !n.IsRead);
+        await ApplyNotificationFeedAsync(forceRefreshLowStock: true, updateDropdownList: true);
 
         isLoadingNotifications = false;
         await PersistReadStateAsync();
         StateHasChanged();
+    }
+
+    private async Task ApplyNotificationFeedAsync(bool forceRefreshLowStock, bool updateDropdownList)
+    {
+        var feed = await AdminHeaderNotificationFeedBuilder.BuildAsync(
+            NotificationService,
+            LowStockCache,
+            OrderService,
+            AffiliateService,
+            CustomerService,
+            readNotificationIds,
+            readNoteAtByCustomerId,
+            lowStockFirstSeenAt,
+            forceRefreshLowStock);
+
+        unreadCount = feed.UnreadCount;
+        lowStockCount = feed.LowStockCount;
+        pendingOrderCount = feed.PendingOrderCount;
+        pendingAffiliateCount = feed.PendingAffiliateCount;
+        customerMessageCount = feed.CustomerMessageCount;
+        lowStockProductIds.Clear();
+        foreach (var productId in feed.LowStockProductIds)
+            lowStockProductIds.Add(productId);
+
+        if (updateDropdownList)
+            notifications = feed.Notifications;
     }
 
     private void ToggleNotifications()
@@ -575,17 +574,12 @@
 
     private async Task MarkAllRead()
     {
-        foreach (var n in notifications)
-        {
-            n.IsRead = true;
-            readNotificationIds.Add(n.Id);
-            if (n.SizeStockId is Guid sizeStockId)
-                readNotificationIds.Add(sizeStockId);
-            if (n.ProductId is Guid productId)
-                readNotificationIds.Add(productId);
-        }
+        foreach (var n in notifications.ToList())
+            MarkNotificationReadLocally(n);
 
+        notifications.Clear();
         unreadCount = 0;
+        SyncUnreadMessageCountFromNotes();
         StateHasChanged();
         await NotificationService.MarkAllRead();
         await PersistReadStateAsync();
@@ -593,15 +587,19 @@
 
     private async Task HandleNotificationClick(NotificationModel notif)
     {
-        notif.IsRead = true;
-        readNotificationIds.Add(notif.Id);
-        if (notif.SizeStockId is Guid sizeStockId)
-            readNotificationIds.Add(sizeStockId);
-        if (notif.ProductId is Guid productId)
-            readNotificationIds.Add(productId);
-
-        unreadCount = notifications.Count(n => !n.IsRead);
+        MarkNotificationReadLocally(notif);
+        notifications.Remove(notif);
+        unreadCount = notifications.Count;
+        SyncUnreadMessageCountFromNotes();
         isNotificationsOpen = false;
+        StateHasChanged();
+
+        if (notif.Type == NotificationType.CustomerMessage && notif.CustomerId is Guid customerId)
+        {
+            var linkHasCustomerFocus = notif.Link?.Contains("customerId=", StringComparison.OrdinalIgnoreCase) == true;
+            if (!linkHasCustomerFocus)
+                CustomersTabCoordinator.NotifyCustomerFocus(customerId);
+        }
 
         var focusProductId = AdminNotificationEnricher.ResolveProductId(notif)
                              ?? (AdminNotificationEnricher.IsLowStockNotification(notif)
@@ -682,6 +680,89 @@
         NavigationManager.NavigateTo("/admin/products?view=low-stock");
     }
 
+    private void ViewAllPendingOrders()
+    {
+        isNotificationsOpen = false;
+        NavigationManager.NavigateTo("/admin/orders?tab=orders&status=pending");
+    }
+
+    private void ViewAllPendingAffiliates()
+    {
+        isNotificationsOpen = false;
+        NavigationManager.NavigateTo("/admin/affiliates?tab=pending");
+    }
+
+    private void MarkNotificationReadLocally(NotificationModel notif)
+    {
+        if (notif.Type == NotificationType.CustomerMessage && notif.CustomerId is Guid customerId)
+        {
+            AdminHeaderMessagesBuilder.MarkCustomerNoteRead(
+                readNoteAtByCustomerId,
+                customerId,
+                notif.CreatedAt);
+            return;
+        }
+
+        if (notif.Id != Guid.Empty)
+            readNotificationIds.Add(notif.Id);
+
+        if (notif.SizeStockId is Guid sizeStockId)
+            readNotificationIds.Add(sizeStockId);
+
+        if (notif.ProductId is Guid productId)
+            readNotificationIds.Add(productId);
+    }
+
+    private void SyncUnreadMessageCountFromNotes()
+    {
+        if (loadedNoteEntries.Count == 0)
+            return;
+
+        unreadMessageCount = AdminHeaderMessagesBuilder.CountUnreadNotes(
+            loadedNoteEntries,
+            readNoteAtByCustomerId);
+
+        foreach (var message in messages)
+        {
+            message.IsRead = AdminHeaderMessagesBuilder.IsNoteRead(
+                new CustomerNoteModel
+                {
+                    CustomerId = message.CustomerId,
+                    CreatedAt = message.CreatedAt
+                },
+                readNoteAtByCustomerId);
+        }
+    }
+
+    private string GetNotificationSection(string type) => type switch
+    {
+        NotificationType.Order => $"Pending orders ({pendingOrderCount})",
+        NotificationType.Affiliate => $"Affiliate applications ({pendingAffiliateCount})",
+        NotificationType.CustomerMessage => $"Customer notes ({customerMessageCount})",
+        NotificationType.LowStock or NotificationType.Stock => $"Low stock ({lowStockCount})",
+        _ when type.Contains("stock", StringComparison.OrdinalIgnoreCase) => $"Low stock ({lowStockCount})",
+        _ => "Other"
+    };
+
+    private IEnumerable<(string? SectionLabel, NotificationModel Notification)> GetNotificationsWithSections()
+    {
+        string? lastSectionLabel = null;
+
+        foreach (var notif in notifications)
+        {
+            var sectionLabel = GetNotificationSection(notif.Type);
+            string? header = null;
+
+            if (!string.Equals(sectionLabel, lastSectionLabel, StringComparison.Ordinal))
+            {
+                lastSectionLabel = sectionLabel;
+                header = sectionLabel;
+            }
+
+            yield return (header, notif);
+        }
+    }
+
     private static string GetNotificationDetail(NotificationModel notif)
     {
         if (AdminNotificationEnricher.IsLowStockNotification(notif))
@@ -692,6 +773,9 @@
             if (!string.IsNullOrWhiteSpace(notif.SizeLabel))
                 return $"Size {notif.SizeLabel} · tap to restock";
         }
+
+        if (!string.IsNullOrWhiteSpace(notif.TimeAgo))
+            return $"{notif.TimeAgo} · {notif.TimeDisplay}";
 
         return notif.TimeDisplay;
     }
@@ -743,6 +827,8 @@
     private static string GetNotifIconClass(string type) => type switch
     {
         NotificationType.Order => "at-notif-item__icon--order",
+        NotificationType.Affiliate => "at-notif-item__icon--ticket",
+        NotificationType.CustomerMessage => "at-notif-item__icon--ticket",
         NotificationType.Ticket => "at-notif-item__icon--ticket",
         NotificationType.Return => "at-notif-item__icon--return",
         NotificationType.LowStock => "at-notif-item__icon--stock",
@@ -754,6 +840,8 @@
     private RenderFragment GetNotifIcon(string type) => type switch
     {
         NotificationType.Order => @<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"></path></svg>,
+        NotificationType.Affiliate => @<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>,
+        NotificationType.CustomerMessage => @<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"></rect><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></svg>,
         NotificationType.Ticket => @<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path></svg>,
         NotificationType.Return => @<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>,
         NotificationType.LowStock => StockIcon(),
@@ -772,6 +860,4 @@
         OrdersTabCoordinator.BadgeCountsRefreshRequested -= OnOrdersChanged;
     }
 
-    private static readonly IReadOnlyDictionary<Guid, ProductModel> EmptyProductCatalog =
-        new Dictionary<Guid, ProductModel>();
 }

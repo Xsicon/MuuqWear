@@ -8,7 +8,7 @@
 @using MuuqWear.Web.Components.Shared
 @inject IJobPostingService JobPostingService
 @inject NavigationManager Navigation
-@attribute [Authorize(Roles = "admin")]
+@attribute [Authorize(Roles = AdminPortalRoles.All)]
 
 <PageTitle>Applications — Admin</PageTitle>
 

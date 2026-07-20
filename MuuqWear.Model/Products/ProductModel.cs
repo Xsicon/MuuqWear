@@ -88,6 +88,7 @@ public class BatchUpdateSizeStockResult
 }
 public class SizeStockModel
 {
+    [JsonPropertyName("id")]
     public Guid Id { get; set; }
 
     [JsonPropertyName("sizeStockId")]

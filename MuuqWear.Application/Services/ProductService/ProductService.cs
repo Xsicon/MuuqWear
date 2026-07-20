@@ -1,6 +1,7 @@
 ﻿using MuuqWear.Application.Shared;
 using MuuqWear.Model.Products;
 using MuuqWear.Model.Shared;
+using System.Net;
 using System.Net.Http.Json;
 
 namespace MuuqWear.Application.Services.ProductService;
@@ -524,6 +525,9 @@ public class ProductService : IProductService
                 $"api/Product/{productId}/size-stock/batch",
                 request);
 
+            if (result.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.MethodNotAllowed)
+                return await UpdateSizeStockSequentialAsync(productId, request);
+
             if (!result.IsSuccessStatusCode)
             {
                 var message = $"Server error: {result.StatusCode}";
@@ -563,6 +567,79 @@ public class ProductService : IProductService
                 Message = HttpResponseReader.FromException(ex)
             };
         }
+    }
+
+    /// <summary>
+    /// Fallback when the batch endpoint is not deployed on the API yet.
+    /// Uses the per-size PATCH/POST endpoints that existed before batch support.
+    /// </summary>
+    private async Task<Response<BatchUpdateSizeStockResult>> UpdateSizeStockSequentialAsync(
+        Guid productId,
+        BatchUpdateSizeStockRequest request)
+    {
+        if (request.Items.Count == 0 && request.Upserts.Count == 0)
+        {
+            return new Response<BatchUpdateSizeStockResult>
+            {
+                Success = false,
+                Message = "No size stock rows to update."
+            };
+        }
+
+        foreach (var item in request.Items)
+        {
+            if (item.SizeStockId == Guid.Empty)
+            {
+                return new Response<BatchUpdateSizeStockResult>
+                {
+                    Success = false,
+                    Message = "Missing size stock id. Close the modal and try again."
+                };
+            }
+
+            var updateResult = await UpdateSizeStock(item.SizeStockId, item.Quantity);
+            if (!updateResult.Success)
+            {
+                return new Response<BatchUpdateSizeStockResult>
+                {
+                    Success = false,
+                    Message = updateResult.Message ?? "Failed to update stock"
+                };
+            }
+        }
+
+        foreach (var upsert in request.Upserts)
+        {
+            var addResult = await AddSizeStock(productId, upsert.Size, upsert.Quantity);
+            if (!addResult.Success)
+            {
+                return new Response<BatchUpdateSizeStockResult>
+                {
+                    Success = false,
+                    Message = addResult.Message ?? "Failed to add size stock"
+                };
+            }
+        }
+
+        var refreshed = await GetSizeStock(productId);
+        if (!refreshed.Success || refreshed.Data == null)
+        {
+            return new Response<BatchUpdateSizeStockResult>
+            {
+                Success = false,
+                Message = refreshed.Message ?? "Stock updated but could not refresh sizes."
+            };
+        }
+
+        return new Response<BatchUpdateSizeStockResult>
+        {
+            Success = true,
+            Data = new BatchUpdateSizeStockResult
+            {
+                SizeStock = refreshed.Data,
+                TotalStock = refreshed.Data.Sum(s => s.Quantity)
+            }
+        };
     }
 
     // =============================================

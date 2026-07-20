@@ -10,7 +10,7 @@
 @inject IProductService ProductService
 @inject ICategoryService CategoryService
 @implements IDisposable
-@attribute [Authorize(Roles = "admin")]
+@attribute [Authorize(Roles = AdminPortalRoles.All)]
 
 <PageTitle>Products &amp; Inventory</PageTitle>
 
