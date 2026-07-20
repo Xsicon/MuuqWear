@@ -1,0 +1,95 @@
+<div class="st-tab">
+    <div class="st-tab-header">
+        <p class="st-tab-eyebrow">System &amp; Technology</p>
+        <h2 class="st-tab-title">System Health</h2>
+        <p class="st-tab-subtitle">Monitor system health and integrations</p>
+    </div>
+
+    @if (isLoading)
+    {
+        <p class="st-empty">Loading system health...</p>
+    }
+    else if (overview is null)
+    {
+        <p class="st-empty st-empty--error">@(IntegrationService.LastError ?? "Unable to load system health.")</p>
+    }
+    else
+    {
+        <div class="st-card-grid st-card-grid--3">
+            <article class="st-card">
+                <div class="st-card__head">
+                    <span class="st-card__icon st-card__icon--database" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M3 5V19A9 3 0 0 0 21 19V5"></path><path d="M3 12A9 3 0 0 0 21 12"></path></svg>
+                    </span>
+                    <div>
+                        <h3 class="st-card__title">Database</h3>
+                        <div class="st-status-line @(overview.DatabaseIsHealthy ? "st-status-line--ok" : "st-status-line--bad")">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.801 10A10 10 0 1 1 17 3.335"></path><path d="m9 11 3 3L22 4"></path></svg>
+                            <span>@(overview.DatabaseIsHealthy ? "Connected" : "Disconnected")</span>
+                        </div>
+                    </div>
+                </div>
+                <p class="st-card__meta">Last Backup: @BackupDisplay</p>
+            </article>
+
+            <article class="st-card">
+                <div class="st-card__head">
+                    <span class="st-card__icon st-card__icon--stripe" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"></rect><line x1="2" x2="22" y1="10" y2="10"></line></svg>
+                    </span>
+                    <div>
+                        <h3 class="st-card__title">Stripe</h3>
+                        <div class="st-status-line @(overview.StripeIsHealthy ? "st-status-line--ok" : "st-status-line--bad")">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.801 10A10 10 0 1 1 17 3.335"></path><path d="m9 11 3 3L22 4"></path></svg>
+                            <span>@(overview.StripeIsHealthy ? "Connected" : "Disconnected")</span>
+                        </div>
+                    </div>
+                </div>
+                <p class="st-card__meta">@overview.StripeStatus</p>
+            </article>
+
+            <article class="st-card">
+                <div class="st-card__head">
+                    <span class="st-card__icon st-card__icon--server" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="8" x="2" y="2" rx="2"></rect><rect width="20" height="8" x="2" y="14" rx="2"></rect><line x1="6" x2="6.01" y1="6" y2="6"></line><line x1="6" x2="6.01" y1="18" y2="18"></line></svg>
+                    </span>
+                    <div>
+                        <h3 class="st-card__title">Supabase</h3>
+                        <div class="st-status-line @(overview.SupabaseIsHealthy ? "st-status-line--ok" : "st-status-line--bad")">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.801 10A10 10 0 1 1 17 3.335"></path><path d="m9 11 3 3L22 4"></path></svg>
+                            <span>@(overview.SupabaseIsHealthy ? "Connected" : "Disconnected")</span>
+                        </div>
+                    </div>
+                </div>
+                <p class="st-card__meta">Active Users: @ActiveUsersDisplay</p>
+            </article>
+        </div>
+
+        <article class="st-panel">
+            <h3 class="st-panel__title">System Health</h3>
+            <dl class="st-metrics">
+                <div class="st-metrics__row">
+                    <dt>Database Status:</dt>
+                    <dd>@HealthLabel(overview.DatabaseIsHealthy)</dd>
+                </div>
+                <div class="st-metrics__row">
+                    <dt>Stripe Status:</dt>
+                    <dd>@HealthLabel(overview.StripeIsHealthy)</dd>
+                </div>
+                <div class="st-metrics__row">
+                    <dt>Supabase Status:</dt>
+                    <dd>@HealthLabel(overview.SupabaseIsHealthy)</dd>
+                </div>
+                <div class="st-metrics__row">
+                    <dt>Last Backup:</dt>
+                    <dd>@BackupDisplay</dd>
+                </div>
+                <div class="st-metrics__row">
+                    <dt>Active Users:</dt>
+                    <dd>@ActiveUsersDisplay</dd>
+                </div>
+            </dl>
+        </article>
+    }
+</div>
+

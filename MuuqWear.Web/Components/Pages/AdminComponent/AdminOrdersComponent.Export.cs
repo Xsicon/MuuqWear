@@ -121,7 +121,7 @@ public partial class AdminOrdersComponent
         }
         catch (Exception ex)
         {
-            exportMessage = $"Export failed: {ex.Message}";
+            exportMessage = $"Export failed: {AdminUiErrorHelper.FromException(ex)}";
         }
         finally
         {
@@ -156,7 +156,8 @@ public partial class AdminOrdersComponent
                 ExportPageSize);
 
             if (!result.Success || result.Data?.Data is null)
-                break;
+                throw new InvalidOperationException(
+                    AdminUiErrorHelper.FromApi(result.Message, "Failed to fetch orders for export."));
 
             all.AddRange(result.Data.Data);
 
@@ -182,7 +183,8 @@ public partial class AdminOrdersComponent
                 ExportPageSize);
 
             if (!result.Success || result.Data?.Data is null)
-                break;
+                throw new InvalidOperationException(
+                    AdminUiErrorHelper.FromApi(result.Message, "Failed to fetch returns for export."));
 
             all.AddRange(result.Data.Data);
 
@@ -208,7 +210,8 @@ public partial class AdminOrdersComponent
                 ExportPageSize);
 
             if (!result.Success || result.Data?.Data is null)
-                break;
+                throw new InvalidOperationException(
+                    AdminUiErrorHelper.FromApi(result.Message, "Failed to fetch refunds for export."));
 
             all.AddRange(result.Data.Data);
 

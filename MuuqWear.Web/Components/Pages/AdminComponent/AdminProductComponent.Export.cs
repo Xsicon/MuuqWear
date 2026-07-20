@@ -101,7 +101,7 @@ public partial class AdminProductComponent
         }
         catch (Exception ex)
         {
-            exportMessage = $"Export failed: {ex.Message}";
+            exportMessage = $"Export failed: {AdminUiErrorHelper.FromException(ex)}";
         }
         finally
         {
@@ -137,7 +137,8 @@ public partial class AdminProductComponent
             });
 
             if (!result.Success || result.Data?.Data is null)
-                break;
+                throw new InvalidOperationException(
+                    AdminUiErrorHelper.FromApi(result.Message, "Failed to fetch products for export."));
 
             all.AddRange(result.Data.Data);
 

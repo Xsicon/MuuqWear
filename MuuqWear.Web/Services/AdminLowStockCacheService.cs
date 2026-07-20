@@ -6,7 +6,6 @@ namespace MuuqWear.Web.Services;
 
 /// <summary>
 /// Caches low-stock product snapshots for admin nav badges and dashboard.
-/// Avoids refetching up to 1000 products on every admin navigation.
 /// </summary>
 public sealed class AdminLowStockCacheService
 {
@@ -17,6 +16,8 @@ public sealed class AdminLowStockCacheService
 
     private IReadOnlyList<ProductModel>? _lowStockProducts;
     private DateTime _cachedAt;
+
+    public string? LastError { get; private set; }
 
     public AdminLowStockCacheService(IProductService productService)
     {
@@ -62,9 +63,11 @@ public sealed class AdminLowStockCacheService
 
             if (!result.Success || result.Data?.Data == null)
             {
-                _lowStockProducts = Array.Empty<ProductModel>();
-                _cachedAt = DateTime.UtcNow;
-                return (0, _lowStockProducts);
+                LastError = AdminUiErrorHelper.FromApi(result.Message, "Failed to load low-stock products.");
+                if (_lowStockProducts != null)
+                    return (_lowStockProducts.Count, _lowStockProducts);
+
+                return (0, Array.Empty<ProductModel>());
             }
 
             foreach (var product in result.Data.Data)
@@ -76,6 +79,7 @@ public sealed class AdminLowStockCacheService
                 .ThenBy(p => p.Name)
                 .ToList();
             _cachedAt = DateTime.UtcNow;
+            LastError = null;
 
             return (_lowStockProducts.Count, _lowStockProducts);
         }

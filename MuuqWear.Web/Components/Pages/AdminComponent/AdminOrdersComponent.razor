@@ -164,7 +164,7 @@
             }
             else if (!orders.Any())
             {
-                <p class="orders-empty">No orders found.</p>
+                <p class="@(string.IsNullOrEmpty(ordersError) ? "orders-empty" : "orders-error")">@(string.IsNullOrEmpty(ordersError) ? "No orders found." : ordersError)</p>
             }
             else
             {
@@ -278,7 +278,7 @@
             }
             else if (!returns.Any())
             {
-                <p class="orders-empty">No returns found.</p>
+                <p class="@(string.IsNullOrEmpty(returnsError) ? "orders-empty" : "orders-error")">@(string.IsNullOrEmpty(returnsError) ? "No returns found." : returnsError)</p>
             }
             else
             {
@@ -495,6 +495,10 @@
         @if (isLoadingDetail)
         {
             <p style="color:#4A5C7A;font-size:14px">Loading...</p>
+        }
+        else if (!string.IsNullOrEmpty(viewDetailError))
+        {
+            <p class="orders-error">@viewDetailError</p>
         }
         else
         {

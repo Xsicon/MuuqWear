@@ -47,6 +47,15 @@
     margin: 0 0 16px;
 }
 
+.content-error--warn {
+    color: #92400E;
+    background: #FEF3C7;
+    border: 1px solid #FDE68A;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-weight: 500;
+}
+
 /* ─── UNDERLINE TABS ─────────────────────────────────────────── */
 .content-tabs {
     display: flex;

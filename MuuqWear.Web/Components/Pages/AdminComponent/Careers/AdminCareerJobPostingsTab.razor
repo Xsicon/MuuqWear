@@ -24,6 +24,10 @@
         {
             <p class="jobs-empty">Loading...</p>
         }
+        else if (!string.IsNullOrEmpty(loadError))
+        {
+            <p class="jobs-empty jobs-empty--error">@loadError</p>
+        }
         else if (!jobs.Any())
         {
             <p class="jobs-empty">No job postings yet. Click "New Posting" to create one.</p>

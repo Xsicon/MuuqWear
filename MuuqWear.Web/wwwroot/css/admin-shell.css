@@ -386,6 +386,11 @@ html[data-admin-theme="dark"] .an-nav__subitem.an-nav--loading::after {
     color: #B8860B;
 }
 
+.an-nav__badge--warn {
+    background: rgba(237, 108, 2, 0.12);
+    color: #ED6C02;
+}
+
 /* ─── NAV GROUPS (expandable sections) ───────────────────── */
 .an-nav-group {
     margin-bottom: 2px;

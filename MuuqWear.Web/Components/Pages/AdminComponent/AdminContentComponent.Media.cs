@@ -37,6 +37,7 @@ public partial class AdminContentComponent
                 .ToList();
 
             var usage = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            var failedCategories = 0;
 
             foreach (var category in new[]
                      {
@@ -47,10 +48,20 @@ public partial class AdminContentComponent
             {
                 var result = await ContentService.GetAll(category);
                 if (!result.Success || result.Data == null)
+                {
+                    failedCategories++;
                     continue;
+                }
 
                 foreach (var item in result.Data)
                     RegisterMediaUsage(usage, item.ImageUrl, item.SecondImageUrl, item.Content);
+            }
+
+            if (failedCategories > 0)
+            {
+                mediaError = failedCategories == 3
+                    ? "Unable to load media library."
+                    : "Some content categories could not be loaded. The library may be incomplete.";
             }
 
             mediaItems.Clear();

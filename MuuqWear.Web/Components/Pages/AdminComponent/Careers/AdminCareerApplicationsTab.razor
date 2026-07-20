@@ -8,6 +8,11 @@
         <p class="cr-tab-subtitle">Review and manage job applications</p>
     </div>
 
+    @if (!string.IsNullOrEmpty(loadError))
+    {
+        <p class="cr-inbox-error" role="alert">@loadError</p>
+    }
+
     @if (!string.IsNullOrEmpty(actionError))
     {
         <p class="cr-inbox-error" role="alert">@actionError</p>

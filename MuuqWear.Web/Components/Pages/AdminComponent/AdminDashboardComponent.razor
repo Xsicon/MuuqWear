@@ -18,7 +18,9 @@
 @inject IOrderService OrderService
 @inject IHelpCenterService HelpService
 @inject IAdminBadgeService BadgeService
+@using MuuqWear.Application.Services.AdminSystemService
 @using MuuqWear.Web.Services
+@inject IAdminSystemService AdminSystemService
 @inject AdminLowStockCacheService LowStockCache
 @inject IAffiliateService AffiliateService
 @inject AuthenticationStateProvider AuthStateProvider
@@ -39,6 +41,11 @@
             <h1 class="ov-welcome__title">Welcome back, @userFirstName!</h1>
             <p class="ov-welcome__sub">@welcomeMessage</p>
         </header>
+
+        @if (!string.IsNullOrEmpty(loadError))
+        {
+            <p class="ov-load-error">@loadError</p>
+        }
 
         <!-- Stats -->
         <div class="ov-stats">
@@ -92,15 +99,20 @@
                 </a>
             </div>
 
-            <div class="ov-stat">
+            <div class="ov-stat ov-stat--link">
+                <a href="/admin/system?tab=health" class="ov-stat__link">
                 <div class="ov-stat__top">
                     <span class="ov-stat__icon ov-stat__icon--green" aria-hidden="true">
                         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.801 10A10 10 0 1 1 17 3.335"></path><path d="m9 11 3 3L22 4"></path></svg>
                     </span>
-                    <span class="ov-stat__trend ov-stat__trend--up">100%</span>
+                    @if (systemHealthLoaded && systemHealthHealthy)
+                    {
+                        <span class="ov-stat__trend ov-stat__trend--up">OK</span>
+                    }
                 </div>
-                <p class="ov-stat__value">Healthy</p>
+                <p class="ov-stat__value">@systemHealthValue</p>
                 <p class="ov-stat__label">System Status</p>
+                </a>
             </div>
         </div>
 
@@ -112,7 +124,6 @@
                 <a href="/admin/orders?tab=returns" class="ov-btn ov-btn--secondary">Process Returns</a>
                 <a href="/admin/orders?tab=refunds&status=pending" class="ov-btn ov-btn--secondary">Pending Refunds</a>
                 <a href="/admin/products?view=low-stock" class="ov-btn ov-btn--secondary">Low Stock Alerts</a>
-                <a href="/admin/analytics" class="ov-btn ov-btn--secondary">Export Data</a>
             </div>
         </section>
 
@@ -167,6 +178,7 @@
 
 @code {
     private bool isLoading = true;
+    private string? loadError;
     private string userFirstName = "Admin";
     private string welcomeMessage = "You have full access to all dashboard features and settings.";
     private int pendingOrders;
@@ -176,22 +188,52 @@
 
     private List<AccessModule> accessModules = new();
     private List<ActivityItem> recentActivity = new();
+    private string systemHealthValue = "—";
+    private bool systemHealthHealthy;
+    private bool systemHealthLoaded;
 
     protected override async Task OnInitializedAsync()
     {
-        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
-        var fullName = user.FindFirst("FullName")?.Value
-                       ?? user.FindFirst("name")?.Value
-                       ?? "Admin";
-        userFirstName = fullName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? "Admin";
+        try
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+            var fullName = user.FindFirst("FullName")?.Value
+                           ?? user.FindFirst("name")?.Value
+                           ?? "Admin";
+            userFirstName = fullName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? "Admin";
 
-        accessModules = BuildAccessModules();
+            accessModules = BuildAccessModules();
 
-        await Task.WhenAll(LoadBadgeCounts(), LoadLowStockProducts());
-        await LoadRecentActivity();
+            await Task.WhenAll(LoadBadgeCounts(), LoadLowStockProducts(), LoadSystemHealth());
+            await LoadRecentActivity();
+        }
+        catch (Exception ex)
+        {
+            loadError = AdminUiErrorHelper.FromException(ex);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
 
-        isLoading = false;
+    private async Task LoadSystemHealth()
+    {
+        var result = await AdminSystemService.GetOverviewAsync();
+        systemHealthLoaded = true;
+
+        if (result.Success && result.Data != null)
+        {
+            var overview = result.Data;
+            systemHealthHealthy = overview.DatabaseIsHealthy && overview.StripeIsHealthy && overview.SupabaseIsHealthy;
+            systemHealthValue = systemHealthHealthy ? "Healthy" : "Degraded";
+        }
+        else
+        {
+            systemHealthHealthy = false;
+            systemHealthValue = "Unavailable";
+        }
     }
 
     private async Task LoadLowStockProducts()
@@ -295,7 +337,7 @@
         new("Affiliate Program", "Affiliate management", "/admin/affiliates", AffiliatesAccessIcon()),
         new("Customer Support", "Support system access", "/admin/tickets", SupportAccessIcon()),
         new("Career Management", "Job posting & hiring", "/admin/careers?tab=postings", CareersAccessIcon()),
-        new("System & Technology", "System administration", "/admin/settings", SystemAccessIcon()),
+        new("System & Technology", "System administration", "/admin/system?tab=health", SystemAccessIcon()),
     };
 
     private static string FormatRelativeTime(DateTime? utc)

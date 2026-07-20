@@ -989,8 +989,30 @@
     color: #22C55E;
 }
 
+::deep .cs-toast--error {
+    background: #FEE2E2;
+    color: #991B1B;
+}
+
 ::deep .cs-loading {
     font-size: 14px;
     color: #7A8BA8;
     margin-bottom: 16px;
+}
+
+::deep .cs-error-banner {
+    color: #C44545;
+    font-size: 13px;
+    font-weight: 600;
+    margin: 0 0 16px;
+    padding: 10px 14px;
+    background: #FEE2E2;
+    border: 1px solid #FECACA;
+    border-radius: 8px;
+}
+
+::deep .cs-error-banner--inline {
+    margin: 8px 0 0;
+    padding: 8px 12px;
+    font-size: 12px;
 }

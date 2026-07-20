@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components;
 using MuuqWear.Application.Services.JobPostingService;
 using MuuqWear.Model.JobApplication;
 using MuuqWear.Model.JobPosting;
+using MuuqWear.Web.Services;
 
 namespace MuuqWear.Web.Components.Pages.AdminComponent.Careers;
 
@@ -18,6 +19,7 @@ public partial class AdminCareerApplicationsTab
     private List<InboxItem> allItems = [];
     private List<InboxItem> filteredItems = [];
     private bool isLoading = true;
+    private string? loadError;
     private string jobFilter = string.Empty;
     private string statusFilter = "all";
     private string search = string.Empty;
@@ -44,27 +46,48 @@ public partial class AdminCareerApplicationsTab
     {
         isLoading = true;
         actionError = null;
+        loadError = null;
         StateHasChanged();
 
-        var jobsResult = await JobPostingService.GetAll();
-        jobs = jobsResult.Success && jobsResult.Data != null ? jobsResult.Data : [];
-
-        var tasks = jobs.Select(async job =>
+        try
         {
-            var appsResult = await JobPostingService.GetApplicationsByJob(job.Id);
-            var apps = appsResult.Success && appsResult.Data != null ? appsResult.Data : [];
-            return apps.Select(app => new InboxItem(app, job.Title));
-        });
+            var jobsResult = await JobPostingService.GetAll();
+            if (!jobsResult.Success || jobsResult.Data == null)
+            {
+                jobs = [];
+                allItems = [];
+                loadError = AdminUiErrorHelper.FromApi(jobsResult.Message, "Failed to load job postings.");
+                ApplyFilters();
+                await NotifyCounts();
+                return;
+            }
 
-        var results = await Task.WhenAll(tasks);
-        allItems = results.SelectMany(x => x).OrderByDescending(x => x.Application.CreatedAt).ToList();
+            jobs = jobsResult.Data;
 
-        SyncJobFilterFromParameter();
-        ApplyFilters();
-        await NotifyCounts();
+            var tasks = jobs.Select(async job =>
+            {
+                var appsResult = await JobPostingService.GetApplicationsByJob(job.Id);
+                var apps = appsResult.Success && appsResult.Data != null ? appsResult.Data : [];
+                return apps.Select(app => new InboxItem(app, job.Title));
+            });
 
-        isLoading = false;
-        StateHasChanged();
+            var results = await Task.WhenAll(tasks);
+            allItems = results.SelectMany(x => x).OrderByDescending(x => x.Application.CreatedAt).ToList();
+        }
+        catch (Exception ex)
+        {
+            jobs = [];
+            allItems = [];
+            loadError = AdminUiErrorHelper.FromException(ex);
+        }
+        finally
+        {
+            SyncJobFilterFromParameter();
+            ApplyFilters();
+            await NotifyCounts();
+            isLoading = false;
+            StateHasChanged();
+        }
     }
 
     private void OnSearchInput(ChangeEventArgs e)

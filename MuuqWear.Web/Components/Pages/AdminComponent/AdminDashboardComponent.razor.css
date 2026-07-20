@@ -12,6 +12,13 @@
     margin: 0;
 }
 
+.ov-load-error {
+    color: #C44545;
+    font-size: 13px;
+    font-weight: 600;
+    margin: 0 0 16px;
+}
+
 .ov-empty {
     padding: 13px 0;
 }

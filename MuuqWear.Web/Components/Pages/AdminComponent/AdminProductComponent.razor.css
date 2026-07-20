@@ -465,6 +465,14 @@
     text-align: center;
 }
 
+.products-error {
+    color: #C44545;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 34px 0;
+    text-align: center;
+}
+
 .product-card {
     background: var(--admin-surface, #fff);
     border: 1px solid var(--admin-border, rgba(169, 183, 204, 0.3));

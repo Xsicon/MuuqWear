@@ -20,6 +20,8 @@ public sealed class AdminContentCountsCacheService
     private ContentCountsSnapshot? _snapshot;
     private DateTime _cachedAt;
 
+    public string? LastError { get; private set; }
+
     public AdminContentCountsCacheService(
         IContentService contentService,
         IVoteService voteService)
@@ -63,6 +65,20 @@ public sealed class AdminContentCountsCacheService
             var voteActive = voteActiveTask.Result;
             var voteFinished = voteFinishedTask.Result;
 
+            var failures = new List<string>();
+            if (!journal.Success) failures.Add(AdminUiErrorHelper.FromApi(journal.Message, "Failed to load journal content."));
+            if (!design.Success) failures.Add(AdminUiErrorHelper.FromApi(design.Message, "Failed to load design history."));
+            if (!events.Success) failures.Add(AdminUiErrorHelper.FromApi(events.Message, "Failed to load events."));
+            if (!voteActive.Success) failures.Add(AdminUiErrorHelper.FromApi(voteActive.Message, "Failed to load active vote campaigns."));
+            if (!voteFinished.Success) failures.Add(AdminUiErrorHelper.FromApi(voteFinished.Message, "Failed to load finished vote campaigns."));
+
+            if (failures.Count > 0)
+            {
+                LastError = string.Join(" ", failures.Distinct());
+                if (_snapshot != null)
+                    return _snapshot;
+            }
+
             var journalItems = journal.Success && journal.Data != null ? journal.Data : [];
             var designItems = design.Success && design.Data != null ? design.Data : [];
             var eventItems = events.Success && events.Data != null ? events.Data : [];
@@ -100,6 +116,7 @@ public sealed class AdminContentCountsCacheService
 
             _snapshot = snapshot;
             _cachedAt = DateTime.UtcNow;
+            LastError = null;
             return snapshot;
         }
         finally

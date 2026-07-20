@@ -36,6 +36,7 @@ public partial class AdminContentComponent : IDisposable
     private bool isFormOpen;
     private string formError = string.Empty;
     private string pageError = string.Empty;
+    private string? metricsWarning;
     private bool isSaving;
     private CreateContentItemModel form = new();
     private string formProductId = string.Empty;
@@ -117,9 +118,9 @@ public partial class AdminContentComponent : IDisposable
         {
             await ApplyCachedCountsAndHealthAsync(forceRefresh: false);
         }
-        catch
+        catch (Exception ex)
         {
-            // Background refresh — never break the page.
+            metricsWarning = AdminUiErrorHelper.FromException(ex);
         }
     }
 
@@ -136,6 +137,7 @@ public partial class AdminContentComponent : IDisposable
         healthJournalLowSeoCount = snapshot.HealthJournalLowSeoCount;
         healthJournalDraftCount = snapshot.HealthJournalDraftCount;
         healthVoteActiveCount = snapshot.HealthVoteActiveCount;
+        metricsWarning = ContentCountsCache.LastError;
 
         if (activeView == "media")
             tabCounts["media"] = mediaItems.Count;

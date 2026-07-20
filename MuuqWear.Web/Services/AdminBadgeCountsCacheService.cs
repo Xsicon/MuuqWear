@@ -16,6 +16,8 @@ public sealed class AdminBadgeCountsCacheService
     private AdminBadgeCountsModel? _counts;
     private DateTime _cachedAt;
 
+    public string? LastError { get; private set; }
+
     public AdminBadgeCountsCacheService(IAdminBadgeService badgeService)
     {
         _badgeService = badgeService;
@@ -39,8 +41,11 @@ public sealed class AdminBadgeCountsCacheService
             {
                 _counts = result.Data;
                 _cachedAt = DateTime.UtcNow;
+                LastError = null;
+                return _counts;
             }
 
+            LastError = AdminUiErrorHelper.FromApi(result.Message, "Failed to load badge counts.");
             return _counts;
         }
         finally

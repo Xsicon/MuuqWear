@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.WebUtilities;
 using MuuqWear.Application.Services.CustomerService;
 using MuuqWear.Application.Shared;
 using MuuqWear.Model.Customer;
+using MuuqWear.Web.Services;
 
 namespace MuuqWear.Web.Components.Pages.AdminComponent;
 
@@ -104,7 +105,7 @@ public partial class AdminCustomerComponent : IDisposable
 
             if (!result.Success || result.Data == null)
             {
-                errorMessage = result.Message ?? "Failed to load customers.";
+                errorMessage = AdminUiErrorHelper.FromApi(result.Message, "Failed to load customers.");
                 if (!customers.Any())
                 {
                     customers = new();
@@ -120,7 +121,19 @@ public partial class AdminCustomerComponent : IDisposable
             currentPage = result.Data.Page;
             pageSize = result.Data.PageSize > 0 ? result.Data.PageSize : pageSize;
             loadedCacheKey = GetCacheKey();
+            errorMessage = string.Empty;
             await EnsureDetailsSelectionAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = AdminUiErrorHelper.FromException(ex);
+            if (!customers.Any())
+            {
+                customers = new();
+                totalCount = 0;
+            }
+
+            await ShowToast(errorMessage, success: false);
         }
         finally
         {
@@ -198,7 +211,7 @@ public partial class AdminCustomerComponent : IDisposable
         }
         catch (Exception ex)
         {
-            errorMessage = ex.Message;
+            errorMessage = AdminUiErrorHelper.FromException(ex);
             StateHasChanged();
         }
     }

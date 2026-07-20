@@ -63,7 +63,7 @@ public partial class AdminCustomerComponent
         }
         catch (Exception ex)
         {
-            exportMessage = $"Export failed: {ex.Message}";
+            exportMessage = $"Export failed: {AdminUiErrorHelper.FromException(ex)}";
         }
         finally
         {
@@ -85,7 +85,8 @@ public partial class AdminCustomerComponent
                 ExportPageSize);
 
             if (!result.Success || result.Data?.Data is null)
-                break;
+                throw new InvalidOperationException(
+                    AdminUiErrorHelper.FromApi(result.Message, "Failed to fetch customers for export."));
 
             all.AddRange(result.Data.Data);
 

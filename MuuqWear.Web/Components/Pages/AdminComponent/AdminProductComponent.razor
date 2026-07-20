@@ -198,7 +198,9 @@
             }
             else if (!FilteredProducts.Any())
             {
-                <p class="products-empty">No products found.</p>
+                <p class="@(string.IsNullOrEmpty(pageLoadError) ? "products-empty" : "products-error")">
+                    @(string.IsNullOrEmpty(pageLoadError) ? "No products found." : pageLoadError)
+                </p>
             }
             else
             {

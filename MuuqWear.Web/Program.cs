@@ -6,9 +6,8 @@ using Microsoft.Extensions.Caching.Memory;
 using MuuqWear.Application.Interfaces;
 using MuuqWear.Application.Services.AddressService;
 using MuuqWear.Application.Services.AdminBadgeService;
-using MuuqWear.Application.Services.AdminUserService;
+using MuuqWear.Application.Services.AdminSystemService;
 using MuuqWear.Application.Services.AffiliateService;
-using MuuqWear.Application.Services.AnalyticsService;
 using MuuqWear.Application.Services.AuthService;
 using MuuqWear.Application.Services.CartService;
 using MuuqWear.Application.Services.WishlistService;
@@ -96,7 +95,7 @@ builder.Services.AddHttpClient<IMuuqsimoService, MuuqsimoService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
 });
-builder.Services.AddHttpClient<IAdminSettingService, AdminSettingService>(client =>
+builder.Services.AddHttpClient<IAdminSystemService, AdminSystemService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
 }).AddHttpMessageHandler<AuthenticatedHttpHandler>();
@@ -120,6 +119,8 @@ builder.Services.AddScoped<AdminContentTabCoordinator>();
 builder.Services.AddScoped<AdminAffiliatesTabCoordinator>();
 builder.Services.AddScoped<AdminSupportTabCoordinator>();
 builder.Services.AddScoped<AdminCareersTabCoordinator>();
+builder.Services.AddScoped<AdminSystemTechTabCoordinator>();
+builder.Services.AddScoped<AdminSystemTechIntegrationService>();
 builder.Services.AddSingleton<ICareerPageSettingsService, CareerPageSettingsService>();
 builder.Services.AddScoped<AdminLowStockCacheService>();
 builder.Services.AddScoped<AdminBadgeCountsCacheService>();
@@ -180,11 +181,6 @@ builder.Services.AddHttpClient<IAdminBadgeService, AdminBadgeService>(client =>
 .AddHttpMessageHandler<AuthenticatedHttpHandler>();
 
 builder.Services.AddHttpClient<IJobPostingService, JobPostingService>(client =>
-{
-    client.BaseAddress = new Uri(apiBaseUrl);
-})
-.AddHttpMessageHandler<AuthenticatedHttpHandler>();
-builder.Services.AddHttpClient<IAnalyticsService, AnalyticsService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
 })

@@ -10,6 +10,11 @@
         </div>
     </div>
 
+    @if (!string.IsNullOrEmpty(loadError))
+    {
+        <p class="cs-error-banner">@loadError</p>
+    }
+
     @if (isLoading)
     {
         <p class="cs-loading">Loading tickets…</p>
@@ -107,15 +112,18 @@
         {
             <div class="cs-empty">
                 <svg class="cs-empty__icon" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
-                <p>No tickets match your filters.</p>
+                <p>@(string.IsNullOrEmpty(loadError) ? "No tickets match your filters." : "Unable to load tickets.")</p>
             </div>
         }
     </div>
 
     @if (!string.IsNullOrEmpty(toast))
     {
-        <div class="cs-toast">
-            <svg class="cs-toast__icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.801 10A10 10 0 1 1 17 3.335"/><path d="m9 11 3 3L22 4"/></svg>
+        <div class="cs-toast @(toastIsError ? "cs-toast--error" : "")">
+            @if (!toastIsError)
+            {
+                <svg class="cs-toast__icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.801 10A10 10 0 1 1 17 3.335"/><path d="m9 11 3 3L22 4"/></svg>
+            }
             @toast
         </div>
     }

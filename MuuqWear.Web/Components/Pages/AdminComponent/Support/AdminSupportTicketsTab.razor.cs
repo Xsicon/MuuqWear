@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using MuuqWear.Application.Services.HelpCenterService;
 using MuuqWear.Model.HelpCenter;
+using MuuqWear.Web.Services;
 
 namespace MuuqWear.Web.Components.Pages.AdminComponent.Support;
 
@@ -13,11 +14,13 @@ public partial class AdminSupportTicketsTab : IDisposable
     private List<SupportTicketModel> tickets = [];
     private TicketStatsModel? stats;
     private bool isLoading = true;
+    private string? loadError;
     private string search = string.Empty;
     private string filterStatus = "All";
     private string filterPriority = "All";
     private Guid? updatingId;
     private string? toast;
+    private bool toastIsError;
     private System.Threading.Timer? toastTimer;
 
     private static readonly (string Key, string Label)[] StatusFilters =
@@ -49,16 +52,34 @@ public partial class AdminSupportTicketsTab : IDisposable
 
     protected override async Task OnInitializedAsync()
     {
-        await Task.WhenAll(LoadTickets(), LoadStats());
-        isLoading = false;
-        await NotifyCounts();
+        try
+        {
+            await Task.WhenAll(LoadTickets(), LoadStats());
+        }
+        catch (Exception ex)
+        {
+            loadError = AdminUiErrorHelper.FromException(ex);
+        }
+        finally
+        {
+            isLoading = false;
+            await NotifyCounts();
+        }
     }
 
     private async Task LoadTickets()
     {
         var result = await HelpCenterService.GetAllTickets(null, 1, 100);
         if (result.Success && result.Data != null)
+        {
             tickets = result.Data.Data;
+            loadError = null;
+        }
+        else
+        {
+            tickets = [];
+            loadError = AdminUiErrorHelper.FromApi(result.Message, "Failed to load support tickets.");
+        }
     }
 
     private async Task LoadStats()
@@ -89,27 +110,43 @@ public partial class AdminSupportTicketsTab : IDisposable
         updatingId = ticket.Id;
         StateHasChanged();
 
-        var result = await HelpCenterService.UpdateTicketStatus(ticket.Id, next);
-        if (result.Success)
+        try
         {
-            ticket.Status = next;
-            await LoadStats();
-            await NotifyCounts();
-            ShowToast("Ticket status updated");
+            var result = await HelpCenterService.UpdateTicketStatus(ticket.Id, next);
+            if (result.Success)
+            {
+                ticket.Status = next;
+                await LoadStats();
+                await NotifyCounts();
+                ShowToast("Ticket status updated");
+            }
+            else
+            {
+                ShowToast(AdminUiErrorHelper.FromApi(result.Message, "Failed to update ticket status."), isError: true);
+            }
         }
-
-        updatingId = null;
+        catch (Exception ex)
+        {
+            ShowToast(AdminUiErrorHelper.FromException(ex), isError: true);
+        }
+        finally
+        {
+            updatingId = null;
+            StateHasChanged();
+        }
     }
 
-    private void ShowToast(string message)
+    private void ShowToast(string message, bool isError = false)
     {
         toast = message;
+        toastIsError = isError;
         toastTimer?.Dispose();
         toastTimer = new System.Threading.Timer(_ =>
         {
             _ = InvokeAsync(() =>
             {
                 toast = null;
+                toastIsError = false;
                 StateHasChanged();
             });
         }, null, 2400, Timeout.Infinite);

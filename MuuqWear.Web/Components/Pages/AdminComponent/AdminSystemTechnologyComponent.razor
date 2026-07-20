@@ -1,0 +1,49 @@
+@page "/admin/system"
+@layout Layout.AdminLayoutComponent.AdminDashboardLayoutComponent
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.WebUtilities
+@using MuuqWear.Application.Shared
+@using MuuqWear.Web.Components.Pages.AdminComponent.SystemTech
+@using MuuqWear.Web.Components.Shared
+@attribute [Authorize(Roles = "admin")]
+@implements IDisposable
+
+<PageTitle>System &amp; Technology</PageTitle>
+
+<div class="st-page">
+    <div class="st-tabs" role="tablist" aria-label="System and technology sections">
+        @foreach (var tab in TabViews)
+        {
+            <button type="button"
+                    role="tab"
+                    aria-selected="@(activeTab == tab.Id)"
+                    class="st-tabs__item @(activeTab == tab.Id ? "st-tabs__item--active" : "")"
+                    @onclick="() => SwitchTab(tab.Id)">
+                @tab.Label
+            </button>
+        }
+    </div>
+
+    @switch (activeTab)
+    {
+        case "integrations":
+            <AdminSystemIntegrationsTab />
+            break;
+        case "sync":
+            <AdminSystemSyncTab />
+            break;
+        case "logs":
+            <AdminSystemLogsTab />
+            break;
+        case "jobs":
+            <AdminSystemJobsTab />
+            break;
+        default:
+            <AdminSystemHealthTab />
+            break;
+    }
+</div>
+
+<PageReadyNotifier IsLoading="false" />

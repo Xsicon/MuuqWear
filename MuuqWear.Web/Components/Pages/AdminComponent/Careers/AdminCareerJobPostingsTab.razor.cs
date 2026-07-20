@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using MuuqWear.Application.Services.JobPostingService;
 using MuuqWear.Model.JobPosting;
+using MuuqWear.Web.Services;
 
 namespace MuuqWear.Web.Components.Pages.AdminComponent.Careers;
 
@@ -12,6 +13,7 @@ public partial class AdminCareerJobPostingsTab
 
     private List<JobPostingModel> jobs = [];
     private bool isLoading;
+    private string? loadError;
     private bool isFormOpen;
     private bool isEditMode;
     private bool isSaving;
@@ -26,13 +28,30 @@ public partial class AdminCareerJobPostingsTab
     private async Task LoadJobs()
     {
         isLoading = true;
+        loadError = null;
         StateHasChanged();
 
-        var result = await JobPostingService.GetAll();
-        jobs = result.Success && result.Data != null ? result.Data : [];
-
-        isLoading = false;
-        StateHasChanged();
+        try
+        {
+            var result = await JobPostingService.GetAll();
+            if (result.Success && result.Data != null)
+                jobs = result.Data;
+            else
+            {
+                jobs = [];
+                loadError = AdminUiErrorHelper.FromApi(result.Message, "Failed to load job postings.");
+            }
+        }
+        catch (Exception ex)
+        {
+            jobs = [];
+            loadError = AdminUiErrorHelper.FromException(ex);
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
     }
 
     private void OpenCreateForm()

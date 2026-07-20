@@ -1,0 +1,68 @@
+<div class="st-tab">
+    <div class="st-tab-header">
+        <p class="st-tab-eyebrow">System &amp; Technology</p>
+        <h2 class="st-tab-title">Logs</h2>
+        <p class="st-tab-subtitle">View system logs and errors</p>
+    </div>
+
+    <div class="st-toolbar">
+        <select class="st-input st-input--filter" @bind="daysFilter" @bind:after="LoadLogsAsync">
+            <option value="7">Last 7 Days</option>
+            <option value="30">Last 30 Days</option>
+            <option value="90">Last 90 Days</option>
+        </select>
+        <select class="st-input st-input--filter" @bind="levelFilter" @bind:after="LoadLogsAsync">
+            <option value="all">All Levels</option>
+            <option value="Error">Error</option>
+            <option value="Warning">Warning</option>
+            <option value="Info">Info</option>
+        </select>
+        <input type="text" class="st-input st-input--search" placeholder="Search..." value="@search" @oninput="OnSearchInput" />
+    </div>
+
+    @if (isLoading)
+    {
+        <p class="st-empty">Loading logs...</p>
+    }
+    else if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <p class="st-empty st-empty--error">@errorMessage</p>
+    }
+    else
+    {
+        <div class="st-log-list">
+            @if (!logs.Any())
+            {
+                <p class="st-empty">No logs match your filters.</p>
+            }
+            else
+            {
+                @foreach (var log in logs)
+                {
+                    <article class="st-log-item" @key="log.Id">
+                        <span class="st-log-item__time">@log.TimestampDisplay</span>
+                        <span class="st-badge st-badge--@GetLevelClass(log.Level)">@log.Level</span>
+                        <span class="st-log-item__message">@log.Message</span>
+                    </article>
+                }
+            }
+        </div>
+
+        @if (totalCount > pageSize)
+        {
+            <div class="st-pagination">
+                <button class="st-btn st-btn--ghost"
+                        disabled="@(currentPage <= 1 || isLoading)"
+                        @onclick="PreviousPage">
+                    Previous
+                </button>
+                <span class="st-pagination__info">Page @currentPage of @TotalPages (@totalCount logs)</span>
+                <button class="st-btn st-btn--ghost"
+                        disabled="@(currentPage >= TotalPages || isLoading)"
+                        @onclick="NextPage">
+                    Next
+                </button>
+            </div>
+        }
+    }
+</div>

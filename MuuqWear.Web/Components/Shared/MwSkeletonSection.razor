@@ -61,35 +61,6 @@
             </div>
             break;
 
-        case SkeletonLayout.AdminAnalytics:
-            <div class="mw-sk-analytics">
-                <div class="mw-sk-analytics__hero">
-                    <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineLg" Width="160px" />
-                    <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineSm" Width="120px" />
-                    <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Block" Height="220px" />
-                </div>
-                <div class="mw-sk-analytics__grid">
-                    @for (var i = 0; i < 2; i++)
-                    {
-                        <div class="mw-sk-analytics__panel">
-                            <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineMd" Width="140px" />
-                            @for (var r = 0; r < 4; r++)
-                            {
-                                <div class="mw-sk-analytics__row">
-                                    <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Circle" Width="32px" Height="32px" />
-                                    <div class="mw-sk-analytics__row-text">
-                                        <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Line" />
-                                        <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineSm" />
-                                    </div>
-                                    <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Line" Width="64px" />
-                                </div>
-                            }
-                        </div>
-                    }
-                </div>
-            </div>
-            break;
-
         case SkeletonLayout.AdminAffiliateTab:
             <div class="mw-sk-stat-grid" style="@($"--mw-sk-stat-cols:{StatColumns}")">
                 @for (var s = 0; s < StatColumns; s++)
@@ -444,7 +415,6 @@
         AdminCardList,
         AdminTable,
         AdminStatGrid,
-        AdminAnalytics,
         AdminAffiliateTab,
         AdminAffiliateRows,
         AdminOverview,

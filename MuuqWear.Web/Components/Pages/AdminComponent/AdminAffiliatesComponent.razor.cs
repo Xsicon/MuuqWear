@@ -6,6 +6,7 @@ using MuuqWear.Application.Services.AffiliateService;
 using MuuqWear.Application.Shared;
 using MuuqWear.Model.AffiliateApplication;
 using MuuqWear.Model.AdminBadgeCount;
+using MuuqWear.Web.Services;
 
 namespace MuuqWear.Web.Components.Pages.AdminComponent;
 
@@ -433,8 +434,7 @@ public partial class AdminAffiliatesComponent : IDisposable
         }
         catch (Exception ex)
         {
-            errorMessage = "Failed to process all payouts.";
-            Console.WriteLine($"[AdminAffiliates] ProcessAllPayouts error: {ex.Message}");
+            errorMessage = AdminUiErrorHelper.FromException(ex);
         }
         finally
         {
@@ -469,8 +469,7 @@ public partial class AdminAffiliatesComponent : IDisposable
         }
         catch (Exception ex)
         {
-            errorMessage = "Failed to update affiliate status.";
-            Console.WriteLine($"[AdminAffiliates] ToggleAffiliateActive error: {ex.Message}");
+            errorMessage = AdminUiErrorHelper.FromException(ex);
         }
         finally
         {
@@ -501,11 +500,22 @@ public partial class AdminAffiliatesComponent : IDisposable
     private async Task UndoLastApplicationActionAsync(Guid applicationId)
     {
         undoApplicationId = null;
-        var result = await UpdateStatusAsync(applicationId, "pending");
-        if (result.Success)
+        try
         {
-            await RefreshAfterMutationAsync(MutationScope.PendingApplication);
-            await ShowToastAsync("Action undone");
+            var result = await UpdateStatusAsync(applicationId, "pending");
+            if (result.Success)
+            {
+                await RefreshAfterMutationAsync(MutationScope.PendingApplication);
+                await ShowToastAsync("Action undone");
+            }
+            else
+            {
+                errorMessage = AdminUiErrorHelper.FromApi(result.Message, "Failed to undo action.");
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = AdminUiErrorHelper.FromException(ex);
         }
     }
 
@@ -545,8 +555,7 @@ public partial class AdminAffiliatesComponent : IDisposable
         }
         catch (Exception ex)
         {
-            errorMessage = "Failed to load affiliate data.";
-            Console.WriteLine($"[AdminAffiliates] Load error: {ex.Message}");
+            errorMessage = AdminUiErrorHelper.FromException(ex);
         }
         finally
         {
@@ -617,8 +626,7 @@ public partial class AdminAffiliatesComponent : IDisposable
         }
         catch (Exception ex)
         {
-            errorMessage = "Failed to refresh affiliate data.";
-            Console.WriteLine($"[AdminAffiliates] Refresh error: {ex.Message}");
+            errorMessage = AdminUiErrorHelper.FromException(ex);
         }
         finally
         {
@@ -765,7 +773,7 @@ public partial class AdminAffiliatesComponent : IDisposable
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[AdminAffiliates] TogglePayoutDetails error: {ex.Message}");
+            errorMessage = AdminUiErrorHelper.FromException(ex);
         }
         finally
         {
@@ -804,8 +812,7 @@ public partial class AdminAffiliatesComponent : IDisposable
         }
         catch (Exception ex)
         {
-            errorMessage = "Failed to process payout.";
-            Console.WriteLine($"[AdminAffiliates] ProcessPayout error: {ex.Message}");
+            errorMessage = AdminUiErrorHelper.FromException(ex);
         }
         finally
         {
@@ -880,8 +887,7 @@ public partial class AdminAffiliatesComponent : IDisposable
         }
         catch (Exception ex)
         {
-            edit.Error = "Failed to save tier.";
-            Console.WriteLine($"[AdminAffiliates] SaveTier error: {ex.Message}");
+            edit.Error = AdminUiErrorHelper.FromException(ex);
         }
         finally
         {
@@ -1048,8 +1054,7 @@ public partial class AdminAffiliatesComponent : IDisposable
         }
         catch (Exception ex)
         {
-            errorMessage = "Failed to update application.";
-            Console.WriteLine($"[AdminAffiliates] HandleAction error: {ex.Message}");
+            errorMessage = AdminUiErrorHelper.FromException(ex);
         }
         finally
         {

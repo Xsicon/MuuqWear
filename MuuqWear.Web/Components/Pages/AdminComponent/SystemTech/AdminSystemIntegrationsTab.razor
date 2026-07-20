@@ -1,0 +1,58 @@
+<div class="st-tab">
+    <div class="st-tab-header">
+        <p class="st-tab-eyebrow">System &amp; Technology</p>
+        <h2 class="st-tab-title">Integrations</h2>
+        <p class="st-tab-subtitle">Manage third-party integrations</p>
+    </div>
+
+    @if (!string.IsNullOrEmpty(toast))
+    {
+        <p class="st-toast @(toastIsError ? "st-toast--error" : "")">@toast</p>
+    }
+
+    @if (isLoading)
+    {
+        <p class="st-empty">Loading integrations...</p>
+    }
+    else if (!IntegrationService.Integrations.Any())
+    {
+        <p class="st-empty st-empty--error">@(IntegrationService.LastError ?? "Unable to load integrations.")</p>
+    }
+    else
+    {
+        <div class="st-card-grid st-card-grid--2">
+            @foreach (var integration in IntegrationService.Integrations)
+            {
+                var isLoadingIntegration = IntegrationService.IsIntegrationLoading(integration.Name);
+                <article class="st-card" @key="integration.Name">
+                    <div class="st-card__row">
+                        <h3 class="st-card__title">@integration.Name</h3>
+                        @if (integration.IsHealthy)
+                        {
+                            <span class="st-status-icon st-status-icon--ok" aria-label="Connected">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.801 10A10 10 0 1 1 17 3.335"></path><path d="m9 11 3 3L22 4"></path></svg>
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="st-status-icon st-status-icon--bad" aria-label="Disconnected">✕</span>
+                        }
+                    </div>
+                    <p class="st-card__meta">@(isLoadingIntegration ? "Checking..." : integration.StatusDetail)</p>
+                    <div class="st-card__actions">
+                        <button class="st-btn st-btn--ghost"
+                                disabled="@isLoadingIntegration"
+                                @onclick="() => Reconnect(integration.Name)">
+                            Reconnect
+                        </button>
+                        <button class="st-btn st-btn--primary"
+                                disabled="@isLoadingIntegration"
+                                @onclick="() => TestConnection(integration.Name)">
+                            Test Connection
+                        </button>
+                    </div>
+                </article>
+            }
+        </div>
+    }
+</div>

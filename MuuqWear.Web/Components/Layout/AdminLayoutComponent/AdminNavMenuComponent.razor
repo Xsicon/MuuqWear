@@ -18,6 +18,7 @@
 @inject AdminAffiliatesTabCoordinator AffiliatesTabCoordinator
 @inject AdminSupportTabCoordinator SupportTabCoordinator
 @inject AdminCareersTabCoordinator CareersTabCoordinator
+@inject AdminSystemTechTabCoordinator SystemTechTabCoordinator
 @rendermode InteractiveServer
 @implements IDisposable
 
@@ -45,7 +46,7 @@
     <NavLink href="/admin"
              class="an-nav__item"
              Match="NavLinkMatch.All"
-             title="Overview"
+             title="@(navCountsWarning ?? "Overview")"
              onclick="window.adminSidebar.close()">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
              viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -56,6 +57,10 @@
             <path d="M8 17v-3"></path>
         </svg>
         <span class="an-nav__label">Overview</span>
+        @if (!string.IsNullOrEmpty(navCountsWarning))
+        {
+            <span class="an-nav__badge an-nav__badge--warn" title="@navCountsWarning">!</span>
+        }
     </NavLink>
 
     <!-- Sales & Orders (expandable) -->
@@ -405,31 +410,58 @@
         }
     </div>
 
-    <NavLink href="/admin/analytics"
-             class="an-nav__item"
-             title="Analytics"
-             onclick="window.adminSidebar.close()">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
-             viewBox="0 0 24 24" fill="none" stroke="currentColor"
-             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
-            <polyline points="16 7 22 7 22 13"></polyline>
-        </svg>
-        <span class="an-nav__label">Analytics</span>
-    </NavLink>
-
-    <NavLink href="/admin/settings"
-             class="an-nav__item"
-             title="Settings"
-             onclick="window.adminSidebar.close()">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
-             viewBox="0 0 24 24" fill="none" stroke="currentColor"
-             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
-            <circle cx="12" cy="12" r="3"></circle>
-        </svg>
-        <span class="an-nav__label">Settings</span>
-    </NavLink>
+    <!-- System & Technology (expandable) -->
+    <div class="an-nav-group">
+        <button type="button"
+                class="an-nav-group__header @(IsSystemTechSectionActive ? "an-nav-group__header--active" : "")"
+                aria-expanded="@systemTechOpen"
+                @onclick="ToggleSystemTech">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect width="20" height="8" x="2" y="2" rx="2"></rect>
+                <rect width="20" height="8" x="2" y="14" rx="2"></rect>
+                <line x1="6" x2="6.01" y1="6" y2="6"></line>
+                <line x1="6" x2="6.01" y1="18" y2="18"></line>
+            </svg>
+            <span class="an-nav__label">System &amp; Technology</span>
+            <svg class="an-nav-group__chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m6 9 6 6 6-6"></path>
+            </svg>
+        </button>
+        @if (systemTechOpen)
+        {
+            <div class="an-nav-group__children">
+                <button type="button"
+                        class="an-nav__subitem @(IsSystemTechTabActive("health") ? "an-nav__subitem--active" : "")"
+                        @onclick='() => NavigateToSystemTechTab("health")'>
+                    System Health
+                </button>
+                <button type="button"
+                        class="an-nav__subitem @(IsSystemTechTabActive("integrations") ? "an-nav__subitem--active" : "")"
+                        @onclick='() => NavigateToSystemTechTab("integrations")'>
+                    Integrations
+                </button>
+                <button type="button"
+                        class="an-nav__subitem @(IsSystemTechTabActive("sync") ? "an-nav__subitem--active" : "")"
+                        @onclick='() => NavigateToSystemTechTab("sync")'>
+                    Sync Tools
+                </button>
+                <button type="button"
+                        class="an-nav__subitem @(IsSystemTechTabActive("logs") ? "an-nav__subitem--active" : "")"
+                        @onclick='() => NavigateToSystemTechTab("logs")'>
+                    Logs
+                </button>
+                <button type="button"
+                        class="an-nav__subitem @(IsSystemTechTabActive("jobs") ? "an-nav__subitem--active" : "")"
+                        @onclick='() => NavigateToSystemTechTab("jobs")'>
+                    Background Jobs
+                </button>
+            </div>
+        }
+    </div>
 
 </nav>
 
@@ -441,6 +473,7 @@
     private int openTickets = 0;
     private int lowStockCount = 0;
     private AdminBadgeCountsModel? counts;
+    private string? navCountsWarning;
     private bool salesOrdersOpen;
     private bool productsInventoryOpen;
     private bool customersOpen;
@@ -448,6 +481,7 @@
     private bool affiliatesOpen;
     private bool supportOpen;
     private bool careersOpen;
+    private bool systemTechOpen;
 
     protected override async Task OnInitializedAsync()
     {
@@ -480,6 +514,7 @@
         SyncAffiliatesGroup();
         SyncSupportGroup();
         SyncCareersGroup();
+        SyncSystemTechGroup();
     }
 
     private void OnBadgeCountsRefreshRequested()
@@ -507,11 +542,25 @@
         counts = await BadgeCountsCache.GetCountsAsync(forceRefresh);
         if (counts != null)
             openTickets = counts.OpenTickets;
+
+        UpdateNavCountsWarning();
     }
 
     private async Task RefreshLowStockCountAsync(bool forceRefresh = false)
     {
         lowStockCount = await LowStockCache.GetCountAsync(forceRefresh);
+        UpdateNavCountsWarning();
+    }
+
+    private void UpdateNavCountsWarning()
+    {
+        var warnings = new List<string>();
+        if (!string.IsNullOrWhiteSpace(BadgeCountsCache.LastError))
+            warnings.Add(BadgeCountsCache.LastError);
+        if (!string.IsNullOrWhiteSpace(LowStockCache.LastError))
+            warnings.Add(LowStockCache.LastError);
+
+        navCountsWarning = warnings.Count == 0 ? null : string.Join(" ", warnings.Distinct());
     }
 
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
@@ -523,6 +572,7 @@
         SyncAffiliatesGroup();
         SyncSupportGroup();
         SyncCareersGroup();
+        SyncSystemTechGroup();
         _ = InvokeAsync(StateHasChanged);
     }
 
@@ -568,6 +618,12 @@
             careersOpen = true;
     }
 
+    private void SyncSystemTechGroup()
+    {
+        if (IsSystemTechSectionActive)
+            systemTechOpen = true;
+    }
+
     private void ToggleCareers()
     {
         careersOpen = !careersOpen;
@@ -607,6 +663,41 @@
             return tab == "postings";
 
         return value.ToString().Equals(tab, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private void ToggleSystemTech()
+    {
+        systemTechOpen = !systemTechOpen;
+    }
+
+    private void NavigateToSystemTechTab(string tab)
+    {
+        var normalized = AdminSystemTechTabCoordinator.NormalizeTab(tab);
+        NavigationManager.NavigateTo($"/admin/system?tab={normalized}");
+        SystemTechTabCoordinator.NotifyTabChanged(normalized);
+    }
+
+    private bool IsSystemTechSectionActive
+    {
+        get
+        {
+            var path = NavigationManager.ToBaseRelativePath(NavigationManager.Uri).Trim('/').ToLowerInvariant();
+            return path.StartsWith("admin/system", StringComparison.Ordinal);
+        }
+    }
+
+    private bool IsSystemTechTabActive(string tab)
+    {
+        if (!IsSystemTechSectionActive)
+            return false;
+
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        var query = QueryHelpers.ParseQuery(uri.Query);
+
+        if (!query.TryGetValue("tab", out var value) || string.IsNullOrEmpty(value))
+            return tab == "health";
+
+        return AdminSystemTechTabCoordinator.NormalizeTab(value) == tab;
     }
 
     private void ToggleSupport()

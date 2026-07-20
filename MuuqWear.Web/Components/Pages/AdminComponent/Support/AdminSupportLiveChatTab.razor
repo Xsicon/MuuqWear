@@ -14,6 +14,11 @@
         <p class="cs-loading">Loading conversations…</p>
     }
 
+    @if (!string.IsNullOrEmpty(loadError))
+    {
+        <p class="cs-error-banner">@loadError</p>
+    }
+
     <div class="cs-stats cs-stats--3">
         <div class="cs-stat-card cs-stat-card--accent">
             <div class="cs-stat-card__bar" style="background:#22C55E"></div>
@@ -46,7 +51,7 @@
                 {
                     <div class="cs-empty" style="padding:40px 16px">
                         <svg class="cs-empty__icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
-                        <p>No active chats</p>
+                        <p>@(string.IsNullOrEmpty(loadError) ? "No active chats" : "Unable to load conversations")</p>
                     </div>
                 }
                 else
@@ -131,6 +136,10 @@
                 </header>
 
                 <div class="cs-chat-panel__messages">
+                    @if (!string.IsNullOrEmpty(messagesError))
+                    {
+                        <p class="cs-error-banner cs-error-banner--inline">@messagesError</p>
+                    }
                     @if (isLoadingMessages)
                     {
                         <p class="cs-row__meta">Loading messages…</p>
@@ -151,6 +160,11 @@
                         }
                     }
                 </div>
+
+                @if (!string.IsNullOrEmpty(actionError))
+                {
+                    <p class="cs-error-banner cs-error-banner--inline">@actionError</p>
+                }
 
                 <div class="cs-chat-panel__input">
                     <input type="text"

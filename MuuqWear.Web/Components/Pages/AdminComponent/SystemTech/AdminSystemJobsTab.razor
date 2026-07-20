@@ -1,0 +1,54 @@
+<div class="st-tab">
+    <div class="st-tab-header">
+        <p class="st-tab-eyebrow">System &amp; Technology</p>
+        <h2 class="st-tab-title">Background Jobs</h2>
+        <p class="st-tab-subtitle">Monitor scheduled and running background jobs</p>
+    </div>
+
+    @if (isLoading)
+    {
+        <p class="st-empty">Loading background jobs...</p>
+    }
+    else if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <p class="st-empty st-empty--error">@errorMessage</p>
+    }
+    else if (!jobs.Any())
+    {
+        <article class="st-panel st-panel--empty">
+            <p class="st-empty">No background jobs are configured yet.</p>
+        </article>
+    }
+    else
+    {
+        <div class="st-job-list">
+            @foreach (var job in jobs)
+            {
+                <article class="st-job-item" @key="job.Id">
+                    <div class="st-job-item__head">
+                        <h3 class="st-job-item__title">@job.Name</h3>
+                        <span class="st-badge st-badge--@GetStatusClass(job.Status)">@job.Status</span>
+                    </div>
+                    <dl class="st-job-item__meta">
+                        <div>
+                            <dt>Schedule</dt>
+                            <dd>@job.Schedule</dd>
+                        </div>
+                        <div>
+                            <dt>Last Run</dt>
+                            <dd>@job.LastRunDisplay</dd>
+                        </div>
+                        <div>
+                            <dt>Next Run</dt>
+                            <dd>@job.NextRunDisplay</dd>
+                        </div>
+                    </dl>
+                    @if (!string.IsNullOrWhiteSpace(job.LastRunMessage))
+                    {
+                        <p class="st-job-item__message">@job.LastRunMessage</p>
+                    }
+                </article>
+            }
+        </div>
+    }
+</div>

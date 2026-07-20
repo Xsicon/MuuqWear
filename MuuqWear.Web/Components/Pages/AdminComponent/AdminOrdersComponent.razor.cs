@@ -8,6 +8,7 @@ using MuuqWear.Application.Shared;
 using MuuqWear.Model.OrderReturn;
 using MuuqWear.Model.Orders;
 using MuuqWear.Model.Refund;
+using MuuqWear.Web.Services;
 
 namespace MuuqWear.Web.Components.Pages.AdminComponent;
 
@@ -103,6 +104,9 @@ new("Denied",   "denied")
     private int refundsTotalCount = 0;
     private const int refundsPageSize = 20;
     private string refundsError = string.Empty;
+    private string ordersError = string.Empty;
+    private string returnsError = string.Empty;
+    private string viewDetailError = string.Empty;
     private string returnActionError = string.Empty;
     private string? returnSuccessMessage = null;
     private Guid? processingRefundId = null;
@@ -371,6 +375,7 @@ new("Denied",   "denied")
             isLoadingTabContent = true;
 
         selectedOrderIds.Clear();
+        ordersError = string.Empty;
         await InvokeAsync(StateHasChanged);
 
         try
@@ -387,6 +392,18 @@ new("Denied",   "denied")
                 totalCount = result.Data.TotalCount;
                 currentPage = result.Data.Page;
             }
+            else
+            {
+                orders = [];
+                totalCount = 0;
+                ordersError = AdminUiErrorHelper.FromApi(result.Message, "Failed to load orders.");
+            }
+        }
+        catch (Exception ex)
+        {
+            orders = [];
+            totalCount = 0;
+            ordersError = AdminUiErrorHelper.FromException(ex);
         }
         finally
         {
@@ -467,11 +484,25 @@ new("Denied",   "denied")
         viewOrder = orders.FirstOrDefault(o => o.Id == orderId);
         viewReturn = null;
         viewRefund = null;
+        viewDetailError = string.Empty;
         StateHasChanged();
 
-        var result = await OrderService.GetOrderDetail(orderId);
-        if (result.Success && result.Data != null)
-            viewOrder = result.Data;
+        try
+        {
+            var result = await OrderService.GetOrderDetail(orderId);
+            if (result.Success && result.Data != null)
+            {
+                viewOrder = result.Data;
+            }
+            else
+            {
+                viewDetailError = AdminUiErrorHelper.FromApi(result.Message, "Failed to load order details.");
+            }
+        }
+        catch (Exception ex)
+        {
+            viewDetailError = AdminUiErrorHelper.FromException(ex);
+        }
 
         isLoadingDetail = false;
         StateHasChanged();
@@ -633,6 +664,8 @@ new("Denied",   "denied")
 
         await InvokeAsync(StateHasChanged);
 
+        returnsError = string.Empty;
+
         try
         {
             var result = await OrderReturnService.GetAllReturns(
@@ -648,6 +681,18 @@ new("Denied",   "denied")
                 returnsTotalCount = result.Data.TotalCount;
                 returnsCurrentPage = result.Data.Page;
             }
+            else
+            {
+                returns = [];
+                returnsTotalCount = 0;
+                returnsError = AdminUiErrorHelper.FromApi(result.Message, "Failed to load returns.");
+            }
+        }
+        catch (Exception ex)
+        {
+            returns = [];
+            returnsTotalCount = 0;
+            returnsError = AdminUiErrorHelper.FromException(ex);
         }
         finally
         {
@@ -789,7 +834,7 @@ new("Denied",   "denied")
         {
             refunds = new();
             refundsTotalCount = 0;
-            refundsError = ex.Message;
+            refundsError = AdminUiErrorHelper.FromException(ex);
         }
         finally
         {

@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.JSInterop;
 using MuuqWear.Application.Shared;
 using MuuqWear.Model.Products;
+using MuuqWear.Web.Services;
 
 namespace MuuqWear.Web.Components.Pages.AdminComponent;
 
@@ -248,6 +249,7 @@ public partial class AdminProductComponent : IDisposable
     private List<CategoryModel> Categories = new();
     private string searchQuery = "";
     private bool isLoading = false;
+    private string pageLoadError = string.Empty;
 
     // FORM STATE
     private bool isFormOpen = false;
@@ -534,6 +536,7 @@ public partial class AdminProductComponent : IDisposable
     private async Task LoadProducts(int page = 1, int pageSize = 10, string? search = null)
     {
         selectedProductIds.Clear();
+        pageLoadError = string.Empty;
 
         Guid? categoryId = null;
         if (activeFilter != "All" &&
@@ -557,31 +560,46 @@ public partial class AdminProductComponent : IDisposable
             IncludeTickets = true
         };
 
-        var result = await ProductService.GetAll(filterModel);
-
-        if (result.Success && result.Data != null)
+        try
         {
-            var allProducts = result.Data.Data;
+            var result = await ProductService.GetAll(filterModel);
 
-            foreach (var product in allProducts)
-                ProductStockHelper.SyncStockFromSizes(product);
-
-            Products = activeFilter switch
+            if (result.Success && result.Data != null)
             {
-                "LowStock" => allProducts
-                    .Where(ProductStockHelper.IsLowStock)
-                    .ToList(),
-                "OutOfStock" => allProducts
-                    .Where(ProductStockHelper.IsOutOfStock)
-                    .ToList(),
-                _ => allProducts
-            };
+                var allProducts = result.Data.Data;
 
-            _totalCount = isStockFilter ? Products.Count : result.Data.TotalCount;
-            _currentPage = isStockFilter ? 1 : result.Data.Page;
+                foreach (var product in allProducts)
+                    ProductStockHelper.SyncStockFromSizes(product);
 
-            if (!isStockFilter)
-                _pageSize = result.Data.PageSize > 0 ? result.Data.PageSize : DefaultPageSize;
+                Products = activeFilter switch
+                {
+                    "LowStock" => allProducts
+                        .Where(ProductStockHelper.IsLowStock)
+                        .ToList(),
+                    "OutOfStock" => allProducts
+                        .Where(ProductStockHelper.IsOutOfStock)
+                        .ToList(),
+                    _ => allProducts
+                };
+
+                _totalCount = isStockFilter ? Products.Count : result.Data.TotalCount;
+                _currentPage = isStockFilter ? 1 : result.Data.Page;
+
+                if (!isStockFilter)
+                    _pageSize = result.Data.PageSize > 0 ? result.Data.PageSize : DefaultPageSize;
+            }
+            else
+            {
+                Products = [];
+                _totalCount = 0;
+                pageLoadError = AdminUiErrorHelper.FromApi(result.Message, "Failed to load products.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Products = [];
+            _totalCount = 0;
+            pageLoadError = AdminUiErrorHelper.FromException(ex);
         }
 
         StateHasChanged();
