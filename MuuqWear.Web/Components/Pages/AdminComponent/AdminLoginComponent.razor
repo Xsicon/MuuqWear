@@ -5,11 +5,13 @@
 @using MuuqWear.Model.Authentication
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @layout Components.Layout.AuthLayoutComponent.AuthLayoutComponent
+@using Microsoft.AspNetCore.Hosting
 @inject IAuthService IAuthService
 @inject AuthStateService AuthStateService
 @inject NavigationManager NavigationManager
 @inject CustomAuthenticationStateProvider CustomAuthStateProvider
 @inject IJSRuntime JS
+@inject IWebHostEnvironment HostEnvironment
 
 
 <section class="mw-auth">
@@ -93,10 +95,12 @@
 
                     </div>
 
+                    @if (ShowDemoAccounts)
+                    {
                     <div class="mw-admin-login__demo">
                         <div class="mw-admin-login__demo-header">
                             <h2 class="mw-admin-login__demo-title">Demo accounts</h2>
-                            <p class="mw-admin-login__demo-subtitle">Click a row to fill the login form.</p>
+                            <p class="mw-admin-login__demo-subtitle">Click a row to fill the login form. Authorization is enforced by your assigned role after sign-in.</p>
                         </div>
 
                         <div class="mw-admin-login__demo-table-wrap">
@@ -127,6 +131,7 @@
                             </table>
                         </div>
                     </div>
+                    }
                     </div>
                 </div>
             </div>
@@ -155,6 +160,7 @@
     private string message = string.Empty;
     private string messageCssClass = string.Empty;
     private bool isSubmitting = false;
+    private bool ShowDemoAccounts => HostEnvironment.IsDevelopment();
 
     private void UseDemoAccount(AdminDemoAccount account)
     {
@@ -208,7 +214,7 @@
                 NavigationManager,
                 CustomAuthStateProvider,
                 JS,
-                "/admin");
+                AdminPortalRoles.GetDefaultHome(authData.Role));
         }
         else
         {

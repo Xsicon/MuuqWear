@@ -11,6 +11,7 @@
 @using MuuqWear.Model.Messages
 @using MuuqWear.Model.NotificationModel
 @using MuuqWear.Model.Products
+@using MuuqWear.Web.Constants
 @using MuuqWear.Web.Helpers
 @using MuuqWear.Web.Services
 @inject INotificationService NotificationService
@@ -164,7 +165,8 @@
                             </button>
                         }
 
-                        @if (pendingOrderCount > AdminHeaderOperationalNotificationsBuilder.MaxPendingOrders)
+                        @if (CanSeeSection(AdminPortalSection.Orders)
+                             && pendingOrderCount > AdminHeaderOperationalNotificationsBuilder.MaxPendingOrders)
                         {
                             <button type="button"
                                     class="at-notif-dropdown__view-all"
@@ -173,7 +175,8 @@
                             </button>
                         }
 
-                        @if (pendingAffiliateCount > AdminHeaderOperationalNotificationsBuilder.MaxPendingAffiliates)
+                        @if (CanSeeSection(AdminPortalSection.Affiliates)
+                             && pendingAffiliateCount > AdminHeaderOperationalNotificationsBuilder.MaxPendingAffiliates)
                         {
                             <button type="button"
                                     class="at-notif-dropdown__view-all"
@@ -182,7 +185,9 @@
                             </button>
                         }
 
-                        @if (customerMessageCount > AdminHeaderOperationalNotificationsBuilder.MaxCustomerMessages)
+                        @if (CanSeeCustomerNotes()
+                             && customerMessageCount > AdminHeaderOperationalNotificationsBuilder.MaxCustomerMessages
+                             && CustomerNotesListLink is not null)
                         {
                             <button type="button"
                                     class="at-notif-dropdown__view-all"
@@ -191,8 +196,9 @@
                             </button>
                         }
 
-                        @if (lowStockCount > notifications.Count(n =>
-                                 AdminNotificationEnricher.IsLowStockNotification(n)))
+                        @if (CanSeeSection(AdminPortalSection.Products)
+                             && lowStockCount > notifications.Count(n =>
+                                      AdminNotificationEnricher.IsLowStockNotification(n)))
                         {
                             <button type="button"
                                     class="at-notif-dropdown__view-all"
@@ -207,6 +213,8 @@
         </div>
 
         <!-- Messages (customer internal notes) -->
+        @if (CanSeeCustomerNotes())
+        {
         <div class="at-topbar__icon-wrap">
             <button type="button"
                     class="at-topbar__btn"
@@ -275,7 +283,7 @@
                             </button>
                         }
 
-                        @if (messageCount > messages.Count)
+                        @if (CustomerNotesListLink is not null && messageCount > messages.Count)
                         {
                             <button type="button"
                                     class="at-notif-dropdown__view-all"
@@ -288,6 +296,7 @@
                 </div>
             }
         </div>
+        }
 
         <!-- User menu -->
         <div class="at-topbar__icon-wrap">
@@ -305,7 +314,7 @@
                 <div class="at-user-dropdown">
                     <div class="at-user-dropdown__header">
                         <p class="at-user-dropdown__name">@userName</p>
-                        <p class="at-user-dropdown__role">Admin</p>
+                        <p class="at-user-dropdown__role">@userRoleDisplay</p>
                     </div>
                     <button type="button" class="at-user-dropdown__logout" @onclick="HandleLogout">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
@@ -356,6 +365,8 @@
     private AdminHeaderReadStateStore? readStateStore;
     private string userName = string.Empty;
     private string userInitials = "AD";
+    private string userRoleDisplay = "Staff";
+    private string? userRole;
     private System.Threading.Timer? _refreshTimer;
     private const int RefreshIntervalSeconds = 120;
 
@@ -363,17 +374,10 @@
     {
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
-
-        userName = user.FindFirst("FullName")?.Value
-                   ?? user.FindFirst("name")?.Value
-                   ?? "Admin";
+        (userName, userInitials, userRoleDisplay) = AdminPortalUserContext.FromClaims(user);
+        userRole = AdminPortalUserContext.GetRole(user);
 
         var userId = user.FindFirst("UserId")?.Value ?? string.Empty;
-
-        var parts = userName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        userInitials = parts.Length >= 2
-            ? $"{parts[0][0]}{parts[^1][0]}".ToUpper()
-            : parts[0][..Math.Min(2, parts[0].Length)].ToUpper();
 
         ProductsTabCoordinator.BadgeCountsRefreshRequested += OnProductsChanged;
         CustomersTabCoordinator.MessagesRefreshRequested += OnCustomerNotesChanged;
@@ -442,6 +446,9 @@
 
     private void OnCustomerNotesChanged()
     {
+        if (!CanSeeCustomerNotes())
+            return;
+
         _ = InvokeAsync(async () =>
         {
             if (isMessagesOpen)
@@ -470,6 +477,13 @@
 
     private async Task LoadMessages()
     {
+        if (!CanSeeCustomerNotes())
+        {
+            messages.Clear();
+            unreadMessageCount = 0;
+            return;
+        }
+
         isLoadingMessages = true;
         StateHasChanged();
 
@@ -537,6 +551,7 @@
             readNotificationIds,
             readNoteAtByCustomerId,
             lowStockFirstSeenAt,
+            userRole,
             forceRefreshLowStock);
 
         unreadCount = feed.UnreadCount;
@@ -613,14 +628,9 @@
 
         await PersistReadStateAsync();
 
-        if (!string.IsNullOrWhiteSpace(notif.Link))
-        {
-            NavigationManager.NavigateTo(notif.Link);
-            return;
-        }
-
-        if (AdminNotificationEnricher.IsLowStockNotification(notif))
-            NavigationManager.NavigateTo("/admin/products?view=low-stock");
+        var destination = ResolveNotificationDestination(notif);
+        if (destination is not null)
+            NavigationManager.NavigateTo(destination);
     }
 
     private async Task HandleMessageClick(AdminMessageModel message)
@@ -641,7 +651,10 @@
             CustomersTabCoordinator.NotifyCustomerFocus(message.CustomerId);
 
         await PersistReadStateAsync();
-        NavigationManager.NavigateTo(message.Link);
+
+        var destination = AdminHeaderNotificationAccess.ResolveLink(userRole, message.Link);
+        if (destination is not null)
+            NavigationManager.NavigateTo(destination);
     }
 
     private async Task MarkAllMessagesRead()
@@ -658,8 +671,13 @@
 
     private void ViewAllCustomerNotes()
     {
+        var destination = CustomerNotesListLink;
+        if (destination is null)
+            return;
+
         isMessagesOpen = false;
-        NavigationManager.NavigateTo("/admin/customers?view=notes");
+        isNotificationsOpen = false;
+        NavigationManager.NavigateTo(destination);
     }
 
     private static string GetMessageDetail(AdminMessageModel message)
@@ -676,21 +694,52 @@
 
     private void ViewAllLowStock()
     {
+        if (!CanSeeSection(AdminPortalSection.Products))
+            return;
+
         isNotificationsOpen = false;
         NavigationManager.NavigateTo("/admin/products?view=low-stock");
     }
 
     private void ViewAllPendingOrders()
     {
+        if (!CanSeeSection(AdminPortalSection.Orders))
+            return;
+
         isNotificationsOpen = false;
         NavigationManager.NavigateTo("/admin/orders?tab=orders&status=pending");
     }
 
     private void ViewAllPendingAffiliates()
     {
+        if (!CanSeeSection(AdminPortalSection.Affiliates))
+            return;
+
         isNotificationsOpen = false;
         NavigationManager.NavigateTo("/admin/affiliates?tab=pending");
     }
+
+    private string? ResolveNotificationDestination(NotificationModel notif)
+    {
+        var linkDestination = AdminHeaderNotificationAccess.ResolveLink(userRole, notif.Link);
+        if (linkDestination is not null)
+            return linkDestination;
+
+        if (AdminNotificationEnricher.IsLowStockNotification(notif)
+            && CanSeeSection(AdminPortalSection.Products))
+            return "/admin/products?view=low-stock";
+
+        return null;
+    }
+
+    private bool CanSeeSection(string section) =>
+        AdminPortalRoles.CanAccess(userRole, section);
+
+    private bool CanSeeCustomerNotes() =>
+        AdminHeaderNotificationAccess.CanSeeCustomerNotes(userRole);
+
+    private string? CustomerNotesListLink =>
+        AdminHeaderNotificationAccess.GetCustomerNotesListLink(userRole);
 
     private void MarkNotificationReadLocally(NotificationModel notif)
     {
@@ -787,7 +836,11 @@
         var query = searchQuery.Trim();
         var url = DetectSearchUrl(query);
         searchQuery = string.Empty;
-        NavigationManager.NavigateTo(url);
+
+        if (AdminPortalRouteAccess.CanAccessPath(userRole, url))
+            NavigationManager.NavigateTo(url);
+        else
+            NavigationManager.NavigateTo("/admin/access-denied");
     }
 
     private static string DetectSearchUrl(string query)

@@ -2,7 +2,7 @@
 @layout Layout.AdminLayoutComponent.AdminDashboardLayoutComponent
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @using Microsoft.AspNetCore.Authorization
-@attribute [Authorize(Roles = AdminPortalRoles.All)]
+@attribute [Authorize(Policy = AdminPortalPolicies.Affiliates)]
 @implements IDisposable
 
 <PageTitle>Affiliate Program</PageTitle>

@@ -6,6 +6,8 @@
 @using MuuqWear.Application.Shared
 @using MuuqWear.Model.AdminBadgeCount
 @using MuuqWear.Model.Products
+@using MuuqWear.Web.Constants
+@using MuuqWear.Web.Helpers
 @using MuuqWear.Web.Services
 @inject AuthenticationStateProvider AuthStateProvider
 @inject AdminBadgeCountsCacheService BadgeCountsCache
@@ -36,7 +38,7 @@
     <div class="an-user__avatar">@userInitials</div>
     <div class="an-user__info">
         <p class="an-user__name">@userName</p>
-        <p class="an-user__role">Admin</p>
+        <p class="an-user__role">@userRoleDisplay</p>
     </div>
 </div>
 
@@ -63,6 +65,8 @@
         }
     </NavLink>
 
+    @if (CanSeeSection(AdminPortalSection.Orders))
+    {
     <!-- Sales & Orders (expandable) -->
     <div class="an-nav-group @(salesOrdersOpen ? "an-nav-group--open" : "")">
         <button type="button"
@@ -108,7 +112,10 @@
             </div>
         }
     </div>
+    }
 
+    @if (CanSeeSection(AdminPortalSection.Customers))
+    {
     <!-- Customers (expandable) -->
     <div class="an-nav-group @(customersOpen ? "an-nav-group--open" : "")">
         <button type="button"
@@ -155,7 +162,10 @@
             </div>
         }
     </div>
+    }
 
+    @if (CanSeeSection(AdminPortalSection.Products))
+    {
     <!-- Products & Inventory (expandable) -->
     <div class="an-nav-group @(productsInventoryOpen ? "an-nav-group--open" : "")">
         <button type="button"
@@ -209,7 +219,10 @@
             </div>
         }
     </div>
+    }
 
+    @if (CanSeeSection(AdminPortalSection.Content))
+    {
     <!-- Content (expandable) -->
     <div class="an-nav-group @(contentOpen ? "an-nav-group--open" : "")">
         <button type="button"
@@ -250,7 +263,10 @@
             </div>
         }
     </div>
+    }
 
+    @if (CanSeeSection(AdminPortalSection.Affiliates))
+    {
     <!-- Affiliates (expandable) -->
     <div class="an-nav-group @(affiliatesOpen ? "an-nav-group--open" : "")">
         <button type="button"
@@ -311,8 +327,11 @@
             </div>
         }
     </div>
+    }
 
 
+    @if (CanSeeSection(AdminPortalSection.Support))
+    {
     <!-- Customer Support (expandable) -->
     <div class="an-nav-group">
         <button type="button"
@@ -368,7 +387,10 @@
             </div>
         }
     </div>
+    }
 
+    @if (CanSeeSection(AdminPortalSection.Careers))
+    {
     <!-- Career Management (expandable) -->
     <div class="an-nav-group">
         <button type="button"
@@ -409,7 +431,10 @@
             </div>
         }
     </div>
+    }
 
+    @if (CanSeeSection(AdminPortalSection.System))
+    {
     <!-- System & Technology (expandable) -->
     <div class="an-nav-group">
         <button type="button"
@@ -462,6 +487,7 @@
             </div>
         }
     </div>
+    }
 
 </nav>
 
@@ -470,6 +496,8 @@
 
     private string userName = string.Empty;
     private string userInitials = "AD";
+    private string userRoleDisplay = "Staff";
+    private string? userRole;
     private int openTickets = 0;
     private int lowStockCount = 0;
     private AdminBadgeCountsModel? counts;
@@ -488,21 +516,16 @@
         var authState = await AuthStateProvider
             .GetAuthenticationStateAsync();
         var user = authState.User;
+        (userName, userInitials, userRoleDisplay) = AdminPortalUserContext.FromClaims(user);
+        userRole = AdminPortalUserContext.GetRole(user);
 
-        userName = user.FindFirst("FullName")?.Value
-                   ?? user.FindFirst("name")?.Value
-                   ?? "Admin";
-
-        var parts = userName.Trim()
-            .Split(' ', StringSplitOptions.RemoveEmptyEntries);
-
-        userInitials = parts.Length >= 2
-            ? $"{parts[0][0]}{parts[^1][0]}".ToUpper()
-            : parts[0][..Math.Min(2, parts[0].Length)].ToUpper();
-
-        var badgeTask = RefreshBadgeCountsAsync();
-        var lowStockTask = RefreshLowStockCountAsync();
-        await Task.WhenAll(badgeTask, lowStockTask);
+        var loadTasks = new List<Task>();
+        if (NeedsBadgeCounts)
+            loadTasks.Add(RefreshBadgeCountsAsync());
+        if (NeedsLowStockCount)
+            loadTasks.Add(RefreshLowStockCountAsync());
+        if (loadTasks.Count > 0)
+            await Task.WhenAll(loadTasks);
 
         NavigationManager.LocationChanged += OnLocationChanged;
         OrdersTabCoordinator.BadgeCountsRefreshRequested += OnBadgeCountsRefreshRequested;
@@ -519,6 +542,9 @@
 
     private void OnBadgeCountsRefreshRequested()
     {
+        if (!NeedsBadgeCounts)
+            return;
+
         _ = InvokeAsync(async () =>
         {
             BadgeCountsCache.Invalidate();
@@ -529,6 +555,9 @@
 
     private void OnProductsBadgeCountsRefreshRequested()
     {
+        if (!NeedsLowStockCount)
+            return;
+
         _ = InvokeAsync(async () =>
         {
             LowStockCache.Invalidate();
@@ -555,13 +584,25 @@
     private void UpdateNavCountsWarning()
     {
         var warnings = new List<string>();
-        if (!string.IsNullOrWhiteSpace(BadgeCountsCache.LastError))
+        if (NeedsBadgeCounts && !string.IsNullOrWhiteSpace(BadgeCountsCache.LastError))
             warnings.Add(BadgeCountsCache.LastError);
-        if (!string.IsNullOrWhiteSpace(LowStockCache.LastError))
+        if (NeedsLowStockCount && !string.IsNullOrWhiteSpace(LowStockCache.LastError))
             warnings.Add(LowStockCache.LastError);
 
         navCountsWarning = warnings.Count == 0 ? null : string.Join(" ", warnings.Distinct());
     }
+
+    private bool CanSeeSection(string section) =>
+        AdminPortalRoles.CanAccess(userRole, section);
+
+    private bool NeedsBadgeCounts =>
+        CanSeeSection(AdminPortalSection.Orders)
+        || CanSeeSection(AdminPortalSection.Customers)
+        || CanSeeSection(AdminPortalSection.Affiliates)
+        || CanSeeSection(AdminPortalSection.Support);
+
+    private bool NeedsLowStockCount =>
+        CanSeeSection(AdminPortalSection.Products);
 
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {

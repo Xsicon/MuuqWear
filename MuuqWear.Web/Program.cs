@@ -30,6 +30,7 @@ using MuuqWear.Application.Services.ProductService;
 using MuuqWear.Application.Services.ProfileService;
 using MuuqWear.Application.Services.VoteService;
 using MuuqWear.Application.Shared;
+using MuuqWear.Web.Authorization;
 using MuuqWear.Web.Components;
 using MuuqWear.Web.Services;
 using System.Security.Claims;
@@ -207,7 +208,11 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
             },
             OnRedirectToAccessDenied = context =>
             {
-                context.Response.Redirect("/not-found");
+                if (context.Request.Path.StartsWithSegments("/admin"))
+                    context.Response.Redirect("/admin/access-denied");
+                else
+                    context.Response.Redirect("/not-found");
+
                 return Task.CompletedTask;
             }
         };
@@ -232,7 +237,7 @@ builder.Services.AddServerSideBlazor(options =>
 });
 
 builder.Services.AddMemoryCache();
-builder.Services.AddAuthorization();
+builder.Services.AddAdminPortalAuthorization();
 
 var app = builder.Build();
 

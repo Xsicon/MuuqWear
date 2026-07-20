@@ -7,7 +7,7 @@
 @using MuuqWear.Application.Shared
 @using MuuqWear.Application.Content
 @using MuuqWear.Web.Components.Pages.AdminComponent.EventPageEditor
-@attribute [Authorize(Roles = AdminPortalRoles.All)]
+@attribute [Authorize(Policy = AdminPortalPolicies.Content)]
 
 <PageTitle>Content Management</PageTitle>
 

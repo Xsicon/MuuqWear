@@ -15,6 +15,12 @@ public static class ApiErrorMessageHelper
         if (response.IsSuccessStatusCode)
             return string.Empty;
 
+        if (response.StatusCode == HttpStatusCode.Forbidden)
+            return "You don't have permission to perform this action.";
+
+        if (response.StatusCode == HttpStatusCode.Unauthorized)
+            return "Your session expired or you are not signed in. Please sign in again.";
+
         var statusMessage = $"Server error: {response.StatusCode}";
 
         try

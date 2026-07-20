@@ -1,0 +1,47 @@
+@page "/admin/access-denied"
+@layout Components.Layout.AdminLayoutComponent.AdminDashboardLayoutComponent
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Authorization
+@using MuuqWear.Web.Constants
+@attribute [Authorize(Policy = AdminPortalPolicies.Overview)]
+
+<PageTitle>Access Denied</PageTitle>
+
+<div class="admin-access-denied">
+    <div class="admin-access-denied__card">
+        <div class="admin-access-denied__icon" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+        </div>
+        <h1 class="admin-access-denied__title">Access denied</h1>
+        <p class="admin-access-denied__message">
+            Your role (<strong>@roleDisplayName</strong>) does not include permission for this area.
+        </p>
+        <p class="admin-access-denied__hint">
+            Use the sidebar to open a section available to your account, or contact an administrator if you need broader access.
+        </p>
+        <a href="@homeHref" class="admin-access-denied__btn">Back to overview</a>
+    </div>
+</div>
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthStateTask { get; set; }
+
+    private string roleDisplayName = "Staff";
+    private string homeHref = "/admin";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthStateTask == null)
+            return;
+
+        var authState = await AuthStateTask;
+        var role = authState.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+        roleDisplayName = AdminPortalRoles.GetDisplayName(role);
+        homeHref = AdminPortalRoles.GetDefaultHome(role);
+    }
+}

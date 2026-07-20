@@ -5,7 +5,7 @@
 @using MuuqWear.Model.Customer
 @using MuuqWear.Web.Components.Shared
 @using MuuqWear.Web.Helpers
-@attribute [Authorize(Roles = AdminPortalRoles.All)]
+@attribute [Authorize(Policy = AdminPortalPolicies.Customers)]
 
 <PageTitle>Customers</PageTitle>
 

@@ -1,0 +1,17 @@
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@using MuuqWear.Web.Constants
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthStateProvider
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var role = authState.User.FindFirst(ClaimTypes.Role)?.Value;
+
+        NavigationManager.NavigateTo(
+            AdminPortalRoles.IsAllowed(role) ? "/admin/access-denied" : "/not-found",
+            replace: true);
+    }
+}

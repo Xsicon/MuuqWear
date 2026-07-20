@@ -12,9 +12,10 @@
 @using MuuqWear.Model.HelpCenter
 @using MuuqWear.Model.Orders
 @using MuuqWear.Model.Products
+@using MuuqWear.Model.Shared
 @layout Components.Layout.AdminLayoutComponent.AdminDashboardLayoutComponent
 @rendermode InteractiveServer
-@attribute [Authorize(Roles = AdminPortalRoles.All)]
+@attribute [Authorize(Policy = AdminPortalPolicies.Overview)]
 @inject IOrderService OrderService
 @inject IHelpCenterService HelpService
 @inject IAdminBadgeService BadgeService
@@ -23,6 +24,7 @@
 @inject IAdminSystemService AdminSystemService
 @inject AdminLowStockCacheService LowStockCache
 @inject IAffiliateService AffiliateService
+@using MuuqWear.Web.Helpers
 @inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>Admin Dashboard</PageTitle>
@@ -48,7 +50,11 @@
         }
 
         <!-- Stats -->
+        @if (HasVisibleStats)
+        {
         <div class="ov-stats">
+            @if (CanSeeSection(AdminPortalSection.Orders))
+            {
             <div class="ov-stat ov-stat--link">
                 <a href="/admin/orders?tab=orders&status=pending" class="ov-stat__link">
                 <div class="ov-stat__top">
@@ -64,8 +70,12 @@
                 <p class="ov-stat__label">Active Orders</p>
                 </a>
             </div>
+            }
 
-            <div class="ov-stat">
+            @if (CanSeeSection(AdminPortalSection.Support))
+            {
+            <div class="ov-stat ov-stat--link">
+                <a href="/admin/support?tab=tickets" class="ov-stat__link">
                 <div class="ov-stat__top">
                     <span class="ov-stat__icon ov-stat__icon--orange" aria-hidden="true">
                         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"></path></svg>
@@ -77,8 +87,12 @@
                 </div>
                 <p class="ov-stat__value">@openTickets</p>
                 <p class="ov-stat__label">Pending Support</p>
+                </a>
             </div>
+            }
 
+            @if (CanSeeSection(AdminPortalSection.Products))
+            {
             <div class="ov-stat ov-stat--link">
                 <a href="/admin/products?view=low-stock" class="ov-stat__link">
                 <div class="ov-stat__top">
@@ -98,7 +112,29 @@
                 }
                 </a>
             </div>
+            }
 
+            @if (CanSeeSection(AdminPortalSection.Affiliates))
+            {
+            <div class="ov-stat ov-stat--link">
+                <a href="/admin/affiliates?tab=pending" class="ov-stat__link">
+                <div class="ov-stat__top">
+                    <span class="ov-stat__icon ov-stat__icon--green" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="19" x2="19" y1="8" y2="14"></line><line x1="22" x2="16" y1="11" y2="11"></line></svg>
+                    </span>
+                    @if (pendingAffiliateApplications > 0)
+                    {
+                        <span class="ov-stat__trend ov-stat__trend--up">@pendingAffiliateApplications</span>
+                    }
+                </div>
+                <p class="ov-stat__value">@pendingAffiliateApplications</p>
+                <p class="ov-stat__label">Affiliate Applications</p>
+                </a>
+            </div>
+            }
+
+            @if (CanSeeSection(AdminPortalSection.System))
+            {
             <div class="ov-stat ov-stat--link">
                 <a href="/admin/system?tab=health" class="ov-stat__link">
                 <div class="ov-stat__top">
@@ -114,18 +150,23 @@
                 <p class="ov-stat__label">System Status</p>
                 </a>
             </div>
+            }
         </div>
+        }
 
         <!-- Quick Actions -->
+        @if (quickActions.Count > 0)
+        {
         <section class="ov-panel ov-panel--actions">
             <h2 class="ov-panel__title">Quick Actions</h2>
             <div class="ov-actions">
-                <a href="/admin/orders?tab=orders" class="ov-btn ov-btn--primary">All Orders</a>
-                <a href="/admin/orders?tab=returns" class="ov-btn ov-btn--secondary">Process Returns</a>
-                <a href="/admin/orders?tab=refunds&status=pending" class="ov-btn ov-btn--secondary">Pending Refunds</a>
-                <a href="/admin/products?view=low-stock" class="ov-btn ov-btn--secondary">Low Stock Alerts</a>
+                @foreach (var action in quickActions)
+                {
+                    <a href="@action.Href" class="ov-btn @(action.IsPrimary ? "ov-btn--primary" : "ov-btn--secondary")">@action.Label</a>
+                }
             </div>
         </section>
+        }
 
         <!-- Your Access + Recent Activity -->
         <div class="ov-grid">
@@ -180,13 +221,16 @@
     private bool isLoading = true;
     private string? loadError;
     private string userFirstName = "Admin";
-    private string welcomeMessage = "You have full access to all dashboard features and settings.";
+    private string? userRole;
+    private string welcomeMessage = "Welcome to the Muuqwear internal dashboard.";
     private int pendingOrders;
     private int openTickets;
+    private int pendingAffiliateApplications;
     private int lowStockCount;
     private List<ProductModel> lowStockProducts = new();
 
     private List<AccessModule> accessModules = new();
+    private List<QuickAction> quickActions = new();
     private List<ActivityItem> recentActivity = new();
     private string systemHealthValue = "—";
     private bool systemHealthHealthy;
@@ -198,14 +242,27 @@
         {
             var authState = await AuthStateProvider.GetAuthenticationStateAsync();
             var user = authState.User;
+            userRole = AdminPortalUserContext.GetRole(user);
+            welcomeMessage = AdminPortalRoles.GetWelcomeMessage(userRole);
+
             var fullName = user.FindFirst("FullName")?.Value
                            ?? user.FindFirst("name")?.Value
                            ?? "Admin";
             userFirstName = fullName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? "Admin";
 
-            accessModules = BuildAccessModules();
+            accessModules = BuildAccessModules(userRole);
+            quickActions = BuildQuickActions();
 
-            await Task.WhenAll(LoadBadgeCounts(), LoadLowStockProducts(), LoadSystemHealth());
+            var loadTasks = new List<Task>();
+            if (NeedsBadgeCounts)
+                loadTasks.Add(LoadBadgeCounts());
+            if (CanSeeSection(AdminPortalSection.Products))
+                loadTasks.Add(LoadLowStockProducts());
+            if (CanSeeSection(AdminPortalSection.System))
+                loadTasks.Add(LoadSystemHealth());
+            if (loadTasks.Count > 0)
+                await Task.WhenAll(loadTasks);
+
             await LoadRecentActivity();
         }
         catch (Exception ex)
@@ -249,6 +306,7 @@
         {
             pendingOrders = badgeResult.Data.PendingOrders;
             openTickets = badgeResult.Data.OpenTickets;
+            pendingAffiliateApplications = badgeResult.Data.AffiliateCounts.Pending;
         }
     }
 
@@ -256,70 +314,97 @@
     {
         var activities = new List<ActivityItem>();
 
-        var ordersTask = OrderService.GetAllOrders(null, null, 1, 3);
-        var ticketsTask = HelpService.GetAllTickets(null, 1, 3);
-        var affiliatesTask = AffiliateService.GetAllApplications("pending");
+        Task<Response<PaginatedResponse<OrderModel>>>? ordersTask = null;
+        Task<Response<PaginatedResponse<SupportTicketModel>>>? ticketsTask = null;
+        Task<Response<List<AffiliateApplicationModel>>>? affiliatesTask = null;
 
-        await Task.WhenAll(ordersTask, ticketsTask, affiliatesTask);
+        if (CanSeeSection(AdminPortalSection.Orders))
+            ordersTask = OrderService.GetAllOrders(null, null, 1, 3);
+        if (CanSeeSection(AdminPortalSection.Support))
+            ticketsTask = HelpService.GetAllTickets(null, 1, 3);
+        if (CanSeeSection(AdminPortalSection.Affiliates))
+            affiliatesTask = AffiliateService.GetAllApplications("pending");
 
-        var ordersResult = await ordersTask;
-        if (ordersResult.Success && ordersResult.Data?.Data != null)
+        var pendingTasks = new List<Task>();
+        if (ordersTask != null)
+            pendingTasks.Add(ordersTask);
+        if (ticketsTask != null)
+            pendingTasks.Add(ticketsTask);
+        if (affiliatesTask != null)
+            pendingTasks.Add(affiliatesTask);
+        if (pendingTasks.Count > 0)
+            await Task.WhenAll(pendingTasks);
+
+        if (ordersTask is not null)
         {
-            foreach (var order in ordersResult.Data.Data)
+            var ordersResult = await ordersTask;
+            if (ordersResult.Success && ordersResult.Data?.Data != null)
             {
-                activities.Add(new ActivityItem
+                foreach (var order in ordersResult.Data.Data)
                 {
-                    Key = $"order-{order.Id}",
-                    Action = $"New order #{order.OrderNumber}",
-                    TimeDisplay = FormatRelativeTime(order.CreatedAt),
-                    SortAt = order.CreatedAt ?? DateTime.MinValue,
-                    Icon = OrderIcon()
-                });
+                    activities.Add(new ActivityItem
+                    {
+                        Key = $"order-{order.Id}",
+                        Action = $"New order #{order.OrderNumber}",
+                        TimeDisplay = FormatRelativeTime(order.CreatedAt),
+                        SortAt = order.CreatedAt ?? DateTime.MinValue,
+                        Icon = OrderIcon()
+                    });
+                }
             }
         }
 
-        var ticketsResult = await ticketsTask;
-        if (ticketsResult.Success && ticketsResult.Data?.Data != null)
+        if (ticketsTask is not null)
         {
-            foreach (var ticket in ticketsResult.Data.Data)
+            var ticketsResult = await ticketsTask;
+            if (ticketsResult.Success && ticketsResult.Data?.Data != null)
             {
-                activities.Add(new ActivityItem
+                foreach (var ticket in ticketsResult.Data.Data)
                 {
-                    Key = $"ticket-{ticket.Id}",
-                    Action = $"Support ticket {ticket.TicketNumber}",
-                    TimeDisplay = FormatRelativeTime(ticket.CreatedAt),
-                    SortAt = ticket.CreatedAt ?? DateTime.MinValue,
-                    Icon = TicketIcon()
-                });
+                    activities.Add(new ActivityItem
+                    {
+                        Key = $"ticket-{ticket.Id}",
+                        Action = $"Support ticket {ticket.TicketNumber}",
+                        TimeDisplay = FormatRelativeTime(ticket.CreatedAt),
+                        SortAt = ticket.CreatedAt ?? DateTime.MinValue,
+                        Icon = TicketIcon()
+                    });
+                }
             }
         }
 
-        var affiliatesResult = await affiliatesTask;
-        if (affiliatesResult.Success && affiliatesResult.Data != null)
+        if (affiliatesTask is not null)
         {
-            foreach (var app in affiliatesResult.Data.Take(2))
+            var affiliatesResult = await affiliatesTask;
+            if (affiliatesResult.Success && affiliatesResult.Data != null)
             {
-                activities.Add(new ActivityItem
+                foreach (var app in affiliatesResult.Data.Take(2))
                 {
-                    Key = $"affiliate-{app.Id}",
-                    Action = $"Affiliate application from {app.FullName}",
-                    TimeDisplay = FormatRelativeTime(app.SubmittedAt),
-                    SortAt = app.SubmittedAt,
-                    Icon = AffiliateIcon()
-                });
+                    activities.Add(new ActivityItem
+                    {
+                        Key = $"affiliate-{app.Id}",
+                        Action = $"Affiliate application from {app.FullName}",
+                        TimeDisplay = FormatRelativeTime(app.SubmittedAt),
+                        SortAt = app.SubmittedAt,
+                        Icon = AffiliateIcon()
+                    });
+                }
             }
         }
 
-        foreach (var product in lowStockProducts.Take(3))
+        if (CanSeeSection(AdminPortalSection.Products))
         {
-            activities.Add(new ActivityItem
+            foreach (var product in lowStockProducts.Take(3))
             {
-                Key = $"lowstock-{product.Id}",
-                Action = $"Low stock alert: {product.Name}",
-                TimeDisplay = $"{ProductStockHelper.GetEffectiveStock(product)} unit{(ProductStockHelper.GetEffectiveStock(product) == 1 ? "" : "s")} left",
-                SortAt = DateTime.UtcNow.AddMinutes(-ProductStockHelper.GetEffectiveStock(product)),
-                Icon = LowStockIcon()
-            });
+                activities.Add(new ActivityItem
+                {
+                    Key = $"lowstock-{product.Id}",
+                    Action = $"Low stock alert: {product.Name}",
+                    TimeDisplay = $"{ProductStockHelper.GetEffectiveStock(product)} unit{(ProductStockHelper.GetEffectiveStock(product) == 1 ? "" : "s")} left",
+                    SortAt = DateTime.UtcNow.AddMinutes(-ProductStockHelper.GetEffectiveStock(product)),
+                    Icon = LowStockIcon()
+                });
+            }
         }
 
         recentActivity = activities
@@ -328,17 +413,82 @@
             .ToList();
     }
 
-    private static List<AccessModule> BuildAccessModules() => new()
+    private bool CanSeeSection(string section) =>
+        AdminPortalRoles.CanAccess(userRole, section);
+
+    private bool NeedsBadgeCounts =>
+        CanSeeSection(AdminPortalSection.Orders)
+        || CanSeeSection(AdminPortalSection.Support)
+        || CanSeeSection(AdminPortalSection.Affiliates);
+
+    private bool HasVisibleStats =>
+        CanSeeSection(AdminPortalSection.Orders)
+        || CanSeeSection(AdminPortalSection.Support)
+        || CanSeeSection(AdminPortalSection.Products)
+        || CanSeeSection(AdminPortalSection.Affiliates)
+        || CanSeeSection(AdminPortalSection.System);
+
+    private List<QuickAction> BuildQuickActions()
     {
-        new("Sales & Orders", "Full order management", "/admin/orders?tab=orders", OrdersAccessIcon()),
-        new("Customers", "Customer database access", "/admin/customers", CustomersAccessIcon()),
-        new("Products & Inventory", "Complete product control", "/admin/products?view=catalog", ProductsAccessIcon()),
-        new("Content", "Content management system", "/admin/content", ContentAccessIcon()),
-        new("Affiliate Program", "Affiliate management", "/admin/affiliates", AffiliatesAccessIcon()),
-        new("Customer Support", "Support system access", "/admin/tickets", SupportAccessIcon()),
-        new("Career Management", "Job posting & hiring", "/admin/careers?tab=postings", CareersAccessIcon()),
-        new("System & Technology", "System administration", "/admin/system?tab=health", SystemAccessIcon()),
-    };
+        var actions = new List<QuickAction>();
+
+        if (CanSeeSection(AdminPortalSection.Orders))
+        {
+            actions.Add(new QuickAction("All Orders", "/admin/orders?tab=orders", true));
+            actions.Add(new QuickAction("Process Returns", "/admin/orders?tab=returns"));
+            actions.Add(new QuickAction("Pending Refunds", "/admin/orders?tab=refunds&status=pending"));
+        }
+
+        if (CanSeeSection(AdminPortalSection.Products))
+            actions.Add(new QuickAction("Low Stock Alerts", "/admin/products?view=low-stock"));
+
+        if (CanSeeSection(AdminPortalSection.Support))
+        {
+            if (actions.Count == 0)
+                actions.Add(new QuickAction("Support Tickets", "/admin/support?tab=tickets", true));
+            else
+                actions.Add(new QuickAction("Support Tickets", "/admin/support?tab=tickets"));
+            actions.Add(new QuickAction("Live Chat", "/admin/support?tab=live-chat"));
+        }
+
+        if (CanSeeSection(AdminPortalSection.Affiliates))
+            actions.Add(new QuickAction("Pending Applications", "/admin/affiliates?tab=pending"));
+
+        if (CanSeeSection(AdminPortalSection.Careers))
+            actions.Add(new QuickAction("Job Postings", "/admin/careers?tab=postings"));
+
+        if (CanSeeSection(AdminPortalSection.Content))
+            actions.Add(new QuickAction("Manage Content", "/admin/content?view=journal"));
+
+        if (CanSeeSection(AdminPortalSection.System))
+            actions.Add(new QuickAction("System Health", "/admin/system?tab=health"));
+
+        if (CanSeeSection(AdminPortalSection.Customers))
+            actions.Add(new QuickAction("Customer List", "/admin/customers?view=list"));
+
+        return actions;
+    }
+
+    private static List<AccessModule> BuildAccessModules(string? role)
+    {
+        var modulesBySection = new Dictionary<string, AccessModule>(StringComparer.OrdinalIgnoreCase)
+        {
+            [AdminPortalSection.Orders] = new("Sales & Orders", "Full order management", "/admin/orders?tab=orders", OrdersAccessIcon()),
+            [AdminPortalSection.Customers] = new("Customers", "Customer database access", "/admin/customers", CustomersAccessIcon()),
+            [AdminPortalSection.Products] = new("Products & Inventory", "Complete product control", "/admin/products?view=catalog", ProductsAccessIcon()),
+            [AdminPortalSection.Content] = new("Content", "Content management system", "/admin/content", ContentAccessIcon()),
+            [AdminPortalSection.Affiliates] = new("Affiliate Program", "Affiliate management", "/admin/affiliates", AffiliatesAccessIcon()),
+            [AdminPortalSection.Support] = new("Customer Support", "Support system access", "/admin/support?tab=tickets", SupportAccessIcon()),
+            [AdminPortalSection.Careers] = new("Career Management", "Job posting & hiring", "/admin/careers?tab=postings", CareersAccessIcon()),
+            [AdminPortalSection.System] = new("System & Technology", "System administration", "/admin/system?tab=health", SystemAccessIcon()),
+        };
+
+        return AdminPortalRoles.GetSections(role)
+            .Where(section => !section.Equals(AdminPortalSection.Overview, StringComparison.OrdinalIgnoreCase))
+            .Where(modulesBySection.ContainsKey)
+            .Select(section => modulesBySection[section])
+            .ToList();
+    }
 
     private static string FormatRelativeTime(DateTime? utc)
     {
@@ -357,6 +507,13 @@
         public string Description { get; } = description;
         public string Href { get; } = href;
         public RenderFragment Icon { get; } = icon;
+    }
+
+    private sealed class QuickAction(string label, string href, bool isPrimary = false)
+    {
+        public string Label { get; } = label;
+        public string Href { get; } = href;
+        public bool IsPrimary { get; } = isPrimary;
     }
 
     private sealed class ActivityItem

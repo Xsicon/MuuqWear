@@ -2,8 +2,11 @@ using MuuqWear.Application.Services.AffiliateService;
 using MuuqWear.Application.Services.CustomerService;
 using MuuqWear.Application.Services.NotificationService;
 using MuuqWear.Application.Services.OrderService;
+using MuuqWear.Application.Shared;
 using MuuqWear.Model.NotificationModel;
 using MuuqWear.Model.Products;
+using MuuqWear.Model.Shared;
+using MuuqWear.Web.Constants;
 using MuuqWear.Web.Helpers;
 
 namespace MuuqWear.Web.Services;
@@ -37,29 +40,63 @@ public static class AdminHeaderNotificationFeedBuilder
         IReadOnlySet<Guid> readNotificationIds,
         IReadOnlyDictionary<Guid, DateTime> readNoteAtByCustomerId,
         IDictionary<Guid, DateTime> lowStockFirstSeenAt,
+        string? userRole,
         bool forceRefreshLowStock = false,
         IReadOnlyDictionary<Guid, ProductModel>? productsById = null)
     {
+        var canOrders = AdminPortalRoles.CanAccess(userRole, AdminPortalSection.Orders);
+        var canAffiliates = AdminPortalRoles.CanAccess(userRole, AdminPortalSection.Affiliates);
+        var canCustomerNotes = AdminHeaderNotificationAccess.CanSeeCustomerNotes(userRole);
+        var canProducts = AdminPortalRoles.CanAccess(userRole, AdminPortalSection.Products);
+
         var apiTask = notificationService.GetRecent();
-        var lowStockTask = lowStockCache.GetLowStockProductsAsync(forceRefreshLowStock);
-        var ordersTask = orderService.GetAllOrders("pending", null, 1, AdminHeaderOperationalNotificationsBuilder.MaxPendingOrders);
-        var affiliatesTask = affiliateService.GetAllApplications("pending");
-        var customersTask = AdminHeaderFeedLoader.LoadCustomersAsync(customerService);
 
-        await Task.WhenAll(apiTask, lowStockTask, ordersTask, affiliatesTask, customersTask);
+        Task<IReadOnlyList<ProductModel>>? lowStockTask = canProducts
+            ? lowStockCache.GetLowStockProductsAsync(forceRefreshLowStock)
+            : null;
 
-        var lowStockProducts = (await lowStockTask).ToList();
-        AdminHeaderNotificationsBuilder.UpdateFirstSeenTimes(lowStockProducts, lowStockFirstSeenAt);
+        Task<Response<PaginatedResponse<MuuqWear.Model.Orders.OrderModel>>>? ordersTask = canOrders
+            ? orderService.GetAllOrders("pending", null, 1, AdminHeaderOperationalNotificationsBuilder.MaxPendingOrders)
+            : null;
 
-        var pendingOrders = ordersTask.Result.Success && ordersTask.Result.Data?.Data != null
+        Task<Response<List<MuuqWear.Model.AffiliateApplication.AffiliateApplicationModel>>>? affiliatesTask = canAffiliates
+            ? affiliateService.GetAllApplications("pending")
+            : null;
+
+        Task<AdminHeaderFeedLoadResult<MuuqWear.Model.Customer.CustomerModel>>? customersTask = canCustomerNotes
+            ? AdminHeaderFeedLoader.LoadCustomersAsync(customerService)
+            : null;
+
+        var pendingTasks = new List<Task> { apiTask };
+        if (lowStockTask != null)
+            pendingTasks.Add(lowStockTask);
+        if (ordersTask != null)
+            pendingTasks.Add(ordersTask);
+        if (affiliatesTask != null)
+            pendingTasks.Add(affiliatesTask);
+        if (customersTask != null)
+            pendingTasks.Add(customersTask);
+
+        await Task.WhenAll(pendingTasks);
+
+        var lowStockProducts = lowStockTask != null
+            ? (await lowStockTask).ToList()
+            : new List<ProductModel>();
+
+        if (canProducts)
+            AdminHeaderNotificationsBuilder.UpdateFirstSeenTimes(lowStockProducts, lowStockFirstSeenAt);
+
+        var pendingOrders = ordersTask?.Result.Success == true && ordersTask.Result.Data?.Data != null
             ? ordersTask.Result.Data.Data
             : new List<MuuqWear.Model.Orders.OrderModel>();
 
-        var pendingAffiliates = affiliatesTask.Result.Success && affiliatesTask.Result.Data != null
+        var pendingAffiliates = affiliatesTask?.Result.Success == true && affiliatesTask.Result.Data != null
             ? affiliatesTask.Result.Data
             : new List<MuuqWear.Model.AffiliateApplication.AffiliateApplicationModel>();
 
-        var customerFeed = await customersTask;
+        var customerFeed = customersTask != null
+            ? await customersTask
+            : new AdminHeaderFeedLoadResult<MuuqWear.Model.Customer.CustomerModel>();
 
         var catalog = productsById ?? EmptyCatalog;
         var merged = new List<NotificationModel>();
@@ -76,6 +113,9 @@ public static class AdminHeaderNotificationFeedBuilder
                 if (IsOperationalType(apiNotif.Type))
                     continue;
 
+                if (!AdminHeaderNotificationAccess.CanSeeNotificationType(userRole, apiNotif.Type))
+                    continue;
+
                 if (!AdminNotificationEnricher.Enrich(apiNotif, catalog))
                     continue;
 
@@ -83,23 +123,35 @@ public static class AdminHeaderNotificationFeedBuilder
             }
         }
 
-        foreach (var orderNotif in AdminHeaderOperationalNotificationsBuilder.FromPendingOrders(pendingOrders))
-            TryAddNotification(merged, seenKeys, orderNotif, readNotificationIds, readNoteAtByCustomerId);
+        if (canOrders)
+        {
+            foreach (var orderNotif in AdminHeaderOperationalNotificationsBuilder.FromPendingOrders(pendingOrders))
+                TryAddNotification(merged, seenKeys, orderNotif, readNotificationIds, readNoteAtByCustomerId);
+        }
 
-        foreach (var affiliateNotif in AdminHeaderOperationalNotificationsBuilder.FromPendingAffiliateApplications(pendingAffiliates))
-            TryAddNotification(merged, seenKeys, affiliateNotif, readNotificationIds, readNoteAtByCustomerId);
+        if (canAffiliates)
+        {
+            foreach (var affiliateNotif in AdminHeaderOperationalNotificationsBuilder.FromPendingAffiliateApplications(pendingAffiliates))
+                TryAddNotification(merged, seenKeys, affiliateNotif, readNotificationIds, readNoteAtByCustomerId);
+        }
 
-        foreach (var messageNotif in AdminHeaderOperationalNotificationsBuilder.FromCustomerNotes(
-                     customerFeed.Items, readNoteAtByCustomerId))
-            TryAddNotification(merged, seenKeys, messageNotif, readNotificationIds, readNoteAtByCustomerId);
+        if (canCustomerNotes)
+        {
+            foreach (var messageNotif in AdminHeaderOperationalNotificationsBuilder.FromCustomerNotes(
+                         customerFeed.Items, readNoteAtByCustomerId))
+                TryAddNotification(merged, seenKeys, messageNotif, readNotificationIds, readNoteAtByCustomerId);
+        }
 
-        var lowStockNotifications = AdminHeaderNotificationsBuilder.FromLowStockProducts(
-            lowStockProducts,
-            readNotificationIds,
-            lowStockFirstSeenAt);
+        if (canProducts)
+        {
+            var lowStockNotifications = AdminHeaderNotificationsBuilder.FromLowStockProducts(
+                lowStockProducts,
+                readNotificationIds,
+                lowStockFirstSeenAt);
 
-        foreach (var clientNotif in lowStockNotifications)
-            TryAddNotification(merged, seenKeys, clientNotif, readNotificationIds, readNoteAtByCustomerId);
+            foreach (var clientNotif in lowStockNotifications)
+                TryAddNotification(merged, seenKeys, clientNotif, readNotificationIds, readNoteAtByCustomerId);
+        }
 
         var notifications = merged
             .OrderBy(n => GetTypeSortOrder(n.Type))
@@ -114,11 +166,15 @@ public static class AdminHeaderNotificationFeedBuilder
         {
             Notifications = notifications,
             UnreadCount = notifications.Count,
-            LowStockCount = lowStockProducts.Count,
-            PendingOrderCount = ordersTask.Result.Data?.TotalCount ?? pendingOrders.Count,
-            PendingAffiliateCount = pendingAffiliates.Count,
-            CustomerMessageCount = customerMessages.Count,
-            LowStockProductIds = lowStockProducts.Select(p => p.Id).ToHashSet()
+            LowStockCount = canProducts ? lowStockProducts.Count : 0,
+            PendingOrderCount = canOrders
+                ? ordersTask?.Result.Data?.TotalCount ?? pendingOrders.Count
+                : 0,
+            PendingAffiliateCount = canAffiliates ? pendingAffiliates.Count : 0,
+            CustomerMessageCount = canCustomerNotes ? customerMessages.Count : 0,
+            LowStockProductIds = canProducts
+                ? lowStockProducts.Select(p => p.Id).ToHashSet()
+                : new HashSet<Guid>()
         };
     }
 

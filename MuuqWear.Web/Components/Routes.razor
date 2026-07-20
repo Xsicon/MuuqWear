@@ -7,9 +7,9 @@
     <Found Context="routeData">
         <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayoutComponent)">
             <NotAuthorized>
-                @if (NavigationManager.Uri.Contains("/admin"))
+                @if (NavigationManager.Uri.Contains("/admin", StringComparison.OrdinalIgnoreCase))
                 {
-                    <RedirectToNotFound />
+                    <RedirectToAdminAccessDenied />
                 }
                 else
                 {

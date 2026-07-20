@@ -92,20 +92,33 @@ It is **not a single page**. It is a **shell** (sidebar + top bar) plus **multip
 
 ---
 
-## 4. Role-based access (from Figma `Overview.tsx`)
+## 4. Role-based access (implemented — frontend v1)
 
-Figma defines dashboard roles and what each role sees:
+Section-level RBAC is enforced in `MuuqWear.Web` via `AdminPortalRoles`, ASP.NET authorization policies, nav filtering, and role-aware dashboard/notifications. See [ADMIN_RBAC_PLAN.md](./ADMIN_RBAC_PLAN.md) for the full matrix and QA checklist.
 
-| Role | Sections |
-|------|----------|
-| **Admin** | All 8 areas |
-| **Operations Manager** | Sales & Orders, Affiliates, Career Management |
-| **Customer Support** | Customer Support (chat + tickets) |
-| **Merchandising** | Products & Inventory |
-| **Creative & Content** | Content |
-| **Technology & Systems** | System & Technology |
+| Role (claim) | Display name | Allowed sections |
+|--------------|--------------|------------------|
+| `admin` | Admin | All: Overview, Orders, Customers, Products, Content, Affiliates, Support, Careers, System |
+| `operations_manager` | Operations Manager | Overview, Orders, Affiliates, Careers |
+| `support_team` | Customer Support | Overview, Support |
+| `merchandising` | Merchandising | Overview, Products |
+| `content_team` | Creative & Content | Overview, Content |
+| `technology_systems` | Technology & Systems | Overview, System |
 
-**Note:** Current Blazor uses `[Authorize(Roles = "admin")]` on most pages. Role-based nav filtering is a **future enhancement** — document but defer unless backend roles already exist.
+**Customers (D1):** The **Customers** nav section and `/admin/customers` routes are **admin only**. Support staff receive **customer note** alerts in the header/messages bell but cannot open the Customers page until D1 is expanded.
+
+**Enforcement layers:**
+- **Routes:** Section policies on each admin page; forbidden deep links → `/admin/access-denied`
+- **Nav:** `AdminNavMenuComponent` hides disallowed groups; badge fetches scoped by role
+- **Overview:** Welcome copy, KPIs, quick actions, “Your Access”, and recent activity filtered by role
+- **Notifications:** Orders/affiliates/notes/low-stock filtered in `AdminHeaderNotificationFeedBuilder`
+- **Login:** Role-specific home via `AdminPortalRoles.GetDefaultHome()` (e.g. Support → `/admin/support`)
+
+**Not yet done:** API endpoint policies may still be `admin`-only (Phase 0). Non-admin roles may see friendly 403 messages when data calls fail.
+
+**Key files:** `MuuqWear.Web/Constants/AdminPortalRoles.cs`, `AdminPortalRouteAccess.cs`, `Authorization/AdminSectionAuthorizationHandler.cs`, `AdminNavMenuComponent.razor`, `AdminDashboardComponent.razor`, `AdminHeaderNotificationFeedBuilder.cs`
+
+**Demo accounts:** Shown on admin login **in Development only** (`AdminLoginComponent.razor`).
 
 ---
 
@@ -326,7 +339,7 @@ Figma defines dashboard roles and what each role sees:
 | Refunds tab | Yes (Figma) | Verify orders component | Add tab if missing |
 | Knowledge base admin | Yes (Figma) | Help center exists | Map or defer |
 | Tier settings (affiliates) | Yes | Verify affiliates | Add UI if missing |
-| Role-based nav | Yes (Figma) | Admin-only | Defer |
+| Role-based nav | Yes (Figma) | **Implemented (v1)** | See [ADMIN_RBAC_PLAN.md](./ADMIN_RBAC_PLAN.md) |
 | Analytics charts | Yes (React) | Partial | Chart library decision |
 | System logs / sync tools | Yes (Figma) | May be mock | Backend endpoints TBD |
 | Notifications dropdown | Yes (React) | Badge counts exist | Wire to `IAdminBadgeService` |

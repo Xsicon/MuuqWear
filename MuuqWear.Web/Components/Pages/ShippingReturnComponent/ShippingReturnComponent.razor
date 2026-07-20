@@ -2,6 +2,7 @@
 @using MuuqWear.Application.Services.OrderReturnService
 @using MuuqWear.Model.OrderReturn
 @rendermode InteractiveServer
+@using MuuqWear.Web.Constants
 @inject IOrderReturnService ReturnService
 @using Microsoft.AspNetCore.Components.Authorization
 @inject AuthenticationStateProvider AuthStateProvider
@@ -102,7 +103,7 @@
 
                 </div>
 
-                @if (isAuthenticated && !isAdmin)
+                @if (isAuthenticated && !isStaffPortalUser)
                 {
                     <button @onclick="OpenReturnPanel" class="sr-summary__cta">
                         Start a Return
@@ -341,7 +342,7 @@
     private bool isSubmitted = false;
     private bool isSubmitting = false;
     private bool isAuthenticated = false;
-    private bool isAdmin = false;
+    private bool isStaffPortalUser;
 
     private string formError = string.Empty;
 
@@ -362,7 +363,8 @@
         var user = authState.User;
 
         isAuthenticated = user.Identity?.IsAuthenticated ?? false;
-        isAdmin = user.IsInRole("admin");
+        isStaffPortalUser = AdminPortalRoles.IsAllowed(
+            user.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value);
     }
 
     private async Task OpenReturnPanel()
@@ -379,7 +381,7 @@
             return;
         }
 
-        if (user.IsInRole("admin"))
+        if (AdminPortalRoles.IsAllowed(user.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value))
             return;
 
         isReturnPanelOpen = true;

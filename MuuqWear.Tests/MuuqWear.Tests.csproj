@@ -16,6 +16,7 @@
   <ItemGroup>
     <ProjectReference Include="..\MuuqWear.Application\MuuqWear.Application.csproj" />
     <ProjectReference Include="..\MuuqWear.Model\MuuqWear.Model.csproj" />
+    <ProjectReference Include="..\MuuqWear.Web\MuuqWear.Web.csproj" />
   </ItemGroup>
 
 </Project>
