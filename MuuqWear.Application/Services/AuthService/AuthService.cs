@@ -182,12 +182,16 @@ public class AuthService : IAuthService
         }
     }
 
-    public async Task<Response<string>> GetGoogleSignInUrl()
+    public async Task<Response<string>> GetGoogleSignInUrl(string? redirectTo = null)
     {
         try
         {
+            var url = "api/Auth/google-signin-url";
+            if (!string.IsNullOrWhiteSpace(redirectTo))
+                url += $"?redirectTo={Uri.EscapeDataString(redirectTo)}";
+
             var response = await _http
-                .GetFromJsonAsync<Response<string>>("api/Auth/google-signin-url");
+                .GetFromJsonAsync<Response<string>>(url);
 
             return response ?? new Response<string>
             {

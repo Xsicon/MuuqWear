@@ -39,46 +39,41 @@
 
         try
         {
-            // read URL fragment via JS
-            // Google OAuth returns tokens in URL fragment
-            // e.g. #access_token=xxx&refresh_token=yyy&provider_token=zzz
+            // Supabase/Google may return tokens in the hash and/or query string.
             var fragment = await JS.InvokeAsync<string>(
-                "eval", "window.location.hash");
+                "eval", "window.location.hash || ''");
+            var query = await JS.InvokeAsync<string>(
+                "eval", "window.location.search || ''");
 
-            if (string.IsNullOrEmpty(fragment))
+            var parameters = ParseParams(fragment.TrimStart('#'));
+            foreach (var pair in ParseParams(query.TrimStart('?')))
+                parameters.TryAdd(pair.Key, pair.Value);
+
+            if (parameters.TryGetValue("error", out var oauthError)
+                || parameters.TryGetValue("error_description", out _))
             {
-                errorMessage = "Invalid Google callback. Please try again.";
+                var detail = parameters.GetValueOrDefault("error_description")
+                             ?? parameters.GetValueOrDefault("error")
+                             ?? "Google sign in was cancelled or denied.";
+                errorMessage = Uri.UnescapeDataString(detail.Replace('+', ' '));
                 isVerifying = false;
                 StateHasChanged();
                 return;
             }
 
-            // parse fragment into key-value pairs
-            var parameters = fragment
-                .TrimStart('#')
-                .Split('&')
-                .Select(p => p.Split('='))
-                .Where(p => p.Length == 2)
-                .ToDictionary(
-                    p => p[0],
-                    p => Uri.UnescapeDataString(p[1]));
-
-            // get access token
             if (!parameters.TryGetValue("access_token", out var accessToken)
                 || string.IsNullOrEmpty(accessToken))
             {
-                errorMessage = "Google sign in failed. Token missing.";
+                errorMessage = parameters.Count == 0
+                    ? "Invalid Google callback. Please try again."
+                    : "Google sign in failed. Token missing.";
                 isVerifying = false;
                 StateHasChanged();
                 return;
             }
 
-            // get refresh token
             parameters.TryGetValue("refresh_token", out var refreshToken);
 
-            // verify token with backend
-            // reuse same VerifyMagicLink method
-            // both use access_token + refresh_token 
             var result = await IAuthService.VerifyMagicLink(
                 new MagicLinkVerifyModel
                 {
@@ -88,7 +83,14 @@
 
             if (result.Success && result.Data != null)
             {
-                // navigate to set cookie
+                if (!string.Equals(result.Data.Role, "user", StringComparison.OrdinalIgnoreCase))
+                {
+                    errorMessage = "Access denied. Staff accounts must use the admin portal.";
+                    isVerifying = false;
+                    StateHasChanged();
+                    return;
+                }
+
                 await AuthNavigationHelper.PrepareAndNavigateAsync(
                     result.Data,
                     NavigationManager,
@@ -110,5 +112,23 @@
             StateHasChanged();
             Console.WriteLine(ex.Message);
         }
+    }
+
+    private static Dictionary<string, string> ParseParams(string raw)
+    {
+        var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        if (string.IsNullOrWhiteSpace(raw))
+            return result;
+
+        foreach (var part in raw.Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var pair = part.Split('=', 2);
+            if (pair.Length != 2 || string.IsNullOrEmpty(pair[0]))
+                continue;
+
+            result[pair[0]] = Uri.UnescapeDataString(pair[1]);
+        }
+
+        return result;
     }
 }

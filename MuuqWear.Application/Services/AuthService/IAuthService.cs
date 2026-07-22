@@ -11,7 +11,7 @@ public interface IAuthService
     Task<Response<int>> Logout();
     Task<Response<int>> SendMagicLink(MagicLinkModel request);
     Task<Response<AuthResponseModel>> VerifyMagicLink(MagicLinkVerifyModel request);
-    Task<Response<string>> GetGoogleSignInUrl();
+    Task<Response<string>> GetGoogleSignInUrl(string? redirectTo = null);
     Task<Response<int>> SendPasswordReset(ForgotPasswordModel request);
     Task<Response<int>> UpdatePassword(ResetPasswordModel request);
 }
