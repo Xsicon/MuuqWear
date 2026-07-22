@@ -23,7 +23,7 @@
         <p class="admin-access-denied__hint">
             Use the sidebar to open a section available to your account, or contact an administrator if you need broader access.
         </p>
-        <a href="@homeHref" class="admin-access-denied__btn">Back to overview</a>
+        <a href="@homeHref" class="admin-access-denied__btn">@homeButtonLabel</a>
     </div>
 </div>
 
@@ -33,6 +33,7 @@
 
     private string roleDisplayName = "Staff";
     private string homeHref = "/admin";
+    private string homeButtonLabel = "Back to overview";
 
     protected override async Task OnInitializedAsync()
     {
@@ -43,5 +44,8 @@
         var role = authState.User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
         roleDisplayName = AdminPortalRoles.GetDisplayName(role);
         homeHref = AdminPortalRoles.GetDefaultHome(role);
+        homeButtonLabel = homeHref.Equals("/admin", StringComparison.OrdinalIgnoreCase)
+            ? "Back to overview"
+            : "Go to your home";
     }
 }

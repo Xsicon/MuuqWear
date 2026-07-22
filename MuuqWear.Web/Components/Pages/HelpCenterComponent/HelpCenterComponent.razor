@@ -179,6 +179,8 @@
         StateHasChanged();
 
         await Task.Delay(50);
+        await JS.InvokeVoidAsync("eval",
+            "(function(){const el=document.querySelector('.hc-faq');if(el)el.scrollIntoView({behavior:'smooth',block:'start'});})();");
     }
 
     private void ToggleFaq(string question)
@@ -196,8 +198,19 @@
 
     private async Task ScrollTopics(int direction)
     {
-        await JS.InvokeVoidAsync("eval",
-            $"(function(){{const track=document.querySelector('.hc-topics__track');const card=track?.querySelector('.hc-topic-card');if(!track||!card)return;const gap=parseFloat(getComputedStyle(track).columnGap||getComputedStyle(track).gap)||0;track.scrollBy({{left:{direction}*(card.offsetWidth+gap),behavior:'smooth'}});}})();");
+        await JS.InvokeVoidAsync(
+            "eval",
+            $@"(function(){{
+                const track = document.querySelector('.hc-topics__track');
+                const card = track?.querySelector('.hc-topic-card');
+                if (!track || !card) return;
+                const styles = getComputedStyle(track);
+                const gap = parseFloat(styles.columnGap || styles.gap) || 0;
+                const step = card.getBoundingClientRect().width + gap;
+                const max = Math.max(0, track.scrollWidth - track.clientWidth);
+                const next = Math.min(max, Math.max(0, track.scrollLeft + ({direction} * step)));
+                track.scrollTo({{ left: next, behavior: 'smooth' }});
+            }})();");
     }
 
     private RenderFragment GetTopicIcon(string key) => key switch

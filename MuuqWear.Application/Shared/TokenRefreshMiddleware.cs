@@ -188,6 +188,8 @@ public class TokenRefreshMiddleware
 
         ReplaceOrAdd(identity, "AccessToken", data.AccessToken!);
         ReplaceOrAdd(identity, "RefreshToken", data.RefreshToken!);
+        if (!string.IsNullOrEmpty(data.Role))
+            ReplaceOrAdd(identity, ClaimTypes.Role, data.Role);
 
         var existingProps = await context.AuthenticateAsync(
             CookieAuthenticationDefaults.AuthenticationScheme);

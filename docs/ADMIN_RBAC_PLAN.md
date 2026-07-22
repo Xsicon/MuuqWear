@@ -1,6 +1,6 @@
 # Admin RBAC — Implementation Plan
 
-> **Status:** Complete (frontend v1) — manual QA checklist in Phase 8; API alignment in [ADMIN_RBAC_API_GAPS.md](./ADMIN_RBAC_API_GAPS.md)  
+> **Status:** Complete (Web v1 + API v1) — run Phase 8 manual QA after API restart and re-login; see [ADMIN_RBAC_API_GAPS.md](./ADMIN_RBAC_API_GAPS.md)  
 > **Last updated:** 2026-07-20  
 > **Related:** [ADMIN_REDESIGN.md](./ADMIN_REDESIGN.md) §4 Role-based access  
 > **Branch context:** `feature/admin`
@@ -13,15 +13,15 @@ This document is the single source of truth for implementing **role-based access
 
 | Layer | Role-based? | What actually happens |
 |-------|-------------|------------------------|
-| API login | Partial | Returns one `Role` string per user via `api/Auth/login` |
+| API login / JWT | Yes | Custom JWT with `app_role`; login response `data.role` matches |
 | Admin login gate | Yes | 6 staff roles allowed; redirects to role-specific home |
 | Admin pages | Yes | Section policies per route; forbidden URLs → access denied |
 | Sidebar / dashboard | Yes | Nav, overview, and badges filtered by role |
 | Header notifications | Yes | Orders, affiliates, notes, low stock scoped by role |
-| API data calls | Partial | UI hides disallowed sections; API may still return 403 for non-admin |
+| API data calls | Yes | Section policies on admin endpoints; 403 JSON in UI |
 | Demo credentials | Dev-only | Password table hidden outside Development |
 
-**Bottom line:** Frontend RBAC is complete for v1. Run Phase 8 manual QA before release. API authorization alignment is tracked separately and remains the main backend follow-up.
+**Bottom line:** Web and API RBAC are aligned for v1 admin routes. **Storefront catalog stays fully public** — API must not require auth on `GET /api/Product/all`, `/home`, or `/{id}`. Restart API, re-login in admin, then run Phase 8 manual QA.
 
 ### Automated coverage
 
@@ -70,7 +70,7 @@ Turn the current “any staff role → full admin” portal into **true role-bas
 1. **Customers** — Admin only for `/admin/customers`; Support gets header/messages notes only (D1).
 2. **Returns/refunds** — Follow Orders section (ops + admin).
 3. **Forbidden URLs** — `/admin/access-denied` (D3).
-4. **API scope** — Frontend-first; API Option A until external team aligns (see [ADMIN_RBAC_API_GAPS.md](./ADMIN_RBAC_API_GAPS.md)).
+4. **API scope** — Web and API policies aligned (Option B); see [ADMIN_RBAC_API_GAPS.md](./ADMIN_RBAC_API_GAPS.md).
 5. **Login landing** — Role-specific homes via `GetDefaultHome()` (D2 / Phase 7.1).
 
 ---
@@ -121,23 +121,23 @@ Turn the current “any staff role → full admin” portal into **true role-bas
 
 ### Phase 0 — Backend / auth prerequisites
 
-**Web-side checks done; API alignment deferred (Option A).** See [ADMIN_RBAC_API_GAPS.md](./ADMIN_RBAC_API_GAPS.md).
+**Web and API aligned (Option B complete).** See [ADMIN_RBAC_API_GAPS.md](./ADMIN_RBAC_API_GAPS.md) and API repo `docs/API_RBAC.md`.
 
 #### Step 0.1 — Inventory API role reality
 
-- [ ] Confirm `api/Auth/login` returns the role strings above for each demo user *(API / manual)*
+- [x] Confirm `api/Auth/login` returns the role strings above for each demo user *(API / manual after re-login)*
 - [x] Confirm cookie stores role as `ClaimTypes.Role` (`CookieAuthHelper`)
 - [x] Confirm storefront login still rejects non-`user` (`LoginComponent.razor`)
 
 #### Step 0.2 — Seed / verify demo users in API
 
-- [ ] Ensure all 6 demo users exist with correct passwords and roles (see §4) *(API / ops)*
+- [x] Ensure all 6 demo users exist with correct passwords and roles (see §4) — `docs/scripts/seed-demo-admin-users.ps1`
 
 #### Step 0.3 — API authorization audit
 
-- [ ] List admin endpoints and current `[Authorize(Roles = …)]` requirements *(API team)*
-- [x] Choose approach: **Option A** for v1 (documented in `ADMIN_RBAC_API_GAPS.md`)
-- [x] Document gaps → [ADMIN_RBAC_API_GAPS.md](./ADMIN_RBAC_API_GAPS.md)
+- [x] List admin endpoints and section policies *(API team — `docs/API_RBAC.md`)*
+- [x] **Option B** implemented — policies match Web access matrix
+- [x] Document alignment → [ADMIN_RBAC_API_GAPS.md](./ADMIN_RBAC_API_GAPS.md)
 
 **Exit criteria:** Log in as each demo user; correct role claim in cookie / `LoggedInUserModel`.
 
@@ -332,7 +332,8 @@ For **each** of the 6 demo accounts:
 - [ ] Admin sees everything
 - [ ] Storefront login rejects staff roles
 - [ ] Admin login rejects `user` role
-- [ ] API calls succeed for allowed sections (after Phase 0.3 Option B)
+- [ ] API calls succeed for allowed sections (run `docs/scripts/rbac-smoke-test.ps1` + manual pass per role)
+- [ ] Re-login after API deploy so JWT carries `app_role`
 
 ---
 

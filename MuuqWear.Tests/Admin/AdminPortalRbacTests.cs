@@ -98,14 +98,24 @@ public class AdminHeaderNotificationAccessTests
     [InlineData(AdminPortalRoles.Merchandising, NotificationType.LowStock, true)]
     [InlineData(AdminPortalRoles.SupportTeam, NotificationType.CustomerMessage, true)]
     [InlineData(AdminPortalRoles.OperationsManager, NotificationType.CustomerMessage, false)]
+    [InlineData(AdminPortalRoles.Admin, "campaign_blast", true)]
+    [InlineData(AdminPortalRoles.Merchandising, "campaign_blast", false)]
+    [InlineData(AdminPortalRoles.SupportTeam, "campaign_blast", false)]
     public void CanSeeNotificationType_filters_by_role(string role, string type, bool expected) =>
         Assert.Equal(expected, AdminHeaderNotificationAccess.CanSeeNotificationType(role, type));
 
     [Fact]
-    public void Support_can_see_customer_notes_but_not_customers_page_link()
+    public void Support_can_see_customer_notes_and_lands_on_support()
     {
         Assert.True(AdminHeaderNotificationAccess.CanSeeCustomerNotes(AdminPortalRoles.SupportTeam));
-        Assert.Null(AdminHeaderNotificationAccess.GetCustomerNotesListLink(AdminPortalRoles.SupportTeam));
+        Assert.Equal(
+            "/admin/support",
+            AdminHeaderNotificationAccess.GetCustomerNotesListLink(AdminPortalRoles.SupportTeam));
+        Assert.Equal(
+            "/admin/support",
+            AdminHeaderNotificationAccess.ResolveLink(
+                AdminPortalRoles.SupportTeam,
+                "/admin/customers?view=notes&customerId=abc"));
     }
 
     [Fact]

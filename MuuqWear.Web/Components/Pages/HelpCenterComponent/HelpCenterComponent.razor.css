@@ -87,13 +87,19 @@
 
 /* ─── TOPICS CAROUSEL ───────────────────────────────────────── */
 .hc-topics__track {
-    display: flex;
-    gap: 13px;
+    /* Grid keeps each column exactly the track width (unlike flex 100% in overflow). */
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 100%;
+    gap: 0;
     overflow-x: auto;
+    overflow-y: hidden;
     scroll-snap-type: x mandatory;
     scrollbar-width: none;
     -ms-overflow-style: none;
     padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
 }
 
     .hc-topics__track::-webkit-scrollbar {
@@ -102,7 +108,8 @@
 
 /* ─── TOPIC CARD ────────────────────────────────────────────── */
 .hc-topic-card {
-    flex: 0 0 100%;
+    width: 100%;
+    min-width: 0;
     scroll-snap-align: start;
     scroll-snap-stop: always;
     text-align: left;
@@ -166,10 +173,20 @@
         padding: 55px 34px;
     }
 
+    .hc-topics__track {
+        display: flex;
+        grid-auto-flow: unset;
+        grid-auto-columns: unset;
+        gap: 13px;
+    }
+
     .hc-topic-card {
         flex: 0 0 300px;
+        width: 300px;
+        max-width: none;
         height: 160px;
         min-height: 0;
+        scroll-snap-stop: normal;
     }
 }
 

@@ -188,6 +188,8 @@ public class AuthenticatedHttpHandler : DelegatingHandler
             var identity = (ClaimsIdentity)context.User.Identity!;
             ReplaceOrAdd(identity, "AccessToken", data.AccessToken!);
             ReplaceOrAdd(identity, "RefreshToken", data.RefreshToken!);
+            if (!string.IsNullOrEmpty(data.Role))
+                ReplaceOrAdd(identity, ClaimTypes.Role, data.Role);
 
             var props = await context.AuthenticateAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme);
