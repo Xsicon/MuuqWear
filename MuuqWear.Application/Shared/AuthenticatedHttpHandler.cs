@@ -55,16 +55,21 @@ public class AuthenticatedHttpHandler : DelegatingHandler
 
         var response = await base.SendAsync(request, cancellationToken);
 
+        // Never retry non-idempotent requests — a 401 retry would duplicate inserts
+        // (chat messages, orders, etc.).
         if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized &&
             !string.IsNullOrEmpty(token))
         {
-            var newToken = await TryRefreshAsync(context);
-            if (newToken != null)
+            if (IsIdempotent(request.Method))
             {
-                var retryRequest = await CloneRequest(request);
-                retryRequest.Headers.Authorization =
-                    new AuthenticationHeaderValue("Bearer", newToken);
-                return await base.SendAsync(retryRequest, cancellationToken);
+                var newToken = await TryRefreshAsync(context);
+                if (newToken != null)
+                {
+                    var retryRequest = await CloneRequest(request);
+                    retryRequest.Headers.Authorization =
+                        new AuthenticationHeaderValue("Bearer", newToken);
+                    return await base.SendAsync(retryRequest, cancellationToken);
+                }
             }
 
             await HandleSignOut(context);
@@ -72,6 +77,11 @@ public class AuthenticatedHttpHandler : DelegatingHandler
 
         return response;
     }
+
+    private static bool IsIdempotent(HttpMethod method) =>
+        method == HttpMethod.Get
+        || method == HttpMethod.Head
+        || method == HttpMethod.Options;
 
     private async Task HandleSignOut(HttpContext? context)
     {

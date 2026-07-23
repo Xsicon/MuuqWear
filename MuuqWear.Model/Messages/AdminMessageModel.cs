@@ -1,18 +1,30 @@
 namespace MuuqWear.Model.Messages;
 
+public static class AdminMessageKind
+{
+    public const string Note = "note";
+    public const string LiveChat = "live_chat";
+}
+
 /// <summary>
-/// Admin header message item (customer internal notes, etc.).
+/// Admin header message item (customer internal notes, live chat, etc.).
 /// </summary>
 public class AdminMessageModel
 {
     public Guid Id { get; set; }
+    public string Kind { get; set; } = AdminMessageKind.Note;
     public Guid CustomerId { get; set; }
+    public Guid? ChatSessionId { get; set; }
     public string CustomerName { get; set; } = string.Empty;
     public string Preview { get; set; } = string.Empty;
     public string AuthorLabel { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public bool IsRead { get; set; }
     public string Link { get; set; } = string.Empty;
+
+    public bool IsLiveChat =>
+        Kind.Equals(AdminMessageKind.LiveChat, StringComparison.OrdinalIgnoreCase)
+        || ChatSessionId.HasValue;
 
     public string TimeDisplay
     {

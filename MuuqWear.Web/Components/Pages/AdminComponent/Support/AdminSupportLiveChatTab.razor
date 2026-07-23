@@ -64,7 +64,15 @@
                                 @key="s.Id">
                             <div class="cs-conv-item__top">
                                 <span class="cs-conv-item__name">@s.CustomerName</span>
-                                <span class="cs-conv-item__time">@GetRelativeTime(s.LastActivity)</span>
+                                <div class="cs-conv-item__meta">
+                                    @if (GetSidebarMessageCount(s) > 0)
+                                    {
+                                        <span class="cs-conv-item__msg-count @(ShouldHighlightSidebarCount(s) ? "cs-conv-item__msg-count--unread" : "")">
+                                            @GetSidebarMessageCount(s)
+                                        </span>
+                                    }
+                                    <span class="cs-conv-item__time">@GetRelativeTime(s.LastActivity)</span>
+                                </div>
                             </div>
                             @if (!string.IsNullOrWhiteSpace(s.ContactEmail))
                             {
@@ -140,11 +148,11 @@
                     {
                         <p class="cs-error-banner cs-error-banner--inline">@messagesError</p>
                     }
-                    @if (isLoadingMessages)
+                    else if (isLoadingMessages)
                     {
                         <p class="cs-row__meta">Loading messages…</p>
                     }
-                    else if (messages.Count == 0)
+                    else if (messagesLoadSucceeded && messages.Count == 0)
                     {
                         <p class="cs-row__meta">No messages yet.</p>
                     }

@@ -8,9 +8,15 @@ namespace MuuqWear.Web.Services;
 /// </summary>
 public static class AdminHeaderNotificationAccess
 {
+    public static bool CanSeeLiveChat(string? role) =>
+        AdminPortalRoles.CanAccess(role, AdminPortalSection.Support);
+
     public static bool CanSeeCustomerNotes(string? role) =>
         AdminPortalRoles.CanAccess(role, AdminPortalSection.Support)
         || AdminPortalRoles.CanAccess(role, AdminPortalSection.Customers);
+
+    public static bool CanSeeMessages(string? role) =>
+        CanSeeCustomerNotes(role) || CanSeeLiveChat(role);
 
     public static bool CanSeeNotificationType(string? role, string notificationType)
     {

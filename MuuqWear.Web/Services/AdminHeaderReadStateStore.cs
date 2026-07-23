@@ -11,6 +11,7 @@ public sealed class AdminHeaderReadStateStore
 {
     private const string NotificationIdsKey = "admin-read-notification-ids";
     private const string NoteReadAtKey = "admin-read-note-at";
+    private const string ChatReadAtKey = "admin-read-chat-at";
     private const string LowStockFirstSeenKey = "admin-low-stock-first-seen";
 
     private readonly IJSRuntime _js;
@@ -49,6 +50,28 @@ public sealed class AdminHeaderReadStateStore
                 .Select(pair => new NoteReadAtEntry
                 {
                     CustomerId = pair.Key,
+                    ReadAt = AdminDateTimeHelper.ToUtc(pair.Value)
+                })
+                .ToList());
+
+    public async Task<Dictionary<Guid, DateTime>> LoadChatReadAtAsync()
+    {
+        var entries = await LoadJsonAsync<List<ChatReadAtEntry>>(ChatReadAtKey);
+        if (entries is not { Count: > 0 })
+            return new Dictionary<Guid, DateTime>();
+
+        return entries.ToDictionary(
+            entry => entry.SessionId,
+            entry => AdminDateTimeHelper.ToUtc(entry.ReadAt));
+    }
+
+    public Task SaveChatReadAtAsync(IReadOnlyDictionary<Guid, DateTime> readAtBySessionId) =>
+        SaveJsonAsync(
+            ChatReadAtKey,
+            readAtBySessionId
+                .Select(pair => new ChatReadAtEntry
+                {
+                    SessionId = pair.Key,
                     ReadAt = AdminDateTimeHelper.ToUtc(pair.Value)
                 })
                 .ToList());
@@ -109,6 +132,12 @@ public sealed class AdminHeaderReadStateStore
     private sealed class NoteReadAtEntry
     {
         public Guid CustomerId { get; set; }
+        public DateTime ReadAt { get; set; }
+    }
+
+    private sealed class ChatReadAtEntry
+    {
+        public Guid SessionId { get; set; }
         public DateTime ReadAt { get; set; }
     }
 

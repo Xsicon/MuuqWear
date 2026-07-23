@@ -1,8 +1,12 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.JSInterop;
 using MuuqWear.Application.Services.ChatService;
+using MuuqWear.Application.Shared;
 using MuuqWear.Model.Chat;
+using MuuqWear.Web.Helpers;
 using MuuqWear.Web.Services;
 
 namespace MuuqWear.Web.Components.Pages.AdminComponent.Support;
@@ -10,29 +14,39 @@ namespace MuuqWear.Web.Components.Pages.AdminComponent.Support;
 public partial class AdminSupportLiveChatTab : IDisposable
 {
     private const int CountUnchanged = -1;
+    private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(3);
+    private static readonly TimeSpan MessageLoadTimeout = TimeSpan.FromSeconds(30);
 
     [Parameter] public EventCallback<(int chats, int tickets)> OnCountsChanged { get; set; }
 
     [Inject] private IJSRuntime JS { get; set; } = default!;
+    [Inject] private NavigationManager NavigationManager { get; set; } = default!;
+    [Inject] private AdminSupportTabCoordinator SupportTabCoordinator { get; set; } = default!;
+    [Inject] private AuthenticationStateProvider AuthStateProvider { get; set; } = default!;
 
     private List<ChatSessionModel> sessions = [];
     private List<ChatMessageModel> messages = [];
+    private readonly Dictionary<Guid, DateTime> readChatAtBySessionId = new();
+    private AdminHeaderReadStateStore? readStateStore;
     private Guid? selectedSessionId;
     private ChatSessionModel? selectedSession;
     private string adminMessageInput = string.Empty;
     private bool isLoading = true;
     private bool isLoadingMessages;
+    private bool messagesLoadSucceeded;
     private bool isSendingAdminMessage;
     private bool isClosingSession;
-    private bool isPollingSessions;
-    private bool isPollingMessages;
     private string? loadError;
     private string? messagesError;
     private string? actionError;
-    private System.Timers.Timer? sessionsTimer;
-    private System.Timers.Timer? messagesTimer;
+    private CancellationTokenSource? pollCts;
+    private CancellationTokenSource? messagesPollCts;
+    private Task? sessionsPollTask;
+    private Task? messagesPollTask;
     private int resolvedTodayCount;
     private DateOnly resolvedTodayDate = DateOnly.FromDateTime(DateTime.Now);
+    private int _messagesLoadVersion;
+    private int _lastHeaderRefreshSignature = int.MinValue;
 
     private int activeCount => sessions.Count(s => !IsWaiting(s));
     private int waitingCount => sessions.Count(IsWaiting);
@@ -52,14 +66,30 @@ public partial class AdminSupportLiveChatTab : IDisposable
         }
     }
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (!firstRender)
+            return;
+
+        SupportTabCoordinator.SessionFocusRequested += OnSessionFocusRequested;
+        SupportTabCoordinator.SessionReadRequested += OnSessionReadRequested;
+        pollCts = new CancellationTokenSource();
+
         try
         {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var userId = AdminHeaderUserScope.GetUserId(authState.User);
+            readStateStore = new AdminHeaderReadStateStore(JS, userId);
+            foreach (var entry in await readStateStore.LoadChatReadAtAsync())
+                readChatAtBySessionId[entry.Key] = entry.Value;
+
             await LoadSessions();
             StartSessionsPolling();
 
-            if (sessions.Count > 0)
+            var focusSessionId = TryGetSessionIdFromUri();
+            if (focusSessionId.HasValue && sessions.Any(s => s.Id == focusSessionId.Value))
+                await SelectSession(focusSessionId.Value);
+            else if (sessions.Count > 0)
                 await SelectSession(sessions[0].Id);
         }
         catch (Exception ex)
@@ -69,19 +99,92 @@ public partial class AdminSupportLiveChatTab : IDisposable
         finally
         {
             isLoading = false;
+            await InvokeAsync(StateHasChanged);
         }
+
+        await NotifyCounts();
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    private void OnSessionFocusRequested(Guid sessionId)
     {
-        if (firstRender)
-            await NotifyCounts();
+        _ = InvokeAsync(async () =>
+        {
+            if (sessions.All(s => s.Id != sessionId))
+                await LoadSessions();
+
+            if (sessions.Any(s => s.Id == sessionId))
+                await SelectSession(sessionId);
+        });
+    }
+
+    private void OnSessionReadRequested(Guid sessionId, DateTime lastActivity)
+    {
+        MarkSessionReadLocally(sessionId, lastActivity);
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void MarkSessionReadLocally(Guid sessionId, DateTime lastActivity)
+    {
+        AdminHeaderLiveChatMessagesBuilder.MarkSessionRead(
+            readChatAtBySessionId,
+            sessionId,
+            lastActivity);
+        _ = PersistReadStateAsync();
+    }
+
+    private Task PersistReadStateAsync() =>
+        readStateStore?.SaveChatReadAtAsync(readChatAtBySessionId) ?? Task.CompletedTask;
+
+    private int unreadChatCount =>
+        AdminHeaderLiveChatMessagesBuilder.CountUnreadSessions(sessions, readChatAtBySessionId);
+
+    private int GetSidebarMessageCount(ChatSessionModel session) =>
+        AdminHeaderLiveChatMessagesBuilder.GetSidebarMessageCount(session, readChatAtBySessionId);
+
+    private bool ShouldHighlightSidebarCount(ChatSessionModel session) =>
+        AdminHeaderLiveChatMessagesBuilder.ShouldHighlightSidebarCount(session, readChatAtBySessionId);
+
+    private Guid? TryGetSessionIdFromUri()
+    {
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        if (!QueryHelpers.ParseQuery(uri.Query).TryGetValue("sessionId", out var value))
+            return null;
+
+        return Guid.TryParse(value.ToString(), out var sessionId) ? sessionId : null;
     }
 
     private async Task NotifyCounts()
     {
         if (OnCountsChanged.HasDelegate)
-            await OnCountsChanged.InvokeAsync((sessions.Count, CountUnchanged));
+            await OnCountsChanged.InvokeAsync((unreadChatCount, CountUnchanged));
+    }
+
+    private int ComputeHeaderRefreshSignature()
+    {
+        var hash = new HashCode();
+        hash.Add(unreadChatCount);
+        foreach (var session in sessions.OrderBy(s => s.Id))
+        {
+            hash.Add(session.Id);
+            hash.Add(session.LastActivity.Ticks);
+            hash.Add(session.UnreadMessageCount);
+            hash.Add(session.LastMessageSender);
+            if (readChatAtBySessionId.TryGetValue(session.Id, out var readAt))
+                hash.Add(readAt.Ticks);
+        }
+
+        return hash.ToHashCode();
+    }
+
+    private void RequestHeaderRefreshIfChanged()
+    {
+        var signature = ComputeHeaderRefreshSignature();
+        if (signature == _lastHeaderRefreshSignature)
+            return;
+
+        _lastHeaderRefreshSignature = signature;
+        SupportTabCoordinator.RequestMessagesRefresh();
+        SupportTabCoordinator.RequestBadgeCountsRefresh();
     }
 
     private static bool IsWaiting(ChatSessionModel s) =>
@@ -89,11 +192,8 @@ public partial class AdminSupportLiveChatTab : IDisposable
 
     private async Task LoadSessions()
     {
-        if (isPollingSessions) return;
-
         try
         {
-            isPollingSessions = true;
             var result = await ChatService.GetActiveSessions();
 
             if (result.Success && result.Data != null)
@@ -107,12 +207,14 @@ public partial class AdminSupportLiveChatTab : IDisposable
                     if (selectedSession == null)
                     {
                         selectedSessionId = null;
-                        messages.Clear();
+                        messages = [];
+                        messagesLoadSucceeded = false;
                         StopMessagesPolling();
                     }
                 }
 
                 await NotifyCounts();
+                RequestHeaderRefreshIfChanged();
             }
             else
             {
@@ -123,74 +225,102 @@ public partial class AdminSupportLiveChatTab : IDisposable
         {
             loadError = AdminUiErrorHelper.FromException(ex);
         }
-        finally
-        {
-            isPollingSessions = false;
-        }
     }
 
     private void StartSessionsPolling()
     {
-        if (sessionsTimer != null) return;
+        if (sessionsPollTask != null || pollCts == null)
+            return;
 
-        sessionsTimer = new System.Timers.Timer(3000);
-        sessionsTimer.Elapsed += async (_, _) =>
+        sessionsPollTask = PollSessionsAsync(pollCts.Token);
+    }
+
+    private async Task PollSessionsAsync(CancellationToken cancellationToken)
+    {
+        using var timer = new PeriodicTimer(PollInterval);
+
+        while (await timer.WaitForNextTickAsync(cancellationToken))
         {
             await InvokeAsync(async () =>
             {
                 await LoadSessions();
                 StateHasChanged();
             });
-        };
-        sessionsTimer.AutoReset = true;
-        sessionsTimer.Start();
+        }
     }
 
     private void StopSessionsPolling()
     {
-        sessionsTimer?.Stop();
-        sessionsTimer?.Dispose();
-        sessionsTimer = null;
+        pollCts?.Cancel();
+        pollCts?.Dispose();
+        pollCts = null;
+        sessionsPollTask = null;
+        StopMessagesPolling();
     }
 
     private async Task LoadMessages()
     {
-        if (!selectedSessionId.HasValue || isPollingMessages) return;
+        if (!selectedSessionId.HasValue)
+            return;
+
+        var sessionId = selectedSessionId.Value;
+        var loadVersion = _messagesLoadVersion;
 
         try
         {
-            isPollingMessages = true;
             isLoadingMessages = messages.Count == 0;
 
-            var result = await ChatService.GetMessages(selectedSessionId.Value);
+            var loadTask = ChatService.GetMessages(sessionId);
+            var completed = await Task.WhenAny(loadTask, Task.Delay(MessageLoadTimeout));
+
+            if (completed != loadTask)
+            {
+                if (loadVersion == _messagesLoadVersion && selectedSessionId == sessionId)
+                    messagesError = "Timed out loading messages. Please try again.";
+                return;
+            }
+
+            var result = await loadTask;
+
+            if (loadVersion != _messagesLoadVersion || selectedSessionId != sessionId)
+                return;
+
             if (result.Success && result.Data != null)
             {
                 ApplyServerMessages(result.Data);
+                messagesLoadSucceeded = true;
                 messagesError = null;
             }
             else
             {
+                messagesLoadSucceeded = false;
                 messagesError = AdminUiErrorHelper.FromApi(result.Message, "Failed to load messages.");
             }
         }
         catch (Exception ex)
         {
-            messagesError = AdminUiErrorHelper.FromException(ex);
+            if (loadVersion == _messagesLoadVersion && selectedSessionId == sessionId)
+            {
+                messagesLoadSucceeded = false;
+                messagesError = AdminUiErrorHelper.FromException(ex);
+            }
         }
         finally
         {
-            isPollingMessages = false;
-            isLoadingMessages = false;
+            if (loadVersion == _messagesLoadVersion && selectedSessionId == sessionId)
+                isLoadingMessages = false;
         }
     }
 
     private void ApplyServerMessages(List<ChatMessageModel> serverMessages)
     {
-        if (isSendingAdminMessage && serverMessages.Count < messages.Count)
-            return;
-
         var serverIds = serverMessages.Select(m => m.Id).ToHashSet();
         var pendingLocal = messages.Where(m => !serverIds.Contains(m.Id)).ToList();
+        var previousIds = messages.Select(m => m.Id).ToHashSet();
+
+        if (isSendingAdminMessage && pendingLocal.Count > 0 && serverMessages.Count < messages.Count)
+            return;
+
         var merged = serverMessages
             .Concat(pendingLocal)
             .OrderBy(m => m.CreatedAt)
@@ -201,42 +331,74 @@ public partial class AdminSupportLiveChatTab : IDisposable
             return;
 
         messages = merged;
+
+        if (merged.Any(m =>
+                m.SenderType is "customer"
+                && !previousIds.Contains(m.Id)))
+        {
+            SupportTabCoordinator.RequestMessagesRefresh();
+            SupportTabCoordinator.RequestBadgeCountsRefresh();
+        }
     }
 
     private void StartMessagesPolling()
     {
-        if (messagesTimer != null) return;
+        messagesPollCts?.Cancel();
+        messagesPollCts?.Dispose();
 
-        messagesTimer = new System.Timers.Timer(3000);
-        messagesTimer.Elapsed += async (_, _) =>
+        if (pollCts == null)
+            return;
+
+        messagesPollCts = CancellationTokenSource.CreateLinkedTokenSource(pollCts.Token);
+        messagesPollTask = PollMessagesAsync(messagesPollCts.Token);
+    }
+
+    private async Task PollMessagesAsync(CancellationToken cancellationToken)
+    {
+        using var timer = new PeriodicTimer(PollInterval);
+
+        while (await timer.WaitForNextTickAsync(cancellationToken))
         {
             await InvokeAsync(async () =>
             {
                 await LoadMessages();
                 StateHasChanged();
             });
-        };
-        messagesTimer.AutoReset = true;
-        messagesTimer.Start();
+        }
     }
 
     private void StopMessagesPolling()
     {
-        messagesTimer?.Stop();
-        messagesTimer?.Dispose();
-        messagesTimer = null;
+        messagesPollCts?.Cancel();
+        messagesPollCts?.Dispose();
+        messagesPollCts = null;
+        messagesPollTask = null;
     }
 
     private async Task SelectSession(Guid sessionId)
     {
-        StopMessagesPolling();
+        _messagesLoadVersion++;
         selectedSessionId = sessionId;
         selectedSession = sessions.FirstOrDefault(s => s.Id == sessionId);
-        messages.Clear();
+        messages = [];
+        messagesLoadSucceeded = false;
         messagesError = null;
         actionError = null;
-        await Task.WhenAll(LoadSessionDetails(sessionId), LoadMessages());
+        isLoadingMessages = true;
+
+        if (selectedSession != null && IsWaiting(selectedSession))
+        {
+            MarkSessionReadLocally(sessionId, selectedSession.LastActivity);
+            SupportTabCoordinator.NotifySessionRead(sessionId, selectedSession.LastActivity);
+        }
+
+        StateHasChanged();
+
+        await LoadSessionDetails(sessionId);
+        await LoadMessages();
         StartMessagesPolling();
+        RequestHeaderRefreshIfChanged();
+        StateHasChanged();
     }
 
     private async Task LoadSessionDetails(Guid sessionId)
@@ -303,6 +465,7 @@ public partial class AdminSupportLiveChatTab : IDisposable
             if (result.Success && result.Data != null)
             {
                 messages.Add(result.Data);
+                messagesLoadSucceeded = true;
                 adminMessageInput = string.Empty;
             }
             else
@@ -344,13 +507,15 @@ public partial class AdminSupportLiveChatTab : IDisposable
                 sessions.RemoveAll(s => s.Id == selectedSessionId);
                 selectedSessionId = null;
                 selectedSession = null;
-                messages.Clear();
+                messages = [];
+                messagesLoadSucceeded = false;
                 StopMessagesPolling();
 
                 if (sessions.Count > 0)
                     await SelectSession(sessions[0].Id);
 
                 await NotifyCounts();
+                RequestHeaderRefreshIfChanged();
             }
             else
             {
@@ -378,7 +543,8 @@ public partial class AdminSupportLiveChatTab : IDisposable
 
     public void Dispose()
     {
+        SupportTabCoordinator.SessionFocusRequested -= OnSessionFocusRequested;
+        SupportTabCoordinator.SessionReadRequested -= OnSessionReadRequested;
         StopSessionsPolling();
-        StopMessagesPolling();
     }
 }

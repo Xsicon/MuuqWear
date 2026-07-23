@@ -573,7 +573,33 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 8px;
     margin-bottom: 4px;
+}
+
+::deep .cs-conv-item__meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+::deep .cs-conv-item__msg-count {
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: #EEF1F8;
+    color: #4A5C7A;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 20px;
+    text-align: center;
+}
+
+::deep .cs-conv-item__msg-count--unread {
+    background: #F59E0B;
+    color: #fff;
 }
 
 ::deep .cs-conv-item__name {

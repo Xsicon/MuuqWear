@@ -1,5 +1,5 @@
 ﻿@page "/help"
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 @using MuuqWear.Web.Components.Shared
 @inject IJSRuntime JS
 @inject NavigationManager NavigationManager

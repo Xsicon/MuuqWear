@@ -1,4 +1,3 @@
-@rendermode InteractiveServer
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Components.Routing
 @using MuuqWear.Application.Services.ChatService
@@ -209,14 +208,16 @@
                     <div class="hc-widget__chat-input-row">
                         <input @bind="messageInput"
                                @bind:event="oninput"
-                               @onkeydown="HandleKeyDown"
+                               @onkeydown="HandleChatKeyDown"
                                placeholder="Type a message..."
                                class="hc-widget__chat-input"
-                               disabled="@isSendingMessage" />
+                               disabled="@isSendingMessage"
+                               autocomplete="off" />
                         <button type="button"
                                 class="hc-widget__chat-send"
                                 @onclick="SendMessage"
-                                disabled="@(isSendingMessage || string.IsNullOrWhiteSpace(messageInput))">
+                                disabled="@(isSendingMessage || string.IsNullOrWhiteSpace(messageInput))"
+                                aria-label="Send message">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
                                  viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

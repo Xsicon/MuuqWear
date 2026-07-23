@@ -9,9 +9,13 @@
 @using MuuqWear.Web.Constants
 @using MuuqWear.Web.Helpers
 @using MuuqWear.Web.Services
+@using MuuqWear.Application.Services.ChatService
+@using Microsoft.JSInterop
 @inject AuthenticationStateProvider AuthStateProvider
 @inject AdminBadgeCountsCacheService BadgeCountsCache
 @inject AdminLowStockCacheService LowStockCache
+@inject IChatService ChatService
+@inject IJSRuntime JS
 @inject NavigationManager NavigationManager
 @inject AdminOrdersTabCoordinator OrdersTabCoordinator
 @inject AdminProductsTabCoordinator ProductsTabCoordinator
@@ -344,9 +348,9 @@
                 <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"></path>
             </svg>
             <span class="an-nav__label">Customer Support</span>
-            @if (counts is not null && counts.ActiveChats > 0)
+            @if (unreadLiveChatCount > 0)
             {
-                <span class="an-nav__badge an-nav__badge--green">@counts.ActiveChats</span>
+                <span class="an-nav__badge an-nav__badge--green">@unreadLiveChatCount</span>
             }
             else if (openTickets > 0)
             {
@@ -365,9 +369,9 @@
                         class="an-nav__subitem @(IsSupportTabActive("live-chat") ? "an-nav__subitem--active" : "")"
                         @onclick='() => NavigateToSupportTab("live-chat")'>
                     Live Chat
-                    @if (counts is not null && counts.ActiveChats > 0)
+                    @if (unreadLiveChatCount > 0)
                     {
-                        <span class="an-nav__badge an-nav__badge--green">@counts.ActiveChats</span>
+                        <span class="an-nav__badge an-nav__badge--green">@unreadLiveChatCount</span>
                     }
                 </button>
                 <button type="button"
@@ -499,9 +503,12 @@
     private string userRoleDisplay = "Staff";
     private string? userRole;
     private int openTickets = 0;
-    private int lowStockCount = 0;
+    private int unreadLiveChatCount;
     private AdminBadgeCountsModel? counts;
     private string? navCountsWarning;
+    private int lowStockCount = 0;
+    private readonly Dictionary<Guid, DateTime> readChatAtBySessionId = new();
+    private AdminHeaderReadStateStore? readStateStore;
     private bool salesOrdersOpen;
     private bool productsInventoryOpen;
     private bool customersOpen;
@@ -519,17 +526,28 @@
         (userName, userInitials, userRoleDisplay) = AdminPortalUserContext.FromClaims(user);
         userRole = AdminPortalUserContext.GetRole(user);
 
+        if (CanSeeSection(AdminPortalSection.Support))
+        {
+            readStateStore = new AdminHeaderReadStateStore(JS, AdminHeaderUserScope.GetUserId(user));
+            foreach (var entry in await readStateStore.LoadChatReadAtAsync())
+                readChatAtBySessionId[entry.Key] = entry.Value;
+        }
+
         var loadTasks = new List<Task>();
         if (NeedsBadgeCounts)
             loadTasks.Add(RefreshBadgeCountsAsync());
         if (NeedsLowStockCount)
             loadTasks.Add(RefreshLowStockCountAsync());
+        if (CanSeeSection(AdminPortalSection.Support))
+            loadTasks.Add(RefreshLiveChatUnreadBadgeAsync());
         if (loadTasks.Count > 0)
             await Task.WhenAll(loadTasks);
 
         NavigationManager.LocationChanged += OnLocationChanged;
         OrdersTabCoordinator.BadgeCountsRefreshRequested += OnBadgeCountsRefreshRequested;
         ProductsTabCoordinator.BadgeCountsRefreshRequested += OnProductsBadgeCountsRefreshRequested;
+        SupportTabCoordinator.BadgeCountsRefreshRequested += OnSupportBadgeRefreshRequested;
+        SupportTabCoordinator.SessionReadRequested += OnLiveChatSessionRead;
         SyncSalesOrdersGroup();
         SyncProductsInventoryGroup();
         SyncCustomersGroup();
@@ -564,6 +582,63 @@
             await RefreshLowStockCountAsync(forceRefresh: true);
             StateHasChanged();
         });
+    }
+
+    private void OnSupportBadgeRefreshRequested()
+    {
+        if (!CanSeeSection(AdminPortalSection.Support))
+            return;
+
+        _ = InvokeAsync(async () =>
+        {
+            await RefreshLiveChatUnreadBadgeAsync();
+            StateHasChanged();
+        });
+    }
+
+    private void OnLiveChatSessionRead(Guid sessionId, DateTime lastActivity)
+    {
+        if (!CanSeeSection(AdminPortalSection.Support))
+            return;
+
+        AdminHeaderLiveChatMessagesBuilder.MarkSessionRead(
+            readChatAtBySessionId,
+            sessionId,
+            lastActivity);
+
+        _ = InvokeAsync(async () =>
+        {
+            await RefreshLiveChatUnreadBadgeAsync();
+            StateHasChanged();
+        });
+    }
+
+    private async Task RefreshLiveChatUnreadBadgeAsync()
+    {
+        if (!CanSeeSection(AdminPortalSection.Support))
+        {
+            unreadLiveChatCount = 0;
+            return;
+        }
+
+        try
+        {
+            var result = await ChatService.GetActiveSessions();
+            if (result.Success && result.Data != null)
+            {
+                unreadLiveChatCount = AdminHeaderLiveChatMessagesBuilder.CountUnreadSessions(
+                    result.Data,
+                    readChatAtBySessionId);
+            }
+            else
+            {
+                unreadLiveChatCount = 0;
+            }
+        }
+        catch
+        {
+            // Keep the last known unread count when refresh fails.
+        }
     }
 
     private async Task RefreshBadgeCountsAsync(bool forceRefresh = false)
@@ -934,5 +1009,7 @@
         NavigationManager.LocationChanged -= OnLocationChanged;
         OrdersTabCoordinator.BadgeCountsRefreshRequested -= OnBadgeCountsRefreshRequested;
         ProductsTabCoordinator.BadgeCountsRefreshRequested -= OnProductsBadgeCountsRefreshRequested;
+        SupportTabCoordinator.BadgeCountsRefreshRequested -= OnSupportBadgeRefreshRequested;
+        SupportTabCoordinator.SessionReadRequested -= OnLiveChatSessionRead;
     }
 }

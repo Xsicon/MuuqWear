@@ -4,7 +4,6 @@ using System.Net.Http.Json;
 
 namespace MuuqWear.Application.Services.ChatService;
 
-
 public class ChatService : IChatService
 {
     private readonly HttpClient _httpClient;
@@ -19,20 +18,11 @@ public class ChatService : IChatService
         try
         {
             var response = await _httpClient.PostAsJsonAsync("api/Chat/send", request);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                var error = await response.Content.ReadFromJsonAsync<Response<ChatMessageModel>>();
-                return error ?? Response<ChatMessageModel>.Fail("Failed to send message");
-            }
-
-            var result = await response.Content.ReadFromJsonAsync<Response<ChatMessageModel>>();
-            return result ?? Response<ChatMessageModel>.Fail("Invalid response");
+            return await HttpResponseReader.ReadAsync<ChatMessageModel>(response);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[Frontend Chat] SendMessage error: {ex.Message}");
-            return Response<ChatMessageModel>.Fail($"Error: {ex.Message}");
+            return Response<ChatMessageModel>.Fail(HttpResponseReader.FromException(ex));
         }
     }
 
@@ -40,15 +30,12 @@ public class ChatService : IChatService
     {
         try
         {
-            var result = await _httpClient
-                .GetFromJsonAsync<Response<List<ChatMessageModel>>>($"api/Chat/messages/{sessionId}");
-
-            return result ?? Response<List<ChatMessageModel>>.Fail("Invalid response");
+            var response = await _httpClient.GetAsync($"api/Chat/messages/{sessionId}");
+            return await HttpResponseReader.ReadAsync<List<ChatMessageModel>>(response);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[Frontend Chat] GetMessages error: {ex.Message}");
-            return Response<List<ChatMessageModel>>.Fail($"Error: {ex.Message}");
+            return Response<List<ChatMessageModel>>.Fail(HttpResponseReader.FromException(ex));
         }
     }
 
@@ -56,15 +43,12 @@ public class ChatService : IChatService
     {
         try
         {
-            var result = await _httpClient
-                .GetFromJsonAsync<Response<List<ChatSessionModel>>>("api/Chat/active-sessions");
-
-            return result ?? Response<List<ChatSessionModel>>.Fail("Invalid response");
+            var response = await _httpClient.GetAsync("api/Chat/active-sessions");
+            return await HttpResponseReader.ReadAsync<List<ChatSessionModel>>(response);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[Frontend Chat] GetActiveSessions error: {ex.Message}");
-            return Response<List<ChatSessionModel>>.Fail($"Error: {ex.Message}");
+            return Response<List<ChatSessionModel>>.Fail(HttpResponseReader.FromException(ex));
         }
     }
 
@@ -72,15 +56,12 @@ public class ChatService : IChatService
     {
         try
         {
-            var result = await _httpClient
-                .GetFromJsonAsync<Response<ChatSessionModel>>($"api/Chat/session/{sessionId}");
-
-            return result ?? Response<ChatSessionModel>.Fail("Invalid response");
+            var response = await _httpClient.GetAsync($"api/Chat/session/{sessionId}");
+            return await HttpResponseReader.ReadAsync<ChatSessionModel>(response);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[Frontend Chat] GetSession error: {ex.Message}");
-            return Response<ChatSessionModel>.Fail($"Error: {ex.Message}");
+            return Response<ChatSessionModel>.Fail(HttpResponseReader.FromException(ex));
         }
     }
 
@@ -89,17 +70,11 @@ public class ChatService : IChatService
         try
         {
             var response = await _httpClient.PostAsync($"api/Chat/close/{sessionId}", null);
-
-            if (!response.IsSuccessStatusCode)
-                return Response<bool>.Fail("Failed to close session");
-
-            var result = await response.Content.ReadFromJsonAsync<Response<bool>>();
-            return result ?? Response<bool>.Fail("Invalid response");
+            return await HttpResponseReader.ReadAsync<bool>(response);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[Frontend Chat] CloseSession error: {ex.Message}");
-            return Response<bool>.Fail($"Error: {ex.Message}");
+            return Response<bool>.Fail(HttpResponseReader.FromException(ex));
         }
     }
 
@@ -107,15 +82,12 @@ public class ChatService : IChatService
     {
         try
         {
-            var result = await _httpClient
-                .GetFromJsonAsync<Response<string>>($"api/Chat/session/{sessionId}/status");
-            return result ?? Response<string>.Fail("Invalid response");
+            var response = await _httpClient.GetAsync($"api/Chat/session/{sessionId}/status");
+            return await HttpResponseReader.ReadAsync<string>(response);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[Frontend Chat] GetSessionStatus error: {ex.Message}");
-            return Response<string>.Fail($"Error: {ex.Message}");
+            return Response<string>.Fail(HttpResponseReader.FromException(ex));
         }
     }
-
 }

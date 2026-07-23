@@ -117,6 +117,7 @@ public static class AdminHeaderMessagesBuilder
         return new AdminMessageModel
         {
             Id = note.Id,
+            Kind = AdminMessageKind.Note,
             CustomerId = customer.Id,
             CustomerName = name,
             Preview = TruncatePreview(note.Body),

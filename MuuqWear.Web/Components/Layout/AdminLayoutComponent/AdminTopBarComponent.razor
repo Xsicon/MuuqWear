@@ -3,6 +3,7 @@
 @using Microsoft.AspNetCore.Components.Web
 @using Microsoft.JSInterop
 @using MuuqWear.Application.Services.AffiliateService
+@using MuuqWear.Application.Services.ChatService
 @using MuuqWear.Application.Services.CustomerService
 @using MuuqWear.Application.Services.NotificationService
 @using MuuqWear.Application.Services.OrderService
@@ -19,12 +20,15 @@
 @inject IOrderService OrderService
 @inject IAffiliateService AffiliateService
 @inject ICustomerService CustomerService
+@inject IChatService ChatService
+@inject AdminSupportTabCoordinator SupportTabCoordinator
 @inject IJSRuntime JS
 @inject AdminProductsTabCoordinator ProductsTabCoordinator
 @inject AdminCustomersTabCoordinator CustomersTabCoordinator
 @inject AdminOrdersTabCoordinator OrdersTabCoordinator
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthStateProvider
+@inject ILogger<AdminTopBarComponent> Logger
 @implements IDisposable
 
 <header class="at-topbar">
@@ -212,8 +216,8 @@
             }
         </div>
 
-        <!-- Messages (customer internal notes) -->
-        @if (CanSeeCustomerNotes())
+        <!-- Messages (live chat + customer internal notes) -->
+        @if (CanSeeMessages())
         {
         <div class="at-topbar__icon-wrap">
             <button type="button"
@@ -253,28 +257,31 @@
                     }
                     else if (!messages.Any())
                     {
-                        <div class="at-notif-dropdown__empty">No customer notes yet.</div>
+                        <div class="at-notif-dropdown__empty">No new messages.</div>
                     }
                     else
                     {
-                        <p class="at-notif-dropdown__section">Recent notes (@messageCount)</p>
-
-                        @if (customersFeedTruncated)
+                        @foreach (var entry in GetMessagesWithSections())
                         {
-                            <p class="at-notif-dropdown__truncation">
-                                Showing the first @AdminHeaderFeedLoader.MaxRecords of @customersTotalCount customers.
-                                Counts may be incomplete.
-                            </p>
-                        }
+                            @if (entry.SectionLabel is not null)
+                            {
+                                <p class="at-notif-dropdown__section">@entry.SectionLabel</p>
+                            }
 
-                        @foreach (var message in messages)
-                        {
+                            var message = entry.Message;
                             <button type="button"
                                     class="at-notif-item @(message.IsRead ? "" : "at-notif-item--unread")"
-                                    @key="message.Id"
+                                    @key="@($"{message.Kind}:{message.Id}:{message.ChatSessionId}")"
                                     @onclick="() => HandleMessageClick(message)">
-                                <div class="at-notif-item__icon at-notif-item__icon--note">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                                <div class="at-notif-item__icon @(message.IsLiveChat ? "at-notif-item__icon--ticket" : "at-notif-item__icon--note")">
+                                    @if (message.IsLiveChat)
+                                    {
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
+                                    }
+                                    else
+                                    {
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                                    }
                                 </div>
                                 <div class="at-notif-item__content">
                                     <p class="at-notif-item__message">@message.CustomerName</p>
@@ -283,12 +290,23 @@
                             </button>
                         }
 
-                        @if (CustomerNotesListLink is not null && messageCount > messages.Count)
+                        @if (CanSeeCustomerNotes()
+                             && CustomerNotesListLink is not null
+                             && noteMessageCount > messages.Count(m => !m.IsLiveChat))
                         {
                             <button type="button"
                                     class="at-notif-dropdown__view-all"
                                     @onclick="ViewAllCustomerNotes">
                                 View all customer notes
+                            </button>
+                        }
+
+                        @if (CanSeeLiveChat() && liveChatMessageCount > messages.Count(m => m.IsLiveChat))
+                        {
+                            <button type="button"
+                                    class="at-notif-dropdown__view-all"
+                                    @onclick="ViewAllLiveChat">
+                                View all live chats
                             </button>
                         }
                     }
@@ -349,8 +367,11 @@
     private List<NotificationModel> notifications = new();
     private List<AdminMessageModel> messages = new();
     private List<(CustomerModel Customer, CustomerNoteModel Note)> loadedNoteEntries = new();
+    private List<MuuqWear.Model.Chat.ChatSessionModel> loadedChatSessions = new();
     private int unreadCount;
     private int unreadMessageCount;
+    private int noteMessageCount;
+    private int liveChatMessageCount;
     private int lowStockCount;
     private int pendingOrderCount;
     private int pendingAffiliateCount;
@@ -361,6 +382,7 @@
     private readonly HashSet<Guid> lowStockProductIds = new();
     private readonly HashSet<Guid> readNotificationIds = new();
     private readonly Dictionary<Guid, DateTime> readNoteAtByCustomerId = new();
+    private readonly Dictionary<Guid, DateTime> readChatAtBySessionId = new();
     private readonly Dictionary<Guid, DateTime> lowStockFirstSeenAt = new();
     private AdminHeaderReadStateStore? readStateStore;
     private string userName = string.Empty;
@@ -368,7 +390,9 @@
     private string userRoleDisplay = "Staff";
     private string? userRole;
     private System.Threading.Timer? _refreshTimer;
+    private System.Threading.Timer? _chatRefreshTimer;
     private const int RefreshIntervalSeconds = 120;
+    private const int ChatRefreshIntervalSeconds = 30;
 
     protected override async Task OnInitializedAsync()
     {
@@ -377,11 +401,13 @@
         (userName, userInitials, userRoleDisplay) = AdminPortalUserContext.FromClaims(user);
         userRole = AdminPortalUserContext.GetRole(user);
 
-        var userId = user.FindFirst("UserId")?.Value ?? string.Empty;
+        var userId = AdminHeaderUserScope.GetUserId(user);
 
         ProductsTabCoordinator.BadgeCountsRefreshRequested += OnProductsChanged;
         CustomersTabCoordinator.MessagesRefreshRequested += OnCustomerNotesChanged;
         OrdersTabCoordinator.BadgeCountsRefreshRequested += OnOrdersChanged;
+        SupportTabCoordinator.MessagesRefreshRequested += OnLiveChatChanged;
+        SupportTabCoordinator.SessionReadRequested += OnLiveChatSessionRead;
 
         readStateStore = new AdminHeaderReadStateStore(JS, userId);
         await LoadPersistedReadStateAsync();
@@ -392,7 +418,18 @@
             TimeSpan.FromSeconds(RefreshIntervalSeconds),
             TimeSpan.FromSeconds(RefreshIntervalSeconds));
 
+        if (CanSeeLiveChat())
+        {
+            _chatRefreshTimer = new System.Threading.Timer(
+                _ => _ = InvokeAsync(RefreshChatMessageBadgeAsync),
+                null,
+                TimeSpan.FromSeconds(ChatRefreshIntervalSeconds),
+                TimeSpan.FromSeconds(ChatRefreshIntervalSeconds));
+        }
+
         await RefreshBadgeCountsAsync();
+        if (CanSeeMessages())
+            await RefreshChatMessageBadgeAsync();
     }
 
     private async Task LoadPersistedReadStateAsync()
@@ -408,6 +445,10 @@
         foreach (var (customerId, readAt) in noteReadAt)
             readNoteAtByCustomerId[customerId] = readAt;
 
+        var chatReadAt = await readStateStore.LoadChatReadAtAsync();
+        foreach (var (sessionId, readAt) in chatReadAt)
+            readChatAtBySessionId[sessionId] = readAt;
+
         var firstSeen = await readStateStore.LoadLowStockFirstSeenAsync();
         foreach (var (productId, seenAt) in firstSeen)
             lowStockFirstSeenAt[productId] = seenAt;
@@ -419,6 +460,7 @@
             : Task.WhenAll(
                 readStateStore.SaveNotificationIdsAsync(readNotificationIds),
                 readStateStore.SaveNoteReadAtAsync(readNoteAtByCustomerId),
+                readStateStore.SaveChatReadAtAsync(readChatAtBySessionId),
                 readStateStore.SaveLowStockFirstSeenAsync(lowStockFirstSeenAt));
 
     private void OnProductsChanged()
@@ -452,13 +494,71 @@
         _ = InvokeAsync(async () =>
         {
             if (isMessagesOpen)
-                await LoadMessages();
+                await LoadMessages(showLoading: messages.Count == 0, includeNotes: false);
 
             if (isNotificationsOpen)
                 await LoadNotifications();
             else
                 await RefreshBadgeCountsAsync();
         });
+    }
+
+    private void OnLiveChatChanged()
+    {
+        if (!CanSeeLiveChat())
+            return;
+
+        _ = InvokeAsync(async () =>
+        {
+            if (isMessagesOpen)
+                await LoadMessages(showLoading: messages.Count == 0, includeNotes: false);
+            else
+                await RefreshChatMessageBadgeAsync();
+        });
+    }
+
+    private void OnLiveChatSessionRead(Guid sessionId, DateTime lastActivity)
+    {
+        if (!CanSeeLiveChat())
+            return;
+
+        AdminHeaderLiveChatMessagesBuilder.MarkSessionRead(
+            readChatAtBySessionId,
+            sessionId,
+            lastActivity);
+
+        _ = InvokeAsync(async () =>
+        {
+            SyncUnreadMessageCount();
+            SupportTabCoordinator.RequestBadgeCountsRefresh();
+            await PersistReadStateAsync();
+            StateHasChanged();
+        });
+    }
+
+    private async Task RefreshChatMessageBadgeAsync()
+    {
+        if (!CanSeeLiveChat())
+            return;
+
+        try
+        {
+            var result = await ChatService.GetActiveSessions();
+            if (result.Success && result.Data != null)
+            {
+                loadedChatSessions = result.Data;
+                liveChatMessageCount = loadedChatSessions.Count(
+                    AdminHeaderLiveChatMessagesBuilder.IsWaitingForAdmin);
+            }
+
+            SyncUnreadMessageCount();
+            SupportTabCoordinator.RequestBadgeCountsRefresh();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to refresh live chat message badge.");
+        }
     }
 
     private async Task RefreshBadgeCountsAsync()
@@ -475,17 +575,78 @@
         StateHasChanged();
     }
 
-    private async Task LoadMessages()
+    private async Task LoadMessages(bool showLoading = true, bool includeNotes = true)
     {
-        if (!CanSeeCustomerNotes())
+        if (!CanSeeMessages())
         {
             messages.Clear();
             unreadMessageCount = 0;
             return;
         }
 
-        isLoadingMessages = true;
-        StateHasChanged();
+        if (showLoading)
+        {
+            isLoadingMessages = true;
+            StateHasChanged();
+        }
+
+        try
+        {
+            var noteMessages = includeNotes
+                ? await LoadNoteMessagesAsync()
+                : messages.Where(m => !m.IsLiveChat).ToList();
+
+            var chatMessages = new List<AdminMessageModel>();
+            if (CanSeeLiveChat())
+            {
+                var chatResult = await ChatService.GetActiveSessions();
+                if (chatResult.Success && chatResult.Data != null)
+                {
+                    loadedChatSessions = chatResult.Data;
+                    liveChatMessageCount = loadedChatSessions.Count(
+                        AdminHeaderLiveChatMessagesBuilder.IsWaitingForAdmin);
+                    chatMessages = AdminHeaderLiveChatMessagesBuilder.FromSessions(
+                        loadedChatSessions,
+                        readChatAtBySessionId);
+                }
+                else
+                {
+                    loadedChatSessions.Clear();
+                    liveChatMessageCount = 0;
+                }
+            }
+            else
+            {
+                loadedChatSessions.Clear();
+                liveChatMessageCount = 0;
+            }
+
+            messages = noteMessages
+                .Concat(chatMessages)
+                .OrderBy(m => m.IsRead)
+                .ThenByDescending(m => m.CreatedAt)
+                .ToList();
+
+            messageCount = noteMessageCount + liveChatMessageCount;
+            SyncUnreadMessageCount();
+        }
+        finally
+        {
+            isLoadingMessages = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task<List<AdminMessageModel>> LoadNoteMessagesAsync()
+    {
+        if (!CanSeeCustomerNotes())
+        {
+            loadedNoteEntries.Clear();
+            noteMessageCount = 0;
+            customersFeedTruncated = false;
+            customersTotalCount = 0;
+            return [];
+        }
 
         var customerFeed = await AdminHeaderFeedLoader.LoadCustomersAsync(CustomerService);
         customersFeedTruncated = customerFeed.IsTruncated;
@@ -513,19 +674,9 @@
         loadedNoteEntries = AdminHeaderMessagesBuilder.CapNotesPerCustomer(
             noteGroups.SelectMany(group => group));
 
-        messageCount = loadedNoteEntries.Count;
-        messages = AdminHeaderMessagesBuilder
-            .FromNotes(loadedNoteEntries, readNoteAtByCustomerId)
-            .OrderBy(m => m.IsRead)
-            .ThenByDescending(m => m.CreatedAt)
-            .ToList();
-
-        unreadMessageCount = AdminHeaderMessagesBuilder.CountUnreadNotes(
-            loadedNoteEntries,
-            readNoteAtByCustomerId);
-
-        isLoadingMessages = false;
-        StateHasChanged();
+        noteMessageCount = loadedNoteEntries.Count;
+        return AdminHeaderMessagesBuilder
+            .FromNotes(loadedNoteEntries, readNoteAtByCustomerId);
     }
 
     private async Task LoadNotifications()
@@ -636,19 +787,42 @@
     private async Task HandleMessageClick(AdminMessageModel message)
     {
         message.IsRead = true;
-        AdminHeaderMessagesBuilder.MarkCustomerNoteRead(
-            readNoteAtByCustomerId,
-            message.CustomerId,
-            message.CreatedAt);
 
-        unreadMessageCount = AdminHeaderMessagesBuilder.CountUnreadNotes(
-            loadedNoteEntries,
-            readNoteAtByCustomerId);
+        if (message.IsLiveChat && message.ChatSessionId is Guid sessionId)
+        {
+            var session = loadedChatSessions.FirstOrDefault(s => s.Id == sessionId);
+            if (session != null)
+            {
+                AdminHeaderLiveChatMessagesBuilder.MarkSessionRead(
+                    readChatAtBySessionId,
+                    sessionId,
+                    session.LastActivity);
+            }
+            else
+            {
+                AdminHeaderLiveChatMessagesBuilder.MarkSessionRead(
+                    readChatAtBySessionId,
+                    sessionId,
+                    message.CreatedAt);
+            }
+
+            SupportTabCoordinator.NotifySessionRead(sessionId, session?.LastActivity ?? message.CreatedAt);
+            SupportTabCoordinator.NotifySessionFocus(sessionId);
+        }
+        else
+        {
+            AdminHeaderMessagesBuilder.MarkCustomerNoteRead(
+                readNoteAtByCustomerId,
+                message.CustomerId,
+                message.CreatedAt);
+
+            var linkHasCustomerFocus = message.Link.Contains("customerId=", StringComparison.OrdinalIgnoreCase);
+            if (!linkHasCustomerFocus)
+                CustomersTabCoordinator.NotifyCustomerFocus(message.CustomerId);
+        }
+
+        SyncUnreadMessageCount();
         isMessagesOpen = false;
-
-        var linkHasCustomerFocus = message.Link.Contains("customerId=", StringComparison.OrdinalIgnoreCase);
-        if (!linkHasCustomerFocus)
-            CustomersTabCoordinator.NotifyCustomerFocus(message.CustomerId);
 
         await PersistReadStateAsync();
 
@@ -659,7 +833,13 @@
 
     private async Task MarkAllMessagesRead()
     {
-        AdminHeaderMessagesBuilder.MarkAllNotesRead(loadedNoteEntries, readNoteAtByCustomerId);
+        if (CanSeeCustomerNotes())
+            AdminHeaderMessagesBuilder.MarkAllNotesRead(loadedNoteEntries, readNoteAtByCustomerId);
+
+        if (CanSeeLiveChat())
+            AdminHeaderLiveChatMessagesBuilder.MarkAllSessionsRead(
+                loadedChatSessions,
+                readChatAtBySessionId);
 
         foreach (var message in messages)
             message.IsRead = true;
@@ -667,6 +847,7 @@
         unreadMessageCount = 0;
         StateHasChanged();
         await PersistReadStateAsync();
+        SupportTabCoordinator.RequestBadgeCountsRefresh();
     }
 
     private void ViewAllCustomerNotes()
@@ -680,10 +861,20 @@
         NavigationManager.NavigateTo(destination);
     }
 
+    private void ViewAllLiveChat()
+    {
+        if (!CanSeeLiveChat())
+            return;
+
+        isMessagesOpen = false;
+        isNotificationsOpen = false;
+        NavigationManager.NavigateTo("/admin/support?tab=live-chat");
+    }
+
     private static string GetMessageDetail(AdminMessageModel message)
     {
         var preview = string.IsNullOrWhiteSpace(message.Preview)
-            ? "Internal note"
+            ? (message.IsLiveChat ? "New chat message" : "Internal note")
             : message.Preview;
 
         if (preview.Length > 72)
@@ -738,6 +929,12 @@
     private bool CanSeeCustomerNotes() =>
         AdminHeaderNotificationAccess.CanSeeCustomerNotes(userRole);
 
+    private bool CanSeeLiveChat() =>
+        AdminHeaderNotificationAccess.CanSeeLiveChat(userRole);
+
+    private bool CanSeeMessages() =>
+        AdminHeaderNotificationAccess.CanSeeMessages(userRole);
+
     private string? CustomerNotesListLink =>
         AdminHeaderNotificationAccess.GetCustomerNotesListLink(userRole);
 
@@ -762,24 +959,61 @@
             readNotificationIds.Add(productId);
     }
 
-    private void SyncUnreadMessageCountFromNotes()
-    {
-        if (loadedNoteEntries.Count == 0)
-            return;
+    private void SyncUnreadMessageCountFromNotes() => SyncUnreadMessageCount();
 
-        unreadMessageCount = AdminHeaderMessagesBuilder.CountUnreadNotes(
-            loadedNoteEntries,
-            readNoteAtByCustomerId);
+    private void SyncUnreadMessageCount()
+    {
+        var unreadNotes = CanSeeCustomerNotes() && loadedNoteEntries.Count > 0
+            ? AdminHeaderMessagesBuilder.CountUnreadNotes(loadedNoteEntries, readNoteAtByCustomerId)
+            : 0;
+
+        var unreadChat = CanSeeLiveChat() && loadedChatSessions.Count > 0
+            ? AdminHeaderLiveChatMessagesBuilder.CountUnreadSessions(
+                loadedChatSessions,
+                readChatAtBySessionId)
+            : 0;
+
+        unreadMessageCount = unreadNotes + unreadChat;
 
         foreach (var message in messages)
         {
-            message.IsRead = AdminHeaderMessagesBuilder.IsNoteRead(
-                new CustomerNoteModel
-                {
-                    CustomerId = message.CustomerId,
-                    CreatedAt = message.CreatedAt
-                },
-                readNoteAtByCustomerId);
+            if (message.IsLiveChat && message.ChatSessionId is Guid sessionId)
+            {
+                var session = loadedChatSessions.FirstOrDefault(s => s.Id == sessionId);
+                message.IsRead = session != null
+                    && AdminHeaderLiveChatMessagesBuilder.IsSessionRead(session, readChatAtBySessionId);
+            }
+            else if (!message.IsLiveChat)
+            {
+                message.IsRead = AdminHeaderMessagesBuilder.IsNoteRead(
+                    new CustomerNoteModel
+                    {
+                        CustomerId = message.CustomerId,
+                        CreatedAt = message.CreatedAt
+                    },
+                    readNoteAtByCustomerId);
+            }
+        }
+    }
+
+    private IEnumerable<(string? SectionLabel, AdminMessageModel Message)> GetMessagesWithSections()
+    {
+        string? lastSectionLabel = null;
+
+        foreach (var message in messages)
+        {
+            var sectionLabel = message.IsLiveChat
+                ? $"Live chat ({liveChatMessageCount})"
+                : $"Customer notes ({noteMessageCount})";
+            string? header = null;
+
+            if (!string.Equals(sectionLabel, lastSectionLabel, StringComparison.Ordinal))
+            {
+                lastSectionLabel = sectionLabel;
+                header = sectionLabel;
+            }
+
+            yield return (header, message);
         }
     }
 
@@ -908,9 +1142,12 @@
     public void Dispose()
     {
         _refreshTimer?.Dispose();
+        _chatRefreshTimer?.Dispose();
         ProductsTabCoordinator.BadgeCountsRefreshRequested -= OnProductsChanged;
         CustomersTabCoordinator.MessagesRefreshRequested -= OnCustomerNotesChanged;
         OrdersTabCoordinator.BadgeCountsRefreshRequested -= OnOrdersChanged;
+        SupportTabCoordinator.MessagesRefreshRequested -= OnLiveChatChanged;
+        SupportTabCoordinator.SessionReadRequested -= OnLiveChatSessionRead;
     }
 
 }
