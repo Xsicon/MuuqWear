@@ -227,16 +227,21 @@ Section-level RBAC is enforced in `MuuqWear.Web` via `AdminPortalRoles`, ASP.NET
 
 ---
 
-### 5.7 Customer Support (`CustomerSupport.tsx`)
-**Routes:** `/admin/live-chat`, `/admin/tickets`
+### 5.7 Customer Support
+**Routes:** `/admin/support?tab=live-chat|tickets|knowledge`
 
-**Tabs:** Live Chat | Support Tickets | Knowledge Base *(Figma)*
+**Design sources:**
+- **V2 (current target):** `.design-reference/backend/CustomerSupportV2.tsx` — macros, KB quick panel, ticket drawer, article steps/votes/comments
+- **V1 (legacy):** `.design-reference/backend/CustomerSupport.tsx`
+- **Plan:** `docs/CUSTOMER_SUPPORT_REDESIGN.md`
 
-**Live chat:** 1/3 conversation list + 2/3 thread; fields `name`, `waiting`, `order`, `status` (waiting/active)  
-**Tickets table:** Ticket ID, Priority, Subject, Customer, Category, Date, Status  
-**Knowledge base:** Help articles / FAQs *(may map to HelpCenter admin — verify)*
+**Tabs:** Live Chat | Support Tickets | Knowledge Base
 
-**Services:** Ticket/help services; `AdminTicketComponent`, `AdminLiveChatComponent`
+**Live chat:** Conversation list + thread; macros; KB slide-over panel  
+**Tickets:** List + drawer (assign team/agent, priority, conversation, macros, KB)  
+**Knowledge base:** Article CRUD with hero + agent steps; viewer with votes/comments; pagination
+
+**Blazor:** `AdminCustomerSupportComponent`, `AdminSupportLiveChatTab`, `AdminSupportTicketsTab`, `AdminSupportKnowledgeBaseTab`
 
 ---
 

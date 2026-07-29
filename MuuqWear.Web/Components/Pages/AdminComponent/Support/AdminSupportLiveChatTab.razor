@@ -3,10 +3,16 @@
 @implements IDisposable
 @inject IChatService ChatService
 
-<div>
-    <div class="cs-tab-header">
-        <p class="cs-tab-eyebrow">Customer Support</p>
-        <h2 class="cs-tab-title">Live Chat</h2>
+<div class="@(showKbPanel ? "cs-tab-shell cs-tab-shell--kb-open" : "cs-tab-shell")">
+    <div class="cs-tab-header-row">
+        <div class="cs-tab-header" style="margin-bottom:0">
+            <p class="cs-tab-eyebrow">Customer Support</p>
+            <h2 class="cs-tab-title">Live Chat</h2>
+            <p class="cs-tab-subtitle">Respond to customers in real time</p>
+        </div>
+        <div class="cs-tab-actions">
+            <SupportKbButton OnClick="OpenKbPanel" />
+        </div>
     </div>
 
     @if (isLoading)
@@ -174,23 +180,31 @@
                     <p class="cs-error-banner cs-error-banner--inline">@actionError</p>
                 }
 
-                <div class="cs-chat-panel__input">
-                    <input type="text"
-                           class="cs-chat-panel__input-field"
-                           placeholder="Type a message…"
-                           @bind="adminMessageInput"
-                           @bind:event="oninput"
-                           @onkeydown="HandleAdminKeyDown"
-                           disabled="@(selectedSession?.Status == "closed" || isSendingAdminMessage)" />
-                    <button type="button"
-                            class="cs-btn cs-btn--primary"
-                            @onclick="SendAdminMessage"
-                            disabled="@(selectedSession?.Status == "closed" || isSendingAdminMessage || string.IsNullOrWhiteSpace(adminMessageInput))">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
-                        Send
-                    </button>
+                <div class="cs-chat-panel__compose">
+                    <SupportMacrosBar OnApply="ApplyMacro" />
+                    <div class="cs-chat-panel__input">
+                        <input type="text"
+                               class="cs-chat-panel__input-field"
+                               placeholder="Type a message…"
+                               @bind="adminMessageInput"
+                               @bind:event="oninput"
+                               @onkeydown="HandleAdminKeyDown"
+                               disabled="@(selectedSession?.Status == "closed" || isSendingAdminMessage)" />
+                        <button type="button"
+                                class="cs-btn cs-btn--primary"
+                                @onclick="SendAdminMessage"
+                                disabled="@(selectedSession?.Status == "closed" || isSendingAdminMessage || string.IsNullOrWhiteSpace(adminMessageInput))">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+                            Send
+                        </button>
+                    </div>
                 </div>
             </section>
         }
     </div>
+
+    @if (showKbPanel)
+    {
+        <SupportKbQuickPanel OnClose="CloseKbPanel" />
+    }
 </div>

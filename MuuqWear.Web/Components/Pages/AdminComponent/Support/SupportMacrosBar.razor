@@ -1,0 +1,46 @@
+<div class="cs-macros-bar">
+    <button type="button"
+            class="cs-macros-bar__toggle @(IsOpen ? "cs-macros-bar__toggle--active" : "")"
+            @onclick="Toggle">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/>
+        </svg>
+        Macros
+    </button>
+    @if (IsOpen)
+    {
+        <div class="cs-macros-bar__chips">
+            @for (var i = 0; i < _macros.Count; i++)
+            {
+                var index = i;
+                var macro = _macros[index];
+                <button type="button"
+                        class="cs-macros-bar__chip"
+                        @key="macro.Label"
+                        @onclick="@(() => SelectMacroAsync(index))"
+                        @onclick:stopPropagation="true">
+                    @macro.Label
+                </button>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private static readonly IReadOnlyList<SupportCannedReply> _macros = SupportCannedReplies.All;
+
+    [Parameter] public EventCallback<string> OnApply { get; set; }
+
+    private bool IsOpen { get; set; }
+
+    private void Toggle() => IsOpen = !IsOpen;
+
+    private async Task SelectMacroAsync(int index)
+    {
+        IsOpen = false;
+        if (!OnApply.HasDelegate || index < 0 || index >= _macros.Count)
+            return;
+
+        await OnApply.InvokeAsync(_macros[index].Text);
+    }
+}

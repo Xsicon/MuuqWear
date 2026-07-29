@@ -2,11 +2,15 @@
 @using MuuqWear.Model.HelpCenter
 @inject IHelpCenterService HelpCenterService
 
-<div>
+<div class="@(showKbPanel ? "cs-tab-shell cs-tab-shell--kb-open" : "cs-tab-shell")">
     <div class="cs-tab-header-row">
         <div class="cs-tab-header" style="margin-bottom:0">
             <p class="cs-tab-eyebrow">Customer Support</p>
             <h2 class="cs-tab-title">Support Tickets</h2>
+            <p class="cs-tab-subtitle">Route to a team, assign an agent, and resolve fast</p>
+        </div>
+        <div class="cs-tab-actions">
+            <SupportKbButton OnClick="OpenKbPanel" />
         </div>
     </div>
 
@@ -126,5 +130,10 @@
             }
             @toast
         </div>
+    }
+
+    @if (showKbPanel)
+    {
+        <SupportKbQuickPanel OnClose="CloseKbPanel" />
     }
 </div>

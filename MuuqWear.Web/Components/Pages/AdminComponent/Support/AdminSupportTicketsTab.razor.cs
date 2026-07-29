@@ -21,6 +21,7 @@ public partial class AdminSupportTicketsTab : IDisposable
     private Guid? updatingId;
     private string? toast;
     private bool toastIsError;
+    private bool showKbPanel;
     private System.Threading.Timer? toastTimer;
 
     private static readonly (string Key, string Label)[] StatusFilters =
@@ -189,6 +190,10 @@ public partial class AdminSupportTicketsTab : IDisposable
 
     private static string FormatDate(DateTime? dt) =>
         dt?.ToString("MMM d, yyyy") ?? "—";
+
+    private void OpenKbPanel() => showKbPanel = true;
+
+    private void CloseKbPanel() => showKbPanel = false;
 
     public void Dispose() => toastTimer?.Dispose();
 }

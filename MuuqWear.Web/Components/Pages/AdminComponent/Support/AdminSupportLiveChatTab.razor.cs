@@ -39,6 +39,7 @@ public partial class AdminSupportLiveChatTab : IDisposable
     private string? loadError;
     private string? messagesError;
     private string? actionError;
+    private bool showKbPanel;
     private CancellationTokenSource? pollCts;
     private CancellationTokenSource? messagesPollCts;
     private Task? sessionsPollTask;
@@ -488,6 +489,13 @@ public partial class AdminSupportLiveChatTab : IDisposable
         if (e.Key == "Enter" && !isSendingAdminMessage && !string.IsNullOrWhiteSpace(adminMessageInput))
             await SendAdminMessage();
     }
+
+    private void OpenKbPanel() => showKbPanel = true;
+
+    private void CloseKbPanel() => showKbPanel = false;
+
+    private void ApplyMacro(string text) =>
+        adminMessageInput = text;
 
     private async Task CloseSelectedSession()
     {
