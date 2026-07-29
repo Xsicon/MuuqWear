@@ -35,7 +35,7 @@
     </div>
 
     <div class="cs-cat-grid">
-        @foreach (var cat in HelpArticleSeed.Categories)
+        @foreach (var cat in HelpArticleCategories.All)
         {
             var meta = HelpCategoryMeta.Get(cat);
             var total = articles.Count(a => a.Category == cat);
@@ -56,6 +56,22 @@
         }
     </div>
 
+    @if (!string.IsNullOrEmpty(loadError))
+    {
+        <div class="cs-empty" style="margin-bottom:16px">
+            <p>@loadError</p>
+            <button type="button" class="cs-btn cs-btn--outline cs-btn--sm" @onclick="LoadArticles">Retry</button>
+        </div>
+    }
+
+    @if (isLoading)
+    {
+        <div class="cs-empty">
+            <p>Loading articles…</p>
+        </div>
+    }
+    else
+    {
     <div class="cs-filter-bar">
         <div class="cs-search">
             <svg class="cs-search__icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
@@ -117,7 +133,7 @@
                     </button>
                     <button type="button"
                             class="cs-btn cs-btn--outline cs-btn--sm"
-                            @onclick="() => TogglePublish(article)">
+                            @onclick="() => TogglePublishAsync(article)">
                         @(article.Status == "Published" ? "Unpublish" : "Publish")
                     </button>
                     <button type="button" class="cs-btn cs-btn--icon cs-btn--icon-danger" title="Delete" @onclick="() => deleteTarget = article">
@@ -135,6 +151,7 @@
             </div>
         }
     </div>
+    }
 </div>
 
 @if (panelOpen)
@@ -160,7 +177,7 @@
                     <label class="cs-field__label">Category</label>
                     <div class="cs-select-wrap">
                         <select class="cs-field__select" @bind="draftCategory">
-                            @foreach (var c in HelpArticleSeed.Categories)
+                            @foreach (var c in HelpArticleCategories.All)
                             {
                                 <option value="@c">@c</option>
                             }
@@ -190,10 +207,10 @@
         <footer class="cs-drawer__footer">
             <button type="button" class="cs-btn cs-btn--ghost" @onclick="ClosePanel">Cancel</button>
             <div class="cs-tab-actions">
-                <button type="button" class="cs-btn cs-btn--outline" @onclick="() => SaveArticle(false)">Save Draft</button>
+                <button type="button" class="cs-btn cs-btn--outline" disabled="@isSaving" @onclick="() => SaveArticleAsync(false)">Save Draft</button>
                 <button type="button" class="cs-btn cs-btn--primary"
-                        disabled="@(string.IsNullOrWhiteSpace(draftTitle) || string.IsNullOrWhiteSpace(draftContent))"
-                        @onclick="() => SaveArticle(true)">
+                        disabled="@(isSaving || string.IsNullOrWhiteSpace(draftTitle) || string.IsNullOrWhiteSpace(draftContent))"
+                        @onclick="() => SaveArticleAsync(true)">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
                     Publish
                 </button>
@@ -213,7 +230,7 @@
             <p class="cs-modal__text">"@deleteTarget.Title" will be permanently removed from the Help Center.</p>
             <div class="cs-modal__actions">
                 <button type="button" class="cs-btn cs-btn--ghost" @onclick="() => deleteTarget = null">Cancel</button>
-                <button type="button" class="cs-btn cs-btn--primary" style="background:#C44545;border-color:#C44545" @onclick="ConfirmDelete">Delete</button>
+                <button type="button" class="cs-btn cs-btn--primary" style="background:#C44545;border-color:#C44545" @onclick="ConfirmDeleteAsync">Delete</button>
             </div>
         </div>
     </div>

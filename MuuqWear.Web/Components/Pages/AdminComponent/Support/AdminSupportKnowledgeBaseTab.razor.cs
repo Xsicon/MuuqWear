@@ -1,16 +1,23 @@
 using Microsoft.AspNetCore.Components;
+using MuuqWear.Application.Services.HelpCenterService;
 using MuuqWear.Model.HelpCenter;
+using MuuqWear.Web.Services;
 
 namespace MuuqWear.Web.Components.Pages.AdminComponent.Support;
 
 public partial class AdminSupportKnowledgeBaseTab : IDisposable
 {
     [Inject] private NavigationManager NavigationManager { get; set; } = default!;
-    private List<HelpArticleModel> articles = HelpArticleSeed.CreateInitialArticles();
+    [Inject] private IHelpCenterService HelpCenterService { get; set; } = default!;
+
+    private List<HelpArticleModel> articles = [];
     private string search = string.Empty;
     private string catFilter = "All";
     private string statusFilter = "All";
     private bool panelOpen;
+    private bool isLoading = true;
+    private bool isSaving;
+    private string? loadError;
     private HelpArticleModel? editingArticle;
     private HelpArticleModel? deleteTarget;
     private string? toast;
@@ -21,8 +28,10 @@ public partial class AdminSupportKnowledgeBaseTab : IDisposable
     private string draftStatus = "Draft";
     private string draftContent = string.Empty;
 
-    private static readonly string[] CategoryPills = ["All", .. HelpArticleSeed.Categories];
+    private static readonly string[] CategoryPills = ["All", .. HelpArticleCategories.All];
     private static readonly string[] StatusPills = ["All", "Published", "Draft"];
+
+    protected override async Task OnInitializedAsync() => await LoadArticles();
 
     private IEnumerable<HelpArticleModel> FilteredArticles
     {
@@ -58,6 +67,36 @@ public partial class AdminSupportKnowledgeBaseTab : IDisposable
         }
     }
 
+    private async Task LoadArticles()
+    {
+        isLoading = true;
+        loadError = null;
+
+        try
+        {
+            var result = await HelpCenterService.GetAdminArticles(null, null, null, 1, 100);
+            if (!result.Success || result.Data == null)
+            {
+                loadError = AdminUiErrorHelper.FromApi(result.Message, "Failed to load knowledge base articles.");
+                articles = [];
+                return;
+            }
+
+            articles = result.Data.Data
+                .OrderByDescending(a => a.UpdatedAt ?? a.CreatedAt)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            loadError = AdminUiErrorHelper.FromException(ex);
+            articles = [];
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
     private void ToggleCatFilter(string cat) =>
         catFilter = catFilter == cat ? "All" : cat;
 
@@ -86,55 +125,109 @@ public partial class AdminSupportKnowledgeBaseTab : IDisposable
 
     private void ClosePanel() => panelOpen = false;
 
-    private void SaveArticle(bool publish)
+    private async Task SaveArticleAsync(bool publish)
     {
-        if (string.IsNullOrWhiteSpace(draftTitle)) return;
+        if (string.IsNullOrWhiteSpace(draftTitle) || isSaving)
+            return;
 
-        var status = publish ? "Published" : (string.IsNullOrWhiteSpace(draftStatus) ? "Draft" : draftStatus);
-        if (!publish && status == "Published")
-            status = "Draft";
+        var status = publish
+            ? HelpArticleDisplayStatus.Published
+            : (string.IsNullOrWhiteSpace(draftStatus) ? HelpArticleDisplayStatus.Draft : draftStatus);
+        if (!publish && status == HelpArticleDisplayStatus.Published)
+            status = HelpArticleDisplayStatus.Draft;
 
-        var updated = new HelpArticleModel
+        var payload = new SaveHelpArticleModel
         {
             Title = draftTitle.Trim(),
             Category = draftCategory,
-            Status = publish ? "Published" : status,
-            Content = draftContent.Trim(),
-            LastUpdated = DateTime.Now.ToString("MMM d, yyyy", System.Globalization.CultureInfo.InvariantCulture)
+            Status = publish ? HelpArticleDisplayStatus.Published : status,
+            Content = draftContent.Trim()
         };
 
-        if (editingArticle == null)
+        isSaving = true;
+        try
         {
-            updated.Id = articles.Count == 0 ? 1 : articles.Max(a => a.Id) + 1;
-            articles.Insert(0, updated);
-            ShowToast("Article created");
-        }
-        else
-        {
-            updated.Id = editingArticle.Id;
-            updated.Views = editingArticle.Views;
-            updated.Helpful = editingArticle.Helpful;
-            var idx = articles.FindIndex(a => a.Id == editingArticle.Id);
-            if (idx >= 0) articles[idx] = updated;
-            ShowToast("Article updated");
-        }
+            var result = editingArticle == null
+                ? await HelpCenterService.CreateArticle(payload)
+                : await HelpCenterService.UpdateArticle(editingArticle.Id, payload);
 
-        panelOpen = false;
+            if (!result.Success || result.Data == null)
+            {
+                ShowToast(AdminUiErrorHelper.FromApi(result.Message, "Failed to save article."));
+                return;
+            }
+
+            if (editingArticle == null)
+                articles.Insert(0, result.Data);
+            else
+            {
+                var idx = articles.FindIndex(a => a.Id == editingArticle.Id);
+                if (idx >= 0)
+                    articles[idx] = result.Data;
+            }
+
+            panelOpen = false;
+            ShowToast(editingArticle == null ? "Article created" : "Article updated");
+        }
+        catch (Exception ex)
+        {
+            ShowToast(AdminUiErrorHelper.FromException(ex));
+        }
+        finally
+        {
+            isSaving = false;
+        }
     }
 
-    private void TogglePublish(HelpArticleModel article)
+    private async Task TogglePublishAsync(HelpArticleModel article)
     {
-        article.Status = article.Status == "Published" ? "Draft" : "Published";
-        article.LastUpdated = DateTime.Now.ToString("MMM d, yyyy", System.Globalization.CultureInfo.InvariantCulture);
-        ShowToast("Article status updated");
+        var next = article.Status == HelpArticleDisplayStatus.Published
+            ? HelpArticleDisplayStatus.Draft
+            : HelpArticleDisplayStatus.Published;
+
+        try
+        {
+            var result = await HelpCenterService.UpdateArticleStatus(article.Id, next);
+            if (!result.Success || result.Data == null)
+            {
+                ShowToast(AdminUiErrorHelper.FromApi(result.Message, "Failed to update article status."));
+                return;
+            }
+
+            var idx = articles.FindIndex(a => a.Id == article.Id);
+            if (idx >= 0)
+                articles[idx] = result.Data;
+
+            ShowToast("Article status updated");
+        }
+        catch (Exception ex)
+        {
+            ShowToast(AdminUiErrorHelper.FromException(ex));
+        }
     }
 
-    private void ConfirmDelete()
+    private async Task ConfirmDeleteAsync()
     {
-        if (deleteTarget == null) return;
-        articles.RemoveAll(a => a.Id == deleteTarget.Id);
-        deleteTarget = null;
-        ShowToast("Article deleted");
+        if (deleteTarget == null)
+            return;
+
+        try
+        {
+            var result = await HelpCenterService.DeleteArticle(deleteTarget.Id);
+            if (!result.Success)
+            {
+                ShowToast(AdminUiErrorHelper.FromApi(result.Message, "Failed to delete article."));
+                return;
+            }
+
+            articles.RemoveAll(a => a.Id == deleteTarget.Id);
+            deleteTarget = null;
+            ShowToast("Article deleted");
+        }
+        catch (Exception ex)
+        {
+            ShowToast(AdminUiErrorHelper.FromException(ex));
+        }
     }
 
     private void ShowToast(string message)

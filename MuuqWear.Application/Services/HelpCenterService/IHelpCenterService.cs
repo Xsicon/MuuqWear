@@ -12,4 +12,18 @@ public interface IHelpCenterService
     Task<Response<SupportTicketModel>> UpdateTicketStatus(
         Guid ticketId, string status);
     Task<Response<TicketStatsModel>> GetStats();
+
+    Task<Response<PaginatedResponse<HelpArticleModel>>> GetPublishedArticles(
+        string? category, string? search, int page, int pageSize);
+    Task<Response<HelpArticleModel>> GetPublishedArticleById(Guid articleId);
+
+    Task<Response<PaginatedResponse<HelpArticleModel>>> GetAdminArticles(
+        string? category, string? status, string? search, int page, int pageSize);
+    Task<Response<HelpArticleModel>> GetAdminArticleById(Guid articleId);
+    Task<Response<HelpArticleModel>> CreateArticle(SaveHelpArticleModel request);
+    Task<Response<HelpArticleModel>> UpdateArticle(
+        Guid articleId, SaveHelpArticleModel request);
+    Task<Response<HelpArticleModel>> UpdateArticleStatus(
+        Guid articleId, string status);
+    Task<Response<bool>> DeleteArticle(Guid articleId);
 }

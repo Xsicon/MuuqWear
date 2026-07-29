@@ -1,3 +1,4 @@
+using MuuqWear.Model.HelpCenter;
 using MuuqWear.Web.Components.Pages.AdminComponent.Support;
 using Xunit;
 
@@ -18,22 +19,19 @@ public class SupportAgentToolsTests
     }
 
     [Fact]
-    public void SupportKbArticleCatalog_returns_published_articles_only()
+    public void HelpArticleDisplayStatus_maps_api_and_ui_values()
     {
-        var articles = SupportKbArticleCatalog.GetPublishedArticles();
-
-        Assert.NotEmpty(articles);
-        Assert.All(articles, a => Assert.Equal("Published", a.Status));
-        Assert.Equal(
-            articles.OrderBy(a => a.Category).ThenBy(a => a.Title).Select(a => a.Id),
-            articles.Select(a => a.Id));
+        Assert.Equal("Published", HelpArticleDisplayStatus.FromApi("published"));
+        Assert.Equal("Draft", HelpArticleDisplayStatus.FromApi("draft"));
+        Assert.Equal("published", HelpArticleDisplayStatus.ToApi("Published"));
+        Assert.Equal("draft", HelpArticleDisplayStatus.ToApi("Draft"));
     }
 
     [Fact]
-    public void SupportKbArticleCatalog_excludes_draft_articles()
+    public void HelpArticleCategories_includes_six_support_topics()
     {
-        var articles = SupportKbArticleCatalog.GetPublishedArticles();
-
-        Assert.DoesNotContain(articles, a => a.Title.Contains("delete my account", StringComparison.OrdinalIgnoreCase));
+        Assert.Equal(6, HelpArticleCategories.All.Length);
+        Assert.Contains("Orders", HelpArticleCategories.All);
+        Assert.Contains("Product Info", HelpArticleCategories.All);
     }
 }

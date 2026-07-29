@@ -67,27 +67,34 @@
         <div class="hc-faq__inner">
             <h2 class="hc-faq__title">@activeTopic FAQ</h2>
 
-            @foreach (var faq in FaqData[activeTopic])
+            @if (isLoadingFaqs)
             {
-                <div class="hc-faq__item @(expandedFaq == faq.Question ? "hc-faq__item--open" : "")"
-                     @key="faq.Question">
-                    <button class="hc-faq__question"
-                            @onclick="() => ToggleFaq(faq.Question)">
-                        <span>@faq.Question</span>
-                        <svg class="hc-faq__chevron"
-                             xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                             viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="m6 9 6 6 6-6"></path>
-                        </svg>
-                    </button>
-                    @if (expandedFaq == faq.Question)
-                    {
-                        <div class="hc-faq__answer">
-                            <p>@faq.Answer</p>
-                        </div>
-                    }
-                </div>
+                <p>Loading articles…</p>
+            }
+            else
+            {
+                @foreach (var faq in FaqData[activeTopic])
+                {
+                    <div class="hc-faq__item @(expandedFaq == faq.Question ? "hc-faq__item--open" : "")"
+                         @key="faq.Question">
+                        <button class="hc-faq__question"
+                                @onclick="() => ToggleFaq(faq.Question)">
+                            <span>@faq.Question</span>
+                            <svg class="hc-faq__chevron"
+                                 xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="m6 9 6 6 6-6"></path>
+                            </svg>
+                        </button>
+                        @if (expandedFaq == faq.Question)
+                        {
+                            <div class="hc-faq__answer">
+                                <p>@faq.Answer</p>
+                            </div>
+                        }
+                    </div>
+                }
             }
 
         </div>
@@ -97,136 +104,20 @@
 <LiveChatWidgetComponent />
 
 @code {
-
-    // ─── REFS ─────────────────────────────────────────────────
-    private ElementReference topicsTrackRef;
-    private ElementReference faqRef;
-
-
-    // ─── TOPIC STATE ──────────────────────────────────────────
-    private string activeTopic = string.Empty;
-    private string expandedFaq = string.Empty;
-    private record TopicItem(string Key, string Title, string Description, string? FullPageUrl = null);
-
-    private List<TopicItem> Topics =>
-    [
-        new("Orders", "Orders", "Track, cancel, or manage your orders."),
-        new("Shipping", "Shipping", "Delivery times, tracking, and international options.", "/shipping-return#shipping"),
-        new("Returns", "Returns", "Start a return, exchange, or refund.", "/shipping-return#returns"),
-        new("Payments", "Payments", "Billing issues, payment methods, and gift cards."),
-        new("Account", "Account", "Profile settings, password, and preferences."),
-        new("Product Info", "Product Info", "Materials, care instructions, and product details."),
-        new("Size Guide", "Size Guide", "Measurements, fit tips, and size charts.", "/size-guide")
-    ];
-    // ─── FAQ DATA ─────────────────────────────────────────────
-    private record FaqItem(string Question, string Answer);
-
-    private Dictionary<string, List<FaqItem>> FaqData => new()
-    {
-        ["Orders"] = new()
-        {
-            new("How do I track my order?",
-                "Once shipped, you'll receive an email with your tracking number. You can also check order status in your account dashboard."),
-            new("Can I cancel my order?",
-                "Orders can be cancelled within 1 hour of placement. After that, we begin processing immediately."),
-            new("How long does processing take?",
-                "Most orders are processed and shipped within 24 hours during business days.")
-        },
-        ["Payments"] = new()
-        {
-            new("What payment methods do you accept?",
-                "We accept all major credit cards, PayPal, Apple Pay, and Google Pay."),
-            new("Is my payment information secure?",
-                "Yes, all payments are processed through Stripe with industry-standard encryption."),
-            new("Can I use multiple payment methods?",
-                "Currently we support one payment method per order.")
-        },
-        ["Account"] = new()
-        {
-            new("How do I reset my password?",
-                "Click 'Forgot Password' on the login page. You'll receive a reset link via email within a few minutes."),
-            new("Can I change my email address?",
-                "Yes, you can update your email in your account settings under Profile."),
-            new("How do I delete my account?",
-                "To delete your account, please contact our support team. We'll process your request within 48 hours.")
-        },
-        ["Product Info"] = new()
-        {
-            new("What materials do you use?",
-                "We use sustainable, high-quality materials. Full fabric composition is listed on each product page."),
-            new("How do I care for my MuuqWear items?",
-                "Most items are machine washable on cold. Specific care instructions are on the product label and product page."),
-            new("Where can I find product specifications?",
-                "Each product page lists fabric composition, fit notes, and care instructions.")
-        }
-    };
-
-    private string? GetTopicFullPageUrl(string key) =>
-        Topics.FirstOrDefault(t => t.Key == key)?.FullPageUrl;
-
-    // ─── TOPIC METHODS ────────────────────────────────────────
-    private async Task SelectTopic(string topic)
-    {
-        var pageUrl = GetTopicFullPageUrl(topic);
-        if (!string.IsNullOrEmpty(pageUrl))
-        {
-            NavigationManager.NavigateTo(pageUrl);
-            return;
-        }
-
-        activeTopic = topic;
-        expandedFaq = string.Empty;
-        StateHasChanged();
-
-        await Task.Delay(50);
-        await JS.InvokeVoidAsync("eval",
-            "(function(){const el=document.querySelector('.hc-faq');if(el)el.scrollIntoView({behavior:'smooth',block:'start'});})();");
-    }
-
-    private void ToggleFaq(string question)
-    {
-        expandedFaq = expandedFaq == question
-            ? string.Empty
-            : question;
-    }
-
-    // ─── CAROUSEL SCROLL ──────────────────────────────────────
-
-    private async Task ScrollTopicsLeft() => await ScrollTopics(-1);
-
-    private async Task ScrollTopicsRight() => await ScrollTopics(1);
-
-    private async Task ScrollTopics(int direction)
-    {
-        await JS.InvokeVoidAsync(
-            "eval",
-            $@"(function(){{
-                const track = document.querySelector('.hc-topics__track');
-                const card = track?.querySelector('.hc-topic-card');
-                if (!track || !card) return;
-                const styles = getComputedStyle(track);
-                const gap = parseFloat(styles.columnGap || styles.gap) || 0;
-                const step = card.getBoundingClientRect().width + gap;
-                const max = Math.max(0, track.scrollWidth - track.clientWidth);
-                const next = Math.min(max, Math.max(0, track.scrollLeft + ({direction} * step)));
-                track.scrollTo({{ left: next, behavior: 'smooth' }});
-            }})();");
-    }
-
     private RenderFragment GetTopicIcon(string key) => key switch
     {
         "Orders" => @<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"></path><path d="M12 22V12"></path><polyline points="3.29 7 12 12 20.71 7"></polyline><path d="m7.5 4.27 9 5.15"></path></svg>,
 
-    "Shipping" => @<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"></path><path d="M15 18H9"></path><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"></path><circle cx="17" cy="18" r="2"></circle><circle cx="7" cy="18" r="2"></circle></svg>,
+        "Shipping" => @<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"></path><path d="M15 18H9"></path><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"></path><circle cx="17" cy="18" r="2"></circle><circle cx="7" cy="18" r="2"></circle></svg>,
 
-    "Returns" => @<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>,
+        "Returns" => @<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>,
 
-    "Payments" => @<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"></rect><line x1="2" x2="22" y1="10" y2="10"></line></svg>,
+        "Payments" => @<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"></rect><line x1="2" x2="22" y1="10" y2="10"></line></svg>,
 
-    "Account" => @<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>,
+        "Account" => @<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>,
 
-    "Size Guide" => @<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.4 2.4 0 0 1 0-3.4l2.6-2.6a2.4 2.4 0 0 1 3.4 0Z"/><path d="m14.5 12.5 2-2"/><path d="m11.5 9.5 2-2"/><path d="m8.5 6.5 2-2"/><path d="m17.5 15.5 2-2"/></svg>,
+        "Size Guide" => @<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.4 2.4 0 0 1 0-3.4l2.6-2.6a2.4 2.4 0 0 1 3.4 0Z"/><path d="m14.5 12.5 2-2"/><path d="m11.5 9.5 2-2"/><path d="m8.5 6.5 2-2"/><path d="m17.5 15.5 2-2"/></svg>,
 
-    _ => @<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><path d="M12 17h.01"></path></svg>
-};
+        _ => @<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><path d="M12 17h.01"></path></svg>
+    };
 }

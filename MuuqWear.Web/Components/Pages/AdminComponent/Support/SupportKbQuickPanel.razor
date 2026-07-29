@@ -1,4 +1,6 @@
+@using MuuqWear.Application.Services.HelpCenterService
 @using MuuqWear.Model.HelpCenter
+@using MuuqWear.Web.Services
 
 <div @onkeydown:window="HandleWindowKeyDown">
 <aside class="cs-kb-panel">
@@ -21,6 +23,20 @@
     </div>
 
     <div class="cs-kb-panel__list">
+        @if (isLoading)
+        {
+            <div class="cs-empty" style="padding:64px 16px">
+                <p>Loading articles…</p>
+            </div>
+        }
+        else if (!string.IsNullOrEmpty(loadError))
+        {
+            <div class="cs-empty" style="padding:64px 16px">
+                <p>@loadError</p>
+            </div>
+        }
+        else
+        {
         @for (var i = 0; i < _publishedArticles.Count; i++)
         {
             var article = _publishedArticles[i];
@@ -51,6 +67,7 @@
                 <svg class="cs-empty__icon" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>
                 <p>No published articles match.</p>
             </div>
+        }
         }
     </div>
 </aside>
@@ -103,16 +120,44 @@
     [Parameter] public EventCallback OnClose { get; set; }
 
     [Inject] private NavigationManager NavigationManager { get; set; } = default!;
+    [Inject] private IHelpCenterService HelpCenterService { get; set; } = default!;
 
     private IReadOnlyList<HelpArticleModel> _publishedArticles = [];
     private string search = string.Empty;
     private HelpArticleModel? ViewArticle { get; set; }
+    private bool isLoading = true;
+    private string? loadError;
 
     private bool HasSearchResults =>
         _publishedArticles.Any(MatchesSearch);
 
-    protected override void OnInitialized() =>
-        _publishedArticles = SupportKbArticleCatalog.GetPublishedArticles();
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var result = await HelpCenterService.GetPublishedArticles(null, null, 1, 100);
+            if (!result.Success || result.Data == null)
+            {
+                loadError = AdminUiErrorHelper.FromApi(result.Message, "Failed to load knowledge base.");
+                _publishedArticles = [];
+                return;
+            }
+
+            _publishedArticles = result.Data.Data
+                .OrderBy(a => a.Category)
+                .ThenBy(a => a.Title)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            loadError = AdminUiErrorHelper.FromException(ex);
+            _publishedArticles = [];
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
 
     private bool MatchesSearch(HelpArticleModel article)
     {
