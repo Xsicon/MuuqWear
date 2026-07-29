@@ -25,33 +25,9 @@
         <p class="cs-error-banner">@loadError</p>
     }
 
-    <div class="cs-stats cs-stats--3">
-        <div class="cs-stat-card cs-stat-card--accent">
-            <div class="cs-stat-card__bar" style="background:#22C55E"></div>
-            <div>
-                <p class="cs-stat-card__value">@activeCount</p>
-                <p class="cs-stat-card__label">Active Chats</p>
-            </div>
-        </div>
-        <div class="cs-stat-card cs-stat-card--accent">
-            <div class="cs-stat-card__bar" style="background:#F59E0B"></div>
-            <div>
-                <p class="cs-stat-card__value">@waitingCount</p>
-                <p class="cs-stat-card__label">Waiting</p>
-            </div>
-        </div>
-        <div class="cs-stat-card cs-stat-card--accent">
-            <div class="cs-stat-card__bar" style="background:#6366F1"></div>
-            <div>
-                <p class="cs-stat-card__value">@resolvedToday</p>
-                <p class="cs-stat-card__label">Resolved Today</p>
-            </div>
-        </div>
-    </div>
-
     <div class="cs-chat-layout">
         <aside class="cs-chat-sidebar">
-            <div class="cs-chat-sidebar__header">Conversations (@sessions.Count)</div>
+            <div class="cs-chat-sidebar__header">Active Conversations (@sessions.Count)</div>
             <div class="cs-chat-sidebar__list">
                 @if (sessions.Count == 0)
                 {
@@ -110,42 +86,51 @@
         else
         {
             <section class="cs-chat-panel">
-                <header class="cs-chat-panel__header">
-                    <div class="cs-chat-panel__customer">
-                        <div class="cs-chat-panel__customer-top">
-                            <div>
-                                <h3 class="cs-chat-panel__name">@selectedSession?.CustomerName</h3>
-                                <p class="cs-row__meta">
-                                    @(IsWaiting(selectedSession!) ? "Waiting" : "Active")
-                                    · last message @GetRelativeTime(selectedSession?.LastActivity ?? DateTime.UtcNow) ago
-                                </p>
-                            </div>
-                            @if (selectedSession?.Status == "active")
-                            {
-                                <button type="button" class="cs-btn cs-btn--danger cs-btn--sm"
-                                        @onclick="CloseSelectedSession"
-                                        disabled="@isClosingSession">
-                                    @(isClosingSession ? "Closing…" : "Close Chat")
-                                </button>
-                            }
-                        </div>
-
-                        <div class="cs-chat-panel__contact">
-                            <svg class="cs-chat-panel__contact-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                                <rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
-                            </svg>
+                <header class="cs-chat-panel__header cs-chat-panel__header--compact">
+                    <div class="cs-chat-panel__header-main">
+                        <div class="cs-chat-panel__header-info">
+                            <h3 class="cs-chat-panel__name">@selectedSession?.CustomerName</h3>
+                            <p class="cs-chat-panel__subtitle">
+                                @(IsWaiting(selectedSession!) ? "Waiting" : "Active")
+                                · last message @GetRelativeTime(selectedSession?.LastActivity ?? DateTime.UtcNow)
+                            </p>
                             @if (!string.IsNullOrWhiteSpace(selectedSession?.ContactEmail))
                             {
-                                <a href="mailto:@selectedSession!.ContactEmail" class="cs-contact-email cs-chat-panel__email-link">@selectedSession.ContactEmail</a>
-                                <button type="button" class="cs-btn cs-btn--outline cs-btn--sm" @onclick="CopyCustomerEmail">
-                                    Copy
-                                </button>
+                                <div class="cs-chat-panel__email-row">
+                                    <a href="mailto:@selectedSession!.ContactEmail"
+                                       class="cs-contact-email cs-chat-panel__email-link"
+                                       title="@selectedSession.ContactEmail">
+                                        @selectedSession.ContactEmail
+                                    </a>
+                                    <button type="button"
+                                            class="cs-chat-panel__copy-btn"
+                                            title="@(emailCopied ? "Copied!" : "Copy email")"
+                                            aria-label="Copy customer email"
+                                            @onclick="CopyCustomerEmail">
+                                        @if (emailCopied)
+                                        {
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21.801 10A10 10 0 1 1 17 3.335"/><path d="m9 11 3 3L22 4"/></svg>
+                                        }
+                                        else
+                                        {
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                                        }
+                                    </button>
+                                </div>
                             }
                             else
                             {
-                                <span class="cs-chat-panel__email-missing">No email provided</span>
+                                <p class="cs-chat-panel__email-missing">No email provided</p>
                             }
                         </div>
+                        @if (selectedSession?.Status == "active")
+                        {
+                            <button type="button" class="cs-btn cs-btn--danger cs-btn--sm"
+                                    @onclick="CloseSelectedSession"
+                                    disabled="@isClosingSession">
+                                @(isClosingSession ? "Closing…" : "Close Chat")
+                            </button>
+                        }
                     </div>
                 </header>
 
@@ -167,11 +152,14 @@
                         @foreach (var m in messages)
                         {
                             var isAgent = m.SenderType is "admin" or "agent";
-                            <div class="cs-bubble @(isAgent ? "cs-bubble--agent" : "cs-bubble--customer")">
-                                <p style="margin:0">@m.Message</p>
-                                <span class="cs-bubble__time">@m.CreatedAt.ToLocalTime().ToString("h:mm tt")</span>
+                            <div class="cs-bubble-row @(isAgent ? "cs-bubble-row--agent" : "cs-bubble-row--customer")">
+                                <div class="cs-bubble @(isAgent ? "cs-bubble--agent" : "cs-bubble--customer")">
+                                    <p class="cs-bubble__text">@m.Message</p>
+                                    <span class="cs-bubble__time">@m.CreatedAt.ToLocalTime().ToString("h:mm tt")</span>
+                                </div>
                             </div>
                         }
+                        <div @ref="messagesEndRef" class="cs-chat-panel__messages-end" aria-hidden="true"></div>
                     }
                 </div>
 
@@ -181,7 +169,7 @@
                 }
 
                 <div class="cs-chat-panel__compose">
-                    <SupportMacrosBar OnApply="ApplyMacro" />
+                    <SupportMacrosBar @ref="macrosBar" OnApply="ApplyMacro" />
                     <div class="cs-chat-panel__input">
                         <input type="text"
                                class="cs-chat-panel__input-field"
@@ -205,6 +193,7 @@
 
     @if (showKbPanel)
     {
+        <button type="button" class="cs-kb-backdrop" @onclick="CloseKbPanel" aria-label="Close knowledge base panel"></button>
         <SupportKbQuickPanel OnClose="CloseKbPanel" />
     }
 </div>

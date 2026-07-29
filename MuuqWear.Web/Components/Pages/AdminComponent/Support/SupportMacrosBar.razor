@@ -35,6 +35,8 @@
 
     private void Toggle() => IsOpen = !IsOpen;
 
+    public void Close() => IsOpen = false;
+
     private async Task SelectMacroAsync(int index)
     {
         IsOpen = false;

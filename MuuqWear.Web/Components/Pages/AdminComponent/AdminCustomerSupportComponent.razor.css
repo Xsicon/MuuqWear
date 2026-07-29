@@ -516,9 +516,10 @@
 ::deep .cs-chat-layout {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 16px;
+    gap: 24px;
     min-height: 460px;
-    height: calc(100vh - 340px);
+    height: calc(100vh - 260px);
+    max-height: 820px;
 }
 
 @media (min-width: 900px) {
@@ -528,7 +529,7 @@
 }
 
 ::deep .cs-chat-sidebar {
-    border: 1px solid #EEF1F6;
+    border: 1px solid #E3E9F4;
     border-radius: 12px;
     display: flex;
     flex-direction: column;
@@ -638,12 +639,83 @@
 }
 
 ::deep .cs-chat-panel {
-    border: 1px solid #EEF1F6;
+    border: 1px solid #E3E9F4;
     border-radius: 12px;
     display: flex;
     flex-direction: column;
     overflow: hidden;
     background: #fff;
+}
+
+::deep .cs-chat-panel__header--compact {
+    padding: 16px 20px;
+}
+
+::deep .cs-chat-panel__header-main {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+::deep .cs-chat-panel__header-info {
+    min-width: 0;
+    flex: 1;
+}
+
+::deep .cs-chat-panel__subtitle {
+    margin: 2px 0 0;
+    font-size: 12px;
+    color: #5B6B85;
+}
+
+::deep .cs-chat-panel__email-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    max-width: 100%;
+    margin-top: 4px;
+}
+
+::deep .cs-chat-panel__email-link {
+    min-width: 0;
+    font-size: 12px;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+::deep .cs-chat-panel__copy-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: #7A8BA8;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+::deep .cs-chat-panel__copy-btn:hover {
+    background: #EEF1F8;
+    color: #1E2A47;
+}
+
+::deep .cs-chat-panel__copy-btn svg {
+    display: block;
+}
+
+::deep .cs-chat-panel__email-missing {
+    margin: 4px 0 0;
+    font-size: 11px;
+    color: #A9B7CC;
+    font-style: italic;
 }
 
 ::deep .cs-chat-panel__header {
@@ -667,39 +739,9 @@
 
 ::deep .cs-chat-panel__name {
     margin: 0;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 600;
     color: #1E2A47;
-}
-
-::deep .cs-chat-panel__contact {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-    padding: 10px 12px;
-    border-radius: 10px;
-    background: #F8FAFD;
-    border: 1px solid #E5E9F2;
-}
-
-::deep .cs-chat-panel__contact-icon {
-    color: #7A8BA8;
-    flex-shrink: 0;
-}
-
-::deep .cs-chat-panel__email-link {
-    flex: 1;
-    min-width: 0;
-    font-size: 14px;
-    font-weight: 500;
-    word-break: break-all;
-}
-
-::deep .cs-chat-panel__email-missing {
-    font-size: 13px;
-    color: #A9B7CC;
-    font-style: italic;
 }
 
 ::deep .cs-chat-panel__messages {
@@ -711,22 +753,41 @@
     gap: 12px;
 }
 
+::deep .cs-bubble-row {
+    display: flex;
+}
+
+::deep .cs-bubble-row--agent {
+    justify-content: flex-end;
+}
+
+::deep .cs-bubble-row--customer {
+    justify-content: flex-start;
+}
+
+::deep .cs-chat-panel__messages-end {
+    height: 1px;
+    flex-shrink: 0;
+}
+
 ::deep .cs-bubble {
-    max-width: 280px;
+    max-width: 20rem;
     padding: 10px 16px;
     border-radius: 16px;
     font-size: 14px;
 }
 
+::deep .cs-bubble__text {
+    margin: 0;
+}
+
 ::deep .cs-bubble--agent {
-    align-self: flex-end;
     background: #1E2A47;
     color: #fff;
     border-bottom-right-radius: 4px;
 }
 
 ::deep .cs-bubble--customer {
-    align-self: flex-start;
     background: #F0F4FB;
     color: #1E2A47;
     border-bottom-left-radius: 4px;
@@ -758,7 +819,7 @@
 }
 
 ::deep .cs-chat-panel__input-field:focus {
-    border-color: #1E2A47;
+    border-color: #0088CC;
 }
 
 ::deep .cs-conv-item__email {
@@ -1057,6 +1118,21 @@
     ::deep .cs-tab-shell--kb-open {
         margin-right: 0;
     }
+
+    ::deep .cs-kb-backdrop {
+        display: block;
+    }
+}
+
+::deep .cs-kb-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 44;
+    border: none;
+    padding: 0;
+    background: rgba(15, 23, 42, 0.28);
+    cursor: pointer;
 }
 
 /* ─── Canned reply macros ─────────────────────────────────── */

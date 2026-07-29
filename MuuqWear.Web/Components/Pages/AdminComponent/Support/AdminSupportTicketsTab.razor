@@ -134,6 +134,7 @@
 
     @if (showKbPanel)
     {
+        <button type="button" class="cs-kb-backdrop" @onclick="CloseKbPanel" aria-label="Close knowledge base panel"></button>
         <SupportKbQuickPanel OnClose="CloseKbPanel" />
     }
 </div>

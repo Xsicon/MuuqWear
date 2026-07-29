@@ -40,70 +40,82 @@ public partial class AdminSupportLiveChatTab : IDisposable
     private string? messagesError;
     private string? actionError;
     private bool showKbPanel;
+    private bool emailCopied;
+    private SupportMacrosBar? macrosBar;
+    private ElementReference messagesEndRef;
+    private bool scrollMessagesPending;
     private CancellationTokenSource? pollCts;
     private CancellationTokenSource? messagesPollCts;
     private Task? sessionsPollTask;
     private Task? messagesPollTask;
-    private int resolvedTodayCount;
-    private DateOnly resolvedTodayDate = DateOnly.FromDateTime(DateTime.Now);
     private int _messagesLoadVersion;
     private int _lastHeaderRefreshSignature = int.MinValue;
-
-    private int activeCount => sessions.Count(s => !IsWaiting(s));
-    private int waitingCount => sessions.Count(IsWaiting);
-
-    private int resolvedToday
-    {
-        get
-        {
-            var today = DateOnly.FromDateTime(DateTime.Now);
-            if (today != resolvedTodayDate)
-            {
-                resolvedTodayDate = today;
-                resolvedTodayCount = 0;
-            }
-
-            return resolvedTodayCount;
-        }
-    }
+    private System.Threading.Timer? emailCopiedTimer;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender)
+        if (firstRender)
+        {
+            SupportTabCoordinator.SessionFocusRequested += OnSessionFocusRequested;
+            SupportTabCoordinator.SessionReadRequested += OnSessionReadRequested;
+            pollCts = new CancellationTokenSource();
+
+            try
+            {
+                var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+                var userId = AdminHeaderUserScope.GetUserId(authState.User);
+                readStateStore = new AdminHeaderReadStateStore(JS, userId);
+                foreach (var entry in await readStateStore.LoadChatReadAtAsync())
+                    readChatAtBySessionId[entry.Key] = entry.Value;
+
+                await LoadSessions();
+                StartSessionsPolling();
+
+                var focusSessionId = TryGetSessionIdFromUri();
+                if (focusSessionId.HasValue && sessions.Any(s => s.Id == focusSessionId.Value))
+                    await SelectSession(focusSessionId.Value);
+                else if (sessions.Count > 0)
+                    await SelectSession(sessions[0].Id);
+            }
+            catch (Exception ex)
+            {
+                loadError = AdminUiErrorHelper.FromException(ex);
+            }
+            finally
+            {
+                isLoading = false;
+                await InvokeAsync(StateHasChanged);
+            }
+
+            await NotifyCounts();
+        }
+
+        if (!scrollMessagesPending)
             return;
 
-        SupportTabCoordinator.SessionFocusRequested += OnSessionFocusRequested;
-        SupportTabCoordinator.SessionReadRequested += OnSessionReadRequested;
-        pollCts = new CancellationTokenSource();
+        scrollMessagesPending = false;
+        await TryScrollMessagesAsync();
+    }
+
+    private void QueueScrollMessages() => scrollMessagesPending = true;
+
+    private async Task TryScrollMessagesAsync()
+    {
+        if (!selectedSessionId.HasValue || messages.Count == 0)
+            return;
 
         try
         {
-            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-            var userId = AdminHeaderUserScope.GetUserId(authState.User);
-            readStateStore = new AdminHeaderReadStateStore(JS, userId);
-            foreach (var entry in await readStateStore.LoadChatReadAtAsync())
-                readChatAtBySessionId[entry.Key] = entry.Value;
-
-            await LoadSessions();
-            StartSessionsPolling();
-
-            var focusSessionId = TryGetSessionIdFromUri();
-            if (focusSessionId.HasValue && sessions.Any(s => s.Id == focusSessionId.Value))
-                await SelectSession(focusSessionId.Value);
-            else if (sessions.Count > 0)
-                await SelectSession(sessions[0].Id);
+            await JS.InvokeVoidAsync("adminScroll.scrollElementIntoView", messagesEndRef);
         }
-        catch (Exception ex)
+        catch (JSDisconnectedException)
         {
-            loadError = AdminUiErrorHelper.FromException(ex);
+            // Circuit disconnected during scroll.
         }
-        finally
+        catch (InvalidOperationException)
         {
-            isLoading = false;
-            await InvokeAsync(StateHasChanged);
+            // Element may not be rendered yet.
         }
-
-        await NotifyCounts();
     }
 
     private void OnSessionFocusRequested(Guid sessionId)
@@ -340,6 +352,8 @@ public partial class AdminSupportLiveChatTab : IDisposable
             SupportTabCoordinator.RequestMessagesRefresh();
             SupportTabCoordinator.RequestBadgeCountsRefresh();
         }
+
+        QueueScrollMessages();
     }
 
     private void StartMessagesPolling()
@@ -381,6 +395,7 @@ public partial class AdminSupportLiveChatTab : IDisposable
         _messagesLoadVersion++;
         selectedSessionId = sessionId;
         selectedSession = sessions.FirstOrDefault(s => s.Id == sessionId);
+        emailCopied = false;
         messages = [];
         messagesLoadSucceeded = false;
         messagesError = null;
@@ -399,6 +414,7 @@ public partial class AdminSupportLiveChatTab : IDisposable
         await LoadMessages();
         StartMessagesPolling();
         RequestHeaderRefreshIfChanged();
+        QueueScrollMessages();
         StateHasChanged();
     }
 
@@ -439,6 +455,17 @@ public partial class AdminSupportLiveChatTab : IDisposable
         {
             await JS.InvokeVoidAsync("navigator.clipboard.writeText", email);
             actionError = null;
+            emailCopied = true;
+            StateHasChanged();
+            emailCopiedTimer?.Dispose();
+            emailCopiedTimer = new System.Threading.Timer(_ =>
+            {
+                _ = InvokeAsync(() =>
+                {
+                    emailCopied = false;
+                    StateHasChanged();
+                });
+            }, null, 2000, Timeout.Infinite);
         }
         catch (Exception ex)
         {
@@ -468,6 +495,8 @@ public partial class AdminSupportLiveChatTab : IDisposable
                 messages.Add(result.Data);
                 messagesLoadSucceeded = true;
                 adminMessageInput = string.Empty;
+                macrosBar?.Close();
+                QueueScrollMessages();
             }
             else
             {
@@ -509,9 +538,6 @@ public partial class AdminSupportLiveChatTab : IDisposable
 
             if (result.Success)
             {
-                _ = resolvedToday;
-                resolvedTodayCount++;
-
                 sessions.RemoveAll(s => s.Id == selectedSessionId);
                 selectedSessionId = null;
                 selectedSession = null;
@@ -553,6 +579,7 @@ public partial class AdminSupportLiveChatTab : IDisposable
     {
         SupportTabCoordinator.SessionFocusRequested -= OnSessionFocusRequested;
         SupportTabCoordinator.SessionReadRequested -= OnSessionReadRequested;
+        emailCopiedTimer?.Dispose();
         StopSessionsPolling();
     }
 }
