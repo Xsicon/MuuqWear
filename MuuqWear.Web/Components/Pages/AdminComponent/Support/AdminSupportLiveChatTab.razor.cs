@@ -42,8 +42,9 @@ public partial class AdminSupportLiveChatTab : IDisposable
     private bool showKbPanel;
     private bool emailCopied;
     private SupportMacrosBar? macrosBar;
-    private ElementReference messagesEndRef;
+    private ElementReference messagesContainerRef;
     private bool scrollMessagesPending;
+    private bool scrollMessagesForce;
     private CancellationTokenSource? pollCts;
     private CancellationTokenSource? messagesPollCts;
     private Task? sessionsPollTask;
@@ -94,19 +95,25 @@ public partial class AdminSupportLiveChatTab : IDisposable
             return;
 
         scrollMessagesPending = false;
-        await TryScrollMessagesAsync();
+        var force = scrollMessagesForce;
+        scrollMessagesForce = false;
+        await TryScrollMessagesAsync(force);
     }
 
-    private void QueueScrollMessages() => scrollMessagesPending = true;
-
-    private async Task TryScrollMessagesAsync()
+    private void QueueScrollMessages(bool force = false)
     {
-        if (!selectedSessionId.HasValue || messages.Count == 0)
+        scrollMessagesForce = scrollMessagesForce || force;
+        scrollMessagesPending = true;
+    }
+
+    private async Task TryScrollMessagesAsync(bool force = false)
+    {
+        if (!selectedSessionId.HasValue)
             return;
 
         try
         {
-            await JS.InvokeVoidAsync("adminScroll.scrollElementIntoView", messagesEndRef);
+            await JS.InvokeVoidAsync("chatScroll.scrollToBottom", messagesContainerRef, force);
         }
         catch (JSDisconnectedException)
         {
@@ -414,7 +421,7 @@ public partial class AdminSupportLiveChatTab : IDisposable
         await LoadMessages();
         StartMessagesPolling();
         RequestHeaderRefreshIfChanged();
-        QueueScrollMessages();
+        QueueScrollMessages(force: true);
         StateHasChanged();
     }
 
@@ -496,7 +503,7 @@ public partial class AdminSupportLiveChatTab : IDisposable
                 messagesLoadSucceeded = true;
                 adminMessageInput = string.Empty;
                 macrosBar?.Close();
-                QueueScrollMessages();
+                QueueScrollMessages(force: true);
             }
             else
             {

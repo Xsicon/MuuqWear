@@ -134,7 +134,7 @@
                     </div>
                 </header>
 
-                <div class="cs-chat-panel__messages">
+                <div class="cs-chat-panel__messages" @ref="messagesContainerRef">
                     @if (!string.IsNullOrEmpty(messagesError))
                     {
                         <p class="cs-error-banner cs-error-banner--inline">@messagesError</p>
@@ -159,16 +159,14 @@
                                 </div>
                             </div>
                         }
-                        <div @ref="messagesEndRef" class="cs-chat-panel__messages-end" aria-hidden="true"></div>
                     }
                 </div>
 
-                @if (!string.IsNullOrEmpty(actionError))
-                {
-                    <p class="cs-error-banner cs-error-banner--inline">@actionError</p>
-                }
-
                 <div class="cs-chat-panel__compose">
+                    @if (!string.IsNullOrEmpty(actionError))
+                    {
+                        <p class="cs-error-banner cs-error-banner--inline">@actionError</p>
+                    }
                     <SupportMacrosBar @ref="macrosBar" OnApply="ApplyMacro" />
                     <div class="cs-chat-panel__input">
                         <input type="text"

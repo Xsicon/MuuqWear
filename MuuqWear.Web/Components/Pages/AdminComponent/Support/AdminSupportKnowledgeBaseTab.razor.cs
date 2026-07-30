@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using MuuqWear.Application.Services.HelpCenterService;
 using MuuqWear.Model.HelpCenter;
 using MuuqWear.Web.Services;
@@ -7,6 +8,8 @@ namespace MuuqWear.Web.Components.Pages.AdminComponent.Support;
 
 public partial class AdminSupportKnowledgeBaseTab : IDisposable
 {
+    private const int PageSize = 10;
+
     [Inject] private NavigationManager NavigationManager { get; set; } = default!;
     [Inject] private IHelpCenterService HelpCenterService { get; set; } = default!;
 
@@ -14,11 +17,17 @@ public partial class AdminSupportKnowledgeBaseTab : IDisposable
     private string search = string.Empty;
     private string catFilter = "All";
     private string statusFilter = "All";
+    private int page = 1;
     private bool panelOpen;
     private bool isLoading = true;
     private bool isSaving;
+    private bool isLoadingArticle;
+    private bool searchExpanded;
+    private ElementReference searchInputRef;
     private string? loadError;
+    private string? listWarning;
     private HelpArticleModel? editingArticle;
+    private HelpArticleModel? viewingArticle;
     private HelpArticleModel? deleteTarget;
     private string? toast;
     private System.Threading.Timer? toastTimer;
@@ -27,11 +36,48 @@ public partial class AdminSupportKnowledgeBaseTab : IDisposable
     private string draftCategory = "Orders";
     private string draftStatus = "Draft";
     private string draftContent = string.Empty;
+    private string draftHeroImageUrl = string.Empty;
+    private List<HelpArticleStepModel> draftSteps = [];
 
-    private static readonly string[] CategoryPills = ["All", .. HelpArticleCategories.All];
     private static readonly string[] StatusPills = ["All", "Published", "Draft"];
 
     protected override async Task OnInitializedAsync() => await LoadArticles();
+
+    private async Task ToggleSearchAsync()
+    {
+        if (searchExpanded)
+        {
+            searchExpanded = false;
+            return;
+        }
+
+        searchExpanded = true;
+        await Task.Yield();
+        try
+        {
+            await searchInputRef.FocusAsync();
+        }
+        catch (InvalidOperationException)
+        {
+            // Input not rendered yet.
+        }
+    }
+
+    private async Task HandleSearchKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape" && string.IsNullOrWhiteSpace(search))
+        {
+            searchExpanded = false;
+            await Task.CompletedTask;
+        }
+    }
+
+    private void ClearSearch()
+    {
+        search = string.Empty;
+        page = 1;
+        ResetPageIfNeeded();
+    }
 
     private IEnumerable<HelpArticleModel> FilteredArticles
     {
@@ -46,6 +92,17 @@ public partial class AdminSupportKnowledgeBaseTab : IDisposable
                 (statusFilter == "All" || a.Status == statusFilter));
         }
     }
+
+    private int TotalPages =>
+        Math.Max(1, (int)Math.Ceiling(FilteredArticles.Count() / (double)PageSize));
+
+    private int CurrentPage =>
+        Math.Min(page, TotalPages);
+
+    private IEnumerable<HelpArticleModel> PagedArticles =>
+        FilteredArticles
+            .Skip((CurrentPage - 1) * PageSize)
+            .Take(PageSize);
 
     private IEnumerable<(string Label, string Value, string Color, string IconSvg)> StatCards
     {
@@ -74,17 +131,22 @@ public partial class AdminSupportKnowledgeBaseTab : IDisposable
 
         try
         {
-            var result = await HelpCenterService.GetAdminArticles(null, null, null, 1, 100);
-            if (!result.Success || result.Data == null)
+            var (items, error, truncation) = await SupportPaginatedLoader.LoadAllPagesAsync(
+                (pageNum, pageSize) => HelpCenterService.GetAdminArticles(null, null, null, pageNum, pageSize));
+
+            if (error != null && items.Count == 0)
             {
-                loadError = AdminUiErrorHelper.FromApi(result.Message, "Failed to load knowledge base articles.");
+                loadError = AdminUiErrorHelper.FromApi(error, "Failed to load knowledge base articles.");
+                listWarning = null;
                 articles = [];
                 return;
             }
 
-            articles = result.Data.Data
+            listWarning = truncation;
+            articles = items
                 .OrderByDescending(a => a.UpdatedAt ?? a.CreatedAt)
                 .ToList();
+            page = 1;
         }
         catch (Exception ex)
         {
@@ -97,52 +159,224 @@ public partial class AdminSupportKnowledgeBaseTab : IDisposable
         }
     }
 
+    private void ResetPageIfNeeded()
+    {
+        if (page > TotalPages)
+            page = TotalPages;
+    }
+
+    private void OnSearchChanged(ChangeEventArgs e)
+    {
+        search = e.Value?.ToString() ?? string.Empty;
+        page = 1;
+        ResetPageIfNeeded();
+
+        if (!string.IsNullOrWhiteSpace(search))
+            searchExpanded = true;
+    }
+
+    private void SetCatFilter(string cat)
+    {
+        catFilter = cat;
+        page = 1;
+        ResetPageIfNeeded();
+    }
+
+    private void SetStatusFilter(string status)
+    {
+        statusFilter = status;
+        page = 1;
+        ResetPageIfNeeded();
+    }
+
     private void ToggleCatFilter(string cat) =>
-        catFilter = catFilter == cat ? "All" : cat;
+        SetCatFilter(catFilter == cat ? "All" : cat);
+
+    private void GoToPage(int nextPage)
+    {
+        page = Math.Clamp(nextPage, 1, TotalPages);
+    }
 
     private void OpenHelpCenter() =>
         NavigationManager.NavigateTo("/help", true);
 
-    private void OpenNewPanel()
+    private void ResetDraftFields()
     {
-        editingArticle = null;
         draftTitle = string.Empty;
         draftCategory = "Orders";
         draftStatus = "Draft";
         draftContent = string.Empty;
+        draftHeroImageUrl = string.Empty;
+        draftSteps = [];
+    }
+
+    private void OpenNewPanel()
+    {
+        editingArticle = null;
+        ResetDraftFields();
         panelOpen = true;
     }
 
-    private void OpenEditPanel(HelpArticleModel article)
+    private async Task OpenEditPanelAsync(HelpArticleModel article)
+    {
+        isLoadingArticle = true;
+        panelOpen = true;
+        editingArticle = article;
+
+        try
+        {
+            var result = await HelpCenterService.GetAdminArticleById(article.Id);
+            if (!result.Success || result.Data == null)
+            {
+                ShowToast(AdminUiErrorHelper.FromApi(result.Message, "Failed to load article."));
+                panelOpen = false;
+                return;
+            }
+
+            ApplyArticleToDraft(result.Data);
+        }
+        catch (Exception ex)
+        {
+            ShowToast(AdminUiErrorHelper.FromException(ex));
+            panelOpen = false;
+        }
+        finally
+        {
+            isLoadingArticle = false;
+        }
+    }
+
+    private async Task OpenViewPanelAsync(HelpArticleModel article)
+    {
+        isLoadingArticle = true;
+        viewingArticle = article;
+
+        try
+        {
+            var result = await HelpCenterService.GetAdminArticleById(article.Id);
+            if (!result.Success || result.Data == null)
+            {
+                ShowToast(AdminUiErrorHelper.FromApi(result.Message, "Failed to load article."));
+                viewingArticle = null;
+                return;
+            }
+
+            viewingArticle = result.Data;
+        }
+        catch (Exception ex)
+        {
+            ShowToast(AdminUiErrorHelper.FromException(ex));
+            viewingArticle = null;
+        }
+        finally
+        {
+            isLoadingArticle = false;
+        }
+    }
+
+    private void CloseViewPanel() => viewingArticle = null;
+
+    private async Task EditFromViewAsync()
+    {
+        if (viewingArticle == null)
+            return;
+
+        var article = viewingArticle;
+        viewingArticle = null;
+        await OpenEditPanelAsync(article);
+    }
+
+    private void ApplyArticleToDraft(HelpArticleModel article)
     {
         editingArticle = article;
         draftTitle = article.Title;
         draftCategory = article.Category;
         draftStatus = article.Status;
         draftContent = article.Content;
-        panelOpen = true;
+        draftHeroImageUrl = article.HeroImageUrl ?? string.Empty;
+        draftSteps = article.Steps
+            .OrderBy(s => s.SortOrder)
+            .Select(s => new HelpArticleStepModel
+            {
+                Id = s.Id,
+                SortOrder = s.SortOrder,
+                Detail = s.Detail,
+                ImageUrl = s.ImageUrl
+            })
+            .ToList();
     }
 
     private void ClosePanel() => panelOpen = false;
 
-    private async Task SaveArticleAsync(bool publish)
+    private void AddDraftStep()
     {
-        if (string.IsNullOrWhiteSpace(draftTitle) || isSaving)
+        draftSteps.Add(new HelpArticleStepModel
+        {
+            SortOrder = draftSteps.Count,
+            Detail = string.Empty
+        });
+    }
+
+    private void RemoveDraftStep(int index)
+    {
+        if (index < 0 || index >= draftSteps.Count)
             return;
 
+        draftSteps.RemoveAt(index);
+        for (var i = 0; i < draftSteps.Count; i++)
+            draftSteps[i].SortOrder = i;
+    }
+
+    private Task SetDraftHeroImageUrl(string url)
+    {
+        draftHeroImageUrl = url;
+        return Task.CompletedTask;
+    }
+
+    private Task SetDraftStepImageUrl(int index, string url)
+    {
+        if (index >= 0 && index < draftSteps.Count)
+            draftSteps[index].ImageUrl = string.IsNullOrWhiteSpace(url) ? null : url;
+
+        return Task.CompletedTask;
+    }
+
+    private SaveHelpArticleModel BuildSavePayload(bool publish)
+    {
         var status = publish
             ? HelpArticleDisplayStatus.Published
             : (string.IsNullOrWhiteSpace(draftStatus) ? HelpArticleDisplayStatus.Draft : draftStatus);
         if (!publish && status == HelpArticleDisplayStatus.Published)
             status = HelpArticleDisplayStatus.Draft;
 
-        var payload = new SaveHelpArticleModel
+        var steps = draftSteps
+            .Select((step, index) => new HelpArticleStepModel
+            {
+                Id = step.Id,
+                SortOrder = index,
+                Detail = step.Detail.Trim(),
+                ImageUrl = string.IsNullOrWhiteSpace(step.ImageUrl) ? null : step.ImageUrl.Trim()
+            })
+            .Where(step => !string.IsNullOrWhiteSpace(step.Detail))
+            .ToList();
+
+        return new SaveHelpArticleModel
         {
             Title = draftTitle.Trim(),
             Category = draftCategory,
             Status = publish ? HelpArticleDisplayStatus.Published : status,
-            Content = draftContent.Trim()
+            Content = draftContent.Trim(),
+            HeroImageUrl = string.IsNullOrWhiteSpace(draftHeroImageUrl) ? null : draftHeroImageUrl.Trim(),
+            Steps = steps
         };
+    }
+
+    private async Task SaveArticleAsync(bool publish)
+    {
+        if (string.IsNullOrWhiteSpace(draftTitle) || isSaving)
+            return;
+
+        var payload = BuildSavePayload(publish);
 
         isSaving = true;
         try
@@ -167,6 +401,7 @@ public partial class AdminSupportKnowledgeBaseTab : IDisposable
             }
 
             panelOpen = false;
+            page = 1;
             ShowToast(editingArticle == null ? "Article created" : "Article updated");
         }
         catch (Exception ex)
@@ -222,6 +457,7 @@ public partial class AdminSupportKnowledgeBaseTab : IDisposable
 
             articles.RemoveAll(a => a.Id == deleteTarget.Id);
             deleteTarget = null;
+            ResetPageIfNeeded();
             ShowToast("Article deleted");
         }
         catch (Exception ex)

@@ -11,6 +11,11 @@ public interface IHelpCenterService
     Task<Response<SupportTicketModel>> GetTicketById(Guid ticketId);
     Task<Response<SupportTicketModel>> UpdateTicketStatus(
         Guid ticketId, string status);
+    Task<Response<SupportTicketModel>> UpdateTicket(
+        Guid ticketId, UpdateTicketModel request);
+    Task<Response<SupportTicketModel>> AssignTicketToMe(Guid ticketId);
+    Task<Response<SupportTicketReplyModel>> AddTicketReply(
+        Guid ticketId, string message);
     Task<Response<TicketStatsModel>> GetStats();
 
     Task<Response<PaginatedResponse<HelpArticleModel>>> GetPublishedArticles(
@@ -26,4 +31,10 @@ public interface IHelpCenterService
     Task<Response<HelpArticleModel>> UpdateArticleStatus(
         Guid articleId, string status);
     Task<Response<bool>> DeleteArticle(Guid articleId);
+    Task<Response<string>> UploadImage(
+        string fileName, byte[] bytes, string contentType);
+    Task<Response<HelpArticleCommentModel>> AddArticleComment(
+        Guid articleId, string body);
+    Task<Response<HelpArticleEngagementModel>> SetArticleVote(
+        Guid articleId, string vote);
 }

@@ -18,7 +18,7 @@
 
 <PageReadyNotifier IsLoading="false" />
 
-<div class="cs-page">
+<div class="cs-page @(activeTab == "live-chat" ? "cs-page--live-chat" : "")">
     @if (activeTab == "live-chat")
     {
         <AdminSupportLiveChatTab />

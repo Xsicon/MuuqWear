@@ -228,18 +228,21 @@ Section-level RBAC is enforced in `MuuqWear.Web` via `AdminPortalRoles`, ASP.NET
 ---
 
 ### 5.7 Customer Support
-**Routes:** `/admin/support?tab=live-chat|tickets|knowledge`
+**Routes:** `/admin/support?tab=live-chat|tickets|knowledge`  
+**Status:** V2 redesign implemented (Phases 1–5 Web + API)
 
 **Design sources:**
-- **V2 (current target):** `.design-reference/backend/CustomerSupportV2.tsx` — macros, KB quick panel, ticket drawer, article steps/votes/comments
+- **V2 (current):** `.design-reference/backend/CustomerSupportV2.tsx` — macros, KB quick panel, ticket drawer, article steps/votes/comments
 - **V1 (legacy):** `.design-reference/backend/CustomerSupport.tsx`
-- **Plan:** `docs/CUSTOMER_SUPPORT_REDESIGN.md`
+- **Plan + QA:** `docs/CUSTOMER_SUPPORT_REDESIGN.md`
 
 **Tabs:** Live Chat | Support Tickets | Knowledge Base
 
 **Live chat:** Conversation list + thread; macros; KB slide-over panel  
-**Tickets:** List + drawer (assign team/agent, priority, conversation, macros, KB)  
-**Knowledge base:** Article CRUD with hero + agent steps; viewer with votes/comments; pagination
+**Tickets:** List + drawer (assign team/agent, priority, conversation thread, macros, KB); “Assigned to me” filter  
+**Knowledge base:** Article CRUD with hero + agent steps; API-backed viewer with votes/comments; pagination; public `/help` reads published articles
+
+**Shared components:** `SupportMacrosBar`, `SupportKbQuickPanel`, `SupportKbArticleViewPanel`, `SupportTicketDrawer`, `SupportKbButton`
 
 **Blazor:** `AdminCustomerSupportComponent`, `AdminSupportLiveChatTab`, `AdminSupportTicketsTab`, `AdminSupportKnowledgeBaseTab`
 

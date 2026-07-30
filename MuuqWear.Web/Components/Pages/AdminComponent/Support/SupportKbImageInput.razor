@@ -1,0 +1,145 @@
+@using Microsoft.AspNetCore.Components.Forms
+@using MuuqWear.Application.Services.HelpCenterService
+
+<div class="cs-kb-image-input">
+    @if (!string.IsNullOrWhiteSpace(Label))
+    {
+        <label class="cs-field__label">@Label</label>
+    }
+
+    <div class="cs-kb-image-input__row">
+        @if (!string.IsNullOrWhiteSpace(Url))
+        {
+            <div class="cs-kb-image-input__thumb-wrap">
+                <img src="@Url" alt="" class="cs-kb-image-input__thumb" />
+            </div>
+        }
+        else
+        {
+            <div class="cs-kb-image-input__thumb-wrap cs-kb-image-input__thumb-wrap--empty" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
+                    <circle cx="9" cy="9" r="2"></circle>
+                    <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>
+                </svg>
+            </div>
+        }
+
+        <div class="cs-kb-image-input__controls">
+            <div class="cs-kb-image-input__tabs">
+                <button type="button"
+                        class="cs-kb-image-input__tab @(tab == "url" ? "cs-kb-image-input__tab--active" : "")"
+                        @onclick='() => tab = "url"'>
+                    URL
+                </button>
+                <button type="button"
+                        class="cs-kb-image-input__tab @(tab == "upload" ? "cs-kb-image-input__tab--active" : "")"
+                        @onclick='() => tab = "upload"'>
+                    Upload
+                </button>
+            </div>
+
+            @if (tab == "url")
+            {
+                <input value="@Url"
+                       @onchange="OnUrlChanged"
+                       placeholder="https://…"
+                       class="cs-field__input" />
+            }
+            else
+            {
+                <label class="cs-kb-image-input__upload">
+                    <InputFile OnChange="HandleUploadAsync"
+                               accept="image/jpeg,image/png,image/webp,image/gif"
+                               class="cs-kb-image-input__upload-input" />
+                    <span class="cs-kb-image-input__upload-label">
+                        @if (isUploading)
+                        {
+                            <text>Uploading…</text>
+                        }
+                        else
+                        {
+                            <text>Choose image (JPEG, PNG, WebP · max 5 MB)</text>
+                        }
+                    </span>
+                </label>
+            }
+
+            @if (!string.IsNullOrEmpty(uploadError))
+            {
+                <p class="cs-kb-image-input__error">@uploadError</p>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = string.Empty;
+    [Parameter] public string Url { get; set; } = string.Empty;
+    [Parameter] public EventCallback<string> UrlChanged { get; set; }
+
+    [Inject] private IHelpCenterService HelpCenterService { get; set; } = default!;
+
+    private string tab = "upload";
+    private bool isUploading;
+    private string? uploadError;
+
+    private async Task OnUrlChanged(ChangeEventArgs e)
+    {
+        uploadError = null;
+        await UrlChanged.InvokeAsync(e.Value?.ToString() ?? string.Empty);
+    }
+
+    private async Task HandleUploadAsync(InputFileChangeEventArgs e)
+    {
+        uploadError = null;
+        var file = e.File;
+
+        if (file.Size > 5 * 1024 * 1024)
+        {
+            uploadError = "Image must be under 5 MB.";
+            return;
+        }
+
+        if (!file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+        {
+            uploadError = "File must be an image.";
+            return;
+        }
+
+        isUploading = true;
+        try
+        {
+            using var stream = file.OpenReadStream(5 * 1024 * 1024);
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+
+            var extension = Path.GetExtension(file.Name);
+            if (string.IsNullOrWhiteSpace(extension))
+                extension = ".jpg";
+
+            var result = await HelpCenterService.UploadImage(
+                $"{Guid.NewGuid()}{extension}",
+                ms.ToArray(),
+                file.ContentType);
+
+            if (result.Success && result.Data != null)
+            {
+                await UrlChanged.InvokeAsync(result.Data);
+                tab = "url";
+            }
+            else
+            {
+                uploadError = result.Message ?? "Upload failed.";
+            }
+        }
+        catch (Exception ex)
+        {
+            uploadError = "Upload failed: " + ex.Message;
+        }
+        finally
+        {
+            isUploading = false;
+        }
+    }
+}

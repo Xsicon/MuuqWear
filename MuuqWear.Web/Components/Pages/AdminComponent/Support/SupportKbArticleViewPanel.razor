@@ -1,0 +1,162 @@
+@using MuuqWear.Model.HelpCenter
+
+<aside class="cs-kb-panel cs-kb-panel--detail">
+    <header class="cs-kb-panel__header">
+        <div>
+            <p class="cs-drawer__eyebrow">Knowledge Base Article</p>
+            <div class="cs-kb-panel__badges">
+                <span class="cs-badge" style="background:@CategoryMeta.Bg;color:@CategoryMeta.Text">@Article.Category</span>
+                <span class="cs-badge cs-badge--round"
+                      style="background:@(Article.Status == HelpArticleDisplayStatus.Published ? "#D1FAE5" : "#F3F4F6");color:@(Article.Status == HelpArticleDisplayStatus.Published ? "#065F46" : "#374151")">
+                    @Article.Status
+                </span>
+            </div>
+        </div>
+        <button type="button" class="cs-btn cs-btn--icon" @onclick="OnClose" aria-label="Close article details">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+    </header>
+
+    <div class="cs-kb-panel__detail-body">
+        <div class="cs-kb-panel__detail-title">
+            <div class="cs-row__icon" style="background:@CategoryMeta.Bg;width:44px;height:44px;border-radius:12px">
+                @((MarkupString)AdminSupportKnowledgeBaseTab.GetCategoryIconSvg(CategoryMeta.IconKey, CategoryMeta.Dot))
+            </div>
+            <h3 class="cs-kb-panel__article-title">@Article.Title</h3>
+        </div>
+
+        <div class="cs-kb-panel__stats">
+            <span><strong>@Article.Views.ToString("N0")</strong> views</span>
+            <span><strong style="color:#22C55E">@Article.Helpful</strong> found helpful</span>
+            <span>Updated @Article.LastUpdated</span>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Article.HeroImageUrl))
+        {
+            <div class="cs-kb-hero">
+                <img src="@Article.HeroImageUrl" alt="@Article.Title" />
+            </div>
+        }
+
+        <p class="cs-kb-panel__content">@Article.Content</p>
+
+        @if (Article.Steps.Count > 0)
+        {
+            <div class="cs-kb-steps">
+                <div class="cs-kb-steps__header">
+                    <div class="cs-kb-steps__icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></svg>
+                    </div>
+                    <h4 class="cs-kb-steps__title">How agents resolve this — step by step</h4>
+                </div>
+                <ol class="cs-kb-steps__list">
+                    @for (var i = 0; i < Article.Steps.Count; i++)
+                    {
+                        var step = Article.Steps[i];
+                        <li class="cs-kb-steps__item" @key="step.Id != Guid.Empty ? step.Id : step.SortOrder">
+                            <span class="cs-kb-steps__num">@(i + 1)</span>
+                            <div class="cs-kb-steps__body">
+                                <p class="cs-kb-steps__detail">@step.Detail</p>
+                                @if (!string.IsNullOrWhiteSpace(step.ImageUrl))
+                                {
+                                    <div class="cs-kb-steps__image">
+                                        <img src="@step.ImageUrl" alt="Step @(i + 1)" />
+                                    </div>
+                                }
+                            </div>
+                        </li>
+                    }
+                </ol>
+            </div>
+        }
+
+        @if (ShowAgentEngagement)
+        {
+            <div class="cs-kb-engagement">
+                @if (!string.IsNullOrEmpty(engagementError))
+                {
+                    <p class="cs-error-banner cs-error-banner--inline">@engagementError</p>
+                }
+                <div class="cs-kb-engagement__votes">
+                    <p class="cs-kb-engagement__votes-label">Was this helpful?</p>
+                    <button type="button"
+                            class="cs-kb-vote @(myVote == "like" ? "cs-kb-vote--like-active" : "")"
+                            @onclick='() => VoteAsync("like")'
+                            disabled="@engagementBusy">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/></svg>
+                        @likeCount
+                    </button>
+                    <button type="button"
+                            class="cs-kb-vote @(myVote == "dislike" ? "cs-kb-vote--dislike-active" : "")"
+                            @onclick='() => VoteAsync("dislike")'
+                            disabled="@engagementBusy">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 14V2"/><path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z"/></svg>
+                        @dislikeCount
+                    </button>
+                </div>
+
+                <div class="cs-kb-engagement__comments">
+                    <div class="cs-kb-engagement__comments-header">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0088CC" stroke-width="2"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
+                        <h4 class="cs-kb-engagement__comments-title">Agent notes &amp; comments (@comments.Count)</h4>
+                    </div>
+
+                    @if (comments.Count == 0)
+                    {
+                        <p class="cs-kb-engagement__empty">No comments yet — share a tip for the team.</p>
+                    }
+                    else
+                    {
+                        <div class="cs-kb-engagement__comment-list">
+                            @foreach (var c in comments)
+                            {
+                                <div class="cs-kb-comment" @key="c.Id">
+                                    <div class="cs-kb-comment__avatar">@c.Initials</div>
+                                    <div class="cs-kb-comment__bubble">
+                                        <div class="cs-kb-comment__meta">
+                                            <span class="cs-kb-comment__author">@c.AuthorName</span>
+                                            <span class="cs-kb-comment__time">@c.TimeAgo</span>
+                                        </div>
+                                        <p class="cs-kb-comment__body">@c.Body</p>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+
+                    <div class="cs-kb-engagement__compose">
+                        <input type="text"
+                               class="cs-kb-engagement__input"
+                               placeholder="Add a comment for the team…"
+                               @bind="commentInput"
+                               @onkeydown="HandleCommentKeyDown" />
+                        <button type="button"
+                                class="cs-btn cs-btn--primary cs-btn--sm"
+                               disabled="@(engagementBusy || string.IsNullOrWhiteSpace(commentInput))"
+                               @onclick="PostCommentAsync">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+                            Post
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <footer class="cs-kb-panel__detail-footer">
+        @if (ShowOpenInHelpCenter)
+        {
+            <button type="button" class="cs-btn cs-btn--outline" @onclick="OpenHelpCenter">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>
+                Open in Help Center
+            </button>
+        }
+        @if (ShowEditButton && OnEdit.HasDelegate)
+        {
+            <button type="button" class="cs-btn cs-btn--primary" @onclick="OnEdit">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"/></svg>
+                Edit Article
+            </button>
+        }
+    </footer>
+</aside>

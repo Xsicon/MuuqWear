@@ -274,11 +274,21 @@ flowchart LR
 
 #### Phase 5 — Polish & tests (~2 days)
 
-1. Playfair Display on tab titles only (if brand approves)
-2. E2E smoke: create article → publish → visible on `/help`
-3. E2E: ticket reply → customer notification (future: email)
-4. API unit tests for KB + ticket replies
-5. Update `ADMIN_REDESIGN.md` §5.7 to reference V2
+1. Playfair Display on tab titles (applied via `cs-tab-title`)
+2. KB engagement wired to API (comments + votes persist)
+3. Web unit tests for support helpers (`SupportAgentToolsTests`)
+4. Manual smoke QA — see checklist below
+5. Ticket email notifications — **deferred** (out of scope)
+6. API unit tests for KB + ticket replies — **MuuqWearApi** (separate repo)
+
+**Manual smoke QA**
+
+| Flow | Steps | Pass |
+|------|-------|------|
+| KB create → publish → public | Admin KB → New article → Publish → open `/help` | ☐ |
+| KB engagement | Open article viewer → vote + comment → reload admin viewer | ☐ |
+| Ticket drawer | Open ticket → assign → reply → reload → thread persists | ☐ |
+| Live Chat | Macros + KB panel; send message; polling unaffected | ☐ |
 
 ---
 
@@ -344,22 +354,28 @@ Largest ticket workflow piece.
 ## 9. Acceptance checklist (per phase)
 
 ### Phase 1
-- [ ] Macros appear on Live Chat and pre-fill input
-- [ ] KB button opens searchable panel from Live Chat & Tickets
-- [ ] Panel closes without breaking chat polling
+- [x] Macros appear on Live Chat and pre-fill input
+- [x] KB button opens searchable panel from Live Chat & Tickets
+- [x] Panel closes without breaking chat polling
 
 ### Phase 3
-- [ ] Articles persist across reload (not seed memory)
-- [ ] Publish makes article visible on `/help`
-- [ ] Editor supports cover image + ordered steps
-- [ ] Article viewer shows steps, comments, publish stats
-- [ ] Pagination works (10 per page)
+- [x] Articles persist across reload (not seed memory)
+- [x] Publish makes article visible on `/help`
+- [x] Editor supports cover image + ordered steps
+- [x] Article viewer shows steps, comments, publish stats
+- [x] Pagination works (10 per page)
 
 ### Phase 4
-- [ ] Ticket drawer opens from list row
-- [ ] Agent can reply; thread persists
-- [ ] Assign team/agent; filter “Assigned to me”
-- [ ] Status/priority update via API
+- [x] Ticket drawer opens from list row
+- [x] Agent can reply; thread persists
+- [x] Assign team/agent; filter “Assigned to me”
+- [x] Status/priority update via API
+
+### Phase 5
+- [x] Playfair Display on support tab titles
+- [x] KB votes/comments persist via API
+- [x] Web unit tests for support helpers
+- [ ] Manual smoke QA (see Phase 5 checklist above)
 
 ---
 

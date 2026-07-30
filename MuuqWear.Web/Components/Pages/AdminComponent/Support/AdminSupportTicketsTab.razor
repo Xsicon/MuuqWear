@@ -2,7 +2,7 @@
 @using MuuqWear.Model.HelpCenter
 @inject IHelpCenterService HelpCenterService
 
-<div class="@(showKbPanel ? "cs-tab-shell cs-tab-shell--kb-open" : "cs-tab-shell")">
+<div class="@ShellClass">
     <div class="cs-tab-header-row">
         <div class="cs-tab-header" style="margin-bottom:0">
             <p class="cs-tab-eyebrow">Customer Support</p>
@@ -17,6 +17,11 @@
     @if (!string.IsNullOrEmpty(loadError))
     {
         <p class="cs-error-banner">@loadError</p>
+    }
+
+    @if (!string.IsNullOrEmpty(listWarning))
+    {
+        <p class="cs-list-warning">@listWarning</p>
     }
 
     @if (isLoading)
@@ -53,6 +58,11 @@
             <svg class="cs-search__icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
             <input class="cs-search__input" placeholder="Search tickets…" @bind="search" @bind:event="oninput" />
         </div>
+        <button type="button"
+                class="cs-pill cs-pill--mine @(mineOnly ? "cs-pill--active-dark" : "")"
+                @onclick="ToggleMineOnly">
+            Assigned to me (@MineCount)
+        </button>
         <div class="cs-pills">
             @foreach (var s in StatusFilters)
             {
@@ -75,12 +85,15 @@
         </div>
     </div>
 
-    <div class="cs-list">
+    <div class="cs-list cs-list--tickets">
         @foreach (var ticket in FilteredTickets)
         {
             var ss = GetStatusStyle(ticket.Status);
             var ps = GetPriorityStyle(ticket.Priority);
-            <div class="cs-row">
+            var replyCount = ticket.DisplayReplyCount;
+            <button type="button"
+                    class="cs-row cs-row--clickable @(activeTicket?.Id == ticket.Id ? "cs-row--active" : "")"
+                    @onclick="() => OpenTicketDrawerAsync(ticket)">
                 <div class="cs-row__body">
                     <div class="cs-row__badges">
                         <span class="cs-row__meta" style="font-family:monospace">@ticket.TicketNumber</span>
@@ -89,6 +102,14 @@
                             <span class="cs-badge__dot" style="background:@ss.Dot"></span>
                             @GetStatusLabel(ticket.Status)
                         </span>
+                        @if (!string.IsNullOrWhiteSpace(ticket.Team) && ticket.Team != SupportTicketTeams.Unassigned)
+                        {
+                            <span class="cs-badge cs-badge--round cs-badge--team">@ticket.Team</span>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(ticket.AssignedToName) && ticket.AssignedToName != SupportTicketAgents.Unassigned)
+                        {
+                            <span class="cs-badge cs-badge--round cs-badge--agent">@ticket.AssignedToName</span>
+                        }
                     </div>
                     <p class="cs-row__title">@ticket.Subject</p>
                     <p class="cs-row__meta">
@@ -96,20 +117,17 @@
                         @if (!string.IsNullOrWhiteSpace(ticket.Email))
                         {
                             <span> · </span>
-                            <a href="mailto:@ticket.Email" class="cs-contact-email" @onclick:stopPropagation="true">@ticket.Email</a>
+                            <span @onclick:stopPropagation="true">@ticket.Email</span>
                         }
                         <span> · @ticket.Category · @FormatDate(ticket.CreatedAt)</span>
+                        @if (replyCount > 0)
+                        {
+                            <span> · @replyCount repl@(replyCount == 1 ? "y" : "ies")</span>
+                        }
                     </p>
                 </div>
-                <div class="cs-row__actions">
-                    <button type="button"
-                            class="cs-btn cs-btn--outline cs-btn--sm"
-                            disabled="@(updatingId == ticket.Id)"
-                            @onclick="() => CycleStatus(ticket)">
-                        @GetActionLabel(ticket.Status)
-                    </button>
-                </div>
-            </div>
+                <svg class="cs-row__chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>
+            </button>
         }
 
         @if (!isLoading && !FilteredTickets.Any())
@@ -130,6 +148,17 @@
             }
             @toast
         </div>
+    }
+
+    @if (activeTicket != null)
+    {
+        <SupportTicketDrawer Ticket="activeTicket"
+                             Shifted="showKbPanel"
+                             IsLoading="drawerLoading"
+                             OnClose="CloseTicketDrawer"
+                             OnOpenKb="OpenKbPanel"
+                             OnNotify="HandleDrawerNotify"
+                             OnTicketUpdated="HandleTicketUpdated" />
     }
 
     @if (showKbPanel)

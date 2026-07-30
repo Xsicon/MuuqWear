@@ -1,0 +1,152 @@
+@using MuuqWear.Model.HelpCenter
+
+<aside class="cs-drawer cs-ticket-drawer @(Shifted ? "cs-drawer--shifted" : "")">
+    <header class="cs-drawer__header cs-ticket-drawer__header">
+        <div class="cs-ticket-drawer__heading">
+            <p class="cs-drawer__eyebrow">@Ticket.TicketNumber · @Ticket.Category</p>
+            <h3 class="cs-drawer__title">@Ticket.Subject</h3>
+        </div>
+        <div class="cs-ticket-drawer__header-actions">
+            <button type="button" class="cs-btn cs-btn--outline cs-btn--sm" @onclick="OnOpenKb">
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>
+                KB
+            </button>
+            <button type="button" class="cs-icon-btn" aria-label="Close ticket drawer" @onclick="OnClose">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+        </div>
+    </header>
+
+    <div class="cs-drawer__body cs-ticket-drawer__body">
+        @if (IsLoading)
+        {
+            <p class="cs-loading">Loading ticket…</p>
+        }
+        else
+        {
+            <div class="cs-ticket-card">
+                <div class="cs-ticket-card__customer">
+                    <div class="cs-ticket-card__avatar">@CustomerInitials</div>
+                    <div class="cs-ticket-card__customer-info">
+                        <p class="cs-ticket-card__name">@Ticket.Name</p>
+                        <a href="mailto:@Ticket.Email" class="cs-ticket-card__email">@Ticket.Email</a>
+                    </div>
+                    @if (!IsAssignedToMe)
+                    {
+                        <button type="button"
+                                class="cs-btn cs-btn--primary cs-btn--sm"
+                                disabled="@IsSaving"
+                                @onclick="AssignToMeAsync">
+                            Assign to me
+                        </button>
+                    }
+                </div>
+
+                <div class="cs-ticket-card__meta">
+                    <span class="cs-ticket-chip">Opened @FormatTimeAgo(Ticket.CreatedAt)</span>
+                    @if (Ticket.Status != "resolved")
+                    {
+                        <span class="cs-ticket-chip @(Ticket.AgentReplyCount > 0 ? "cs-ticket-chip--success" : "cs-ticket-chip--warn")">
+                            @(Ticket.AgentReplyCount > 0 ? "First response sent" : "Awaiting first response")
+                        </span>
+                    }
+                </div>
+
+                <div class="cs-ticket-grid">
+                    <div class="cs-ticket-field">
+                        <label class="cs-ticket-field__label">Status</label>
+                        <select class="cs-ticket-field__select"
+                                value="@Ticket.Status"
+                                disabled="@IsSaving"
+                                @onchange="OnStatusChanged">
+                            @foreach (var s in SupportTicketStatuses.All)
+                            {
+                                <option value="@s.Value">@s.Label</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="cs-ticket-field">
+                        <label class="cs-ticket-field__label">Priority</label>
+                        <select class="cs-ticket-field__select"
+                                value="@Ticket.Priority"
+                                disabled="@IsSaving"
+                                @onchange="OnPriorityChanged">
+                            @foreach (var p in SupportTicketPriorities.All)
+                            {
+                                <option value="@p.Value">@p.Label</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="cs-ticket-field">
+                        <label class="cs-ticket-field__label">Team</label>
+                        <select class="cs-ticket-field__select"
+                                value="@DisplayTeam"
+                                disabled="@IsSaving"
+                                @onchange="OnTeamChanged">
+                            @foreach (var team in SupportTicketTeams.All)
+                            {
+                                <option value="@team">@team</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="cs-ticket-field">
+                        <label class="cs-ticket-field__label">Agent</label>
+                        <select class="cs-ticket-field__select"
+                                value="@DisplayAgent"
+                                disabled="@IsSaving"
+                                @onchange="OnAgentChanged">
+                            @foreach (var agent in AgentOptions)
+                            {
+                                <option value="@agent">@agent</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <section class="cs-ticket-section">
+                <h4 class="cs-ticket-section__title">Original message</h4>
+                <div class="cs-ticket-original">@Ticket.Message</div>
+            </section>
+
+            <section class="cs-ticket-section">
+                <h4 class="cs-ticket-section__title">Conversation</h4>
+                <div class="cs-ticket-thread">
+                    @if (!VisibleReplies.Any())
+                    {
+                        <p class="cs-ticket-thread__empty">No replies yet.</p>
+                    }
+                    else
+                    {
+                        @foreach (var reply in VisibleReplies)
+                        {
+                            <div class="cs-ticket-bubble @(reply.IsAgent ? "cs-ticket-bubble--agent" : "cs-ticket-bubble--customer")">
+                                <p class="cs-ticket-bubble__text">@reply.Message</p>
+                                <span class="cs-ticket-bubble__time">@FormatReplyTime(reply.CreatedAt)</span>
+                            </div>
+                        }
+                    }
+                </div>
+            </section>
+        }
+    </div>
+
+    <footer class="cs-ticket-drawer__footer">
+        <SupportMacrosBar @ref="macrosBar" OnApply="ApplyMacro" />
+        <div class="cs-ticket-compose">
+            <input class="cs-ticket-compose__input"
+                   placeholder="Write a reply to the customer…"
+                   @bind="replyText"
+                   @bind:event="oninput"
+                   @onkeydown="HandleReplyKeyDown"
+                   disabled="@IsSaving" />
+            <button type="button"
+                    class="cs-btn cs-btn--primary"
+                    disabled="@(IsSaving || string.IsNullOrWhiteSpace(replyText))"
+                    @onclick="SendReplyAsync">
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg>
+                Reply
+            </button>
+        </div>
+    </footer>
+</aside>

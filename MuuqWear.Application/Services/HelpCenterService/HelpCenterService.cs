@@ -139,6 +139,111 @@ public class HelpCenterService : IHelpCenterService
     }
 
     // =============================================
+    // UPDATE TICKET (ADMIN)
+    // =============================================
+    public async Task<Response<SupportTicketModel>> UpdateTicket(
+        Guid ticketId, UpdateTicketModel request)
+    {
+        try
+        {
+            var payload = new Dictionary<string, object?>();
+            if (!string.IsNullOrWhiteSpace(request.Status))
+                payload["status"] = request.Status;
+            if (!string.IsNullOrWhiteSpace(request.Priority))
+                payload["priority"] = request.Priority;
+            if (request.Team != null)
+                payload["team"] = request.Team;
+            if (request.AssignedTo.HasValue)
+                payload["assignedTo"] = request.AssignedTo;
+            if (request.AssignedToName != null)
+                payload["assignedToName"] = request.AssignedToName;
+
+            var result = await _http.PatchAsJsonAsync(
+                $"api/Help/admin/tickets/{ticketId}", payload);
+            var response = await result.Content
+                .ReadFromJsonAsync<Response<SupportTicketModel>>();
+
+            return response ?? new Response<SupportTicketModel>
+            {
+                Success = false,
+                Message = result.IsSuccessStatusCode
+                    ? "Unexpected response from server"
+                    : $"Server error: {result.StatusCode}"
+            };
+        }
+        catch (Exception)
+        {
+            return new Response<SupportTicketModel>
+            {
+                Success = false,
+                Message = "Unable to connect to server. Please try again."
+            };
+        }
+    }
+
+    // =============================================
+    // ASSIGN TICKET TO ME (ADMIN)
+    // =============================================
+    public async Task<Response<SupportTicketModel>> AssignTicketToMe(Guid ticketId)
+    {
+        try
+        {
+            var result = await _http.PostAsync(
+                $"api/Help/admin/tickets/{ticketId}/assign-me", null);
+            var response = await result.Content
+                .ReadFromJsonAsync<Response<SupportTicketModel>>();
+
+            return response ?? new Response<SupportTicketModel>
+            {
+                Success = false,
+                Message = result.IsSuccessStatusCode
+                    ? "Unexpected response from server"
+                    : $"Server error: {result.StatusCode}"
+            };
+        }
+        catch (Exception)
+        {
+            return new Response<SupportTicketModel>
+            {
+                Success = false,
+                Message = "Unable to connect to server. Please try again."
+            };
+        }
+    }
+
+    // =============================================
+    // ADD TICKET REPLY (ADMIN)
+    // =============================================
+    public async Task<Response<SupportTicketReplyModel>> AddTicketReply(
+        Guid ticketId, string message)
+    {
+        try
+        {
+            var result = await _http.PostAsJsonAsync(
+                $"api/Help/admin/tickets/{ticketId}/replies",
+                new AddTicketReplyModel { Message = message });
+            var response = await result.Content
+                .ReadFromJsonAsync<Response<SupportTicketReplyModel>>();
+
+            return response ?? new Response<SupportTicketReplyModel>
+            {
+                Success = false,
+                Message = result.IsSuccessStatusCode
+                    ? "Unexpected response from server"
+                    : $"Server error: {result.StatusCode}"
+            };
+        }
+        catch (Exception)
+        {
+            return new Response<SupportTicketReplyModel>
+            {
+                Success = false,
+                Message = "Unable to connect to server. Please try again."
+            };
+        }
+    }
+
+    // =============================================
     // GET STATS (ADMIN)
     // =============================================
     public async Task<Response<TicketStatsModel>> GetStats()
@@ -320,6 +425,76 @@ public class HelpCenterService : IHelpCenterService
         catch (Exception)
         {
             return ConnectionError<bool>();
+        }
+    }
+
+    public async Task<Response<string>> UploadImage(
+        string fileName, byte[] bytes, string contentType)
+    {
+        try
+        {
+            using var content = new MultipartFormDataContent();
+            var fileContent = new ByteArrayContent(bytes);
+            fileContent.Headers.ContentType =
+                new System.Net.Http.Headers.MediaTypeHeaderValue(contentType);
+            content.Add(fileContent, "file", fileName);
+
+            var result = await _http.PostAsync("api/Help/admin/upload-image", content);
+            return await HttpResponseReader.ReadAsync<string>(result);
+        }
+        catch (Exception ex)
+        {
+            return Response<string>.Fail(HttpResponseReader.FromException(ex));
+        }
+    }
+
+    public async Task<Response<HelpArticleCommentModel>> AddArticleComment(
+        Guid articleId, string body)
+    {
+        try
+        {
+            var result = await _http.PostAsJsonAsync(
+                $"api/Help/admin/articles/{articleId}/comments",
+                new AddArticleCommentModel { Body = body });
+            var response = await result.Content
+                .ReadFromJsonAsync<Response<HelpArticleCommentModel>>();
+
+            return response ?? new Response<HelpArticleCommentModel>
+            {
+                Success = false,
+                Message = result.IsSuccessStatusCode
+                    ? "Unexpected response from server"
+                    : $"Server error: {result.StatusCode}"
+            };
+        }
+        catch (Exception)
+        {
+            return ConnectionError<HelpArticleCommentModel>();
+        }
+    }
+
+    public async Task<Response<HelpArticleEngagementModel>> SetArticleVote(
+        Guid articleId, string vote)
+    {
+        try
+        {
+            var result = await _http.PostAsJsonAsync(
+                $"api/Help/admin/articles/{articleId}/vote",
+                new SetArticleVoteModel { Vote = vote });
+            var response = await result.Content
+                .ReadFromJsonAsync<Response<HelpArticleEngagementModel>>();
+
+            return response ?? new Response<HelpArticleEngagementModel>
+            {
+                Success = false,
+                Message = result.IsSuccessStatusCode
+                    ? "Unexpected response from server"
+                    : $"Server error: {result.StatusCode}"
+            };
+        }
+        catch (Exception)
+        {
+            return ConnectionError<HelpArticleEngagementModel>();
         }
     }
 

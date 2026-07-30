@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.JSInterop;
 using MuuqWear.Application.Services.ChatService;
 using MuuqWear.Application.Services.HelpCenterService;
 using MuuqWear.Model.Chat;
@@ -14,6 +15,7 @@ public partial class LiveChatWidgetComponent : IDisposable
 
     [Inject] private IHelpCenterService HelpCenterService { get; set; } = default!;
     [Inject] private IChatService ChatService { get; set; } = default!;
+    [Inject] private IJSRuntime JS { get; set; } = default!;
 
     private bool isChatOpen;
     private string widgetState = "menu";
@@ -35,11 +37,48 @@ public partial class LiveChatWidgetComponent : IDisposable
     private string? chatErrorMessage;
     private bool isChatClosed;
 
+    private ElementReference messagesContainerRef;
+    private bool scrollMessagesPending;
+    private bool scrollMessagesForce;
+
     private System.Timers.Timer? pollTimer;
     private bool isPolling;
 
     /// <summary>Hard gate so Enter/click/re-entry cannot POST twice.</summary>
     private int _sendGate;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (widgetState != "chat" || !scrollMessagesPending)
+            return;
+
+        scrollMessagesPending = false;
+        var force = scrollMessagesForce;
+        scrollMessagesForce = false;
+        await TryScrollMessagesAsync(force);
+    }
+
+    private void QueueScrollMessages(bool force = false)
+    {
+        scrollMessagesForce = scrollMessagesForce || force;
+        scrollMessagesPending = true;
+    }
+
+    private async Task TryScrollMessagesAsync(bool force = false)
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("chatScroll.scrollToBottom", messagesContainerRef, force);
+        }
+        catch (JSDisconnectedException)
+        {
+            // Circuit disconnected during scroll.
+        }
+        catch (InvalidOperationException)
+        {
+            // Container may not be rendered yet.
+        }
+    }
 
     private void OpenChatWidget()
     {
@@ -178,6 +217,7 @@ public partial class LiveChatWidgetComponent : IDisposable
                 }
 
                 showGuestForm = false;
+                QueueScrollMessages(force: true);
             }
             else
             {
@@ -235,6 +275,12 @@ public partial class LiveChatWidgetComponent : IDisposable
         chatErrorMessage = null;
         showGuestForm = false;
         StateHasChanged();
+    }
+
+    private void OpenLiveChat()
+    {
+        widgetState = "chat";
+        QueueScrollMessages(force: true);
     }
 
     private void StartPolling()
@@ -313,6 +359,7 @@ public partial class LiveChatWidgetComponent : IDisposable
             return;
 
         chatMessages = deduped;
+        QueueScrollMessages();
     }
 
     public void Dispose() => StopPolling();

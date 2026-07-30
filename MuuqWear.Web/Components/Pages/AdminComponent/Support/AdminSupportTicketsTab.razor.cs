@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Authorization;
 using MuuqWear.Application.Services.HelpCenterService;
 using MuuqWear.Model.HelpCenter;
+using MuuqWear.Web.Helpers;
 using MuuqWear.Web.Services;
 
 namespace MuuqWear.Web.Components.Pages.AdminComponent.Support;
@@ -11,18 +13,27 @@ public partial class AdminSupportTicketsTab : IDisposable
 
     [Parameter] public EventCallback<(int chats, int tickets)> OnCountsChanged { get; set; }
 
+    [Inject] private AuthenticationStateProvider AuthStateProvider { get; set; } = default!;
+
     private List<SupportTicketModel> tickets = [];
     private TicketStatsModel? stats;
+    private SupportTicketModel? activeTicket;
     private bool isLoading = true;
+    private bool drawerLoading;
     private string? loadError;
+    private string? listWarning;
     private string search = string.Empty;
     private string filterStatus = "All";
     private string filterPriority = "All";
-    private Guid? updatingId;
+    private bool mineOnly;
+    private string agentName = string.Empty;
     private string? toast;
     private bool toastIsError;
     private bool showKbPanel;
     private System.Threading.Timer? toastTimer;
+
+    private string ShellClass =>
+        showKbPanel ? "cs-tab-shell cs-tab-shell--kb-open" : "cs-tab-shell";
 
     private static readonly (string Key, string Label)[] StatusFilters =
     [
@@ -33,6 +44,11 @@ public partial class AdminSupportTicketsTab : IDisposable
     ];
 
     private static readonly string[] PriorityFilters = ["All", "high", "normal", "low"];
+
+    private int MineCount =>
+        string.IsNullOrWhiteSpace(agentName)
+            ? 0
+            : tickets.Count(t => t.IsAssignedTo(agentName));
 
     private IEnumerable<SupportTicketModel> FilteredTickets
     {
@@ -47,12 +63,16 @@ public partial class AdminSupportTicketsTab : IDisposable
                  t.TicketNumber.Contains(q, StringComparison.OrdinalIgnoreCase)) &&
                 (filterStatus == "All" || t.Status == filterStatus) &&
                 (filterPriority == "All" || t.Priority == filterPriority ||
-                 (filterPriority == "low" && t.Priority is not "high" and not "normal")));
+                 (filterPriority == "low" && t.Priority is not "high" and not "normal")) &&
+                (!mineOnly || t.IsAssignedTo(agentName)));
         }
     }
 
     protected override async Task OnInitializedAsync()
     {
+        var auth = await AuthStateProvider.GetAuthenticationStateAsync();
+        (agentName, _, _) = AdminPortalUserContext.FromClaims(auth.User);
+
         try
         {
             await Task.WhenAll(LoadTickets(), LoadStats());
@@ -70,17 +90,20 @@ public partial class AdminSupportTicketsTab : IDisposable
 
     private async Task LoadTickets()
     {
-        var result = await HelpCenterService.GetAllTickets(null, 1, 100);
-        if (result.Success && result.Data != null)
-        {
-            tickets = result.Data.Data;
-            loadError = null;
-        }
-        else
+        var (items, error, truncation) = await SupportPaginatedLoader.LoadAllPagesAsync(
+            (page, pageSize) => HelpCenterService.GetAllTickets(null, page, pageSize));
+
+        if (error != null && items.Count == 0)
         {
             tickets = [];
-            loadError = AdminUiErrorHelper.FromApi(result.Message, "Failed to load support tickets.");
+            listWarning = null;
+            loadError = AdminUiErrorHelper.FromApi(error, "Failed to load support tickets.");
+            return;
         }
+
+        tickets = items;
+        listWarning = truncation;
+        loadError = null;
     }
 
     private async Task LoadStats()
@@ -99,31 +122,25 @@ public partial class AdminSupportTicketsTab : IDisposable
         }
     }
 
-    private async Task CycleStatus(SupportTicketModel ticket)
+    private async Task OpenTicketDrawerAsync(SupportTicketModel ticket)
     {
-        var next = ticket.Status switch
-        {
-            "open" => "in_progress",
-            "in_progress" => "resolved",
-            _ => "open"
-        };
-
-        updatingId = ticket.Id;
+        activeTicket = ticket;
+        drawerLoading = true;
         StateHasChanged();
 
         try
         {
-            var result = await HelpCenterService.UpdateTicketStatus(ticket.Id, next);
-            if (result.Success)
+            var result = await HelpCenterService.GetTicketById(ticket.Id);
+            if (result.Success && result.Data != null)
             {
-                ticket.Status = next;
-                await LoadStats();
-                await NotifyCounts();
-                ShowToast("Ticket status updated");
+                activeTicket = result.Data;
+                SyncTicketInList(result.Data);
             }
             else
             {
-                ShowToast(AdminUiErrorHelper.FromApi(result.Message, "Failed to update ticket status."), isError: true);
+                ShowToast(
+                    AdminUiErrorHelper.FromApi(result.Message, "Failed to load ticket details."),
+                    isError: true);
             }
         }
         catch (Exception ex)
@@ -132,10 +149,34 @@ public partial class AdminSupportTicketsTab : IDisposable
         }
         finally
         {
-            updatingId = null;
+            drawerLoading = false;
             StateHasChanged();
         }
     }
+
+    private void CloseTicketDrawer() => activeTicket = null;
+
+    private Task HandleTicketUpdated(SupportTicketModel updated)
+    {
+        SyncTicketInList(updated);
+        activeTicket = updated;
+        return Task.CompletedTask;
+    }
+
+    private Task HandleDrawerNotify((string Message, bool IsError) notification)
+    {
+        ShowToast(notification.Message, notification.IsError);
+        return Task.CompletedTask;
+    }
+
+    private void SyncTicketInList(SupportTicketModel updated)
+    {
+        var index = tickets.FindIndex(t => t.Id == updated.Id);
+        if (index >= 0)
+            tickets[index] = updated;
+    }
+
+    private void ToggleMineOnly() => mineOnly = !mineOnly;
 
     private void ShowToast(string message, bool isError = false)
     {
@@ -152,13 +193,6 @@ public partial class AdminSupportTicketsTab : IDisposable
             });
         }, null, 2400, Timeout.Infinite);
     }
-
-    private static string GetActionLabel(string status) => status switch
-    {
-        "open" => "Start",
-        "in_progress" => "Resolve",
-        _ => "Reopen"
-    };
 
     private static string GetStatusLabel(string status) => status switch
     {
