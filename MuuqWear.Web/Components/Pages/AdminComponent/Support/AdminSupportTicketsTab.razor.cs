@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Components.Web;
 using MuuqWear.Application.Services.HelpCenterService;
 using MuuqWear.Model.HelpCenter;
 using MuuqWear.Web.Helpers;
@@ -24,8 +25,9 @@ public partial class AdminSupportTicketsTab : IDisposable
     private string? listWarning;
     private string search = string.Empty;
     private string filterStatus = "All";
-    private string filterPriority = "All";
     private bool mineOnly;
+    private bool searchExpanded;
+    private ElementReference searchInputRef;
     private string agentName = string.Empty;
     private string? toast;
     private bool toastIsError;
@@ -42,8 +44,6 @@ public partial class AdminSupportTicketsTab : IDisposable
         ("in_progress", "In Progress"),
         ("resolved", "Resolved")
     ];
-
-    private static readonly string[] PriorityFilters = ["All", "high", "normal", "low"];
 
     private int MineCount =>
         string.IsNullOrWhiteSpace(agentName)
@@ -62,11 +62,47 @@ public partial class AdminSupportTicketsTab : IDisposable
                  t.Email.Contains(q, StringComparison.OrdinalIgnoreCase) ||
                  t.TicketNumber.Contains(q, StringComparison.OrdinalIgnoreCase)) &&
                 (filterStatus == "All" || t.Status == filterStatus) &&
-                (filterPriority == "All" || t.Priority == filterPriority ||
-                 (filterPriority == "low" && t.Priority is not "high" and not "normal")) &&
                 (!mineOnly || t.IsAssignedTo(agentName)));
         }
     }
+
+    private async Task ToggleSearchAsync()
+    {
+        if (searchExpanded)
+        {
+            searchExpanded = false;
+            return;
+        }
+
+        searchExpanded = true;
+        await Task.Yield();
+        try
+        {
+            await searchInputRef.FocusAsync();
+        }
+        catch (InvalidOperationException)
+        {
+            // Input not rendered yet.
+        }
+    }
+
+    private async Task HandleSearchKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape" && string.IsNullOrWhiteSpace(search))
+        {
+            searchExpanded = false;
+            await Task.CompletedTask;
+        }
+    }
+
+    private void OnSearchChanged(ChangeEventArgs e)
+    {
+        search = e.Value?.ToString() ?? string.Empty;
+        if (!string.IsNullOrWhiteSpace(search))
+            searchExpanded = true;
+    }
+
+    private void ClearSearch() => search = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {

@@ -154,20 +154,6 @@
         </div>
         }
 
-        <!-- Quick Actions -->
-        @if (quickActions.Count > 0)
-        {
-        <section class="ov-panel ov-panel--actions">
-            <h2 class="ov-panel__title">Quick Actions</h2>
-            <div class="ov-actions">
-                @foreach (var action in quickActions)
-                {
-                    <a href="@action.Href" class="ov-btn @(action.IsPrimary ? "ov-btn--primary" : "ov-btn--secondary")">@action.Label</a>
-                }
-            </div>
-        </section>
-        }
-
         <!-- Your Access + Recent Activity -->
         <div class="ov-grid">
             <section class="ov-panel">
@@ -230,7 +216,6 @@
     private List<ProductModel> lowStockProducts = new();
 
     private List<AccessModule> accessModules = new();
-    private List<QuickAction> quickActions = new();
     private List<ActivityItem> recentActivity = new();
     private string systemHealthValue = "—";
     private bool systemHealthHealthy;
@@ -251,7 +236,6 @@
             userFirstName = fullName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? "Admin";
 
             accessModules = BuildAccessModules(userRole);
-            quickActions = BuildQuickActions();
 
             var loadTasks = new List<Task>();
             if (NeedsBadgeCounts)
@@ -428,47 +412,6 @@
         || CanSeeSection(AdminPortalSection.Affiliates)
         || CanSeeSection(AdminPortalSection.System);
 
-    private List<QuickAction> BuildQuickActions()
-    {
-        var actions = new List<QuickAction>();
-
-        if (CanSeeSection(AdminPortalSection.Orders))
-        {
-            actions.Add(new QuickAction("All Orders", "/admin/orders?tab=orders", true));
-            actions.Add(new QuickAction("Process Returns", "/admin/orders?tab=returns"));
-            actions.Add(new QuickAction("Pending Refunds", "/admin/orders?tab=refunds&status=pending"));
-        }
-
-        if (CanSeeSection(AdminPortalSection.Products))
-            actions.Add(new QuickAction("Low Stock Alerts", "/admin/products?view=low-stock"));
-
-        if (CanSeeSection(AdminPortalSection.Support))
-        {
-            if (actions.Count == 0)
-                actions.Add(new QuickAction("Support Tickets", "/admin/support?tab=tickets", true));
-            else
-                actions.Add(new QuickAction("Support Tickets", "/admin/support?tab=tickets"));
-            actions.Add(new QuickAction("Live Chat", "/admin/support?tab=live-chat"));
-        }
-
-        if (CanSeeSection(AdminPortalSection.Affiliates))
-            actions.Add(new QuickAction("Pending Applications", "/admin/affiliates?tab=pending"));
-
-        if (CanSeeSection(AdminPortalSection.Careers))
-            actions.Add(new QuickAction("Job Postings", "/admin/careers?tab=postings"));
-
-        if (CanSeeSection(AdminPortalSection.Content))
-            actions.Add(new QuickAction("Manage Content", "/admin/content?view=journal"));
-
-        if (CanSeeSection(AdminPortalSection.System))
-            actions.Add(new QuickAction("System Health", "/admin/system?tab=health"));
-
-        if (CanSeeSection(AdminPortalSection.Customers))
-            actions.Add(new QuickAction("Customer List", "/admin/customers?view=list"));
-
-        return actions;
-    }
-
     private static List<AccessModule> BuildAccessModules(string? role)
     {
         var modulesBySection = new Dictionary<string, AccessModule>(StringComparer.OrdinalIgnoreCase)
@@ -507,13 +450,6 @@
         public string Description { get; } = description;
         public string Href { get; } = href;
         public RenderFragment Icon { get; } = icon;
-    }
-
-    private sealed class QuickAction(string label, string href, bool isPrimary = false)
-    {
-        public string Label { get; } = label;
-        public string Href { get; } = href;
-        public bool IsPrimary { get; } = isPrimary;
     }
 
     private sealed class ActivityItem

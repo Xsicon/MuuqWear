@@ -168,10 +168,6 @@
     padding: 21px;
 }
 
-.ov-panel--actions {
-    margin-bottom: 21px;
-}
-
 .ov-panel__title {
     color: var(--admin-text, #1E2A47);
     font-size: 18px;
@@ -296,52 +292,4 @@ html[data-admin-theme="dark"] .mw-admin .ov-activity-item__icon,
 .ov-activity-item__time {
     color: var(--admin-muted, #4A5C7A);
     font-size: 11px;
-}
-
-/* ─── Quick Actions ─────────────────────────────────────────── */
-.ov-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.ov-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 10px 16px;
-    font-size: 13px;
-    font-weight: 600;
-    text-decoration: none;
-    border: none;
-    cursor: pointer;
-    transition: opacity 0.2s, background 0.2s;
-    font-family: inherit;
-}
-
-.ov-btn--primary {
-    background: #1E2A47;
-    color: #fff;
-}
-
-.ov-btn--primary:hover {
-    background: #0B1A33;
-    color: #fff;
-    text-decoration: none;
-}
-
-.ov-btn--secondary {
-    background: var(--admin-surface, #fff);
-    color: var(--admin-text, #1E2A47);
-    border: 1px solid var(--admin-border, rgba(169, 183, 204, 0.4));
-}
-
-.ov-btn--secondary:hover {
-    background: var(--admin-hover, #F4F6F9);
-    text-decoration: none;
-}
-
-html[data-admin-theme="dark"] .mw-admin .ov-btn--secondary,
-:global(html[data-admin-theme="dark"]) .mw-admin .ov-btn--secondary {
-    border-color: var(--admin-border);
 }

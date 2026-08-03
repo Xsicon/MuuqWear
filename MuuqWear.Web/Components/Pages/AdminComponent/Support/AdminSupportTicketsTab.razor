@@ -53,33 +53,45 @@
         </div>
     </div>
 
-    <div class="cs-filter-bar">
-        <div class="cs-search">
-            <svg class="cs-search__icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-            <input class="cs-search__input" placeholder="Search tickets…" @bind="search" @bind:event="oninput" />
+    <div class="cs-kb-toolbar">
+        <div class="cs-kb-search @(searchExpanded ? "cs-kb-search--open" : "")">
+            <button type="button"
+                    class="cs-kb-search__toggle @(searchExpanded ? "cs-kb-search__toggle--active" : "")"
+                    aria-label="@(searchExpanded ? "Close search" : "Search tickets")"
+                    aria-expanded="@searchExpanded"
+                    @onclick="ToggleSearchAsync">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            </button>
+            <div class="cs-kb-search__field">
+                <input @ref="searchInputRef"
+                       class="cs-kb-search__input"
+                       placeholder="Search tickets…"
+                       value="@search"
+                       @oninput="OnSearchChanged"
+                       @onkeydown="HandleSearchKeyDown" />
+                @if (!string.IsNullOrEmpty(search))
+                {
+                    <button type="button"
+                            class="cs-kb-search__clear"
+                            aria-label="Clear search"
+                            @onclick="ClearSearch">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                    </button>
+                }
+            </div>
         </div>
-        <button type="button"
-                class="cs-pill cs-pill--mine @(mineOnly ? "cs-pill--active-dark" : "")"
-                @onclick="ToggleMineOnly">
-            Assigned to me (@MineCount)
-        </button>
-        <div class="cs-pills">
+        <div class="cs-kb-toolbar__filters">
+            <button type="button"
+                    class="cs-pill cs-pill--mine @(mineOnly ? "cs-pill--active-dark" : "")"
+                    @onclick="ToggleMineOnly">
+                Assigned to me (@MineCount)
+            </button>
             @foreach (var s in StatusFilters)
             {
                 <button type="button"
                         class="cs-pill @(filterStatus == s.Key ? "cs-pill--active-dark" : "")"
                         @onclick="() => filterStatus = s.Key">
                     @s.Label
-                </button>
-            }
-        </div>
-        <div class="cs-pills">
-            @foreach (var p in PriorityFilters)
-            {
-                <button type="button"
-                        class="cs-pill @(filterPriority == p ? "cs-pill--active-light" : "")"
-                        @onclick="() => filterPriority = p">
-                    @(p == "All" ? "All" : char.ToUpper(p[0]) + p[1..])
                 </button>
             }
         </div>
