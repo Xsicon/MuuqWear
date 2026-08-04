@@ -1,8 +1,10 @@
 /* System & Technology admin — tab shell + shared tab content */
 
 .st-page {
+    width: 100%;
+    max-width: none;
     padding: 0;
-    max-width: 1400px;
+    box-sizing: border-box;
 }
 
 .st-tabs {

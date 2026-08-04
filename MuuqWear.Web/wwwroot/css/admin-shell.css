@@ -145,6 +145,7 @@ html[data-admin-theme="dark"] .mw-admin {
 /* ─── MAIN ────────────────────────────────────────────────── */
 .mw-admin-main {
     flex: 1;
+    width: 100%;
     min-width: 0;
     min-height: 100vh;
     background: var(--admin-bg);
@@ -162,12 +163,27 @@ html[data-admin-theme="dark"] .mw-admin {
 
 .mw-admin-content {
     flex: 1;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    box-sizing: border-box;
     padding: 16px;
 }
 
 @media (min-width: 768px) {
     .mw-admin-content {
         padding: 21px;
+    }
+}
+
+@media (max-width: 767px) {
+    .mw-admin-content {
+        padding: 12px;
+    }
+
+    .at-topbar {
+        padding: 8px 12px;
+        gap: 8px;
     }
 }
 

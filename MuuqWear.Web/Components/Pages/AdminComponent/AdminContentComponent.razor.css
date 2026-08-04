@@ -1,8 +1,10 @@
 ﻿/* Content — Phase 5 admin shell */
 
 .content-page {
+    width: 100%;
+    max-width: none;
     padding: 0;
-    max-width: 1400px;
+    box-sizing: border-box;
 }
 
 .content-header {
@@ -693,10 +695,6 @@ select.form-input {
 }
 
 /* ─── Design reference shell (Journal redesign) ─────────────── */
-.content-page {
-    max-width: 1152px;
-}
-
 .content-shell-header {
     display: flex;
     align-items: flex-start;

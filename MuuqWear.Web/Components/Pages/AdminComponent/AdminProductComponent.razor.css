@@ -312,8 +312,10 @@
 
 /* ─── PRODUCTS LIST PAGE (Phase 3) ──────────────────────────── */
 .products-page {
+    width: 100%;
+    max-width: none;
     padding: 0;
-    max-width: 1200px;
+    box-sizing: border-box;
 }
 
 .products-header {

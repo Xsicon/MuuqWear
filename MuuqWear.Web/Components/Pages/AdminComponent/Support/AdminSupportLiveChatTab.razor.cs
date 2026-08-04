@@ -8,6 +8,7 @@ using MuuqWear.Application.Shared;
 using MuuqWear.Model.Chat;
 using MuuqWear.Web.Helpers;
 using MuuqWear.Web.Services;
+using MuuqWear.Web.Components.Pages.AdminComponent;
 
 namespace MuuqWear.Web.Components.Pages.AdminComponent.Support;
 
@@ -41,6 +42,13 @@ public partial class AdminSupportLiveChatTab : IDisposable
     private string? actionError;
     private bool showKbPanel;
     private bool emailCopied;
+
+    private string TabShellClass =>
+        SupportLiveChatUiHelper.BuildTabShellClass(showKbPanel, selectedSessionId.HasValue);
+
+    private string CustomerInitials =>
+        AffiliateAdminDesignHelper.GetInitials(selectedSession?.CustomerName ?? string.Empty);
+
     private SupportMacrosBar? macrosBar;
     private ElementReference messagesContainerRef;
     private bool scrollMessagesPending;
@@ -530,6 +538,23 @@ public partial class AdminSupportLiveChatTab : IDisposable
 
     private void CloseKbPanel() => showKbPanel = false;
 
+    private void DeselectSession() => ClearChatSessionState();
+
+    private void ClearChatSessionState()
+    {
+        showKbPanel = false;
+        _messagesLoadVersion++;
+        emailCopied = false;
+        StopMessagesPolling();
+        selectedSessionId = null;
+        selectedSession = null;
+        messages = [];
+        messagesLoadSucceeded = false;
+        messagesError = null;
+        actionError = null;
+        adminMessageInput = string.Empty;
+    }
+
     private void ApplyMacro(string text) =>
         adminMessageInput = text;
 
@@ -546,11 +571,7 @@ public partial class AdminSupportLiveChatTab : IDisposable
             if (result.Success)
             {
                 sessions.RemoveAll(s => s.Id == selectedSessionId);
-                selectedSessionId = null;
-                selectedSession = null;
-                messages = [];
-                messagesLoadSucceeded = false;
-                StopMessagesPolling();
+                ClearChatSessionState();
 
                 if (sessions.Count > 0)
                     await SelectSession(sessions[0].Id);

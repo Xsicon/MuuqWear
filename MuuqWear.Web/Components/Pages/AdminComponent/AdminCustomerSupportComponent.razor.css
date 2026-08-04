@@ -785,14 +785,208 @@
 
 @media (max-width: 899px) {
     ::deep .cs-chat-layout {
-        grid-template-rows: minmax(180px, 34vh) minmax(0, 1fr);
-        overflow-y: auto;
-        overflow-x: hidden;
+        grid-template-rows: minmax(0, 1fr);
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    ::deep .cs-tab-shell--chat-open .cs-tab-header-row,
+    ::deep .cs-tab-shell--chat-open > .cs-loading {
+        display: none;
+    }
+
+    ::deep .cs-tab-shell--chat-open {
+        position: relative;
+        flex: 1 1 auto;
+        min-height: 0;
+    }
+
+    ::deep .cs-tab-shell--chat-open .cs-chat-layout {
+        display: none;
     }
 
     ::deep .cs-chat-sidebar {
         min-height: 0;
         max-height: none;
+        height: 100%;
+    }
+
+    ::deep .cs-drawer.cs-chat-drawer {
+        position: absolute;
+        inset: 0;
+        z-index: 20;
+        width: 100%;
+        max-width: none;
+        border-left: none;
+        border-radius: 0;
+        box-shadow: none;
+        display: flex;
+        flex-direction: column;
+        background: #F4F6F9;
+    }
+
+    ::deep .cs-chat-drawer__header {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 0;
+        border-bottom: none;
+        background: #0088CC;
+        flex-shrink: 0;
+    }
+
+    ::deep .cs-chat-drawer__mobile-top {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 14px;
+        min-height: 56px;
+    }
+
+    ::deep .cs-chat-drawer__desktop-only {
+        display: none;
+    }
+
+    ::deep .cs-chat-drawer__back,
+    ::deep .cs-chat-drawer__mobile-icon-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        border: none;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.16);
+        color: #fff;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+
+    ::deep .cs-chat-drawer__mobile-center {
+        flex: 1;
+        min-width: 0;
+        text-align: center;
+    }
+
+    ::deep .cs-chat-drawer__mobile-name {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 700;
+        color: #fff;
+        font-family: inherit;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    ::deep .cs-chat-drawer__mobile-status {
+        margin: 2px 0 0;
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.82);
+    }
+
+    ::deep .cs-chat-drawer__mobile-actions {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+    }
+
+    ::deep .cs-chat-drawer__mobile-close-row {
+        display: flex;
+        justify-content: center;
+        padding: 0 14px 10px;
+        background: #0088CC;
+    }
+
+    ::deep .cs-chat-drawer__mobile-close-btn {
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        background: rgba(255, 255, 255, 0.12);
+        color: #fff;
+        border-radius: 999px;
+        padding: 6px 14px;
+        font-size: 12px;
+        font-weight: 600;
+        font-family: inherit;
+        cursor: pointer;
+    }
+
+    ::deep .cs-chat-drawer__mobile-close-btn:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
+    }
+
+    ::deep .cs-chat-drawer__body {
+        flex: 1 1 auto;
+        min-height: 0;
+        background: #F4F6F9;
+        border-radius: 20px 20px 0 0;
+        margin-top: -8px;
+        position: relative;
+        z-index: 1;
+    }
+
+    ::deep .cs-chat-drawer__body .cs-chat-panel__messages {
+        padding: 16px 14px 20px;
+        background: #F4F6F9;
+    }
+
+    ::deep .cs-bubble-row--customer {
+        align-items: flex-end;
+        gap: 8px;
+    }
+
+    ::deep .cs-bubble-avatar {
+        display: inline-flex;
+    }
+
+    ::deep .cs-bubble {
+        max-width: min(78vw, 18rem);
+    }
+
+    ::deep .cs-chat-drawer__sync-error {
+        margin: 12px 14px 0;
+    }
+
+    ::deep .cs-chat-drawer__footer {
+        flex-shrink: 0;
+        padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+        border-top: none;
+        background: #fff;
+        box-shadow: 0 -4px 20px rgba(30, 42, 71, 0.06);
+    }
+
+    ::deep .cs-chat-drawer__footer .cs-macros-bar {
+        overflow-x: auto;
+    }
+
+    ::deep .cs-chat-drawer__footer .cs-chat-panel__input {
+        align-items: center;
+        gap: 10px;
+    }
+
+    ::deep .cs-chat-drawer__footer .cs-chat-panel__input-field {
+        border-radius: 999px;
+        padding: 12px 18px;
+        border-color: #E3E9F4;
+        background: #F8FAFD;
+    }
+
+    ::deep .cs-chat-drawer__send-btn {
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
+        padding: 0;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    ::deep .cs-chat-drawer__send-label {
+        display: none;
     }
 }
 
@@ -840,7 +1034,25 @@
 }
 
 ::deep .cs-conv-item--active {
-    background: #EEF1F8;
+    background: #E1F0FA;
+    box-shadow: inset 3px 0 0 #0088CC;
+}
+
+::deep .cs-conv-item--active:hover {
+    background: #D4E8F7;
+}
+
+::deep .cs-conv-item--active .cs-conv-item__name {
+    color: #006DA3;
+}
+
+::deep .cs-conv-item--active .cs-conv-item__preview {
+    color: #4A5C7A;
+}
+
+::deep .cs-conv-item--active .cs-conv-item__status {
+    color: #006DA3;
+    font-weight: 600;
 }
 
 ::deep .cs-conv-item__top {
@@ -1041,6 +1253,22 @@
 
 ::deep .cs-bubble-row--customer {
     justify-content: flex-start;
+    gap: 8px;
+    align-items: flex-end;
+}
+
+::deep .cs-bubble-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: #E1F0FA;
+    color: #0088CC;
+    font-size: 10px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
 }
 
 ::deep .cs-bubble {
@@ -1139,10 +1367,6 @@
 }
 
 ::deep .cs-drawer {
-    position: fixed;
-    top: 0;
-    right: 0;
-    bottom: 0;
     width: 100%;
     max-width: 576px;
     z-index: 50;
@@ -1151,6 +1375,24 @@
     background: #fff;
     box-shadow: -4px 0 40px rgba(30, 42, 71, 0.12);
     overflow: hidden;
+}
+
+@media (min-width: 900px) {
+    ::deep .cs-drawer {
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+    }
+}
+
+@media (max-width: 899px) {
+    ::deep .cs-drawer:not(.cs-chat-drawer) {
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+    }
 }
 
 ::deep .cs-drawer__header {
@@ -1433,7 +1675,8 @@
         max-width: min(28rem, 100vw);
     }
 
-    ::deep .cs-drawer--shifted {
+    ::deep .cs-drawer--shifted,
+    ::deep .cs-chat-drawer.cs-drawer--shifted {
         visibility: hidden;
         pointer-events: none;
     }
@@ -2142,6 +2385,77 @@
     z-index: 45;
 }
 
+/* ─── Live chat drawer (matches ticket drawer + KB shift) ─── */
+
+::deep .cs-chat-drawer {
+    max-width: 36rem;
+    z-index: 45;
+    border-left: 3px solid #0088CC;
+}
+
+::deep .cs-chat-drawer__header {
+    align-items: flex-start;
+    gap: 12px;
+}
+
+::deep .cs-chat-drawer__heading {
+    min-width: 0;
+    flex: 1;
+}
+
+::deep .cs-chat-drawer__subtitle {
+    margin: 2px 0 0;
+    font-size: 12px;
+    color: #5B6B85;
+}
+
+::deep .cs-chat-drawer__body {
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    min-width: 0;
+    overflow: hidden;
+}
+
+::deep .cs-chat-drawer__body .cs-chat-panel__messages {
+    flex: 1 1 auto;
+    min-height: 0;
+    min-width: 0;
+    overflow-x: hidden;
+}
+
+::deep .cs-chat-drawer__sync-error {
+    margin: 12px 16px 0;
+    flex-shrink: 0;
+}
+
+::deep .cs-chat-drawer__footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 12px 20px 16px;
+}
+
+::deep .cs-chat-drawer__footer .cs-chat-panel__input {
+    width: 100%;
+}
+
+@media (min-width: 900px) {
+    ::deep .cs-chat-drawer__mobile-top,
+    ::deep .cs-chat-drawer__mobile-close-row {
+        display: none;
+    }
+
+    ::deep .cs-bubble-avatar {
+        display: none;
+    }
+
+    ::deep .cs-chat-drawer__desktop-only {
+        display: contents;
+    }
+}
+
 ::deep .cs-ticket-drawer__header {
     align-items: flex-start;
     gap: 12px;
@@ -2567,14 +2881,16 @@
     }
 
     ::deep .cs-drawer,
-    ::deep .cs-ticket-drawer {
+    ::deep .cs-ticket-drawer,
+    ::deep .cs-chat-drawer {
         max-width: 100%;
     }
 
-    ::deep .cs-drawer__header,
+    ::deep .cs-drawer__header:not(.cs-chat-drawer__header),
     ::deep .cs-drawer__body,
     ::deep .cs-drawer__footer,
-    ::deep .cs-ticket-drawer__footer {
+    ::deep .cs-ticket-drawer__footer,
+    ::deep .cs-chat-drawer__footer {
         padding-left: 16px;
         padding-right: 16px;
     }

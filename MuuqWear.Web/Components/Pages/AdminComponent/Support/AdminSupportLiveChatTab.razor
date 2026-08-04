@@ -3,7 +3,7 @@
 @implements IDisposable
 @inject IChatService ChatService
 
-<div class="@(showKbPanel ? "cs-tab-shell cs-tab-shell--kb-open" : "cs-tab-shell")">
+<div class="@TabShellClass">
     <div class="cs-tab-header-row">
         <div class="cs-tab-header" style="margin-bottom:0">
             <p class="cs-tab-eyebrow">Customer Support</p>
@@ -83,57 +83,106 @@
                 </div>
             </div>
         }
-        else
-        {
-            <section class="cs-chat-panel">
-                <header class="cs-chat-panel__header cs-chat-panel__header--compact">
-                    <div class="cs-chat-panel__header-main">
-                        <div class="cs-chat-panel__header-info">
-                            <h3 class="cs-chat-panel__name">@selectedSession?.CustomerName</h3>
-                            <p class="cs-chat-panel__subtitle">
-                                @(IsWaiting(selectedSession!) ? "Waiting" : "Active")
-                                · last message @GetRelativeTime(selectedSession?.LastActivity ?? DateTime.UtcNow)
-                            </p>
-                            @if (!string.IsNullOrWhiteSpace(selectedSession?.ContactEmail))
-                            {
-                                <div class="cs-chat-panel__email-row">
-                                    <a href="mailto:@selectedSession!.ContactEmail"
-                                       class="cs-contact-email cs-chat-panel__email-link"
-                                       title="@selectedSession.ContactEmail">
-                                        @selectedSession.ContactEmail
-                                    </a>
-                                    <button type="button"
-                                            class="cs-chat-panel__copy-btn"
-                                            title="@(emailCopied ? "Copied!" : "Copy email")"
-                                            aria-label="Copy customer email"
-                                            @onclick="CopyCustomerEmail">
-                                        @if (emailCopied)
-                                        {
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21.801 10A10 10 0 1 1 17 3.335"/><path d="m9 11 3 3L22 4"/></svg>
-                                        }
-                                        else
-                                        {
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-                                        }
-                                    </button>
-                                </div>
-                            }
-                            else
-                            {
-                                <p class="cs-chat-panel__email-missing">No email provided</p>
-                            }
-                        </div>
-                        @if (selectedSession?.Status == "active")
-                        {
-                            <button type="button" class="cs-btn cs-btn--danger cs-btn--sm"
-                                    @onclick="CloseSelectedSession"
-                                    disabled="@isClosingSession">
-                                @(isClosingSession ? "Closing…" : "Close Chat")
-                            </button>
-                        }
-                    </div>
-                </header>
+    </div>
 
+    @if (selectedSessionId.HasValue && selectedSession != null)
+    {
+        <aside class="cs-drawer cs-chat-drawer @(showKbPanel ? "cs-drawer--shifted" : "")">
+            <header class="cs-drawer__header cs-chat-drawer__header">
+                <div class="cs-chat-drawer__mobile-top">
+                    <button type="button"
+                            class="cs-chat-drawer__back"
+                            aria-label="Back to conversations"
+                            @onclick="DeselectSession">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+                    </button>
+                    <div class="cs-chat-drawer__mobile-center">
+                        <h3 class="cs-chat-drawer__mobile-name">@selectedSession.CustomerName</h3>
+                        <p class="cs-chat-drawer__mobile-status">
+                            @(IsWaiting(selectedSession) ? "Waiting" : "Active")
+                            · @GetRelativeTime(selectedSession.LastActivity)
+                        </p>
+                    </div>
+                    <div class="cs-chat-drawer__mobile-actions">
+                        <button type="button" class="cs-chat-drawer__mobile-icon-btn" aria-label="Open knowledge base" @onclick="OpenKbPanel">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="cs-chat-drawer__desktop-only">
+                <div class="cs-chat-drawer__heading">
+                    <h3 class="cs-drawer__title">@selectedSession.CustomerName</h3>
+                    <p class="cs-chat-drawer__subtitle">
+                        @(IsWaiting(selectedSession) ? "Waiting" : "Active")
+                        · last message @GetRelativeTime(selectedSession.LastActivity)
+                    </p>
+                    @if (!string.IsNullOrWhiteSpace(selectedSession.ContactEmail))
+                    {
+                        <div class="cs-chat-panel__email-row">
+                            <a href="mailto:@selectedSession.ContactEmail"
+                               class="cs-contact-email cs-chat-panel__email-link"
+                               title="@selectedSession.ContactEmail">
+                                @selectedSession.ContactEmail
+                            </a>
+                            <button type="button"
+                                    class="cs-chat-panel__copy-btn"
+                                    title="@(emailCopied ? "Copied!" : "Copy email")"
+                                    aria-label="Copy customer email"
+                                    @onclick="CopyCustomerEmail">
+                                @if (emailCopied)
+                                {
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21.801 10A10 10 0 1 1 17 3.335"/><path d="m9 11 3 3L22 4"/></svg>
+                                }
+                                else
+                                {
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                                }
+                            </button>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="cs-chat-panel__email-missing">No email provided</p>
+                    }
+                </div>
+                <div class="cs-ticket-drawer__header-actions">
+                    <button type="button" class="cs-btn cs-btn--outline cs-btn--sm" @onclick="OpenKbPanel">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>
+                        KB
+                    </button>
+                    @if (selectedSession.Status == "active")
+                    {
+                        <button type="button" class="cs-btn cs-btn--danger cs-btn--sm"
+                                @onclick="CloseSelectedSession"
+                                disabled="@isClosingSession">
+                            @(isClosingSession ? "Closing…" : "Close Chat")
+                        </button>
+                    }
+                    <button type="button" class="cs-icon-btn" aria-label="Close chat panel" @onclick="DeselectSession">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                    </button>
+                </div>
+                </div>
+
+                @if (selectedSession.Status == "active")
+                {
+                    <div class="cs-chat-drawer__mobile-close-row">
+                        <button type="button"
+                                class="cs-chat-drawer__mobile-close-btn"
+                                @onclick="CloseSelectedSession"
+                                disabled="@isClosingSession">
+                            @(isClosingSession ? "Closing…" : "Close Chat")
+                        </button>
+                    </div>
+                }
+            </header>
+
+            <div class="cs-drawer__body cs-chat-drawer__body">
+                @if (!string.IsNullOrEmpty(loadError))
+                {
+                    <p class="cs-error-banner cs-error-banner--inline cs-chat-drawer__sync-error">@loadError</p>
+                }
                 <div class="cs-chat-panel__messages" @ref="messagesContainerRef">
                     @if (!string.IsNullOrEmpty(messagesError))
                     {
@@ -153,6 +202,10 @@
                         {
                             var isAgent = m.SenderType is "admin" or "agent";
                             <div class="cs-bubble-row @(isAgent ? "cs-bubble-row--agent" : "cs-bubble-row--customer")">
+                                @if (!isAgent)
+                                {
+                                    <span class="cs-bubble-avatar" aria-hidden="true">@CustomerInitials</span>
+                                }
                                 <div class="cs-bubble @(isAgent ? "cs-bubble--agent" : "cs-bubble--customer")">
                                     <p class="cs-bubble__text">@m.Message</p>
                                     <span class="cs-bubble__time">@m.CreatedAt.ToLocalTime().ToString("h:mm tt")</span>
@@ -161,33 +214,33 @@
                         }
                     }
                 </div>
+            </div>
 
-                <div class="cs-chat-panel__compose">
-                    @if (!string.IsNullOrEmpty(actionError))
-                    {
-                        <p class="cs-error-banner cs-error-banner--inline">@actionError</p>
-                    }
-                    <SupportMacrosBar @ref="macrosBar" OnApply="ApplyMacro" />
-                    <div class="cs-chat-panel__input">
-                        <input type="text"
-                               class="cs-chat-panel__input-field"
-                               placeholder="Type a message…"
-                               @bind="adminMessageInput"
-                               @bind:event="oninput"
-                               @onkeydown="HandleAdminKeyDown"
-                               disabled="@(selectedSession?.Status == "closed" || isSendingAdminMessage)" />
-                        <button type="button"
-                                class="cs-btn cs-btn--primary"
-                                @onclick="SendAdminMessage"
-                                disabled="@(selectedSession?.Status == "closed" || isSendingAdminMessage || string.IsNullOrWhiteSpace(adminMessageInput))">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
-                            Send
-                        </button>
-                    </div>
+            <footer class="cs-drawer__footer cs-chat-drawer__footer">
+                @if (!string.IsNullOrEmpty(actionError))
+                {
+                    <p class="cs-error-banner cs-error-banner--inline">@actionError</p>
+                }
+                <SupportMacrosBar @ref="macrosBar" OnApply="ApplyMacro" />
+                <div class="cs-chat-panel__input">
+                    <input type="text"
+                           class="cs-chat-panel__input-field"
+                           placeholder="Type a message…"
+                           @bind="adminMessageInput"
+                           @bind:event="oninput"
+                           @onkeydown="HandleAdminKeyDown"
+                           disabled="@(selectedSession.Status == "closed" || isSendingAdminMessage)" />
+                    <button type="button"
+                            class="cs-btn cs-btn--primary cs-chat-drawer__send-btn"
+                            @onclick="SendAdminMessage"
+                            disabled="@(selectedSession.Status == "closed" || isSendingAdminMessage || string.IsNullOrWhiteSpace(adminMessageInput))">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+                        <span class="cs-chat-drawer__send-label">Send</span>
+                    </button>
                 </div>
-            </section>
-        }
-    </div>
+            </footer>
+        </aside>
+    }
 
     @if (showKbPanel)
     {

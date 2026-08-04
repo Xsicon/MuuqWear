@@ -1,8 +1,10 @@
 /* Customers — Phase 4 admin shell */
 
 .customers-page {
+    width: 100%;
+    max-width: none;
     padding: 0;
-    max-width: 1400px;
+    box-sizing: border-box;
 }
 
 .customers-page--refreshing {

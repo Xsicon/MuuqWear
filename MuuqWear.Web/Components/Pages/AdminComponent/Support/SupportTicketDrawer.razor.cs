@@ -6,6 +6,7 @@ using MuuqWear.Application.Services.HelpCenterService;
 using MuuqWear.Model.HelpCenter;
 using MuuqWear.Web.Helpers;
 using MuuqWear.Web.Services;
+using MuuqWear.Web.Components.Pages.AdminComponent;
 
 namespace MuuqWear.Web.Components.Pages.AdminComponent.Support;
 
@@ -63,18 +64,8 @@ public partial class SupportTicketDrawer
         !reply.IsAgent &&
         string.Equals(reply.Message.Trim(), Ticket.Message.Trim(), StringComparison.Ordinal);
 
-    private string CustomerInitials
-    {
-        get
-        {
-            var parts = Ticket.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length >= 2)
-                return $"{parts[0][0]}{parts[^1][0]}".ToUpperInvariant();
-            return parts.Length > 0
-                ? parts[0][..Math.Min(2, parts[0].Length)].ToUpperInvariant()
-                : "?";
-        }
-    }
+    private string CustomerInitials =>
+        AffiliateAdminDesignHelper.GetInitials(Ticket.Name);
 
     protected override async Task OnInitializedAsync()
     {

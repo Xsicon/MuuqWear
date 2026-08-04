@@ -1,8 +1,10 @@
 /* Sales & Orders — Phase 2 (uses admin shell CSS variables) */
 
 .orders-page {
+    width: 100%;
+    max-width: none;
     padding: 0;
-    max-width: 1200px;
+    box-sizing: border-box;
 }
 
 .orders-page--refreshing {
