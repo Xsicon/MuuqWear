@@ -1682,6 +1682,44 @@
     }
 }
 
+@media (max-width: 899px) {
+    ::deep .cs-tab-shell--kb-open {
+        position: relative;
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    ::deep .cs-tab-shell--kb-open .cs-tab-header-row,
+    ::deep .cs-tab-shell--kb-open > .cs-loading,
+    ::deep .cs-tab-shell--kb-open .cs-chat-layout,
+    ::deep .cs-tab-shell--kb-open .cs-stats,
+    ::deep .cs-tab-shell--kb-open .cs-kb-toolbar,
+    ::deep .cs-tab-shell--kb-open .cs-list,
+    ::deep .cs-tab-shell--kb-open > .cs-list-warning {
+        display: none;
+    }
+
+    ::deep .cs-kb-backdrop {
+        display: none;
+    }
+
+    ::deep .cs-kb-panel,
+    ::deep .cs-kb-panel--detail {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        max-width: none;
+        z-index: 55;
+        border-left: none;
+        box-shadow: none;
+    }
+
+    ::deep .cs-kb-panel--detail {
+        z-index: 56;
+    }
+}
+
 ::deep .cs-kb-backdrop {
     display: none;
     position: fixed;
