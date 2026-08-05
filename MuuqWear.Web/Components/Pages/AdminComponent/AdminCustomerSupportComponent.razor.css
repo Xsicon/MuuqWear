@@ -775,7 +775,7 @@
     overflow: hidden;
 }
 
-@media (min-width: 900px) {
+@media (min-width: 1200px) {
     ::deep .cs-chat-layout {
         grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
         grid-template-rows: minmax(0, 1fr);
@@ -783,7 +783,7 @@
     }
 }
 
-@media (max-width: 899px) {
+@media (max-width: 1199px) {
     ::deep .cs-chat-layout {
         grid-template-rows: minmax(0, 1fr);
         flex: 1;
@@ -1377,8 +1377,43 @@
     overflow: hidden;
 }
 
-@media (min-width: 900px) {
+@media (min-width: 1200px) {
     ::deep .cs-drawer {
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+    }
+
+    ::deep .cs-drawer.cs-chat-drawer {
+        width: min(36rem, calc(100vw - var(--admin-sidebar-width, 260px)));
+        max-width: min(36rem, calc(100vw - var(--admin-sidebar-width, 260px)));
+    }
+
+    ::deep .cs-drawer.cs-chat-drawer.cs-drawer--shifted {
+        width: min(36rem, calc(100vw - var(--admin-sidebar-width, 260px) - 28rem));
+        max-width: min(36rem, calc(100vw - var(--admin-sidebar-width, 260px) - 28rem));
+    }
+}
+
+@media (min-width: 768px) {
+    ::deep .cs-drawer.cs-ticket-drawer {
+        width: min(36rem, calc(100vw - var(--admin-sidebar-width, 260px)));
+        max-width: min(36rem, calc(100vw - var(--admin-sidebar-width, 260px)));
+    }
+
+    ::deep .cs-drawer.cs-ticket-drawer.cs-drawer--shifted {
+        width: min(36rem, calc(100vw - var(--admin-sidebar-width, 260px) - 28rem));
+        max-width: min(36rem, calc(100vw - var(--admin-sidebar-width, 260px) - 28rem));
+    }
+
+    ::deep .cs-kb-panel {
+        max-width: min(28rem, calc(100vw - var(--admin-sidebar-width, 260px)));
+    }
+}
+
+@media (max-width: 1199px) {
+    ::deep .cs-drawer:not(.cs-chat-drawer) {
         position: fixed;
         top: 0;
         right: 0;
@@ -1386,12 +1421,16 @@
     }
 }
 
-@media (max-width: 899px) {
+@media (min-width: 768px) and (max-width: 1199px) {
+    ::deep .cs-drawer.cs-ticket-drawer {
+        width: min(36rem, calc(100vw - var(--admin-sidebar-width, 260px)));
+        max-width: min(36rem, calc(100vw - var(--admin-sidebar-width, 260px)));
+    }
+}
+
+@media (max-width: 767px) {
     ::deep .cs-drawer:not(.cs-chat-drawer) {
-        position: fixed;
-        top: 0;
-        right: 0;
-        bottom: 0;
+        max-width: 100%;
     }
 }
 
@@ -1658,31 +1697,16 @@
 }
 
 ::deep .cs-tab-shell--kb-open {
-    margin-right: 28rem;
+    margin-right: 0;
 }
 
-@media (max-width: 1023px) {
+@media (min-width: 1200px) {
     ::deep .cs-tab-shell--kb-open {
-        margin-right: 0;
-    }
-
-    ::deep .cs-kb-backdrop {
-        display: block;
-    }
-
-    ::deep .cs-kb-panel {
-        z-index: 55;
-        max-width: min(28rem, 100vw);
-    }
-
-    ::deep .cs-drawer--shifted,
-    ::deep .cs-chat-drawer.cs-drawer--shifted {
-        visibility: hidden;
-        pointer-events: none;
+        margin-right: 28rem;
     }
 }
 
-@media (max-width: 899px) {
+@media (max-width: 1199px) {
     ::deep .cs-tab-shell--kb-open {
         position: relative;
         flex: 1 1 auto;
@@ -1700,23 +1724,14 @@
         display: none;
     }
 
+    ::deep .cs-tab-shell--kb-open .cs-drawer.cs-chat-drawer,
+    ::deep .cs-tab-shell--kb-open .cs-drawer.cs-ticket-drawer {
+        visibility: hidden;
+        pointer-events: none;
+    }
+
     ::deep .cs-kb-backdrop {
         display: none;
-    }
-
-    ::deep .cs-kb-panel,
-    ::deep .cs-kb-panel--detail {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        max-width: none;
-        z-index: 55;
-        border-left: none;
-        box-shadow: none;
-    }
-
-    ::deep .cs-kb-panel--detail {
-        z-index: 56;
     }
 }
 
@@ -1825,6 +1840,33 @@
 
 ::deep .cs-kb-panel--detail {
     z-index: 46;
+}
+
+@media (max-width: 1199px) {
+    ::deep .cs-kb-panel,
+    ::deep .cs-kb-panel--detail {
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        width: auto;
+        max-width: none;
+        z-index: 55;
+        border-left: none;
+        box-shadow: none;
+    }
+
+    ::deep .cs-kb-panel--detail {
+        z-index: 56;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 1199px) {
+    ::deep .cs-kb-panel,
+    ::deep .cs-kb-panel--detail {
+        left: var(--admin-sidebar-width, 260px);
+    }
 }
 
 ::deep .cs-kb-panel__header {
@@ -2408,25 +2450,23 @@
 /* ─── Ticket drawer (Phase 4) ─────────────────────────────── */
 
 ::deep .cs-drawer--shifted {
-    right: 28rem;
+    right: 0;
     transition: right 0.3s ease;
 }
 
-@media (max-width: 1023px) {
+@media (min-width: 1200px) {
     ::deep .cs-drawer--shifted {
-        right: 0;
+        right: 28rem;
     }
 }
 
 ::deep .cs-ticket-drawer {
-    max-width: 36rem;
     z-index: 45;
 }
 
 /* ─── Live chat drawer (matches ticket drawer + KB shift) ─── */
 
 ::deep .cs-chat-drawer {
-    max-width: 36rem;
     z-index: 45;
     border-left: 3px solid #0088CC;
 }
@@ -2479,7 +2519,7 @@
     width: 100%;
 }
 
-@media (min-width: 900px) {
+@media (min-width: 1200px) {
     ::deep .cs-chat-drawer__mobile-top,
     ::deep .cs-chat-drawer__mobile-close-row {
         display: none;
