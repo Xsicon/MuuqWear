@@ -13,4 +13,8 @@ public class CustomerModel
     public DateTime? LatestNoteAt { get; set; }
     public string? LatestNoteAuthorName { get; set; }
     public string? LatestNoteAuthorRole { get; set; }
+    public string AccountStatus { get; set; } = "active";
+    public DateTime? SuspendedUntil { get; set; }
+    public string? SuspensionReason { get; set; }
+    public DateTime? SuspendedAt { get; set; }
 }

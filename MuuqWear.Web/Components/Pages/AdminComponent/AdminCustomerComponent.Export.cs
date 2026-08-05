@@ -82,7 +82,8 @@ public partial class AdminCustomerComponent
             var result = await CustomerService.GetAll(
                 string.IsNullOrWhiteSpace(searchQuery) ? null : searchQuery,
                 page,
-                ExportPageSize);
+                ExportPageSize,
+                string.IsNullOrWhiteSpace(statusFilter) ? null : statusFilter);
 
             if (!result.Success || result.Data?.Data is null)
                 throw new InvalidOperationException(

@@ -1,0 +1,131 @@
+@using MuuqWear.Model.Customer
+@using MuuqWear.Web.Helpers
+
+<div class="customers-account-panel">
+    <div class="customers-panel__section">
+        <p class="customers-panel__label">Account Status</p>
+        <span class="customers-status-badge @(CustomerAccountStatusHelper.IsSuspended(Customer) ? "customers-status-badge--suspended" : "customers-status-badge--active")">
+            @CustomerAccountStatusHelper.GetStatusLabel(Customer)
+        </span>
+        @if (CustomerAccountStatusHelper.IsSuspended(Customer) && Customer.SuspendedAt.HasValue)
+        {
+            <p class="customers-account-panel__meta">
+                Suspended @Customer.SuspendedAt.Value.ToLocalTime().ToString("MMM dd, yyyy h:mm tt")
+            </p>
+        }
+        @if (!string.IsNullOrWhiteSpace(Customer.SuspensionReason))
+        {
+            <p class="customers-account-panel__reason">@Customer.SuspensionReason</p>
+        }
+    </div>
+
+    @if (!string.IsNullOrEmpty(AccountActionError))
+    {
+        <p class="customers-account-panel__error">@AccountActionError</p>
+    }
+
+    @if (CustomerAccountStatusHelper.IsSuspended(Customer))
+    {
+        <div class="customers-panel__actions customers-panel__actions--stack">
+            <button type="button"
+                    class="customers-account-action customers-account-action--reactivate"
+                    disabled="@IsBusy"
+                    @onclick="ReactivateRequested">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M20 11a8.1 8.1 0 1 1-2.2-5.6L20 7"></path>
+                    <path d="M20 3v4h-4"></path>
+                </svg>
+                <span>@(IsBusy ? "Reactivating…" : "Reactivate Account")</span>
+            </button>
+        </div>
+    }
+    else if (ShowSuspendForm)
+    {
+        <div class="customers-account-panel__form">
+            <label class="customers-account-panel__field">
+                <span class="customers-panel__label">Suspension Duration</span>
+                <select class="customers-account-panel__select"
+                        disabled="@IsBusy"
+                        value="@SuspendDurationDays"
+                        @onchange="HandleDurationChanged">
+                    @foreach (var option in CustomerAccountStatusHelper.SuspensionDurations)
+                    {
+                        <option value="@option.Days">@option.Label</option>
+                    }
+                </select>
+            </label>
+
+            <label class="customers-account-panel__field">
+                <span class="customers-panel__label">Internal Reason (optional)</span>
+                <textarea class="customers-account-panel__textarea"
+                          rows="3"
+                          maxlength="500"
+                          placeholder="Reason for suspension…"
+                          disabled="@IsBusy"
+                          value="@SuspendReason"
+                          @oninput="HandleReasonChanged"></textarea>
+            </label>
+
+            <div class="customers-panel__actions customers-panel__actions--stack">
+                <button type="button"
+                        class="customers-account-action customers-account-action--danger"
+                        disabled="@IsBusy"
+                        @onclick="SuspendRequested">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"></path>
+                        <path d="M9 9l6 6"></path>
+                        <path d="M15 9l-6 6"></path>
+                    </svg>
+                    <span>@(IsBusy ? "Suspending…" : "Confirm Suspension")</span>
+                </button>
+                <button type="button"
+                        class="customers-account-action customers-account-action--secondary"
+                        disabled="@IsBusy"
+                        @onclick="CancelSuspendRequested">
+                    <span>Cancel</span>
+                </button>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="customers-panel__actions customers-panel__actions--stack">
+            <button type="button"
+                    class="customers-account-action customers-account-action--suspend"
+                    disabled="@IsBusy"
+                    @onclick="ShowSuspendFormRequested">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"></path>
+                    <path d="M9 12h6"></path>
+                </svg>
+                <span>Suspend Account</span>
+            </button>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public CustomerModel Customer { get; set; } = default!;
+    [Parameter] public bool IsBusy { get; set; }
+    [Parameter] public bool ShowSuspendForm { get; set; }
+    [Parameter] public int SuspendDurationDays { get; set; } = 30;
+    [Parameter] public string SuspendReason { get; set; } = string.Empty;
+    [Parameter] public string? AccountActionError { get; set; }
+    [Parameter] public EventCallback SuspendRequested { get; set; }
+    [Parameter] public EventCallback ReactivateRequested { get; set; }
+    [Parameter] public EventCallback ShowSuspendFormRequested { get; set; }
+    [Parameter] public EventCallback CancelSuspendRequested { get; set; }
+    [Parameter] public EventCallback<int> SuspendDurationDaysChanged { get; set; }
+    [Parameter] public EventCallback<string> SuspendReasonChanged { get; set; }
+
+    private async Task HandleDurationChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var days))
+            await SuspendDurationDaysChanged.InvokeAsync(days);
+    }
+
+    private async Task HandleReasonChanged(ChangeEventArgs e)
+    {
+        await SuspendReasonChanged.InvokeAsync(e.Value?.ToString() ?? string.Empty);
+    }
+}

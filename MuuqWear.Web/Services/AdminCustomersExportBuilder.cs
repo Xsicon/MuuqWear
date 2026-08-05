@@ -21,7 +21,7 @@ public static class AdminCustomersExportBuilder
         sb.AppendLine($"Search,{FormatFilter(searchFilter)}");
         sb.AppendLine($"Generated,{stamp}");
         sb.AppendLine();
-        sb.AppendLine("Name,Email,Orders,Total Spent,Joined,Last Order,Note Count,Latest Note,Latest Note Author,Latest Note Date");
+        sb.AppendLine("Name,Email,Orders,Total Spent,Joined,Last Order,Account Status,Suspended Until,Note Count,Latest Note,Latest Note Author,Latest Note Date");
 
         foreach (var customer in customers)
         {
@@ -32,6 +32,8 @@ public static class AdminCustomersExportBuilder
                 CsvMoney(customer.TotalSpent),
                 Csv(FormatDate(customer.CreatedAt)),
                 Csv(FormatDate(customer.LastOrderAt)),
+                Csv(customer.AccountStatus),
+                Csv(FormatDate(customer.SuspendedUntil)),
                 Csv(customer.NoteCount),
                 Csv(customer.LatestNotePreview),
                 Csv(FormatNoteAuthor(customer)),
@@ -73,6 +75,7 @@ public static class AdminCustomersExportBuilder
         var headers = new[]
         {
             "Name", "Email", "Orders", "Total Spent", "Joined", "Last Order",
+            "Account Status", "Suspended Until",
             "Note Count", "Latest Note", "Latest Note Author", "Latest Note Date"
         };
 
@@ -84,6 +87,8 @@ public static class AdminCustomersExportBuilder
             c.TotalSpent,
             FormatDate(c.CreatedAt),
             FormatDate(c.LastOrderAt),
+            c.AccountStatus,
+            FormatDate(c.SuspendedUntil),
             c.NoteCount,
             c.LatestNotePreview,
             FormatNoteAuthor(c),

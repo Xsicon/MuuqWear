@@ -81,7 +81,7 @@ public partial class AdminCustomerComponent : IDisposable
         }
     }
 
-    private string GetCacheKey() => $"{activeView}:{searchQuery}:{currentPage}:{pageSize}";
+    private string GetCacheKey() => $"{activeView}:{searchQuery}:{statusFilter}:{currentPage}:{pageSize}";
 
     private async Task LoadCustomersAsync(bool force = false)
     {
@@ -101,7 +101,11 @@ public partial class AdminCustomerComponent : IDisposable
 
         try
         {
-            var result = await CustomerService.GetAll(searchQuery, currentPage, pageSize);
+            var result = await CustomerService.GetAll(
+                searchQuery,
+                currentPage,
+                pageSize,
+                string.IsNullOrWhiteSpace(statusFilter) ? null : statusFilter);
 
             if (!result.Success || result.Data == null)
             {
@@ -230,7 +234,7 @@ public partial class AdminCustomerComponent : IDisposable
 
     private async Task EnsureDetailsSelectionAsync()
     {
-        if (activeView != "details" || customers.Count == 0)
+        if (activeView != "details" || customers.Count == 0 || suppressDetailsAutoSelect)
             return;
 
         if (selectedCustomerForDetails != null &&
@@ -286,17 +290,20 @@ public partial class AdminCustomerComponent : IDisposable
     {
         selectedCustomer = customer;
         isDetailPanelOpen = true;
+        ResetAccountActionState();
     }
 
     private void SelectCustomerForDetails(CustomerModel customer)
     {
         selectedCustomerForDetails = customer;
+        ResetAccountActionState();
     }
 
     private void CloseCustomerDetail()
     {
         isDetailPanelOpen = false;
         selectedCustomer = null;
+        ResetAccountActionState();
     }
 
     private void ViewCustomerOrders()

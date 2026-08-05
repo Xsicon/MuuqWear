@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using MuuqWear.Model.Authentication;
+using MuuqWear.Model.Profile;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Json;
 using System.Security.Claims;
@@ -60,14 +61,16 @@ public class TokenRefreshMiddleware
         var accessToken = context.User.FindFirst("AccessToken")?.Value;
         var refreshToken = context.User.FindFirst("RefreshToken")?.Value;
         var userId = context.User.FindFirst("UserId")?.Value;
-        //var isActive = await CheckIsActive(accessToken);
-        //if (!isActive)
-        //{
-        //    await context.SignOutAsync(
-        //        CookieAuthenticationDefaults.AuthenticationScheme);
-        //    context.Response.Redirect("/");
-        //    return;
-        //}
+        var isActive = await CheckIsActive(accessToken, userId);
+        if (!isActive)
+        {
+            await context.SignOutAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme);
+            context.Response.Cookies.Append("session_message",
+                "Your account is no longer active. Please contact support if you need help.");
+            context.Response.Redirect("/login?inactive=true");
+            return;
+        }
 
         if (!string.IsNullOrEmpty(accessToken) && IsTokenExpired(accessToken))
         {
@@ -211,26 +214,44 @@ public class TokenRefreshMiddleware
         identity.AddClaim(new Claim(type, value));
     }
 
-    private async Task<bool> CheckIsActive(string? accessToken)
+    private static readonly TimeSpan AccountStatusInterval = TimeSpan.FromMinutes(1);
+    private static readonly HttpClient AccountStatusClient = new()
+    {
+        Timeout = TimeSpan.FromSeconds(5)
+    };
+
+    private async Task<bool> CheckIsActive(string? accessToken, string? userId)
     {
         if (string.IsNullOrEmpty(accessToken)) return true; // not logged in → skip
+
+        // Only positive results are cached, so a suspension still takes effect within the interval
+        // while healthy sessions avoid an API round trip on every request.
+        var cacheKey = $"account-active-{userId}";
+        if (!string.IsNullOrEmpty(userId) && _cache.TryGetValue(cacheKey, out bool cachedActive) && cachedActive)
+            return true;
 
         try
         {
             var apiBaseUrl = _configuration["ApiBaseUrl"];
-            using var http = new HttpClient();
-            http.DefaultRequestHeaders.Authorization =
+            using var request = new HttpRequestMessage(
+                HttpMethod.Get, $"{apiBaseUrl}api/Profile/is-active");
+            request.Headers.Authorization =
                 new System.Net.Http.Headers.AuthenticationHeaderValue(
                     "Bearer", accessToken);
 
-            var result = await http.GetAsync($"{apiBaseUrl}api/Profile/is-active");
+            using var result = await AccountStatusClient.SendAsync(request);
 
             if (!result.IsSuccessStatusCode) return true; // if check fails → don't block
 
             var response = await result.Content
-                .ReadFromJsonAsync<Response<bool>>();
+                .ReadFromJsonAsync<Response<ProfileAccountStatusModel>>();
 
-            return response?.Data != false; // false = deleted → block
+            var isActive = response?.Data?.IsActive != false;
+
+            if (isActive && !string.IsNullOrEmpty(userId))
+                _cache.Set(cacheKey, true, AccountStatusInterval);
+
+            return isActive;
         }
         catch
         {

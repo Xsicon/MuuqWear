@@ -68,19 +68,35 @@
         <p class="customers-error">@errorMessage</p>
     }
 
-    <div class="customers-search">
-        <svg class="customers-search__icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-             viewBox="0 0 24 24" fill="none" stroke="currentColor"
-             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="11" cy="11" r="8"></circle>
-            <path d="m21 21-4.3-4.3"></path>
-        </svg>
-        <input class="customers-search__input"
-               type="search"
-               placeholder="Search by name or email…"
-               value="@searchQuery"
-               @oninput="HandleSearchInput"
-               @onkeydown="HandleSearchKeyDown" />
+    <div class="customers-search-row">
+        <div class="customers-search">
+            <svg class="customers-search__icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.3-4.3"></path>
+            </svg>
+            <input class="customers-search__input"
+                   type="search"
+                   placeholder="Search by name or email…"
+                   value="@searchQuery"
+                   @oninput="HandleSearchInput"
+                   @onkeydown="HandleSearchKeyDown" />
+        </div>
+
+        @if (activeView == "list" || activeView == "details")
+        {
+            <label class="customers-status-filter">
+                <span class="customers-status-filter__label">Status</span>
+                <select class="customers-status-filter__select"
+                        value="@statusFilter"
+                        @onchange="HandleStatusFilterChanged">
+                    <option value="">All</option>
+                    <option value="active">Active</option>
+                    <option value="suspended">Suspended</option>
+                </select>
+            </label>
+        }
     </div>
 
     @if (activeView == "list")
@@ -95,7 +111,7 @@
                 {
                     <MwSkeletonSection Layout="MwSkeletonSection.SkeletonLayout.AdminTable"
                                        Count="8"
-                                       Columns="7"
+                                       Columns="8"
                                        AriaLabel="Loading customers" />
                 }
                 else if (!customers.Any())
@@ -114,6 +130,7 @@
                                     <th>Total Spent</th>
                                     <th>Joined</th>
                                     <th>Last Order</th>
+                                    <th>Status</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -129,6 +146,11 @@
                                         <td class="customers-table__spent">@customer.TotalSpent.ToString("C")</td>
                                         <td class="customers-table__muted">@FormatDate(customer.CreatedAt)</td>
                                         <td class="customers-table__muted">@FormatDate(customer.LastOrderAt)</td>
+                                        <td>
+                                            <span class="customers-status-badge @(CustomerAccountStatusHelper.IsSuspended(customer) ? "customers-status-badge--suspended" : "customers-status-badge--active")">
+                                                @(CustomerAccountStatusHelper.IsSuspended(customer) ? "Suspended" : "Active")
+                                            </span>
+                                        </td>
                                         <td>
                                             <button type="button"
                                                     class="customers-view-btn"
@@ -246,6 +268,19 @@
                         <p class="customers-panel__value">@FormatDate(selectedCustomerForDetails.LastOrderAt)</p>
                     </div>
 
+                    <AdminCustomerAccountPanel Customer="selectedCustomerForDetails"
+                                               IsBusy="isAccountActionBusy"
+                                               ShowSuspendForm="showSuspendForm"
+                                               SuspendDurationDays="suspendDurationDays"
+                                               SuspendReason="suspendReason"
+                                               AccountActionError="@accountActionError"
+                                               SuspendRequested="SuspendActiveCustomerAsync"
+                                               ReactivateRequested="ReactivateActiveCustomerAsync"
+                                               ShowSuspendFormRequested="BeginSuspendForm"
+                                               CancelSuspendRequested="CancelSuspendForm"
+                                               SuspendDurationDaysChanged="SetSuspendDurationDays"
+                                               SuspendReasonChanged="SetSuspendReason" />
+
                     <div class="customers-panel__actions">
                         <button type="button"
                                 class="btn-primary"
@@ -276,7 +311,7 @@
                 {
                     <MwSkeletonSection Layout="MwSkeletonSection.SkeletonLayout.AdminTable"
                                        Count="8"
-                                       Columns="7"
+                                       Columns="5"
                                        AriaLabel="Loading customers" />
                 }
                 else if (!customers.Any())
@@ -403,6 +438,19 @@
             <p class="customers-panel__label">Last Order</p>
             <p class="customers-panel__value">@FormatDate(selectedCustomer.LastOrderAt)</p>
         </div>
+
+        <AdminCustomerAccountPanel Customer="selectedCustomer"
+                                   IsBusy="isAccountActionBusy"
+                                   ShowSuspendForm="showSuspendForm"
+                                   SuspendDurationDays="suspendDurationDays"
+                                   SuspendReason="suspendReason"
+                                   AccountActionError="@accountActionError"
+                                   SuspendRequested="SuspendActiveCustomerAsync"
+                                   ReactivateRequested="ReactivateActiveCustomerAsync"
+                                   ShowSuspendFormRequested="BeginSuspendForm"
+                                   CancelSuspendRequested="CancelSuspendForm"
+                                   SuspendDurationDaysChanged="SetSuspendDurationDays"
+                                   SuspendReasonChanged="SetSuspendReason" />
 
         <div class="customers-panel__actions">
             <button type="button"

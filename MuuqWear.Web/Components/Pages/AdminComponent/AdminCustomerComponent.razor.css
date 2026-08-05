@@ -103,11 +103,154 @@
     margin: 0 0 16px;
 }
 
-/* ─── SEARCH ──────────────────────────────────────────────── */
-.customers-search {
-    position: relative;
+.customers-search-row {
+    display: flex;
+    align-items: stretch;
+    gap: 12px;
     margin-bottom: 16px;
+    flex-wrap: wrap;
 }
+
+.customers-search {
+    flex: 1 1 240px;
+    position: relative;
+}
+
+.customers-status-filter {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 140px;
+}
+
+.customers-status-filter__label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--admin-muted, #4A5C7A);
+}
+
+.customers-status-filter__select {
+    min-height: 42px;
+    padding: 0 12px;
+    border: 1px solid var(--admin-border, rgba(169, 183, 204, 0.45));
+    background: var(--admin-surface, #fff);
+    color: var(--admin-text, #1E2A47);
+    font-size: 13px;
+    font-family: inherit;
+}
+
+.customers-status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.customers-status-badge--active {
+    background: #E8F5EE;
+    color: #166534;
+}
+
+.customers-status-badge--suspended {
+    background: #FEE2E2;
+    color: #991B1B;
+}
+
+.customers-account-panel {
+    margin: 8px 0 20px;
+    padding-top: 8px;
+    border-top: 1px solid var(--admin-border, rgba(169, 183, 204, 0.2));
+}
+
+.customers-account-panel__meta,
+.customers-account-panel__reason {
+    margin: 8px 0 0;
+    font-size: 12px;
+    color: var(--admin-muted, #4A5C7A);
+    line-height: 1.45;
+}
+
+.customers-account-panel__reason {
+    font-style: italic;
+}
+
+.customers-account-panel__error {
+    margin: 0 0 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #FEE2E2;
+    border: 1px solid #FECACA;
+    color: #991B1B;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.customers-account-panel__form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.customers-account-panel__field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.customers-account-panel__select,
+.customers-account-panel__textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    border: 1px solid var(--admin-border, rgba(169, 183, 204, 0.45));
+    background: var(--admin-surface, #fff);
+    color: var(--admin-text, #1E2A47);
+    font-size: 13px;
+    font-family: inherit;
+}
+
+.customers-account-panel__textarea {
+    resize: vertical;
+    min-height: 84px;
+}
+
+.customers-panel__actions--stack {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.btn-danger {
+    font-size: 13px;
+    font-weight: 600;
+    padding: 10px 16px;
+    border: none;
+    cursor: pointer;
+    background: #B42318;
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-family: inherit;
+    transition: background 0.2s;
+}
+
+.btn-danger:hover:not(:disabled) {
+    background: #912018;
+}
+
+.btn-danger:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+/* ─── SEARCH ──────────────────────────────────────────────── */
 
 .customers-search__icon {
     position: absolute;
@@ -549,6 +692,9 @@
 
 /* ─── DARK MODE ───────────────────────────────────────────── */
 :global(html[data-admin-theme="dark"]) .mw-admin .customers-search__input,
+:global(html[data-admin-theme="dark"]) .mw-admin .customers-status-filter__select,
+:global(html[data-admin-theme="dark"]) .mw-admin .customers-account-panel__select,
+:global(html[data-admin-theme="dark"]) .mw-admin .customers-account-panel__textarea,
 :global(html[data-admin-theme="dark"]) .mw-admin .customers-table-card,
 :global(html[data-admin-theme="dark"]) .mw-admin .customers-panel,
 :global(html[data-admin-theme="dark"]) .mw-admin .customers-export-menu,
