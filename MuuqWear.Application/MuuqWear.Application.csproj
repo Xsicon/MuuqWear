@@ -8,10 +8,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MuuqWear.Model\MuuqWear.Model.csproj" />
-    <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.JSInterop" Version="8.0.18" />
     <PackageReference Include="Supabase" Version="1.1.1" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.17.0" />
   </ItemGroup>

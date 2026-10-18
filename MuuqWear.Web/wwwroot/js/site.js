@@ -893,3 +893,102 @@ window.mwLoadScripts = {
         ]);
     }
 };
+
+window.mwRegisterStorefrontBridge = function (ref) {
+    window.__mwStorefrontBridge = ref;
+};
+
+window.mwStorefrontAddToCart = async function (request) {
+    var bridge = window.__mwStorefrontBridge;
+    if (!bridge) return null;
+    return await bridge.invokeMethodAsync('AddToCartFromPage', request);
+};
+
+window.mwPublishWishlist = function (ids) {
+    window.__mwWishlistIds = ids || [];
+    window.dispatchEvent(new CustomEvent('mw-wishlist-updated'));
+};
+
+window.mwTryWishlistToggle = async function (item) {
+    var bridge = window.__mwStorefrontBridge;
+    if (!bridge) return -1;
+    var active = await bridge.invokeMethodAsync('ToggleWishlist', item);
+    return active ? 1 : 0;
+};
+
+window.mwWatchWishlist = function (id, dotNetRef) {
+    var key = String(id);
+    window.__mwWlHandlers = window.__mwWlHandlers || {};
+    if (window.__mwWlHandlers[key])
+        window.removeEventListener('mw-wishlist-updated', window.__mwWlHandlers[key]);
+    var handler = function () {
+        dotNetRef.invokeMethodAsync('OnWishlistUpdated', window.__mwWishlistIds || []);
+    };
+    window.__mwWlHandlers[key] = handler;
+    window.addEventListener('mw-wishlist-updated', handler);
+    handler();
+};
+
+window.mwUnwatchWishlist = function (id) {
+    var key = String(id);
+    var handler = window.__mwWlHandlers && window.__mwWlHandlers[key];
+    if (!handler) return;
+    window.removeEventListener('mw-wishlist-updated', handler);
+    delete window.__mwWlHandlers[key];
+};
+
+window.mwCatalogCache = {
+    prefix: 'mw-catalog:',
+    indexKey: 'mw-catalog-index',
+    maxEntries: 24,
+    maxChars: 180000,
+    get: function (key) {
+        try {
+            var raw = localStorage.getItem(this.prefix + key);
+            return raw ? JSON.parse(raw) : null;
+        } catch (e) {
+            return null;
+        }
+    },
+    set: function (key, body, contentType) {
+        var storageKey = this.prefix + key;
+        var payload = JSON.stringify({
+            savedAt: Date.now(),
+            body: body,
+            contentType: contentType || 'application/json'
+        });
+        if (payload.length > this.maxChars) return;
+        try {
+            localStorage.setItem(storageKey, payload);
+            this._touch(storageKey);
+        } catch (e) {
+            this._evict();
+            try {
+                localStorage.setItem(storageKey, payload);
+                this._touch(storageKey);
+            } catch (_) { }
+        }
+    },
+    _index: function () {
+        try {
+            var parsed = JSON.parse(localStorage.getItem(this.indexKey) || '[]');
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (e) {
+            return [];
+        }
+    },
+    _touch: function (storageKey) {
+        var index = this._index().filter(function (item) { return item !== storageKey; });
+        index.push(storageKey);
+        while (index.length > window.mwCatalogCache.maxEntries) {
+            localStorage.removeItem(index.shift());
+        }
+        localStorage.setItem(this.indexKey, JSON.stringify(index));
+    },
+    _evict: function () {
+        var index = this._index();
+        var oldest = index.shift();
+        if (oldest) localStorage.removeItem(oldest);
+        localStorage.setItem(this.indexKey, JSON.stringify(index));
+    }
+};

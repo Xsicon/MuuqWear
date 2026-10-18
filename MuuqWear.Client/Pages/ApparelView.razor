@@ -1,0 +1,587 @@
+﻿@implements IDisposable
+@inject IJSRuntime JS
+@inject IProductService ProductService
+@inject ICategoryService CategoryService
+@inject NavigationManager NavigationManager
+@inject StorefrontHomeCacheService HomeCache
+@using MuuqWear.Web.Services
+@using MuuqWear.Application.Services.ProductService
+@using MuuqWear.Application.Services.CategoryService
+@using MuuqWear.Model.Products
+@using MuuqWear.Application.Services.WishlistService
+@using MuuqWear.Web.Components.Shared
+
+<PageTitle>Apparel</PageTitle>
+
+<section class="mw-shop">
+    <div class="mw-shop__container">
+
+        <nav class="mw-shop__breadcrumb" aria-label="Breadcrumb">
+            <a href="/">Home</a>
+            <span class="mw-shop__breadcrumb-sep">/</span>
+            <span class="mw-shop__breadcrumb-current">Shop All</span>
+        </nav>
+
+        <h1 class="mw-shop__title">Shop All</h1>
+        <p class="mw-shop__desc">
+            Discover our curated collection of technical outerwear, premium knitwear,
+            and essential accessories designed for the modern explorer.
+        </p>
+
+        <button type="button"
+                class="mw-shop__filter-trigger"
+                @onclick="OpenFilters"
+                aria-label="Open filters">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <line x1="21" x2="14" y1="4" y2="4" />
+                <line x1="10" x2="3" y1="4" y2="4" />
+                <line x1="21" x2="12" y1="12" y2="12" />
+                <line x1="8" x2="3" y1="12" y2="12" />
+                <line x1="21" x2="16" y1="20" y2="20" />
+                <line x1="12" x2="3" y1="20" y2="20" />
+                <line x1="14" x2="14" y1="2" y2="6" />
+                <line x1="8" x2="8" y1="10" y2="14" />
+                <line x1="16" x2="16" y1="18" y2="22" />
+            </svg>
+            Filters
+            @if (ActiveFilterCount > 0)
+            {
+                <span class="mw-shop__filter-badge">@ActiveFilterCount</span>
+            }
+        </button>
+
+        <div class="mw-shop__layout">
+
+            <aside class="mw-shop__sidebar" aria-label="Product filters">
+                <div class="mw-shop__sidebar-panel">
+                    @FilterPanelContent("cat")
+                </div>
+            </aside>
+
+            <div class="mw-shop__main">
+
+                <div class="mw-shop__toolbar">
+                    <p class="mw-shop__count">
+                        Showing <strong>@totalCount</strong> products
+                    </p>
+
+                    <div class="mw-shop__sort">
+                        <span class="mw-shop__sort-label">Sort by:</span>
+                        <div class="mw-shop__sort-wrap">
+                            <select class="mw-shop__sort-select"
+                                    @bind="filter.SortBy"
+                                    @bind:after="ApplySortChange"
+                                    aria-label="Sort products">
+                                @foreach (var option in SortOptions)
+                                {
+                                    <option value="@option.Value">@option.Label</option>
+                                }
+                            </select>
+                            <svg class="mw-shop__sort-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="m6 9 6 6 6-6" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                @if (isLoading && !Products.Any())
+                {
+                    <MwSkeletonSection Layout="MwSkeletonSection.SkeletonLayout.ProductGrid"
+                                       Count="8"
+                                       ProductColumns="3"
+                                       AriaLabel="Loading products" />
+                }
+                else if (!Products.Any())
+                {
+                    <div class="mw-shop__empty">
+                        <p>No products found.</p>
+                        <button type="button" class="mw-shop__btn-primary mw-shop__btn-primary--inline" @onclick="ClearFilters">
+                            Clear Filters
+                        </button>
+                    </div>
+                }
+                else
+                {
+                    <div class="mw-shop__grid">
+                        @foreach (var item in Products)
+                        {
+                            <div class="mw-shop-product">
+                                <div class="mw-shop-product__image">
+                                    <a href="/productdetail/@item.Id" class="mw-shop-product__media-link">
+                                        <img src="@item.ImageUrl"
+                                             loading="lazy"
+                                             alt="@item.Name" />
+                                        @if (!string.IsNullOrEmpty(item.Badge))
+                                        {
+                                            <span class="mw-shop-product__badge">@item.Badge</span>
+                                        }
+                                    </a>
+                                    <WishlistButtonComponent ProductId="@item.Id"
+                                                             ProductName="@item.Name"
+                                                             ProductImageUrl="@item.ImageUrl"
+                                                             ProductPrice="@item.Price"
+                                                             CssClass="mw-wishlist-btn--overlay"
+                                                             Size="16" />
+                                </div>
+                                <a href="/productdetail/@item.Id" class="mw-shop-product__body">
+                                    <p class="mw-shop-product__category">
+                                        @(Categories.FirstOrDefault(c => c.Id == item.CategoryId)?.Name ?? "")
+                                    </p>
+                                    <h3 class="mw-shop-product__name">@item.Name</h3>
+                                    <p class="mw-shop-product__price">$@item.Price.ToString("F2")</p>
+                                </a>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="mw-shop__pagination">
+                        <PaginationComponent TItem="ProductModel"
+                                             TotalCount="@totalCount"
+                                             CurrentPage="@filter.Page"
+                                             PageSize="@filter.PageSize"
+                                             OnPageChanged="HandlePageChanged" />
+                    </div>
+                }
+
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="mw-shop-filter-overlay @(isFilterOpen ? "open" : "")"
+     @onclick="CloseFilters">
+    <div class="mw-shop-filter-drawer" @onclick:stopPropagation="true">
+
+        <div class="mw-shop-filter-drawer__header">
+            <h2 class="mw-shop-filter-drawer__title">Filters</h2>
+            <button type="button"
+                    class="mw-shop-filter-drawer__close"
+                    @onclick="CloseFilters"
+                    aria-label="Close filters">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M18 6 6 18" /><path d="m6 6 12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <div class="mw-shop-filter-drawer__body">
+            @FilterPanelContent("m_cat")
+        </div>
+
+    </div>
+</div>
+
+@code {
+
+    // state
+    private ShopFilterModel filter = new();
+    private List<ProductModel> Products = new();
+    private List<CategoryModel> Categories = new();
+    private int totalCount = 0;
+    private bool isLoading = true;
+    private bool isLoadingCategories = true;
+    private bool isFilterOpen = false;
+
+    private const int PriceFloor = 0;
+    private const int PriceCeiling = 500;
+    private int priceSliderValue = 500;
+    private bool _syncingUrl;
+
+    // available sizes
+    private List<string> AvailableSizes = new()
+    {
+        "XS", "S", "M", "L", "XL", "XXL"
+    };
+
+    private static readonly (string Value, string Label)[] SortOptions =
+    {
+        ("featured", "Featured"),
+        ("price_asc", "Price: Low to High"),
+        ("price_desc", "Price: High to Low"),
+        ("newest", "Newest")
+    };
+
+    private static string NormalizeSortBy(string? sortBy)
+    {
+        if (string.IsNullOrWhiteSpace(sortBy))
+            return "featured";
+
+        return SortOptions
+            .FirstOrDefault(option => string.Equals(option.Value, sortBy, StringComparison.OrdinalIgnoreCase))
+            .Value ?? "featured";
+    }
+
+    private int ActiveFilterCount =>
+        (filter.CategoryId.HasValue ? 1 : 0) +
+        filter.SelectedSizes.Count +
+        (filter.MinPrice.HasValue || filter.MaxPrice.HasValue ? 1 : 0);
+
+    private string PriceRangeLowLabel => "$0";
+
+    private string PriceRangeHighLabel
+    {
+        get
+        {
+            if (!IsPriceSliderDirty && filter.MaxPrice.HasValue)
+            {
+                var appliedMax = (int)Math.Clamp(filter.MaxPrice.Value, PriceFloor, PriceCeiling);
+                return appliedMax >= PriceCeiling ? "$500+" : $"${appliedMax}";
+            }
+
+            return priceSliderValue >= PriceCeiling ? "$500+" : $"${priceSliderValue}";
+        }
+    }
+
+    private bool HasAppliedPriceFilter => filter.MaxPrice.HasValue;
+
+    private bool IsPriceSliderDirty =>
+        filter.MaxPrice.HasValue
+            ? priceSliderValue != (int)Math.Clamp(filter.MaxPrice.Value, PriceFloor, PriceCeiling)
+            : priceSliderValue < PriceCeiling;
+
+    protected override void OnInitialized()
+    {
+        NavigationManager.LocationChanged += OnLocationChanged;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        LoadFiltersFromUrl();
+        await Task.WhenAll(LoadProducts(), LoadCategories());
+        SyncSlidersFromFilter();
+    }
+
+    private void LoadFiltersFromUrl()
+    {
+        var query = System.Web.HttpUtility.ParseQueryString(new Uri(NavigationManager.Uri).Query);
+
+        filter = new ShopFilterModel();
+
+        var search = query["search"];
+        if (!string.IsNullOrWhiteSpace(search))
+            filter.Search = search;
+
+        if (Guid.TryParse(query["categoryId"], out var categoryId))
+            filter.CategoryId = categoryId;
+
+        var sizes = query["sizes"];
+        if (!string.IsNullOrWhiteSpace(sizes))
+        {
+            filter.SelectedSizes = sizes
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Where(s => AvailableSizes.Contains(s))
+                .ToList();
+        }
+
+        if (decimal.TryParse(
+                query["minPrice"],
+                System.Globalization.NumberStyles.Number,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out var minPrice))
+        {
+            filter.MinPrice = minPrice;
+        }
+
+        if (decimal.TryParse(
+                query["maxPrice"],
+                System.Globalization.NumberStyles.Number,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out var maxPrice))
+        {
+            filter.MaxPrice = maxPrice;
+        }
+
+        if (int.TryParse(query["page"], out var page) && page > 0)
+            filter.Page = page;
+
+        if (int.TryParse(query["pageSize"], out var pageSize) && pageSize > 0)
+            filter.PageSize = pageSize;
+
+        var sortBy = query["sortBy"];
+        filter.SortBy = NormalizeSortBy(sortBy);
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        if (_syncingUrl)
+        {
+            _syncingUrl = false;
+            return;
+        }
+
+        _ = InvokeAsync(HandleLocationChangedAsync);
+    }
+
+    private async Task HandleLocationChangedAsync()
+    {
+        LoadFiltersFromUrl();
+        SyncSlidersFromFilter();
+        await LoadProducts();
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+
+    private RenderFragment FilterPanelContent(string idPrefix) => __builder =>
+    {
+        <div class="mw-shop-filters">
+            <div class="mw-shop-filters__head">
+                <h3 class="mw-shop-filters__title">Filters</h3>
+                <button type="button" class="mw-shop-filters__clear" @onclick="ClearFilters">
+                    Clear All
+                </button>
+            </div>
+
+            <div class="mw-shop-filters__section">
+                <h4 class="mw-shop-filters__label">Categories</h4>
+                @if (isLoadingCategories)
+                {
+                    <div class="mw-shop-filters__loading">
+                        @for (var i = 0; i < 5; i++)
+                        {
+                            <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Pill" Width="100%" />
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="mw-shop-filters__checks">
+                        @foreach (var category in Categories)
+                        {
+                            var inputId = $"{idPrefix}_{category.Id}";
+                            <label class="mw-shop-filters__check" for="@inputId">
+                                <input type="checkbox"
+                                       id="@inputId"
+                                       checked="@(filter.CategoryId == category.Id)"
+                                       @onchange="() => ToggleCategory(category.Id)" />
+                                @category.Name
+                            </label>
+                        }
+                    </div>
+                }
+            </div>
+
+            <div class="mw-shop-filters__section">
+                <h4 class="mw-shop-filters__label">Size</h4>
+                <div class="mw-shop-filters__sizes">
+                    @foreach (var size in AvailableSizes)
+                    {
+                        <button type="button"
+                                class="mw-shop-filters__size @(filter.SelectedSizes.Contains(size) ? "mw-shop-filters__size--selected" : "")"
+                                @onclick="() => ToggleSize(size)">
+                            @size
+                        </button>
+                    }
+                </div>
+            </div>
+
+            <div class="mw-shop-filters__section mw-shop-filters__section--price">
+                <h4 class="mw-shop-filters__label">Price Range</h4>
+                @if (HasAppliedPriceFilter)
+                {
+                    <p class="mw-shop-filters__applied">
+                        Applied: up to @PriceRangeHighLabel
+                    </p>
+                }
+                <div class="mw-shop-filters__range-labels">
+                    <span>@PriceRangeLowLabel</span>
+                    <span>@PriceRangeHighLabel</span>
+                </div>
+                <input type="range"
+                       class="mw-shop-filters__range-slider"
+                       min="@PriceFloor"
+                       max="@PriceCeiling"
+                       step="1"
+                       @bind="priceSliderValue"
+                       @bind:event="oninput"
+                       aria-label="Maximum price"
+                       aria-valuemin="@PriceFloor"
+                       aria-valuemax="@PriceCeiling"
+                       aria-valuenow="@priceSliderValue" />
+                <button type="button"
+                        class="mw-shop__btn-primary mw-shop-filters__apply-price @(IsPriceSliderDirty ? "" : "mw-shop-filters__apply-price--muted")"
+                        disabled="@(!IsPriceSliderDirty)"
+                        @onclick="ApplyFilters">
+                    Apply
+                </button>
+            </div>
+        </div>
+    };
+
+    private async Task LoadCategories()
+    {
+        isLoadingCategories = true;
+
+        var cached = HomeCache.GetCategoriesCached();
+        if (cached != null)
+        {
+            Categories = cached;
+            isLoadingCategories = false;
+        }
+
+        var data = await HomeCache.GetCategoriesAsync(allowStale: cached != null);
+        if (data != null)
+            Categories = data;
+
+        isLoadingCategories = false;
+    }
+
+    private async Task LoadProducts()
+    {
+        isLoading = true;
+        await InvokeAsync(StateHasChanged);
+
+        var result = await ProductService.GetAll(filter.ToFilterModel());
+
+        if (result.Success && result.Data != null)
+        {
+            Products = result.Data.Data;
+            totalCount = result.Data.TotalCount;
+            filter.Page = result.Data.Page;
+        }
+
+        isLoading = false;
+    }
+
+    // category filter (single-select checkbox group)
+    private async Task ToggleCategory(Guid categoryId)
+    {
+        filter.CategoryId = filter.CategoryId == categoryId ? null : categoryId;
+        filter.Page = 1;
+        await LoadProducts();
+        UpdateUrl();
+    }
+
+    // toggle size filter
+    private async Task ToggleSize(string size)
+    {
+        if (filter.SelectedSizes.Contains(size))
+            filter.SelectedSizes.Remove(size);
+        else
+            filter.SelectedSizes.Add(size);
+
+        filter.Page = 1; // reset to page 1
+        await LoadProducts();
+        UpdateUrl();
+    }
+
+    private void SyncSlidersFromFilter()
+    {
+        if (filter.MaxPrice.HasValue)
+        {
+            priceSliderValue = (int)Math.Clamp(filter.MaxPrice.Value, PriceFloor, PriceCeiling);
+            return;
+        }
+
+        if (filter.MinPrice.HasValue)
+        {
+            priceSliderValue = (int)Math.Clamp(filter.MinPrice.Value, PriceFloor, PriceCeiling);
+            return;
+        }
+
+        priceSliderValue = PriceCeiling;
+    }
+
+    private void SyncPriceFilterFromSliders()
+    {
+        filter.MinPrice = null;
+        filter.MaxPrice = priceSliderValue < PriceCeiling ? priceSliderValue : null;
+    }
+
+    // apply price filters
+    private async Task ApplyFilters()
+    {
+        SyncPriceFilterFromSliders();
+        filter.Page = 1;
+        await LoadProducts();
+        SyncSlidersFromFilter();
+        UpdateUrl();
+        CloseFilters();
+    }
+
+    // handle sort change
+    private async Task ApplySortChange()
+    {
+        filter.SortBy = NormalizeSortBy(filter.SortBy);
+        filter.Page = 1;
+        await LoadProducts();
+        UpdateUrl();
+    }
+
+    // handle pagination
+    private async Task HandlePageChanged((int Page, int PageSize) args)
+    {
+        filter.Page = args.Page;
+        filter.PageSize = args.PageSize;
+        await LoadProducts();
+        UpdateUrl();
+    }
+
+    // clear all filters
+    private async Task ClearFilters()
+    {
+        filter = new ShopFilterModel();
+        priceSliderValue = PriceCeiling;
+        await LoadProducts();
+        UpdateUrl();
+        CloseFilters();
+    }
+
+    // update URL with current filters
+    // shareable links
+    private void UpdateUrl()
+    {
+        var queryParams = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(filter.Search))
+            queryParams.Add($"search={Uri.EscapeDataString(filter.Search)}");
+
+        if (filter.Page > 1)
+            queryParams.Add($"page={filter.Page}");
+
+        if (filter.PageSize != 10)
+            queryParams.Add($"pageSize={filter.PageSize}");
+
+        if (filter.CategoryId.HasValue)
+            queryParams.Add($"categoryId={filter.CategoryId.Value}");
+
+        if (filter.SelectedSizes.Any())
+            queryParams.Add($"sizes={Uri.EscapeDataString(string.Join(",", filter.SelectedSizes))}");
+
+        if (filter.MinPrice.HasValue)
+            queryParams.Add($"minPrice={filter.MinPrice.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
+
+        if (filter.MaxPrice.HasValue)
+            queryParams.Add($"maxPrice={filter.MaxPrice.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
+
+        if (!string.Equals(filter.SortBy, "featured", StringComparison.OrdinalIgnoreCase))
+            queryParams.Add($"sortBy={Uri.EscapeDataString(NormalizeSortBy(filter.SortBy))}");
+
+        var url = queryParams.Any()
+            ? $"/shop/apparel?{string.Join("&", queryParams)}"
+            : "/shop/apparel";
+
+        var targetUri = NavigationManager.ToAbsoluteUri(url).ToString();
+        if (string.Equals(NavigationManager.Uri, targetUri, StringComparison.OrdinalIgnoreCase))
+            return;
+
+        _syncingUrl = true;
+        NavigationManager.NavigateTo(url, replace: true);
+    }
+
+    void OpenFilters()
+    {
+        SyncSlidersFromFilter();
+        isFilterOpen = true;
+    }
+
+    void CloseFilters()
+    {
+        SyncSlidersFromFilter();
+        isFilterOpen = false;
+    }
+}
+
+<CatalogPageReady IsLoading="@(isLoading && !Products.Any())" />

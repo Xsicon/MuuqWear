@@ -1,6 +1,8 @@
+@namespace MuuqWear.Web.Components.Shared
 @using MuuqWear.Application.Services.WishlistService
 @using MuuqWear.Model.Wishlist
 @inject WishlistStateService WishlistStateService
+@inject IJSRuntime JS
 @implements IDisposable
 
 <button type="button"
@@ -28,28 +30,70 @@
     [Parameter] public string CssClass { get; set; } = "";
     [Parameter] public int Size { get; set; } = 18;
 
-    private bool IsActive => WishlistStateService.IsWishlisted(ProductId);
+    private bool? _bridgeActive;
+    private DotNetObjectReference<WishlistButtonComponent>? _watchRef;
+    private bool IsActive => _bridgeActive ?? WishlistStateService.IsWishlisted(ProductId);
 
     protected override void OnInitialized()
     {
         WishlistStateService.OnWishlistChanged += OnWishlistChanged;
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        _watchRef = DotNetObjectReference.Create(this);
+        try
+        {
+            await JS.InvokeVoidAsync("mwWatchWishlist", ProductId, _watchRef);
+        }
+        catch (JSException) { }
+        catch (InvalidOperationException) { }
+    }
+
+    [JSInvokable]
+    public void OnWishlistUpdated(Guid[] ids)
+    {
+        _bridgeActive = ids.Contains(ProductId);
+        _ = InvokeAsync(StateHasChanged);
+    }
+
     private void OnWishlistChanged() => InvokeAsync(StateHasChanged);
 
     private async Task HandleClick()
     {
-        await WishlistStateService.ToggleAsync(new WishlistItemModel
+        var item = new WishlistItemModel
         {
             ProductId = ProductId,
             ProductName = ProductName,
             ProductImageUrl = ProductImageUrl,
             ProductPrice = ProductPrice
-        });
+        };
+
+        try
+        {
+            var bridged = await JS.InvokeAsync<int>("mwTryWishlistToggle", item);
+            if (bridged >= 0)
+            {
+                _bridgeActive = bridged == 1;
+                return;
+            }
+        }
+        catch (JSException) { }
+        catch (InvalidOperationException) { }
+
+        _bridgeActive = await WishlistStateService.ToggleAsync(item);
     }
 
     public void Dispose()
     {
         WishlistStateService.OnWishlistChanged -= OnWishlistChanged;
+        if (_watchRef is not null)
+        {
+            _ = JS.InvokeVoidAsync("mwUnwatchWishlist", ProductId);
+            _watchRef.Dispose();
+        }
     }
 }

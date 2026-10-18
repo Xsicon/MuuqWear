@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using MuuqWear.Application.Shared;
+﻿using MuuqWear.Application.Shared;
 using MuuqWear.Model.ContentItem;
 using System.Net.Http.Json;
 

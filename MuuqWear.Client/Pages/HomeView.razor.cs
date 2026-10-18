@@ -2,9 +2,9 @@
 using Microsoft.JSInterop;
 using MuuqWear.Web.Services;
 
-namespace MuuqWear.Web.Components.Pages.HomeComponent;
+namespace MuuqWear.Client.Pages;
 
-public partial class HomeComponent : IAsyncDisposable
+public partial class HomeView : IAsyncDisposable
 {
     private const int HeroAutoplayMs = 5500;
 

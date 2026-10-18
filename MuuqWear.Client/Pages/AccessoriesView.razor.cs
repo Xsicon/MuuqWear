@@ -6,9 +6,9 @@ using MuuqWear.Application.Services.ProductService;
 using MuuqWear.Model.Cart;
 using MuuqWear.Model.Products;
 
-namespace MuuqWear.Web.Components.Pages.AccessoriesComponent;
+namespace MuuqWear.Client.Pages;
 
-public partial class AccessoriesComponent : IAsyncDisposable
+public partial class AccessoriesView : IAsyncDisposable
 {
     [Inject] private IProductService ProductService { get; set; } = default!;
     [Inject] private ICategoryService CategoryService { get; set; } = default!;
@@ -183,7 +183,7 @@ public partial class AccessoriesComponent : IAsyncDisposable
 
         var defaultSize = selectedProduct.SizeStock.FirstOrDefault()?.Size ?? "One Size";
 
-        var success = await CartStateService.AddItem(new AddCartItemModel
+        var request = new AddCartItemModel
         {
             ProductId = selectedProduct.Id,
             Size = defaultSize,
@@ -192,7 +192,8 @@ public partial class AccessoriesComponent : IAsyncDisposable
             ProductImageUrl = selectedProduct.ImageUrl,
             ProductPrice = selectedProduct.Price,
             Color = selectedColor
-        });
+        };
+        var success = await AddThroughStorefrontAsync(request);
 
         isAddingToCart = false;
 
@@ -200,6 +201,27 @@ public partial class AccessoriesComponent : IAsyncDisposable
             CloseProduct();
 
         StateHasChanged();
+    }
+
+    private async Task<bool> AddThroughStorefrontAsync(AddCartItemModel request)
+    {
+        try
+        {
+            var bridged = await JS.InvokeAsync<bool?>("mwStorefrontAddToCart", request);
+            if (bridged is null)
+            {
+                await Task.Delay(300);
+                bridged = await JS.InvokeAsync<bool?>("mwStorefrontAddToCart", request);
+            }
+
+            if (bridged is not null)
+                return bridged.Value;
+        }
+        catch (JSException) { }
+        catch (InvalidOperationException) { }
+
+        await CartStateService.InitializeAsync(false, null);
+        return await CartStateService.AddItem(request);
     }
 
     private Task ScrollLeft(ElementReference el) =>

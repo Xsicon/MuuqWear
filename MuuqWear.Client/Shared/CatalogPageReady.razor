@@ -1,0 +1,34 @@
+@inject IJSRuntime JS
+
+@code {
+    [Parameter]
+    public bool IsLoading { get; set; }
+
+    private bool _signaled;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!IsLoading)
+            await SignalAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !IsLoading)
+            await SignalAsync();
+    }
+
+    private async Task SignalAsync()
+    {
+        if (_signaled)
+            return;
+
+        _signaled = true;
+        try
+        {
+            await JS.InvokeVoidAsync("mwNavProgress.pageReady");
+        }
+        catch (JSException) { }
+        catch (InvalidOperationException) { }
+    }
+}

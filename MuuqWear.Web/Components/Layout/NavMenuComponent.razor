@@ -8,6 +8,7 @@
 @using MuuqWear.Application.Services.CategoryService
 @using MuuqWear.Application.Shared
 @using MuuqWear.Model.Cart
+@using MuuqWear.Model.Wishlist
 @using MuuqWear.Model.Products
 @using MuuqWear.Application.Services.AuthService
 @using MuuqWear.Application.Services.WishlistService
@@ -788,6 +789,7 @@
                     WishlistStateService.InitializeAsync(false, null));
             }
 
+            await RegisterStorefrontBridgeAsync();
             StateHasChanged();
         }
 
@@ -1021,10 +1023,13 @@
     }
     private System.Threading.Timer? _activeCheckTimer;
 
+    private DotNetObjectReference<NavMenuComponent>? _storefrontBridge;
+
     // subscribe to cart changes
     protected override void OnInitialized()
     {
         CartStateService.OnCartChanged += OnCartChanged;
+        WishlistStateService.OnWishlistChanged += OnWishlistChanged;
         AuthSession.OnSessionExpired += HandleSessionExpired;
         AuthSession.OnProfileUpdated += HandleProfileUpdated;
 
@@ -1048,6 +1053,42 @@
     {
         InvokeAsync(StateHasChanged);
     }
+
+    private void OnWishlistChanged()
+    {
+        _ = InvokeAsync(PublishWishlistAsync);
+    }
+
+    private async Task RegisterStorefrontBridgeAsync()
+    {
+        _storefrontBridge ??= DotNetObjectReference.Create(this);
+        try
+        {
+            await JS.InvokeVoidAsync("mwRegisterStorefrontBridge", _storefrontBridge);
+            await PublishWishlistAsync();
+        }
+        catch (JSException) { }
+        catch (InvalidOperationException) { }
+    }
+
+    private async Task PublishWishlistAsync()
+    {
+        var ids = WishlistStateService.Items.Select(item => item.ProductId).ToArray();
+        try
+        {
+            await JS.InvokeVoidAsync("mwPublishWishlist", ids);
+        }
+        catch (JSException) { }
+        catch (InvalidOperationException) { }
+    }
+
+    [JSInvokable]
+    public Task<bool> AddToCartFromPage(AddCartItemModel request) =>
+        CartStateService.AddItem(request);
+
+    [JSInvokable]
+    public Task<bool> ToggleWishlist(WishlistItemModel item) =>
+        WishlistStateService.ToggleAsync(item);
 
     // qty decrease
     private async Task DecreaseQty(CartItemModel item)
@@ -1075,7 +1116,9 @@
     {
         // NavigationManager.LocationChanged -= OnLocationChanged;
         CartStateService.OnCartChanged -= OnCartChanged;
+        WishlistStateService.OnWishlistChanged -= OnWishlistChanged;
         AuthSession.OnProfileUpdated -= HandleProfileUpdated;
+        _storefrontBridge?.Dispose();
 
         AuthSession.OnSessionExpired -= HandleSessionExpired;  // ← add
     }

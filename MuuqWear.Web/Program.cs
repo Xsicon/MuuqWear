@@ -41,7 +41,8 @@ var apiBaseUrl = builder.Configuration["ApiBaseUrl"]!;
 
 
 builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
+    .AddInteractiveServerComponents()
+    .AddInteractiveWebAssemblyComponents();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient<IAuthService, AuthService>(client =>
 {
@@ -89,6 +90,10 @@ builder.Services.AddHttpClient<IAddressService, AddressService>(client =>
 }).AddHttpMessageHandler<AuthenticatedHttpHandler>();
 // Public endpoint — no auth handler
 builder.Services.AddHttpClient<IJournalService, JournalService>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+});
+builder.Services.AddHttpClient("CatalogProxy", client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
 });
@@ -241,7 +246,11 @@ builder.Services.AddAdminPortalAuthorization();
 
 var app = builder.Build();
 
-if (!app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment())
+{
+    app.UseWebAssemblyDebugging();
+}
+else
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
 }
@@ -332,9 +341,25 @@ app.MapGet("/auth/clear", async (HttpContext ctx, bool expired = false) =>
     ctx.Response.Redirect(expired ? "/login?expired=true" : "/");
 });
 
-
+app.MapGet("/api/Product/{**rest}", ForwardCatalogGet);
+app.MapGet("/api/Category/{**rest}", ForwardCatalogGet);
+app.MapGet("/api/Journal", ForwardCatalogGet);
+app.MapGet("/api/Journal/{**rest}", ForwardCatalogGet);
 
 app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode();
+    .AddInteractiveServerRenderMode()
+    .AddInteractiveWebAssemblyRenderMode()
+    .AddAdditionalAssemblies(typeof(MuuqWear.Client.ClientAssemblyMarker).Assembly);
 
 app.Run();
+
+static async Task ForwardCatalogGet(HttpContext ctx, IHttpClientFactory factory)
+{
+    var client = factory.CreateClient("CatalogProxy");
+    var relative = (ctx.Request.Path.Value ?? "/").TrimStart('/') + ctx.Request.QueryString.Value;
+    using var response = await client.GetAsync(relative, ctx.RequestAborted);
+    ctx.Response.StatusCode = (int)response.StatusCode;
+    if (response.Content.Headers.ContentType is not null)
+        ctx.Response.ContentType = response.Content.Headers.ContentType.ToString();
+    await response.Content.CopyToAsync(ctx.Response.Body, ctx.RequestAborted);
+}
