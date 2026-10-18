@@ -8,6 +8,7 @@
 
 # Alternate build output dirs (used when VS locks bin/obj)
 .build-out/
+**/.build-out/
 _build_out/
 _build_out2/
 _build_out3/
@@ -15,6 +16,7 @@ _build_out_api/
 _build_verify/
 _build_verify2/
 _build_verify3/
+_build_*/
 
 # Visual Studio
 .vs/
@@ -22,6 +24,7 @@ _build_verify3/
 *.suo
 *.userosscache
 *.sln.docstates
+MuuqWear.slnLaunch.user
 
 # Rider / VS Code / Cursor
 .idea/
@@ -49,4 +52,5 @@ Desktop.ini
 .DS_Store
 
 # Local / design reference (not part of the app)
-/docs/Muuqwear full design ref
+.design-reference/
+/docs/Muuqwear full design ref/
