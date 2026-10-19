@@ -1,0 +1,20 @@
+{
+  "hosting": {
+    "site": "muuqwear-6e2e0",
+    "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "run": {
+          "serviceId": "muuqwear-web",
+          "region": "me-central1"
+        }
+      }
+    ]
+  }
+}

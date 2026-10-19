@@ -1,4 +1,4 @@
-const SHELL = 'mw-shell-v2';
+const SHELL = 'mw-shell-v3';
 const CATALOG = 'mw-catalog-v1';
 
 const SHELL_ASSETS = [
@@ -12,6 +12,10 @@ const SHELL_ASSETS = [
     '/js/carousel.js',
     '/js/image-load.js',
     '/_framework/blazor.web.js',
+    '/favicon.ico',
+    '/favicon.png',
+    '/apple-touch-icon.png',
+    '/favicon-192.png',
     '/images/muuqwearlogo.png',
     '/lib/swiper/swiper-bundle.min.css',
     '/lib/swiper/swiper-bundle.min.js',

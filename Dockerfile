@@ -4,6 +4,8 @@ WORKDIR /src
 
 # Restore dependencies (layer cache when only app code changes)
 COPY MuuqWear.Web/MuuqWear.Web.csproj MuuqWear.Web/
+COPY MuuqWear.Client/MuuqWear.Client.csproj MuuqWear.Client/
+COPY MuuqWear.Shared/MuuqWear.Shared.csproj MuuqWear.Shared/
 COPY MuuqWear.Application/MuuqWear.Application.csproj MuuqWear.Application/
 COPY MuuqWear.Model/MuuqWear.Model.csproj MuuqWear.Model/
 RUN dotnet restore MuuqWear.Web/MuuqWear.Web.csproj

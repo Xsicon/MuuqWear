@@ -31,10 +31,33 @@
     <link rel="stylesheet" href="MuuqWear.Web.styles.css" />
     <link rel="stylesheet" href="MuuqWear.Client.styles.css" />
     <link rel="stylesheet" href="lib/swiper/swiper-bundle.min.css" />
-    <link rel="icon" type="image/png" href="/images/muuqwearlogo.png" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="manifest.webmanifest" />
     <meta name="theme-color" content="#1E2A47" />
     <HeadOutlet />
+    <script>
+        (function () {
+            var brand = "MuuqWear";
+            function apply() {
+                var text = (document.title || "").trim();
+                var prefix = new RegExp("^" + brand + "\\s*[\\-\\u2014\\u2013]\\s*", "i");
+                var suffix = new RegExp("\\s*[\\-\\u2014\\u2013]\\s*" + brand + "\\s*$", "i");
+                var page = text.replace(prefix, "").replace(suffix, "").trim();
+                var next = page && page.toLowerCase() !== brand.toLowerCase()
+                    ? brand + " - " + page
+                    : brand;
+                if (document.title !== next) document.title = next;
+            }
+            apply();
+            new MutationObserver(apply).observe(document.head, {
+                childList: true,
+                subtree: true,
+                characterData: true
+            });
+        })();
+    </script>
 </head>
 <body>
     <Routes />

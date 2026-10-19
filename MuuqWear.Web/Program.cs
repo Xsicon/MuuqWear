@@ -33,10 +33,18 @@ using MuuqWear.Application.Shared;
 using MuuqWear.Web.Authorization;
 using MuuqWear.Web.Components;
 using MuuqWear.Web.Services;
+using Microsoft.AspNetCore.HttpOverrides;
 using System.Security.Claims;
 
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 var apiBaseUrl = builder.Configuration["ApiBaseUrl"]!;
 
 
@@ -251,6 +259,8 @@ builder.Services.AddMemoryCache();
 builder.Services.AddAdminPortalAuthorization();
 
 var app = builder.Build();
+
+app.UseForwardedHeaders();
 
 if (app.Environment.IsDevelopment())
 {

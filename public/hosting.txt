@@ -1,0 +1,1 @@
+MuuqWear Hosting routes requests to Cloud Run.

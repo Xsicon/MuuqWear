@@ -1,0 +1,4 @@
+ASPNETCORE_ENVIRONMENT: "Production"
+ASPNETCORE_URLS: "http://+:8080"
+ApiBaseUrl: "https://muuqwear-api-97531432476.me-central1.run.app/"
+FrontendBaseUrl: "https://muuqwear-6e2e0.web.app"
