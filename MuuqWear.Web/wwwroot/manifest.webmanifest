@@ -1,0 +1,17 @@
+{
+  "name": "MuuqWear",
+  "short_name": "MuuqWear",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1E2A47",
+  "icons": [
+    {
+      "src": "/images/muuqwearlogo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

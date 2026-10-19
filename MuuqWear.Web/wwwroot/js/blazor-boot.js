@@ -31,6 +31,10 @@
     }
 
     function reloadOnce(reason) {
+        if (!navigator.onLine) {
+            return;
+        }
+
         if (window.__mwBlazorReloadScheduled) {
             return;
         }

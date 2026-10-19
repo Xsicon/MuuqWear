@@ -1051,7 +1051,16 @@
 
     private void OnCartChanged()
     {
-        InvokeAsync(StateHasChanged);
+        _ = InvokeAsync(async () =>
+        {
+            StateHasChanged();
+            try
+            {
+                await JS.InvokeVoidAsync("mwPublishCart");
+            }
+            catch (JSException) { }
+            catch (InvalidOperationException) { }
+        });
     }
 
     private void OnWishlistChanged()
@@ -1085,6 +1094,47 @@
     [JSInvokable]
     public Task<bool> AddToCartFromPage(AddCartItemModel request) =>
         CartStateService.AddItem(request);
+
+    [JSInvokable]
+    public Task<CartModel> GetCartForPage() =>
+        Task.FromResult(CartStateService.Cart);
+
+    [JSInvokable]
+    public async Task SyncLocalBag()
+    {
+        if (!isUserAuthenticated)
+            return;
+
+        var cartJson = await JS.InvokeAsync<string?>("getCartCookie");
+        if (!string.IsNullOrWhiteSpace(cartJson) && cartJson != "[]")
+        {
+            await CartStateService.LoadGuestCartFromCookie();
+            await CartStateService.MergeGuestCartAsync();
+        }
+
+        var wishlistJson = await JS.InvokeAsync<string?>("getWishlistCookie");
+        if (!string.IsNullOrWhiteSpace(wishlistJson) && wishlistJson != "[]")
+        {
+            await WishlistStateService.LoadGuestWishlistFromCookie();
+            await WishlistStateService.MergeGuestWishlistAsync();
+        }
+    }
+
+    [JSInvokable]
+    public async Task<CartModel> UpdateCartQtyFromPage(string cartItemId, int quantity)
+    {
+        if (Guid.TryParse(cartItemId, out var id))
+            await CartStateService.UpdateQuantity(id, quantity);
+        return CartStateService.Cart;
+    }
+
+    [JSInvokable]
+    public async Task<CartModel> RemoveCartItemFromPage(string cartItemId)
+    {
+        if (Guid.TryParse(cartItemId, out var id))
+            await CartStateService.RemoveItem(id);
+        return CartStateService.Cart;
+    }
 
     [JSInvokable]
     public Task<bool> ToggleWishlist(WishlistItemModel item) =>

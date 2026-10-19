@@ -1,14 +1,12 @@
 ﻿using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Components.Forms;
 using MuuqWear.Application.Services.AuthService;
 using MuuqWear.Model.Authentication;
 
-namespace MuuqWear.Web.Components.Pages.RegisterComponent;
-public partial class RegisterComponent
+namespace MuuqWear.Client.Pages;
+public partial class RegisterView
 {
 
-    [CascadingParameter]
-    private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
     RegisterModel registerModel = new();
     string message = string.Empty;
     string messageCssClass = string.Empty;
@@ -41,22 +39,17 @@ public partial class RegisterComponent
         }
     }
 
-    protected override async Task OnInitializedAsync()
+    [CascadingParameter]
+    private EditContext? EditContext { get; set; }
+
+    private string PasswordFieldClass =>
+        EditContext?.FieldCssClass(FieldIdentifier.Create(() => registerModel.Password)) ?? string.Empty;
+
+    private void OnPasswordInput(ChangeEventArgs e)
     {
-        if (AuthenticationStateTask is null) return;
-
-        var authState = await AuthenticationStateTask;
-
-        if (authState.User.Identity?.IsAuthenticated == true)
-        {
-            NavigationManager.NavigateTo("/profile", replace: true); //  Always /profile
-        }
-    }
-
-    private void HandlePasswordInput(string value)
-    {
-        registerModel.Password = value;
-        CalculateStrength(value);
+        registerModel.Password = e.Value?.ToString() ?? string.Empty;
+        CalculateStrength(registerModel.Password);
+        EditContext?.NotifyFieldChanged(FieldIdentifier.Create(() => registerModel.Password));
     }
 
     private void CalculateStrength(string password)

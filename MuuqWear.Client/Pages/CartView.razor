@@ -1,0 +1,298 @@
+@using MuuqWear.Application.Services.CartService
+@using MuuqWear.Model.Cart
+@inject CartStateService CartStateService
+@inject IJSRuntime JS
+@inject NavigationManager NavigationManager
+@implements IDisposable
+
+<PageTitle>Your Bag — MuuqWear</PageTitle>
+
+<div class="mw-cartp">
+    <div class="mw-cartp__container">
+
+        <!-- BREADCRUMB -->
+        <div class="mw-cartp__breadcrumb">
+            <a href="/">Home</a>
+            <span>&gt;</span>
+            <span class="mw-cartp__breadcrumb-active">Your Bag</span>
+        </div>
+
+        <!-- HEADER -->
+        <div class="mw-cartp__head">
+            <h1 class="mw-cartp__title">
+                Your Bag
+                @if (cart.TotalItems > 0)
+                {
+                    <span class="mw-cartp__count">@cart.TotalItems</span>
+                }
+            </h1>
+            <a href="/shop/apparel" class="mw-cartp__continue">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m15 18-6-6 6-6" />
+                </svg>
+                Continue Shopping
+            </a>
+        </div>
+
+        @if (!_ready)
+        {
+            <p class="mw-cartp__empty-text">Loading your bag…</p>
+        }
+        else if (cart.IsEmpty)
+        {
+            <!-- EMPTY STATE -->
+            <div class="mw-cartp__empty">
+                <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56"
+                     viewBox="0 0 24 24" fill="none" stroke="#A9B7CC"
+                     stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="8" cy="21" r="1" />
+                    <circle cx="19" cy="21" r="1" />
+                    <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
+                </svg>
+                <p class="mw-cartp__empty-text">Your bag is empty</p>
+                <a href="/shop/apparel" class="mw-cartp__shop-btn">Shop Now</a>
+            </div>
+        }
+        else
+        {
+            <div class="mw-cartp__grid">
+
+                <!-- LEFT: CART ITEMS -->
+                <div class="mw-cartp__items">
+
+                    @foreach (var item in cart.Items)
+                    {
+                        <div class="mw-cartp__item">
+
+                            <!-- IMAGE -->
+                            <a href="/productdetail/@item.ProductId" class="mw-cartp__img">
+                                <img src="@item.ProductImageUrl" alt="@item.ProductName" loading="lazy" />
+                            </a>
+
+                            <!-- INFO -->
+                            <div class="mw-cartp__info">
+
+                                <div class="mw-cartp__info-top">
+                                    <div>
+                                        <a href="/productdetail/@item.ProductId" class="mw-cartp__name">
+                                            @item.ProductName
+                                        </a>
+                                        <p class="mw-cartp__meta">Size: @item.Size</p>
+                                        @if (!string.IsNullOrEmpty(item.Color))
+                                        {
+                                            <p class="mw-cartp__meta">Color: @item.Color</p>
+                                        }
+                                        <p class="mw-cartp__meta">$@item.ProductPrice.ToString("F2") each</p>
+                                    </div>
+                                    <span class="mw-cartp__price">$@item.ItemTotal.ToString("F2")</span>
+                                </div>
+
+                                <div class="mw-cartp__controls">
+
+                                    <!-- QTY -->
+                                    <div class="mw-cartp__qty">
+                                        <button @onclick="() => DecreaseQty(item)" disabled="@(item.Quantity <= 1)" aria-label="Decrease quantity">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /></svg>
+                                        </button>
+                                        <span>@item.Quantity</span>
+                                        <button @onclick="() => IncreaseQty(item)" aria-label="Increase quantity">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /><path d="M12 5v14" /></svg>
+                                        </button>
+                                    </div>
+
+                                    <!-- REMOVE -->
+                                    <button class="mw-cartp__remove" @onclick="() => RemoveItem(item.Id)">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M3 6h18"></path>
+                                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                                            <line x1="10" x2="10" y1="11" y2="17"></line>
+                                            <line x1="14" x2="14" y1="11" y2="17"></line>
+                                        </svg>
+                                        Remove
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+                    }
+
+                </div>
+
+                <!-- RIGHT: ORDER SUMMARY -->
+                <div class="mw-cartp__summary-wrap">
+                    <div class="mw-cartp__summary">
+
+                        <h2 class="mw-cartp__summary-title">Order Summary</h2>
+
+                        <div class="mw-cartp__row">
+                            <span>Subtotal</span>
+                            <span>$@cart.Subtotal.ToString("F2")</span>
+                        </div>
+
+                        <div class="mw-cartp__row">
+                            <span>Shipping</span>
+                            <span class="mw-cartp__free">Free</span>
+                        </div>
+
+                        <div class="mw-cartp__row">
+                            <span>Tax (10%)</span>
+                            <span>$@cart.Tax.ToString("F2")</span>
+                        </div>
+
+                        <div class="mw-cartp__divider"></div>
+
+                        <div class="mw-cartp__row mw-cartp__row--total">
+                            <span>Total</span>
+                            <span>$@cart.Total.ToString("F2")</span>
+                        </div>
+
+                        <a href="/checkout" class="mw-cartp__checkout">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                            </svg>
+                            Checkout Securely
+                        </a>
+
+                        <p class="mw-cartp__secure">Secure checkout · SSL encrypted</p>
+
+                    </div>
+                </div>
+
+            </div>
+        }
+
+    </div>
+</div>
+
+@code {
+    private readonly Guid _watchId = Guid.NewGuid();
+    private CartModel cart = new();
+    private bool _ready;
+    private bool _watching;
+    private DotNetObjectReference<CartView>? _self;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        _self = DotNetObjectReference.Create(this);
+        try
+        {
+            await JS.InvokeVoidAsync("mwWatchCart", _watchId, _self);
+            _watching = true;
+        }
+        catch (JSException) { }
+        catch (InvalidOperationException) { }
+
+        if (!await TryLoadFromBridge())
+        {
+            await CartStateService.InitializeAsync(false, null);
+            cart = CartStateService.Cart;
+        }
+
+        _ready = true;
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public async Task OnCartUpdated()
+    {
+        if (await TryLoadFromBridge())
+            StateHasChanged();
+    }
+
+    private async Task DecreaseQty(CartItemModel item)
+    {
+        if (item.Quantity <= 1) return;
+        await ChangeQty(item.Id, item.Quantity - 1);
+    }
+
+    private async Task IncreaseQty(CartItemModel item)
+    {
+        await ChangeQty(item.Id, item.Quantity + 1);
+    }
+
+    private async Task ChangeQty(Guid cartItemId, int quantity)
+    {
+        var updated = await AskBridge("mwStorefrontUpdateCartQty", cartItemId, quantity);
+        if (updated is not null)
+        {
+            cart = updated;
+            return;
+        }
+
+        await CartStateService.InitializeAsync(false, null);
+        await CartStateService.UpdateQuantity(cartItemId, quantity);
+        cart = CartStateService.Cart;
+    }
+
+    private async Task RemoveItem(Guid cartItemId)
+    {
+        var updated = await AskBridge("mwStorefrontRemoveFromCart", cartItemId);
+        if (updated is not null)
+        {
+            cart = updated;
+            return;
+        }
+
+        await CartStateService.InitializeAsync(false, null);
+        await CartStateService.RemoveItem(cartItemId);
+        cart = CartStateService.Cart;
+    }
+
+    private async Task<bool> TryLoadFromBridge()
+    {
+        var remote = await AskBridge("mwStorefrontGetCart");
+        if (remote is null)
+        {
+            await Task.Delay(300);
+            remote = await AskBridge("mwStorefrontGetCart");
+        }
+
+        if (remote is null)
+            return false;
+
+        cart = remote;
+        return true;
+    }
+
+    private async Task<CartModel?> AskBridge(string method, Guid? cartItemId = null, int? quantity = null)
+    {
+        try
+        {
+            if (cartItemId is null)
+                return await JS.InvokeAsync<CartModel?>(method);
+
+            if (quantity is null)
+                return await JS.InvokeAsync<CartModel?>(method, cartItemId.Value.ToString());
+
+            return await JS.InvokeAsync<CartModel?>(method, cartItemId.Value.ToString(), quantity.Value);
+        }
+        catch (JSException)
+        {
+            return null;
+        }
+        catch (InvalidOperationException)
+        {
+            return null;
+        }
+    }
+
+    public void Dispose()
+    {
+        if (_watching)
+        {
+            try { _ = JS.InvokeVoidAsync("mwUnwatchCart", _watchId); }
+            catch (JSException) { }
+            catch (InvalidOperationException) { }
+        }
+
+        _self?.Dispose();
+    }
+}

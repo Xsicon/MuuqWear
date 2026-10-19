@@ -1044,4 +1044,24 @@ body.mw-nav-loading::before {
     }
 }
 
+#mw-offline-banner {
+    position: sticky;
+    top: 0;
+    z-index: 4000;
+    background: #1E2A47;
+    color: #fff;
+    text-align: center;
+    padding: 8px 16px;
+    font-size: 14px;
+}
+
+#mw-offline-banner[hidden] {
+    display: none;
+}
+
+body.mw-offline .hc-chat-launcher,
+body.mw-offline .hc-widget {
+    display: none !important;
+}
+
 

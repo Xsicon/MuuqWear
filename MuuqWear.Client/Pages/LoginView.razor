@@ -1,0 +1,324 @@
+﻿@using MuuqWear.Application.Services.AuthService
+@using MuuqWear.Application.Shared
+@using MuuqWear.Client.Auth
+@using MuuqWear.Model.Authentication
+@inject IAuthService IAuthService
+@inject IJSRuntime JS
+@inject AuthStateService AuthStateService
+@inject NavigationManager NavigationManager
+
+<section class="mw-auth">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-12 col-sm-10 col-md-6 col-lg-4 mt-5">
+                <div class="mw-auth-card text-center">
+                    <a href="/">
+                        <img src="/images/muuqwearlogo.png" class="mw-auth-logo mb-3" />
+                    </a>
+                    <h2 class="mw-auth-title">Welcome Back</h2>
+                    <p class="mw-auth-subtitle mb-4">Sign in to your account</p>
+
+                    <!-- TABS -->
+                    <div class="mw-auth-tabs mb-4">
+                        <button class="mw-auth-tab @(activeTab == "password" ? "active" : "")"
+                                @onclick='() => SwitchTab("password")'>
+                            Password
+                        </button>
+                        <button class="mw-auth-tab @(activeTab == "magic" ? "active" : "")"
+                                @onclick='() => SwitchTab("magic")'>
+                            Magic Link
+                        </button>
+                    </div>
+
+                    <!-- PASSWORD TAB -->
+                    @if (activeTab == "password")
+                    {
+                        <EditForm Model="@loginModel" OnValidSubmit="HandleLogin">
+                            <DataAnnotationsValidator />
+
+                            <div class="mb-3">
+                                <InputText class="form-control mw-input"
+                                           placeholder="Email"
+                                           @bind-Value="loginModel.Email" />
+                                <ValidationMessage For="@(() => loginModel.Email)" />
+                            </div>
+
+                            <div class="mb-3">
+                                <InputText class="form-control mw-input"
+                                           placeholder="Password"
+                                           type="password"
+                                           @bind-Value="loginModel.Password" />
+                                <ValidationMessage For="@(() => loginModel.Password)" />
+                            </div>
+                            <div class="d-flex justify-content-end mb-3">
+                                <a href="/forgot-password" class="mw-forgot-link">
+                                    Forgot password?
+                                </a>
+                            </div>
+                            <!-- REMEMBER ME -->
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <div class="form-check text-start">
+                                    <input type="checkbox"
+                                           class="form-check-input"
+                                           id="rememberMe"
+                                           @bind="rememberMe" />
+                                    <label class="form-check-label small" for="rememberMe">
+                                        Remember Me
+                                    </label>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="mw-btn-primary w-100" disabled="@isSubmitting">
+                                @if (isSubmitting)
+                                {
+                                    <span class="mw-btn-spinner"></span>
+                                    <span>Signing in...</span>
+                                }
+                                else
+                                {
+                                    <span>Login</span>
+                                }
+                            </button>
+
+                            @if (!string.IsNullOrEmpty(message))
+                            {
+                                <div class="@messageCssClass mt-2">
+                                    <span>@message</span>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(expiredMessage))
+                            {
+                                <div class="mw-alert mw-alert--warning">
+                                    @expiredMessage
+                                </div>
+                            }
+
+                        </EditForm>
+                    }
+
+                    <!-- MAGIC LINK TAB -->
+                    <!-- MAGIC LINK TAB -->
+                    @if (activeTab == "magic")
+                    {
+                        <div class="mw-magic-link">
+
+                            <p class="mw-auth-subtitle mb-4">
+                                No password needed. Enter your email
+                                and we'll send you a secure login link.
+                            </p>
+
+                            <div class="mb-4">
+                                <input class="form-control mw-input w-100"
+                                       placeholder="Enter your email address"
+                                       @bind="magicLinkEmail"
+                                       @bind:event="oninput" />
+                            </div>
+
+                            <button type="button"
+                                    class="mw-btn-primary w-100"
+                                    @onclick="HandleMagicLink"
+                                    disabled="@isSendingMagicLink">
+                                @if (isSendingMagicLink)
+                                {
+                                    <span class="mw-btn-spinner"></span>
+                                    <span>Sending link...</span>
+                                }
+                                else
+                                {
+                                    <span>Send Magic Link</span>
+                                }
+                            </button>
+
+                            @if (!string.IsNullOrEmpty(magicLinkMessage))
+                            {
+                                <div class="mt-3 p-3 rounded @(magicLinkMessageCss == "text-success" ? "mw-alert-success" : "mw-alert-error")">
+                                    <span>@magicLinkMessage</span>
+                                </div>
+                            }
+
+                        </div>
+                    }
+                    <!-- DIVIDER -->
+                    <div class="mw-auth-divider my-3">
+                        <span>or continue with</span>
+                    </div>
+
+                    <button type="button"
+                            class="mw-social-btn"
+                            @onclick="HandleGoogleSignIn"
+                            disabled="@isGoogleLoading">
+                        @if (isGoogleLoading)
+                        {
+                            <span class="mw-btn-spinner" style="border-top-color: #4285F4"></span>
+                        }
+                        else
+                        {
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+                                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+                                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+                                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
+                                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+                            </svg>
+                        }
+                        <span>@(isGoogleLoading ? "Connecting…" : "Continue with Google")</span>
+                    </button>
+
+                    <!-- REGISTER LINK -->
+                    <p class="text-center mt-4 small">
+                        Don't have an account?
+                        <a href="/register" class="mw-link">Create one</a>
+                    </p>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@code {
+    private bool isGoogleLoading = false;
+    private bool isSubmitting = false;
+    private string? expiredMessage;
+
+    private string activeTab = "password"; // default tab
+
+    private LoginModel loginModel = new();
+    private string message = "";
+    private string messageCssClass = "";
+    private bool rememberMe = false;
+
+    private string magicLinkEmail = string.Empty;
+    private bool isSendingMagicLink = false;
+    private string magicLinkMessage = string.Empty;
+    private string magicLinkMessageCss = string.Empty;
+
+    private void SwitchTab(string tab)
+    {
+        activeTab = tab;
+
+        // reset messages when switching tabs
+        message = string.Empty;
+        messageCssClass = string.Empty;
+        magicLinkMessage = string.Empty;
+        magicLinkMessageCss = string.Empty;
+    }
+
+    private async Task HandleLogin()
+    {
+        isSubmitting = true;
+        message = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            var result = await IAuthService.Login(loginModel);
+
+            if (result.Success && result.Data != null)
+            {
+                var authData = result.Data;
+                if (authData.Role != "user")
+                {
+                    message = "Access denied.";
+                    messageCssClass = "text-danger";
+                    return;
+                }
+
+                await PublicSignIn.CompleteAsync(
+                    result.Data,
+                    JS,
+                    NavigationManager,
+                    "/profile",
+                    rememberMe);
+            }
+            else
+            {
+                message = result.Message;
+                messageCssClass = "text-danger";
+            }
+        }
+        finally
+        {
+            isSubmitting = false;
+            StateHasChanged();
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        var uri = new Uri(NavigationManager.Uri);
+        if (uri.Query.Contains("expired=true", StringComparison.OrdinalIgnoreCase))
+            expiredMessage = "Your session has expired. Please sign in again.";
+    }
+
+    private async Task HandleMagicLink()
+    {
+        if (string.IsNullOrWhiteSpace(magicLinkEmail))
+        {
+            magicLinkMessage = "Please enter your email";
+            magicLinkMessageCss = "text-danger";
+            return;
+        }
+        if (!MuuqWearUtils.IsValidEmail(magicLinkEmail))
+        {
+            magicLinkMessage = "Please enter a valid email address";
+            magicLinkMessageCss = "text-danger";
+            return;
+        }
+
+        isSendingMagicLink = true;
+        magicLinkMessage = string.Empty;
+        StateHasChanged();
+
+        var result = await IAuthService.SendMagicLink(
+            new MagicLinkModel { Email = magicLinkEmail });
+
+        if (result.Success)
+        {
+            magicLinkMessage = result.Message;
+            magicLinkMessageCss = "text-success";
+        }
+        else
+        {
+            magicLinkMessage = result.Message;
+            magicLinkMessageCss = "text-danger";
+        }
+
+        isSendingMagicLink = false;
+    }
+
+    private async Task HandleGoogleSignIn()
+    {
+        try
+        {
+            isGoogleLoading = true;
+            StateHasChanged();
+
+            // get Google OAuth URL from backend (redirect back to this site)
+            var callbackUrl =
+                $"{NavigationManager.BaseUri.TrimEnd('/')}/auth/google-callback";
+            var result = await IAuthService.GetGoogleSignInUrl(callbackUrl);
+
+            if (result.Success && !string.IsNullOrEmpty(result.Data))
+            {
+                // navigate to Google OAuth URL
+                // forceLoad: true → full page redirect
+                // needed for OAuth flow
+                NavigationManager.NavigateTo(result.Data, forceLoad: true);
+            }
+            else
+            {
+                message = result.Message ?? "Failed to connect to Google";
+                messageCssClass = "text-danger";
+                isGoogleLoading = false;
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            message = "Something went wrong. Please try again.";
+            messageCssClass = "text-danger";
+            isGoogleLoading = false;
+            StateHasChanged();
+        }
+    }
+}

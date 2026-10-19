@@ -288,140 +288,107 @@ window.destroyMagnifier = function (imgSelector) {
     if (lens) lens.remove();
 };
 
-// =============================================
-// CART COOKIE FUNCTIONS
-// =============================================
-
-// get cart cookie 
-// returns JSON string of cart items or null
-window.getCartCookie = function () {
-    try {
-        // get all cookies as string
-        // e.g. "muuqwear_auth=xxx; muuqwear_cart=[...]"
-        var cookies = document.cookie.split(';');
-
-        for (var i = 0; i < cookies.length; i++) {
-            var cookie = cookies[i].trim();
-
-            // find cart cookie by name 
-            if (cookie.startsWith('muuqwear_cart=')) {
-                // extract value after "muuqwear_cart="
-                var value = cookie.substring('muuqwear_cart='.length);
-
-                // decode URI component 
-                // cookie values are URL encoded
-                return decodeURIComponent(value);
-            }
-        }
-
-        // cart cookie not found → return null 
-        return null;
-    }
-    catch (e) {
-        console.error('getCartCookie error:', e);
-        return null;
-    }
-};
-
-// set cart cookie 
-// json = JSON string of cart items
-// days = cookie expiry in days (default 7)
-window.setCartCookie = function (json, days) {
-    try {
-        // calculate expiry date 
-        var expires = new Date();
-        expires.setDate(expires.getDate() + (days || 7));
-
-        // encode JSON to be safe in cookie 
-        // handles special characters like []{}",
-        var encoded = encodeURIComponent(json);
-
-        // set cookie with:
-        // name=value → muuqwear_cart=[...]
-        // expires → 7 days 
-        // path=/ → available on all pages 
-        // SameSite=Lax → security 
-        document.cookie =
-            'muuqwear_cart=' + encoded +
-            '; expires=' + expires.toUTCString() +
-            '; path=/' +
-            '; SameSite=Lax';
-    }
-    catch (e) {
-        console.error('setCartCookie error:', e);
+// Guest cart and wishlist live in IndexedDB. Existing cookies are copied once.
+window.mwBag = {
+    _db: null,
+    open: function () {
+        var self = this;
+        if (self._db) return Promise.resolve(self._db);
+        return new Promise(function (resolve, reject) {
+            var request = indexedDB.open('mw-store', 1);
+            request.onupgradeneeded = function () {
+                if (!request.result.objectStoreNames.contains('bags'))
+                    request.result.createObjectStore('bags');
+            };
+            request.onsuccess = function () {
+                self._db = request.result;
+                resolve(self._db);
+            };
+            request.onerror = function () { reject(request.error); };
+        });
+    },
+    get: function (key) {
+        return this.open().then(function (db) {
+            return new Promise(function (resolve, reject) {
+                var request = db.transaction('bags', 'readonly').objectStore('bags').get(key);
+                request.onsuccess = function () { resolve(request.result || null); };
+                request.onerror = function () { reject(request.error); };
+            });
+        });
+    },
+    set: function (key, value) {
+        return this.open().then(function (db) {
+            return new Promise(function (resolve, reject) {
+                var request = db.transaction('bags', 'readwrite').objectStore('bags').put(value, key);
+                request.onsuccess = function () { resolve(); };
+                request.onerror = function () { reject(request.error); };
+            });
+        });
+    },
+    remove: function (key) {
+        return this.open().then(function (db) {
+            return new Promise(function (resolve, reject) {
+                var request = db.transaction('bags', 'readwrite').objectStore('bags').delete(key);
+                request.onsuccess = function () { resolve(); };
+                request.onerror = function () { reject(request.error); };
+            });
+        });
     }
 };
 
-// clear cart cookie 
-// called after merging guest cart on login
-window.clearCartCookie = function () {
-    try {
-        // set expiry to past date → browser deletes cookie 
-        document.cookie =
-            'muuqwear_cart=' +
-            '; expires=Thu, 01 Jan 1970 00:00:00 UTC' +
-            '; path=/' +
-            '; SameSite=Lax';
+function mwReadCookie(name) {
+    var cookies = document.cookie.split(';');
+    var prefix = name + '=';
+    for (var i = 0; i < cookies.length; i++) {
+        var cookie = cookies[i].trim();
+        if (cookie.indexOf(prefix) === 0)
+            return decodeURIComponent(cookie.substring(prefix.length));
     }
-    catch (e) {
-        console.error('clearCartCookie error:', e);
-    }
-};
+    return null;
+}
 
-// =============================================
-// WISHLIST COOKIE FUNCTIONS
-// =============================================
+function mwExpireCookie(name) {
+    document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax';
+}
 
-window.getWishlistCookie = function () {
-    try {
-        var cookies = document.cookie.split(';');
+function mwLoadBag(key, cookieName) {
+    return window.mwBag.get(key).then(function (stored) {
+        if (stored) return stored;
+        var legacy = mwReadCookie(cookieName);
+        if (!legacy) return null;
+        return window.mwBag.set(key, legacy).then(function () {
+            mwExpireCookie(cookieName);
+            return legacy;
+        });
+    }).catch(function (e) {
+        console.error('mwLoadBag error:', e);
+        return mwReadCookie(cookieName);
+    });
+}
 
-        for (var i = 0; i < cookies.length; i++) {
-            var cookie = cookies[i].trim();
+function mwSaveBag(key, cookieName, json) {
+    return window.mwBag.set(key, json).then(function () {
+        mwExpireCookie(cookieName);
+    }).catch(function (e) {
+        console.error('mwSaveBag error:', e);
+    });
+}
 
-            if (cookie.startsWith('muuqwear_wishlist=')) {
-                var value = cookie.substring('muuqwear_wishlist='.length);
-                return decodeURIComponent(value);
-            }
-        }
+function mwClearBag(key, cookieName) {
+    return window.mwBag.remove(key).then(function () {
+        mwExpireCookie(cookieName);
+    }).catch(function (e) {
+        console.error('mwClearBag error:', e);
+        mwExpireCookie(cookieName);
+    });
+}
 
-        return null;
-    }
-    catch (e) {
-        console.error('getWishlistCookie error:', e);
-        return null;
-    }
-};
-
-window.setWishlistCookie = function (json, days) {
-    try {
-        var expires = new Date();
-        expires.setDate(expires.getDate() + (days || 30));
-        var encoded = encodeURIComponent(json);
-
-        document.cookie =
-            'muuqwear_wishlist=' + encoded +
-            '; expires=' + expires.toUTCString() +
-            '; path=/' +
-            '; SameSite=Lax';
-    }
-    catch (e) {
-        console.error('setWishlistCookie error:', e);
-    }
-};
-
-window.clearWishlistCookie = function () {
-    try {
-        document.cookie =
-            'muuqwear_wishlist=' +
-            '; expires=Thu, 01 Jan 1970 00:00:00 UTC' +
-            '; path=/' +
-            '; SameSite=Lax';
-    }
-    catch (e) {
-        console.error('clearWishlistCookie error:', e);
-    }
-};
+window.getCartCookie = function () { return mwLoadBag('cart', 'muuqwear_cart'); };
+window.setCartCookie = function (json) { return mwSaveBag('cart', 'muuqwear_cart', json); };
+window.clearCartCookie = function () { return mwClearBag('cart', 'muuqwear_cart'); };
+window.getWishlistCookie = function () { return mwLoadBag('wishlist', 'muuqwear_wishlist'); };
+window.setWishlistCookie = function (json) { return mwSaveBag('wishlist', 'muuqwear_wishlist', json); };
+window.clearWishlistCookie = function () { return mwClearBag('wishlist', 'muuqwear_wishlist'); };
 
 // Sign in via single POST — no cache key round-trip (avoids json=1 fetch race).
 window.mwSignIn = function (session) {
@@ -904,6 +871,48 @@ window.mwStorefrontAddToCart = async function (request) {
     return await bridge.invokeMethodAsync('AddToCartFromPage', request);
 };
 
+window.mwStorefrontGetCart = async function () {
+    var bridge = window.__mwStorefrontBridge;
+    if (!bridge) return null;
+    return await bridge.invokeMethodAsync('GetCartForPage');
+};
+
+window.mwStorefrontUpdateCartQty = async function (id, qty) {
+    var bridge = window.__mwStorefrontBridge;
+    if (!bridge) return null;
+    return await bridge.invokeMethodAsync('UpdateCartQtyFromPage', id, qty);
+};
+
+window.mwStorefrontRemoveFromCart = async function (id) {
+    var bridge = window.__mwStorefrontBridge;
+    if (!bridge) return null;
+    return await bridge.invokeMethodAsync('RemoveCartItemFromPage', id);
+};
+
+window.mwPublishCart = function () {
+    window.dispatchEvent(new CustomEvent('mw-cart-updated'));
+};
+
+window.mwWatchCart = function (id, dotNetRef) {
+    var key = String(id);
+    window.__mwCartHandlers = window.__mwCartHandlers || {};
+    if (window.__mwCartHandlers[key])
+        window.removeEventListener('mw-cart-updated', window.__mwCartHandlers[key]);
+    var handler = function () {
+        dotNetRef.invokeMethodAsync('OnCartUpdated');
+    };
+    window.__mwCartHandlers[key] = handler;
+    window.addEventListener('mw-cart-updated', handler);
+};
+
+window.mwUnwatchCart = function (id) {
+    var key = String(id);
+    var handler = window.__mwCartHandlers && window.__mwCartHandlers[key];
+    if (!handler) return;
+    window.removeEventListener('mw-cart-updated', handler);
+    delete window.__mwCartHandlers[key];
+};
+
 window.mwPublishWishlist = function (ids) {
     window.__mwWishlistIds = ids || [];
     window.dispatchEvent(new CustomEvent('mw-wishlist-updated'));
@@ -935,6 +944,46 @@ window.mwUnwatchWishlist = function (id) {
     if (!handler) return;
     window.removeEventListener('mw-wishlist-updated', handler);
     delete window.__mwWlHandlers[key];
+};
+
+window.mwIsOnline = function () { return navigator.onLine; };
+
+window.mwWatchOnline = function (id, dotNetRef) {
+    var key = String(id);
+    window.__mwOnlineHandlers = window.__mwOnlineHandlers || {};
+    if (window.__mwOnlineHandlers[key])
+    {
+        window.removeEventListener('online', window.__mwOnlineHandlers[key]);
+        window.removeEventListener('offline', window.__mwOnlineHandlers[key]);
+    }
+    var handler = function () {
+        dotNetRef.invokeMethodAsync('OnConnectivityChanged', navigator.onLine);
+    };
+    window.__mwOnlineHandlers[key] = handler;
+    window.addEventListener('online', handler);
+    window.addEventListener('offline', handler);
+};
+
+window.mwUnwatchOnline = function (id) {
+    var key = String(id);
+    var handler = window.__mwOnlineHandlers && window.__mwOnlineHandlers[key];
+    if (!handler) return;
+    window.removeEventListener('online', handler);
+    window.removeEventListener('offline', handler);
+    delete window.__mwOnlineHandlers[key];
+};
+
+window.mwTokenStore = {
+    key: 'mw-refresh',
+    getRefresh: function () {
+        try { return sessionStorage.getItem(this.key); } catch (e) { return null; }
+    },
+    setRefresh: function (value) {
+        try {
+            if (value) sessionStorage.setItem(this.key, value);
+            else sessionStorage.removeItem(this.key);
+        } catch (e) { }
+    }
 };
 
 window.mwCatalogCache = {
@@ -992,3 +1041,35 @@ window.mwCatalogCache = {
         localStorage.setItem(this.indexKey, JSON.stringify(index));
     }
 };
+
+(function () {
+    function applyOffline(offline) {
+        document.body.classList.toggle('mw-offline', !!offline);
+        var banner = document.getElementById('mw-offline-banner');
+        if (!banner) {
+            banner = document.createElement('div');
+            banner.id = 'mw-offline-banner';
+            banner.setAttribute('role', 'status');
+            banner.textContent = 'You are offline. Saved pages and your bag still open. Checkout and chat need a connection.';
+            document.body.prepend(banner);
+        }
+        banner.hidden = !offline;
+    }
+
+    window.mwSyncBag = function () {
+        var bridge = window.__mwStorefrontBridge;
+        if (!bridge) return Promise.resolve();
+        return bridge.invokeMethodAsync('SyncLocalBag').catch(function () { });
+    };
+
+    window.addEventListener('offline', function () { applyOffline(true); });
+    window.addEventListener('online', function () {
+        applyOffline(false);
+        window.mwSyncBag();
+    });
+    applyOffline(!navigator.onLine);
+
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/service-worker.js').catch(function () { });
+    }
+})();

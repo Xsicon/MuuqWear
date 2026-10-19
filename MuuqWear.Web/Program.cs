@@ -97,6 +97,12 @@ builder.Services.AddHttpClient("CatalogProxy", client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
 });
+builder.Services.AddHttpClient("CheckoutProxy", client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+})
+.AddHttpMessageHandler<AuthenticatedHttpHandler>()
+.AddHttpMessageHandler<AffiliateCookieHandler>();
 builder.Services.AddHttpClient<IMuuqsimoService, MuuqsimoService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
@@ -346,6 +352,12 @@ app.MapGet("/api/Category/{**rest}", ForwardCatalogGet);
 app.MapGet("/api/Journal", ForwardCatalogGet);
 app.MapGet("/api/Journal/{**rest}", ForwardCatalogGet);
 
+var checkoutVerbs = new[] { HttpMethods.Get, HttpMethods.Post, HttpMethods.Put, HttpMethods.Delete };
+app.MapMethods("/api/Cart", checkoutVerbs, ForwardCheckout).DisableAntiforgery();
+app.MapMethods("/api/Cart/{**rest}", checkoutVerbs, ForwardCheckout).DisableAntiforgery();
+app.MapPost("/api/Order/place", ForwardCheckout).DisableAntiforgery();
+app.MapPost("/api/Payment/create-intent/{orderId:guid}", ForwardCheckout).DisableAntiforgery();
+
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
     .AddInteractiveWebAssemblyRenderMode()
@@ -361,5 +373,31 @@ static async Task ForwardCatalogGet(HttpContext ctx, IHttpClientFactory factory)
     ctx.Response.StatusCode = (int)response.StatusCode;
     if (response.Content.Headers.ContentType is not null)
         ctx.Response.ContentType = response.Content.Headers.ContentType.ToString();
+    await response.Content.CopyToAsync(ctx.Response.Body, ctx.RequestAborted);
+}
+
+static async Task ForwardCheckout(HttpContext ctx, IHttpClientFactory factory)
+{
+    if (ctx.User.Identity?.IsAuthenticated != true)
+    {
+        ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
+        return;
+    }
+
+    var client = factory.CreateClient("CheckoutProxy");
+    var relative = (ctx.Request.Path.Value ?? "/").TrimStart('/') + ctx.Request.QueryString.Value;
+    using var outbound = new HttpRequestMessage(new HttpMethod(ctx.Request.Method), relative);
+    if (ctx.Request.ContentLength is > 0)
+    {
+        outbound.Content = new StreamContent(ctx.Request.Body);
+        if (!string.IsNullOrEmpty(ctx.Request.ContentType))
+            outbound.Content.Headers.TryAddWithoutValidation("Content-Type", ctx.Request.ContentType);
+    }
+
+    using var response = await client.SendAsync(
+        outbound, HttpCompletionOption.ResponseHeadersRead, ctx.RequestAborted);
+    ctx.Response.StatusCode = (int)response.StatusCode;
+    if (response.Content.Headers.ContentType is { } contentType)
+        ctx.Response.ContentType = contentType.ToString();
     await response.Content.CopyToAsync(ctx.Response.Body, ctx.RequestAborted);
 }
