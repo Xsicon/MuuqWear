@@ -30,6 +30,10 @@ using MuuqWear.Application.Services.ProductService;
 using MuuqWear.Application.Services.ProfileService;
 using MuuqWear.Application.Services.VoteService;
 using MuuqWear.Application.Shared;
+using MuuqWear.Client.Auth;
+using MuuqWear.Client.Checkout;
+using MuuqWear.Client.Offline;
+using MuuqWear.Model.Site;
 using MuuqWear.Web.Authorization;
 using MuuqWear.Web.Components;
 using MuuqWear.Web.Services;
@@ -101,6 +105,7 @@ builder.Services.AddHttpClient<IJournalService, JournalService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
 });
+builder.Services.AddSingleton<StorefrontFirestore>();
 builder.Services.AddHttpClient("CatalogProxy", client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
@@ -149,6 +154,18 @@ builder.Services.AddScoped<NavigationLoadingService>();
 builder.Services.AddScoped<StorefrontHomeCacheService>();
 builder.Services.AddScoped<CartStateService>();
 builder.Services.AddScoped<WishlistStateService>();
+builder.Services.AddScoped<FirebaseSession>();
+builder.Services.AddScoped<BrowserTokenStore>();
+builder.Services.AddScoped<IFirebaseIdTokenSource>(sp => sp.GetRequiredService<FirebaseSession>());
+builder.Services.AddTransient<FirebaseIdTokenHandler>();
+builder.Services.AddHttpClient("MuuqWearFunctions", client =>
+{
+    var functionsBase = builder.Configuration["FunctionsBaseUrl"];
+    if (!string.IsNullOrWhiteSpace(functionsBase))
+        client.BaseAddress = new Uri(functionsBase);
+});
+builder.Services.AddScoped<CheckoutSessionClient>();
+builder.Services.AddScoped<OfflineQueue>();
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<CustomAuthenticationStateProvider>();
 builder.Services.AddScoped<AuthenticatedHttpHandler>();
@@ -282,6 +299,20 @@ app.UseAuthorization();
 app.UseMiddleware<TokenRefreshMiddleware>(); // ← add this line
 app.UseMiddleware<AffiliateTrackingMiddleware>();
 app.UseAntiforgery();
+app.Use(async (ctx, next) =>
+{
+    var config = ctx.RequestServices.GetRequiredService<IConfiguration>();
+    if (CutoverFreeze.Enabled(config["Cutover:FreezeWrites"])
+        && !CutoverFreeze.Allows(ctx.Request.Method, ctx.Request.Path)
+        && (ctx.Request.Path.StartsWithSegments("/api") || ctx.Request.Path.StartsWithSegments("/auth")))
+    {
+        ctx.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+        await ctx.Response.WriteAsJsonAsync(new { error = PageCopy.WritesPaused });
+        return;
+    }
+
+    await next();
+});
 
 //Set Cookie
 
@@ -357,10 +388,10 @@ app.MapGet("/auth/clear", async (HttpContext ctx, bool expired = false) =>
     ctx.Response.Redirect(expired ? "/login?expired=true" : "/");
 });
 
-app.MapGet("/api/Product/{**rest}", ForwardCatalogGet);
-app.MapGet("/api/Category/{**rest}", ForwardCatalogGet);
-app.MapGet("/api/Journal", ForwardCatalogGet);
-app.MapGet("/api/Journal/{**rest}", ForwardCatalogGet);
+app.MapGet("/api/Product/{**rest}", ServeStorefrontCatalog);
+app.MapGet("/api/Category/{**rest}", ServeStorefrontCatalog);
+app.MapGet("/api/Journal", ServeStorefrontCatalog);
+app.MapGet("/api/Journal/{**rest}", ServeStorefrontCatalog);
 
 var checkoutVerbs = new[] { HttpMethods.Get, HttpMethods.Post, HttpMethods.Put, HttpMethods.Delete };
 app.MapMethods("/api/Cart", checkoutVerbs, ForwardCheckout).DisableAntiforgery();
@@ -375,15 +406,11 @@ app.MapRazorComponents<App>()
 
 app.Run();
 
-static async Task ForwardCatalogGet(HttpContext ctx, IHttpClientFactory factory)
+static async Task ServeStorefrontCatalog(HttpContext ctx, StorefrontFirestore store)
 {
-    var client = factory.CreateClient("CatalogProxy");
-    var relative = (ctx.Request.Path.Value ?? "/").TrimStart('/') + ctx.Request.QueryString.Value;
-    using var response = await client.GetAsync(relative, ctx.RequestAborted);
-    ctx.Response.StatusCode = (int)response.StatusCode;
-    if (response.Content.Headers.ContentType is not null)
-        ctx.Response.ContentType = response.Content.Headers.ContentType.ToString();
-    await response.Content.CopyToAsync(ctx.Response.Body, ctx.RequestAborted);
+    var payload = await store.HandleAsync(ctx.Request, ctx.RequestAborted);
+    ctx.Response.StatusCode = StatusCodes.Status200OK;
+    await ctx.Response.WriteAsJsonAsync(payload, ctx.RequestAborted);
 }
 
 static async Task ForwardCheckout(HttpContext ctx, IHttpClientFactory factory)

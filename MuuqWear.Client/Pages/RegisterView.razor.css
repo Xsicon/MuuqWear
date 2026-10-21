@@ -1,4 +1,38 @@
-﻿/* Page background */
+﻿.mw-auth-panel {
+    animation: mw-auth-in 0.28s ease;
+}
+
+.mw-auth-panel.text-center .mw-auth-title,
+.mw-auth-panel.text-center .mw-auth-subtitle {
+    text-align: center;
+}
+
+@keyframes mw-auth-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+.mw-link-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    color: #1E2A47;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+    .mw-link-btn:hover {
+        text-decoration: underline;
+    }
+
+/* Page background */
 .mw-auth {
     background: #F5F6F8;
     min-height: 100vh;

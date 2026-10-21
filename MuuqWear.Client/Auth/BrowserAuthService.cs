@@ -1,4 +1,3 @@
-using System.Net.Http.Json;
 using MuuqWear.Application.Services.AuthService;
 using MuuqWear.Application.Shared;
 using MuuqWear.Model.Authentication;
@@ -7,101 +6,115 @@ namespace MuuqWear.Client.Auth;
 
 public sealed class BrowserAuthService : IAuthService
 {
-    private readonly HttpClient _http;
+    private readonly FirebaseSession _firebase;
     private readonly BrowserTokenStore _tokens;
 
-    public BrowserAuthService(HttpClient http, BrowserTokenStore tokens)
+    public BrowserAuthService(FirebaseSession firebase, BrowserTokenStore tokens)
     {
-        _http = http;
+        _firebase = firebase;
         _tokens = tokens;
     }
 
     public Task<bool> IsUserLoggedIn() =>
         Task.FromResult(!string.IsNullOrWhiteSpace(_tokens.AccessToken));
 
-    public Task<Response<int>> Register(RegisterModel request) =>
-        Post<int>("api/Auth/register", request);
-
-    public async Task<Response<AuthResponseModel>> VerifyOTP(VerifyOTPModel request)
+    public async Task<Response<int>> Register(RegisterModel request)
     {
-        var response = await Post<AuthResponseModel>("api/Auth/verifyotp", request);
-        if (response.Success && response.Data is not null)
-            await _tokens.SaveAsync(response.Data);
-        return response;
+        if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
+            return Response<int>.Fail("Email and password are required");
+        if (request.Password != request.ConfirmPassword)
+            return Response<int>.Fail("Passwords do not match");
+
+        var result = await _firebase.SignUpAsync(request.Email, request.Password, request.FullName);
+        if (result.Ok)
+            return Response<int>.SuccessResponse(1, "Check your email to confirm your account.");
+
+        if (!IsEmailAlreadyUsed(result.Message))
+            return Response<int>.Fail(result.Message ?? "Unable to create the account.");
+
+        var existing = await _firebase.SignInAsync(request.Email, request.Password);
+        if (!existing.Ok)
+            return Response<int>.Fail("An account with that email already exists. Please sign in.");
+        if (existing.EmailVerified)
+            return Response<int>.Fail("An account with that email already exists. Please sign in.");
+
+        var resent = await _firebase.SendEmailVerificationAsync();
+        if (!resent.Ok)
+            return Response<int>.Fail(resent.Message ?? "Unable to send the confirmation email.");
+        return Response<int>.SuccessResponse(1, "Check your email to confirm your account.");
     }
+
+    private static bool IsEmailAlreadyUsed(string? message) =>
+        !string.IsNullOrWhiteSpace(message) &&
+        message.Contains("already exists", StringComparison.OrdinalIgnoreCase);
 
     public async Task<Response<AuthResponseModel>> Login(LoginModel request)
     {
-        var response = await Post<AuthResponseModel>("api/Auth/login", request);
-        if (response.Success && response.Data is not null)
-            await _tokens.SaveAsync(response.Data);
-        return response;
+        var result = await _firebase.SignInAsync(request.Email ?? "", request.Password ?? "");
+        if (result.MfaRequired)
+            return Response<AuthResponseModel>.Fail("Enter your authenticator code");
+        if (!result.Ok)
+            return Response<AuthResponseModel>.Fail(result.Message ?? "Email or password is incorrect.");
+        var session = await StoreSessionAsync(result);
+        return Response<AuthResponseModel>.SuccessResponse(session);
     }
 
-    public Task<Response<int>> Logout() =>
-        Post<int>("api/Auth/logout", new { });
+    public Task<Response<AuthResponseModel>> VerifyOTP(VerifyOTPModel request)
+    {
+        return CompleteMfaAsync(request.Otp);
+    }
 
-    public Task<Response<int>> SendMagicLink(MagicLinkModel request)
+    public async Task<Response<int>> Logout()
+    {
+        await _firebase.SignOutAsync();
+        await _tokens.SaveAsync(new AuthResponseModel());
+        return Response<int>.SuccessResponse(1);
+    }
+
+    public Task<Response<int>> SendMagicLink(MagicLinkModel request) =>
+        SendPasswordReset(new ForgotPasswordModel { Email = request.Email });
+
+    public Task<Response<AuthResponseModel>> VerifyMagicLink(MagicLinkVerifyModel request) =>
+        Task.FromResult(Response<AuthResponseModel>.Fail("Open the reset email, then sign in with your new password."));
+
+    public Task<Response<string>> GetGoogleSignInUrl(string? redirectTo = null) =>
+        Task.FromResult(Response<string>.Fail("Sign in with email and password."));
+
+    public async Task<Response<int>> SendPasswordReset(ForgotPasswordModel request)
     {
         if (string.IsNullOrWhiteSpace(request.Email))
-            return Task.FromResult(Response<int>.Fail("Please enter your email"));
-        return Post<int>("api/Auth/magic-link", request);
+            return Response<int>.Fail("Email is required");
+        var result = await _firebase.SendPasswordResetAsync(request.Email);
+        if (!result.Ok)
+            return Response<int>.Fail(result.Message ?? "Unable to send the reset email.");
+        return Response<int>.SuccessResponse(1, "Check your email");
     }
 
-    public async Task<Response<AuthResponseModel>> VerifyMagicLink(MagicLinkVerifyModel request)
+    public Task<Response<int>> UpdatePassword(ResetPasswordModel request) =>
+        Task.FromResult(Response<int>.Fail("Use the reset email from Firebase Auth."));
+
+    private async Task<Response<AuthResponseModel>> CompleteMfaAsync(string? code)
     {
-        var response = await Post<AuthResponseModel>("api/Auth/verify-magic-link", request);
-        if (response.Success && response.Data is not null)
-            await _tokens.SaveAsync(response.Data);
-        return response;
+        var result = await _firebase.CompleteTotpSignInAsync(code ?? "");
+        if (!result.Ok)
+            return Response<AuthResponseModel>.Fail(result.Message ?? "That authenticator code is not valid.");
+        var session = await StoreSessionAsync(result);
+        return Response<AuthResponseModel>.SuccessResponse(session);
     }
 
-    public async Task<Response<string>> GetGoogleSignInUrl(string? redirectTo = null)
+    private async Task<AuthResponseModel> StoreSessionAsync(FirebaseAuthResult result)
     {
-        var url = "api/Auth/google-signin-url";
-        if (!string.IsNullOrWhiteSpace(redirectTo))
-            url += "?redirectTo=" + Uri.EscapeDataString(redirectTo);
-
-        try
+        var token = await _firebase.GetIdTokenAsync();
+        var session = new AuthResponseModel
         {
-            return await _http.GetFromJsonAsync<Response<string>>(url)
-                ?? Response<string>.Fail("Unexpected response from server");
-        }
-        catch
-        {
-            return Response<string>.Fail("Unable to connect to server. Please try again.");
-        }
-    }
-
-    public Task<Response<int>> SendPasswordReset(ForgotPasswordModel request)
-    {
-        if (string.IsNullOrWhiteSpace(request.Email))
-            return Task.FromResult(Response<int>.Fail("Email is required"));
-        return Post<int>("api/Auth/forgot-password", request);
-    }
-
-    public Task<Response<int>> UpdatePassword(ResetPasswordModel request)
-    {
-        if (string.IsNullOrWhiteSpace(request.NewPassword))
-            return Task.FromResult(Response<int>.Fail("Password is required"));
-        if (request.NewPassword != request.ConfirmPassword)
-            return Task.FromResult(Response<int>.Fail("Passwords do not match"));
-        return Post<int>("api/Auth/reset-password", request);
-    }
-
-    private async Task<Response<T>> Post<T>(string url, object body)
-    {
-        try
-        {
-            var result = await _http.PostAsJsonAsync(url, body);
-            return await result.Content.ReadFromJsonAsync<Response<T>>()
-                ?? Response<T>.Fail(result.IsSuccessStatusCode
-                    ? "Unexpected response from server"
-                    : $"Server error: {result.StatusCode}");
-        }
-        catch
-        {
-            return Response<T>.Fail("Unable to connect to server. Please try again.");
-        }
+            AccessToken = token,
+            RefreshToken = "firebase",
+            Email = result.Email,
+            UserId = result.Uid,
+            UserName = result.Email,
+            Role = "Customer"
+        };
+        await _tokens.SaveAsync(session);
+        return session;
     }
 }

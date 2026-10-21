@@ -1,33 +1,88 @@
 ﻿using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
+using Microsoft.Extensions.Configuration;
 using MuuqWear.Application.Shared;
 using MuuqWear.Model.Authentication;
 using MuuqWear.Model.OrderReturn;
 using System.Net.Http.Json;
+using System.Text.Json.Serialization;
 
 namespace MuuqWear.Application.Services.AuthService;
 public class AuthService : IAuthService
 {
     private readonly HttpClient _http;
     private readonly ProtectedSessionStorage _sessionStorage;
+    private readonly IConfiguration _config;
     public bool IsNewSignup { get; private set; } = false;
 
 
-    public AuthService(HttpClient http, ProtectedSessionStorage sessionStorage)
+    public AuthService(HttpClient http, ProtectedSessionStorage sessionStorage, IConfiguration config)
     {
         this._http = http;
         this._sessionStorage = sessionStorage;
+        _config = config;
     }
     public async Task<Response<int>> Register(RegisterModel request)
     {
-        var result = await _http.PostAsJsonAsync("api/Auth/register", request);
-
-        var response = await result.Content.ReadFromJsonAsync<Response<int>>();
-
-        return response ?? new Response<int>
+        var apiKey = _config["Firebase:ApiKey"];
+        if (string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(request.Email) ||
+            string.IsNullOrWhiteSpace(request.Password))
         {
-            Success = false,
-            Message = "Empty response from server"
-        };
+            return Response<int>.Fail("Unable to create the account. Please try again.");
+        }
+
+        using var signup = await _http.PostAsJsonAsync(
+            IdentityUrl("accounts:signUp", apiKey),
+            new
+            {
+                email = request.Email,
+                password = request.Password,
+                displayName = request.FullName,
+                returnSecureToken = true
+            });
+        var signupBody = await signup.Content.ReadFromJsonAsync<IdentityResponse>();
+        if (!signup.IsSuccessStatusCode)
+        {
+            var code = signupBody?.Error?.Message ?? "";
+            if (code.StartsWith("EMAIL_EXISTS", StringComparison.OrdinalIgnoreCase))
+                return Response<int>.Fail("An account with that email already exists. Please sign in.");
+            if (code.StartsWith("WEAK_PASSWORD", StringComparison.OrdinalIgnoreCase))
+                return Response<int>.Fail("Choose a stronger password.");
+            return Response<int>.Fail("Unable to create the account. Please try again.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(signupBody?.IdToken))
+        {
+            await _http.PostAsJsonAsync(
+                IdentityUrl("accounts:sendOobCode", apiKey),
+                new { requestType = "VERIFY_EMAIL", idToken = signupBody.IdToken });
+        }
+
+        return Response<int>.SuccessResponse(1, "Check your email to confirm your account.");
+    }
+
+    private static Uri IdentityUrl(string method, string apiKey) =>
+        new($"https://identitytoolkit.googleapis.com/v1/{method}?key={Uri.EscapeDataString(apiKey)}");
+
+    private sealed class IdentityResponse
+    {
+        [JsonPropertyName("idToken")]
+        public string? IdToken { get; set; }
+        [JsonPropertyName("refreshToken")]
+        public string? RefreshToken { get; set; }
+        [JsonPropertyName("localId")]
+        public string? LocalId { get; set; }
+        [JsonPropertyName("email")]
+        public string? Email { get; set; }
+        [JsonPropertyName("displayName")]
+        public string? DisplayName { get; set; }
+        [JsonPropertyName("error")]
+        public IdentityErrorBody? Error { get; set; }
+    }
+
+    private sealed class IdentityErrorBody
+    {
+        [JsonPropertyName("message")]
+        public string? Message { get; set; }
     }
     public async Task<Response<AuthResponseModel>> VerifyOTP(VerifyOTPModel request)
     {
@@ -61,16 +116,49 @@ public class AuthService : IAuthService
     {
         try
         {
-            var result = await _http.PostAsJsonAsync("api/Auth/login", request);
-            var response = await result.Content.ReadFromJsonAsync<Response<AuthResponseModel>>();
-            if (response != null)
-                return response;
+            var apiKey = _config["Firebase:ApiKey"];
+            if (string.IsNullOrWhiteSpace(apiKey) ||
+                string.IsNullOrWhiteSpace(request.Email) ||
+                string.IsNullOrWhiteSpace(request.Password))
+            {
+                return new Response<AuthResponseModel>
+                {
+                    Success = false,
+                    Message = "Invalid email or password."
+                };
+            }
+
+            using var signin = await _http.PostAsJsonAsync(
+                IdentityUrl("accounts:signInWithPassword", apiKey),
+                new
+                {
+                    email = request.Email,
+                    password = request.Password,
+                    returnSecureToken = true
+                });
+            var body = await signin.Content.ReadFromJsonAsync<IdentityResponse>();
+            if (!signin.IsSuccessStatusCode || string.IsNullOrWhiteSpace(body?.IdToken))
+            {
+                return new Response<AuthResponseModel>
+                {
+                    Success = false,
+                    Message = "Invalid email or password."
+                };
+            }
+
             return new Response<AuthResponseModel>
             {
-                Success = false,
-                Message = result.IsSuccessStatusCode
-                        ? "Unexpected response from server"
-                        : $"Server error: {result.StatusCode}"
+                Success = true,
+                Message = "Login Successful",
+                Data = new AuthResponseModel
+                {
+                    AccessToken = body.IdToken,
+                    RefreshToken = body.RefreshToken,
+                    Email = body.Email ?? request.Email,
+                    UserId = body.LocalId,
+                    UserName = body.DisplayName ?? "",
+                    Role = FirebaseIdTokenRole.FromAccessToken(body.IdToken)
+                }
             };
         }
         catch (Exception ex)

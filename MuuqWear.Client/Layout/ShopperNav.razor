@@ -1,0 +1,244 @@
+@inject NavigationManager NavigationManager
+@inject CartStateService CartStateService
+@inject WishlistStateService WishlistStateService
+@inject IAuthService Auth
+@inject FirebaseSession Firebase
+@implements IDisposable
+@using MuuqWear.Application.Services.AuthService
+@using MuuqWear.Application.Services.CartService
+@using MuuqWear.Application.Services.WishlistService
+@using MuuqWear.Client.Auth
+
+<div>
+    <header class="mw-header" role="banner">
+        <div class="mw-header__bar">
+            <div class="mw-header__inner">
+                <a href="/" class="mw-logo text-decoration-none">
+                    <img src="/images/muuqwearlogo.png" alt="MuuqWear logo" class="mw-logo__img img-fluid" />
+                    <span class="mw-logo__text text-uppercase fw-bolder ms-2 d-none d-md-flex">MuuqWear</span>
+                </a>
+
+                <div class="mw-header__desktop d-none d-md-flex">
+                    <nav class="mw-nav">
+                        <NavLink class="mw-nav__link" href="/" Match="NavLinkMatch.All">Home</NavLink>
+                        <NavLink class="mw-nav__link" href="/shop/apparel">Apparel</NavLink>
+                        <NavLink class="mw-nav__link" href="/shop/accessories">Accessories</NavLink>
+                        <a class="mw-nav__link" href="/community" data-enhance-nav="false">Community</a>
+                        <NavLink class="mw-nav__link" href="/journal">Journal</NavLink>
+                    </nav>
+
+                    <div class="mw-header__icons">
+                        <button class="mw-icon-btn" aria-label="Search" @onclick="GoShop">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="8" />
+                                <path d="m21 21-4.3-4.3" />
+                            </svg>
+                        </button>
+
+                        <button class="mw-icon-btn mw-icon-btn--cart" aria-label="@CartAriaLabel" @onclick="GoCart">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="8" cy="21" r="1" />
+                                <circle cx="19" cy="21" r="1" />
+                                <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
+                            </svg>
+                            @if (CartItemCount > 0)
+                            {
+                                <span class="mw-cart-badge" aria-hidden="true">@CartItemCount</span>
+                            }
+                        </button>
+
+                        <div class="mw-profile-dropdown">
+                            @if (_signedIn)
+                            {
+                                <button class="mw-icon-btn" aria-label="Profile" @onclick="ToggleProfile">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="12" cy="7" r="4"></circle>
+                                    </svg>
+                                </button>
+                                @if (_profileOpen)
+                                {
+                                    <div class="mw-profile-overlay" @onclick="CloseProfile"></div>
+                                    <div class="mw-profile-menu">
+                                        <div class="mw-profile-menu__header">
+                                            <p class="mw-profile-menu__name">Account</p>
+                                            <p class="mw-profile-menu__email">@_email</p>
+                                        </div>
+                                        <a href="/profile" class="mw-profile-menu__item" data-enhance-nav="false" @onclick="CloseProfile">
+                                            <span>My Orders</span>
+                                        </a>
+                                        <a href="/settings" class="mw-profile-menu__item" data-enhance-nav="false" @onclick="CloseProfile">
+                                            <span>Settings</span>
+                                        </a>
+                                        <div class="mw-profile-menu__divider"></div>
+                                        <button class="mw-profile-menu__item mw-profile-menu__signout" @onclick="HandleSignOut">
+                                            <span>Sign Out</span>
+                                        </button>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <NavLink href="/login" class="mw-signin-btn">Sign In</NavLink>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mw-header__mobile d-flex d-md-none">
+                    <button class="mw-icon-btn mw-icon-btn--mobile" aria-label="Search" @onclick="GoShop">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8" />
+                            <path d="m21 21-4.3-4.3" />
+                        </svg>
+                    </button>
+                    <button class="mw-icon-btn mw-icon-btn--mobile mw-icon-btn--cart" aria-label="@CartAriaLabel" @onclick="GoCart">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <circle cx="8" cy="21" r="1" />
+                            <circle cx="19" cy="21" r="1" />
+                            <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
+                        </svg>
+                        @if (CartItemCount > 0)
+                        {
+                            <span class="mw-cart-badge mw-cart-badge--mobile" aria-hidden="true">@CartItemCount</span>
+                        }
+                    </button>
+                    @if (_signedIn)
+                    {
+                        <a href="/profile" class="mw-icon-btn mw-icon-btn--mobile" aria-label="Profile" data-enhance-nav="false">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                        </a>
+                    }
+                    else
+                    {
+                        <NavLink href="/login" class="mw-icon-btn mw-icon-btn--mobile" aria-label="Sign in">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                        </NavLink>
+                    }
+                    <button class="mw-icon-btn mw-hamburger mw-icon-btn--mobile"
+                            aria-label="@(_menuOpen ? "Close menu" : "Open menu")"
+                            aria-expanded="@_menuOpen"
+                            @onclick="ToggleMenu">
+                        @if (_menuOpen)
+                        {
+                            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M18 6 6 18" /><path d="m6 6 12 12" />
+                            </svg>
+                        }
+                        else
+                        {
+                            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="4" x2="20" y1="12" y2="12" /><line x1="4" x2="20" y1="6" y2="6" /><line x1="4" x2="20" y1="18" y2="18" />
+                            </svg>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="mw-mobile-nav d-md-none @(_menuOpen ? "mw-mobile-nav--open" : "")" @onclick="CloseMenu">
+        <div class="mw-mobile-nav__panel" @onclick:stopPropagation="true">
+            <div class="mw-mobile-nav__header">
+                <span class="mw-mobile-nav__title">Menu</span>
+                <button class="mw-mobile-nav__close" @onclick="CloseMenu" aria-label="Close menu">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6 6 18" /><path d="m6 6 12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="mw-mobile-nav__scroll">
+                @if (_signedIn)
+                {
+                    <div class="mw-mobile-nav__user">
+                        <p class="mw-mobile-nav__user-name">Account</p>
+                        @if (!string.IsNullOrEmpty(_email))
+                        {
+                            <p class="mw-mobile-nav__user-email">@_email</p>
+                        }
+                        <button type="button" class="mw-mobile-nav__signout" @onclick="HandleSignOut">Sign Out</button>
+                    </div>
+                }
+                else
+                {
+                    <div class="mw-mobile-nav__auth">
+                        <NavLink href="/login" class="mw-mobile-nav__auth-btn mw-mobile-nav__auth-btn--outline" @onclick="CloseMenu">Sign In</NavLink>
+                        <NavLink href="/register" class="mw-mobile-nav__auth-btn mw-mobile-nav__auth-btn--solid" @onclick="CloseMenu">Sign Up</NavLink>
+                    </div>
+                }
+                <nav class="mw-mobile-nav__body">
+                    <NavLink class="mw-mobile-nav__link" href="/" Match="NavLinkMatch.All" @onclick="CloseMenu"><span>Home</span></NavLink>
+                    <NavLink class="mw-mobile-nav__link" href="/shop/apparel" @onclick="CloseMenu"><span>Apparel</span></NavLink>
+                    <NavLink class="mw-mobile-nav__link" href="/shop/accessories" @onclick="CloseMenu"><span>Accessories</span></NavLink>
+                    <a class="mw-mobile-nav__link" href="/community" data-enhance-nav="false" @onclick="CloseMenu"><span>Community</span></a>
+                    <NavLink class="mw-mobile-nav__link" href="/journal" @onclick="CloseMenu"><span>Journal</span></NavLink>
+                    <NavLink class="mw-mobile-nav__link" href="/about" @onclick="CloseMenu"><span>About</span></NavLink>
+                    <NavLink class="mw-mobile-nav__link" href="/faq" @onclick="CloseMenu"><span>FAQ</span></NavLink>
+                    <NavLink class="mw-mobile-nav__link" href="/contact" @onclick="CloseMenu"><span>Contact</span></NavLink>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool _signedIn;
+    private bool _profileOpen;
+    private bool _menuOpen;
+    private bool _listening;
+    private string? _email;
+
+    private int CartItemCount => CartStateService.Cart.Items.Sum(i => i.Quantity);
+    private string CartAriaLabel => CartItemCount > 0 ? $"Bag, {CartItemCount} items" : "Bag";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || !OperatingSystem.IsBrowser())
+            return;
+
+        if (!_listening)
+        {
+            CartStateService.OnCartChanged += OnCartChanged;
+            _listening = true;
+        }
+
+        var user = await Firebase.CurrentUserAsync();
+        _signedIn = !string.IsNullOrWhiteSpace(user?.Uid);
+        _email = user?.Email;
+        await CartStateService.InitializeAsync(_signedIn, user?.Uid);
+        await WishlistStateService.InitializeAsync(_signedIn, user?.Uid);
+        StateHasChanged();
+    }
+
+    private void OnCartChanged() => InvokeAsync(StateHasChanged);
+    private void ToggleMenu() => _menuOpen = !_menuOpen;
+    private void CloseMenu() => _menuOpen = false;
+    private void ToggleProfile() => _profileOpen = !_profileOpen;
+    private void CloseProfile() => _profileOpen = false;
+    private void GoShop() => NavigationManager.NavigateTo("/shop");
+    private void GoCart() => NavigationManager.NavigateTo("/cart");
+
+    private async Task HandleSignOut()
+    {
+        _profileOpen = false;
+        _menuOpen = false;
+        await CartStateService.ClearCartState();
+        await WishlistStateService.ClearWishlistState();
+        await Auth.Logout();
+        _signedIn = false;
+        _email = null;
+        NavigationManager.NavigateTo("/");
+    }
+
+    public void Dispose()
+    {
+        if (_listening)
+            CartStateService.OnCartChanged -= OnCartChanged;
+    }
+}

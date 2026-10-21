@@ -1044,6 +1044,7 @@ body.mw-nav-loading::before {
     }
 }
 
+#mw-maintenance-banner,
 #mw-offline-banner {
     position: sticky;
     top: 0;
@@ -1057,6 +1058,10 @@ body.mw-nav-loading::before {
 
 #mw-offline-banner[hidden] {
     display: none;
+}
+
+#mw-maintenance-banner {
+    background: #c45c26;
 }
 
 body.mw-offline .hc-chat-launcher,

@@ -1,119 +1,55 @@
 ﻿namespace MuuqWear.Model.Products;
 
-/// <summary>
-/// Static size guide data
-/// Hardcoded for performance — no runtime calculation 
-/// Single source of truth for all size tables 
-/// </summary>
 public static class SizeGuideData
 {
-    // =============================================
-    // TOPS, HOODIES & JACKETS
-    // =============================================
+    public const string Intro = "Find your size with the charts below. All measurements are garment measurements, in centimeters and inches.";
+    public const string FitNote = "Between sizes? Compare the measurements to a garment you own that fits well.";
+    public const string Help = "Still unsure? Write to Info@muuqwear.com with your height, weight, and the item you are eyeing; we reply within 2 business days.";
 
-    public static readonly List<TopSizeRow> TopsInches = new()
-    {
-        new("XS", "34-36", "27"),
-        new("S",  "36-38", "28"),
-        new("M",  "38-40", "29"),
-        new("L",  "40-42", "30"),
-        new("XL", "42-44", "31"),
-        new("XXL","44-46", "32"),
-    };
+    public static readonly string[] FitNotes =
+    [
+        "Between sizes? Compare the garment measurements above to a piece you own that fits well.",
+        "Length: if you are taller than the recommended height for your size, consider sizing up for length.",
+        "Fabric: natural fabrics may shrink slightly on the first wash; care labels give exact guidance.",
+    ];
 
-    public static readonly List<TopSizeRow> TopsCm = new()
-    {
-        new("XS", "86-91",   "69"),
-        new("S",  "91-97",   "71"),
-        new("M",  "97-102",  "74"),
-        new("L",  "102-107", "76"),
-        new("XL", "107-112", "79"),
-        new("XXL","112-117", "81"),
-    };
+    public static readonly List<MeasurementGuide> MeasurementGuides =
+    [
+        new("Chest", "Around the fullest part of your chest, tape level under your arms."),
+        new("Length", "From the shoulder down to where you want the hem to fall."),
+        new("Sleeve length", "From the shoulder seam to the wrist."),
+        new("Cuff", "Around the wrist where the cuff sits."),
+        new("Bottom", "The width of the garment hem, measured flat."),
+    ];
 
-    // =============================================
-    // BOTTOMS
-    // =============================================
+    public static readonly List<GarmentSizeRow> Centimeters =
+    [
+        new("S", "52", "170-175", "65-73", "141", "108", "144", "63", "35.6"),
+        new("M", "54", "175-180", "73-82", "146", "114", "150", "64", "36.8"),
+        new("L", "56", "180-185", "82-91", "151", "120", "156", "65", "38.0"),
+        new("XL", "58", "185-190", "91-100", "156", "126", "162", "66", "39.2"),
+        new("XXL", "60", "190+", "100+", "161", "132", "168", "67", "40.4"),
+    ];
 
-    public static readonly List<BottomSizeRow> BottomsInches = new()
-    {
-        new("XS", "28-30", "34-36", "30"),
-        new("S",  "30-32", "36-38", "31"),
-        new("M",  "32-34", "38-40", "31"),
-        new("L",  "34-36", "40-42", "32"),
-        new("XL", "36-38", "42-44", "32"),
-        new("XXL","38-40", "44-46", "33"),
-    };
-
-    public static readonly List<BottomSizeRow> BottomsCm = new()
-    {
-        new("XS", "71-76",   "86-91",   "76"),
-        new("S",  "76-81",   "91-97",   "79"),
-        new("M",  "81-86",   "97-102",  "79"),
-        new("L",  "86-91",   "102-107", "81"),
-        new("XL", "91-97",   "107-112", "81"),
-        new("XXL","97-102",  "112-117", "84"),
-    };
-
-    // =============================================
-    // ACCESSORIES
-    // =============================================
-
-    public static readonly List<AccessorySizeRow> AccessoriesInches = new()
-    {
-        new("Caps",         "Adjustable",  "One Size"),
-        new("Beanies",      "Stretch Fit", "One Size"),
-        new("Crossbody Bag","—",           "10\" × 7\" × 3\""),
-        new("Tote Bag",     "—",           "15\" × 13\" × 5\""),
-        new("Backpack 20L", "—",           "18\" × 12\" × 7\""),
-    };
-
-    public static readonly List<AccessorySizeRow> AccessoriesCm = new()
-    {
-        new("Caps",         "Adjustable",  "One Size"),
-        new("Beanies",      "Stretch Fit", "One Size"),
-        new("Crossbody Bag","—",           "25 × 18 × 8 cm"),
-        new("Tote Bag",     "—",           "38 × 33 × 13 cm"),
-        new("Backpack 20L", "—",           "46 × 30 × 18 cm"),
-    };
-
-    // =============================================
-    // HOW TO MEASURE — measurement instructions
-    // =============================================
-
-    public static readonly List<MeasurementGuide> MeasurementGuides = new()
-    {
-        new(
-            "Chest",
-            "Wrap the tape around the fullest part of your chest, keeping it level under your arms."
-        ),
-        new(
-            "Waist",
-            "Measure around your natural waistline, keeping the tape comfortably loose."
-        ),
-        new(
-            "Hip",
-            "Stand with feet together and measure around the fullest part of your hips."
-        ),
-        new(
-            "Inseam",
-            "Measure from the crotch seam of a well-fitting pair of pants to the bottom of the leg."
-        ),
-    };
+    public static readonly List<GarmentSizeRow> Inches =
+    [
+        new("S", "52", "5'7-5'9", "140-160", "55.5", "42.5", "56.5", "24.8", "14.0"),
+        new("M", "54", "5'9-5'11", "160-180", "57.5", "44.5", "58.5", "25.2", "14.5"),
+        new("L", "56", "5'11-6'1", "180-200", "59.5", "46.5", "60.5", "25.6", "15.0"),
+        new("XL", "58", "6'1-6'3", "200-220", "61.5", "48.5", "62.5", "26.0", "15.5"),
+        new("XXL", "60", "6'3+", "220+", "63.5", "50.5", "64.5", "26.4", "16.0"),
+    ];
 }
 
-// =============================================
-// RECORD TYPES — immutable data containers 
-// =============================================
+public record GarmentSizeRow(
+    string Size,
+    string Numeric,
+    string Height,
+    string Weight,
+    string Length,
+    string Chest,
+    string Bottom,
+    string Sleeve,
+    string Cuff);
 
-/// <summary>Tops size row — Size, Chest, Length</summary>
-public record TopSizeRow(string Size, string Chest, string Length);
-
-/// <summary>Bottoms size row — Size, Waist, Hip, Inseam</summary>
-public record BottomSizeRow(string Size, string Waist, string Hip, string Inseam);
-
-/// <summary>Accessory row — Item, Size, Dimensions</summary>
-public record AccessorySizeRow(string Item, string Size, string Dimensions);
-
-/// <summary>Measurement guide — Title, Description</summary>
 public record MeasurementGuide(string Title, string Description);

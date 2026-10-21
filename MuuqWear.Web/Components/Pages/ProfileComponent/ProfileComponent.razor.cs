@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.JSInterop;
 using MuuqWear.Application.Services.CartService;
 using MuuqWear.Application.Services.WishlistService;
+using MuuqWear.Client.Auth;
 using MuuqWear.Model.Address;
 using MuuqWear.Model.AffiliateApplication;
 using MuuqWear.Model.Orders;
@@ -68,6 +69,14 @@ public partial class ProfileComponent
     private string settingsError = string.Empty;
     private string settingsSuccess = string.Empty;
     private bool isSavingSettings = false;
+    private bool mfaEnrolled;
+    private bool mfaBusy;
+    private bool mfaSetupOpen;
+    private string mfaMessage = string.Empty;
+    private string mfaMessageCss = string.Empty;
+    private string mfaCode = string.Empty;
+    private string? mfaSecretKey;
+    private string? mfaQrCodeUrl;
 
     protected override void OnInitialized()
     {
@@ -106,6 +115,95 @@ public partial class ProfileComponent
     }
 
     private void OnWishlistChanged() => InvokeAsync(StateHasChanged);
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        await FirebaseSession.RestoreAsync();
+        await RefreshMfaAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task RefreshMfaAsync()
+    {
+        var status = await FirebaseSession.GetMfaStatusAsync();
+        mfaEnrolled = status.Enrolled;
+        if (!string.IsNullOrWhiteSpace(status.Message) && !status.Ok)
+        {
+            mfaMessage = status.Message;
+            mfaMessageCss = "err";
+        }
+    }
+
+    private async Task HandleStartMfa()
+    {
+        mfaBusy = true;
+        mfaMessage = string.Empty;
+        var setup = await FirebaseSession.StartTotpEnrollAsync();
+        mfaBusy = false;
+        if (!setup.Ok)
+        {
+            mfaMessage = setup.Message ?? "Sign in to turn on an authenticator app.";
+            mfaMessageCss = "err";
+            return;
+        }
+
+        mfaSetupOpen = true;
+        mfaSecretKey = setup.SecretKey;
+        mfaQrCodeUrl = setup.QrCodeUrl;
+        mfaCode = string.Empty;
+    }
+
+    private async Task HandleFinishMfa()
+    {
+        mfaBusy = true;
+        mfaMessage = string.Empty;
+        var setup = await FirebaseSession.FinishTotpEnrollAsync(mfaCode);
+        mfaBusy = false;
+        if (!setup.Ok)
+        {
+            mfaMessage = setup.Message ?? "That authenticator code is not valid.";
+            mfaMessageCss = "err";
+            return;
+        }
+
+        mfaSetupOpen = false;
+        mfaSecretKey = null;
+        mfaQrCodeUrl = null;
+        mfaCode = string.Empty;
+        mfaEnrolled = true;
+        mfaMessage = "Authenticator app is on.";
+        mfaMessageCss = "ok";
+    }
+
+    private void HandleCancelMfa()
+    {
+        mfaSetupOpen = false;
+        mfaSecretKey = null;
+        mfaQrCodeUrl = null;
+        mfaCode = string.Empty;
+        mfaMessage = string.Empty;
+    }
+
+    private async Task HandleTurnOffMfa()
+    {
+        mfaBusy = true;
+        mfaMessage = string.Empty;
+        var setup = await FirebaseSession.UnenrollTotpAsync();
+        mfaBusy = false;
+        if (!setup.Ok)
+        {
+            mfaMessage = setup.Message ?? "Could not turn the authenticator app off.";
+            mfaMessageCss = "err";
+            return;
+        }
+
+        mfaEnrolled = false;
+        mfaMessage = "Authenticator app is off.";
+        mfaMessageCss = "ok";
+    }
 
     public void Dispose()
     {
@@ -323,6 +421,15 @@ public partial class ProfileComponent
         addressFormError = string.Empty;
         StateHasChanged();
 
+        if (await QueueAccountAsync(new { kind = "address", addressForm, isEditMode, editingId = editingAddress?.Id }))
+        {
+            addressFormError = string.Empty;
+            isAddressFormOpen = false;
+            isSavingAddress = false;
+            StateHasChanged();
+            return;
+        }
+
         if (isEditMode && editingAddress != null)
         {
             //  cast directly — same fields
@@ -423,6 +530,14 @@ public partial class ProfileComponent
         settingsError = string.Empty;
         settingsSuccess = string.Empty;
         StateHasChanged();
+
+        if (await QueueAccountAsync(new { kind = "profile", settingsFullName, settingsEmail }))
+        {
+            settingsSuccess = "Will send when you are back online.";
+            isSavingSettings = false;
+            StateHasChanged();
+            return;
+        }
 
         var result = await ProfileService.UpdateProfile(new UpdateProfileModel
         {
@@ -731,6 +846,21 @@ public partial class ProfileComponent
         catch
         {
             // Ignore errors during dispose
+        }
+    }
+
+    private async Task<bool> QueueAccountAsync(object payload)
+    {
+        try
+        {
+            if (await JSRuntime.InvokeAsync<bool>("mwIsOnline"))
+                return false;
+            await JSRuntime.InvokeVoidAsync("mwOutbox.enqueue", "account", payload);
+            return true;
+        }
+        catch
+        {
+            return false;
         }
     }
 

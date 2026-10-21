@@ -1,10 +1,15 @@
-﻿@using MuuqWear.Application.Services.AuthService
+﻿@page "/login"
+@layout ShopperAuthLayout
+@using MuuqWear.Application.Services.AuthService
 @using MuuqWear.Application.Shared
 @using MuuqWear.Client.Auth
 @using MuuqWear.Model.Authentication
+@using MuuqWear.Client.Offline
+@using MuuqWear.Model.Site
 @inject IAuthService IAuthService
 @inject IJSRuntime JS
 @inject AuthStateService AuthStateService
+@inject FirebaseSession Firebase
 @inject NavigationManager NavigationManager
 
 <section class="mw-auth">
@@ -15,7 +20,7 @@
                     <a href="/">
                         <img src="/images/muuqwearlogo.png" class="mw-auth-logo mb-3" />
                     </a>
-                    <h2 class="mw-auth-title">Welcome Back</h2>
+                    <h2 class="mw-auth-title">@PageCopy.SignIn</h2>
                     <p class="mw-auth-subtitle mb-4">Sign in to your account</p>
 
                     <!-- TABS -->
@@ -211,6 +216,15 @@
 
         try
         {
+            var online = true;
+            try { online = await JS.InvokeAsync<bool>("mwIsOnline"); } catch { }
+            if (!online)
+            {
+                message = OfflineAction.SignInNeedsConnection;
+                messageCssClass = "text-danger";
+                return;
+            }
+
             var result = await IAuthService.Login(loginModel);
 
             if (result.Success && result.Data != null)
@@ -248,6 +262,18 @@
         var uri = new Uri(NavigationManager.Uri);
         if (uri.Query.Contains("expired=true", StringComparison.OrdinalIgnoreCase))
             expiredMessage = "Your session has expired. Please sign in again.";
+        else if (uri.Query.Contains("registered=true", StringComparison.OrdinalIgnoreCase))
+            expiredMessage = "Check your email and confirm your account, then sign in.";
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || !OperatingSystem.IsBrowser())
+            return;
+
+        var user = await Firebase.CurrentUserAsync();
+        if (!string.IsNullOrWhiteSpace(user?.Uid) && user.EmailVerified)
+            NavigationManager.NavigateTo("/profile", forceLoad: true);
     }
 
     private async Task HandleMagicLink()

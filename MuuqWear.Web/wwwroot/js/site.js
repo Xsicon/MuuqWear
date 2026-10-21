@@ -295,10 +295,15 @@ window.mwBag = {
         var self = this;
         if (self._db) return Promise.resolve(self._db);
         return new Promise(function (resolve, reject) {
-            var request = indexedDB.open('mw-store', 1);
+            var request = indexedDB.open('mw-store', 2);
             request.onupgradeneeded = function () {
-                if (!request.result.objectStoreNames.contains('bags'))
-                    request.result.createObjectStore('bags');
+                var db = request.result;
+                if (!db.objectStoreNames.contains('bags'))
+                    db.createObjectStore('bags');
+                if (!db.objectStoreNames.contains('catalog'))
+                    db.createObjectStore('catalog');
+                if (!db.objectStoreNames.contains('outbox'))
+                    db.createObjectStore('outbox', { keyPath: 'id' });
             };
             request.onsuccess = function () {
                 self._db = request.result;
@@ -987,58 +992,99 @@ window.mwTokenStore = {
 };
 
 window.mwCatalogCache = {
-    prefix: 'mw-catalog:',
-    indexKey: 'mw-catalog-index',
-    maxEntries: 24,
-    maxChars: 180000,
+    maxChars: 400000,
     get: function (key) {
-        try {
-            var raw = localStorage.getItem(this.prefix + key);
-            return raw ? JSON.parse(raw) : null;
-        } catch (e) {
-            return null;
-        }
+        return window.mwBag.open().then(function (db) {
+            return new Promise(function (resolve) {
+                if (!db.objectStoreNames.contains('catalog')) {
+                    resolve(null);
+                    return;
+                }
+                var request = db.transaction('catalog', 'readonly').objectStore('catalog').get(key);
+                request.onsuccess = function () { resolve(request.result || null); };
+                request.onerror = function () { resolve(null); };
+            });
+        }).catch(function () { return null; });
     },
     set: function (key, body, contentType) {
-        var storageKey = this.prefix + key;
-        var payload = JSON.stringify({
+        if (!body || body.length > this.maxChars) return Promise.resolve();
+        var payload = {
             savedAt: Date.now(),
             body: body,
             contentType: contentType || 'application/json'
+        };
+        return window.mwBag.open().then(function (db) {
+            return new Promise(function (resolve, reject) {
+                if (!db.objectStoreNames.contains('catalog')) {
+                    resolve();
+                    return;
+                }
+                var request = db.transaction('catalog', 'readwrite').objectStore('catalog').put(payload, key);
+                request.onsuccess = function () { resolve(); };
+                request.onerror = function () { reject(request.error); };
+            });
+        }).catch(function () { });
+    }
+};
+
+window.mwOutbox = {
+    enqueue: function (kind, payload) {
+        var item = {
+            id: Date.now() + '-' + Math.random().toString(16).slice(2),
+            kind: kind,
+            payload: payload,
+            queuedAt: Date.now()
+        };
+        return window.mwBag.open().then(function (db) {
+            return new Promise(function (resolve, reject) {
+                if (!db.objectStoreNames.contains('outbox')) {
+                    resolve(item.id);
+                    return;
+                }
+                var request = db.transaction('outbox', 'readwrite').objectStore('outbox').put(item);
+                request.onsuccess = function () { resolve(item.id); };
+                request.onerror = function () { reject(request.error); };
+            });
         });
-        if (payload.length > this.maxChars) return;
-        try {
-            localStorage.setItem(storageKey, payload);
-            this._touch(storageKey);
-        } catch (e) {
-            this._evict();
-            try {
-                localStorage.setItem(storageKey, payload);
-                this._touch(storageKey);
-            } catch (_) { }
-        }
     },
-    _index: function () {
-        try {
-            var parsed = JSON.parse(localStorage.getItem(this.indexKey) || '[]');
-            return Array.isArray(parsed) ? parsed : [];
-        } catch (e) {
-            return [];
-        }
+    pending: function () {
+        return window.mwBag.open().then(function (db) {
+            return new Promise(function (resolve) {
+                if (!db.objectStoreNames.contains('outbox')) {
+                    resolve([]);
+                    return;
+                }
+                var request = db.transaction('outbox', 'readonly').objectStore('outbox').getAll();
+                request.onsuccess = function () { resolve(request.result || []); };
+                request.onerror = function () { resolve([]); };
+            });
+        }).catch(function () { return []; });
     },
-    _touch: function (storageKey) {
-        var index = this._index().filter(function (item) { return item !== storageKey; });
-        index.push(storageKey);
-        while (index.length > window.mwCatalogCache.maxEntries) {
-            localStorage.removeItem(index.shift());
-        }
-        localStorage.setItem(this.indexKey, JSON.stringify(index));
+    remove: function (id) {
+        return window.mwBag.open().then(function (db) {
+            return new Promise(function (resolve, reject) {
+                if (!db.objectStoreNames.contains('outbox')) {
+                    resolve();
+                    return;
+                }
+                var request = db.transaction('outbox', 'readwrite').objectStore('outbox').delete(id);
+                request.onsuccess = function () { resolve(); };
+                request.onerror = function () { reject(request.error); };
+            });
+        }).catch(function () { });
     },
-    _evict: function () {
-        var index = this._index();
-        var oldest = index.shift();
-        if (oldest) localStorage.removeItem(oldest);
-        localStorage.setItem(this.indexKey, JSON.stringify(index));
+    flush: function () {
+        return this.pending().then(function (items) {
+            window.dispatchEvent(new CustomEvent('mw-outbox', { detail: items }));
+            var mail = items.find(function (item) {
+                return (item.kind === 'contact' || item.kind === 'newsletter') && item.payload && item.payload.mailto;
+            });
+            if (mail) {
+                window.mwOutbox.remove(mail.id);
+                window.location.href = mail.payload.mailto;
+            }
+            return items;
+        });
     }
 };
 
@@ -1050,7 +1096,7 @@ window.mwCatalogCache = {
             banner = document.createElement('div');
             banner.id = 'mw-offline-banner';
             banner.setAttribute('role', 'status');
-            banner.textContent = 'You are offline. Saved pages and your bag still open. Checkout and chat need a connection.';
+            banner.textContent = 'You are offline. Saved pages and your bag still open. Sign-in and payment need a connection. Messages wait and send when you are back.';
             document.body.prepend(banner);
         }
         banner.hidden = !offline;
@@ -1066,10 +1112,11 @@ window.mwCatalogCache = {
     window.addEventListener('online', function () {
         applyOffline(false);
         window.mwSyncBag();
+        if (window.mwOutbox) window.mwOutbox.flush();
     });
     applyOffline(!navigator.onLine);
 
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/service-worker.js').catch(function () { });
+        navigator.serviceWorker.register('/service-worker.js?v=20261022a').catch(function () { });
     }
 })();

@@ -1,12 +1,16 @@
 ﻿@using Microsoft.AspNetCore.Http
+@using MuuqWear.Client
+@using MuuqWear.Client.Layout
+@using static Microsoft.AspNetCore.Components.Web.RenderMode
 @inject IHttpContextAccessor HttpContextAccessor
 
 @{
     var adminTheme = ResolveAdminTheme();
+    var serverHost = StaffPaths.IsServerOwned(HttpContextAccessor.HttpContext?.Request.Path.Value);
 }
 
 <!DOCTYPE html>
-<html lang="en" data-admin-theme="@adminTheme">
+<html lang="en" data-admin-theme="@adminTheme" data-mw-host="@(serverHost ? "server" : "wasm")">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -36,7 +40,14 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="manifest.webmanifest" />
     <meta name="theme-color" content="#1E2A47" />
-    <HeadOutlet />
+    @if (serverHost)
+    {
+        <HeadOutlet />
+    }
+    else
+    {
+        <HeadOutlet @rendermode="@(new InteractiveWebAssemblyRenderMode(prerender: true))" />
+    }
     <script>
         (function () {
             var brand = "MuuqWear";
@@ -60,13 +71,21 @@
     </script>
 </head>
 <body>
-    <Routes />
+    @if (serverHost)
+    {
+        <Routes />
+    }
+    else
+    {
+        <ShopperRoutes @rendermode="@(new InteractiveWebAssemblyRenderMode(prerender: true))" />
+    }
     <script src="lib/swiper/swiper-bundle.min.js"></script>
     <script src="js/carousel.js"></script>
-    <script src="js/site.js?v=20261019f"></script>
+    <script src="js/site.js?v=20261022a"></script>
+    <script src="js/firebase-auth.js?v=20261021f"></script>
     <script src="js/chat-scroll.js"></script>
     <script src="_framework/blazor.web.js" autostart="false"></script>
-    <script src="js/blazor-boot.js"></script>
+    <script src="js/blazor-boot.js?v=20261022a"></script>
     <script src="js/image-load.js"></script>
 
 

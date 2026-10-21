@@ -8,6 +8,7 @@ using MuuqWear.Model.Profile;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Json;
 using System.Security.Claims;
+using System.Text.Json.Serialization;
 
 namespace MuuqWear.Application.Shared;
 public class TokenRefreshMiddleware
@@ -147,6 +148,14 @@ public class TokenRefreshMiddleware
         }
         try
         {
+            var firebase = await TryFirebaseRefreshAsync(refreshToken);
+            if (firebase != null)
+            {
+                _cache.Set($"access_token_{userId}", firebase.AccessToken, TimeSpan.FromMinutes(50));
+                await RewriteCookieAsync(context, firebase);
+                return true;
+            }
+
             var apiBaseUrl = _configuration["ApiBaseUrl"];
             using var http = new HttpClient();
 
@@ -219,6 +228,53 @@ public class TokenRefreshMiddleware
     {
         Timeout = TimeSpan.FromSeconds(5)
     };
+
+    private async Task<AuthResponseModel?> TryFirebaseRefreshAsync(string refreshToken)
+    {
+        var apiKey = _configuration["Firebase:ApiKey"];
+        if (string.IsNullOrWhiteSpace(apiKey))
+            return null;
+
+        try
+        {
+            using var content = new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["grant_type"] = "refresh_token",
+                ["refresh_token"] = refreshToken
+            });
+            using var result = await AccountStatusClient.PostAsync(
+                $"https://securetoken.googleapis.com/v1/token?key={Uri.EscapeDataString(apiKey)}",
+                content);
+            if (!result.IsSuccessStatusCode)
+                return null;
+
+            var payload = await result.Content.ReadFromJsonAsync<FirebaseRefreshResponse>();
+            if (string.IsNullOrWhiteSpace(payload?.IdToken))
+                return null;
+
+            return new AuthResponseModel
+            {
+                AccessToken = payload.IdToken,
+                RefreshToken = payload.RefreshToken ?? refreshToken,
+                UserId = payload.UserId,
+                Role = FirebaseIdTokenRole.FromAccessToken(payload.IdToken)
+            };
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private sealed class FirebaseRefreshResponse
+    {
+        [JsonPropertyName("id_token")]
+        public string? IdToken { get; set; }
+        [JsonPropertyName("refresh_token")]
+        public string? RefreshToken { get; set; }
+        [JsonPropertyName("user_id")]
+        public string? UserId { get; set; }
+    }
 
     private async Task<bool> CheckIsActive(string? accessToken, string? userId)
     {

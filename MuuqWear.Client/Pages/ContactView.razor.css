@@ -1,0 +1,65 @@
+.mw-contact {
+    font-family: 'Manrope', sans-serif;
+    color: #1E2A47;
+    background: #fff;
+    padding: 48px 16px 72px;
+}
+
+.mw-contact__inner {
+    max-width: 640px;
+    margin: 0 auto;
+}
+
+.mw-contact__eyebrow {
+    margin: 0 0 8px;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #A9B7CC;
+}
+
+.mw-contact h1 {
+    margin: 0 0 12px;
+    font-size: 40px;
+    color: #0B1A33;
+}
+
+.mw-contact__field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 16px;
+}
+
+.mw-contact__field label {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.mw-contact input,
+.mw-contact select,
+.mw-contact textarea {
+    border: 1px solid #A9B7CC;
+    background: #fff;
+    color: #0B1A33;
+    padding: 10px 12px;
+    font: inherit;
+}
+
+.mw-contact__send {
+    margin-top: 20px;
+    border: 0;
+    background: #C44545;
+    color: #fff;
+    padding: 12px 18px;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.mw-contact__confirm {
+    margin-top: 24px;
+    padding: 16px;
+    background: #E6ECF5;
+    color: #0B1A33;
+}

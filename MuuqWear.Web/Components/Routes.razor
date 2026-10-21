@@ -3,8 +3,7 @@
 @inject NavigationManager NavigationManager
 
 @* remove <AuthInitializer /> *@
-<Router AppAssembly="typeof(Program).Assembly"
-        AdditionalAssemblies="new[] { typeof(MuuqWear.Client.ClientAssemblyMarker).Assembly }">
+<Router AppAssembly="typeof(Program).Assembly">
     <Found Context="routeData">
         <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayoutComponent)">
             <NotAuthorized>

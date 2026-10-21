@@ -1,4 +1,5 @@
-﻿@inject IJSRuntime JS
+﻿@page "/productdetail/{Id}"
+@inject IJSRuntime JS
 @inject IProductService ProductService
 @inject NavigationManager NavigationManager
 @inject CartStateService CartStateService
@@ -8,6 +9,7 @@
 @using MuuqWear.Application.Services.ProductService
 @using MuuqWear.Model.Cart
 @using MuuqWear.Model.Products
+@using MuuqWear.Model.Site
 @using MuuqWear.Web.Components.Shared
 
 <PageTitle>@(product?.Name ?? "Product")</PageTitle>
@@ -135,8 +137,8 @@ else
                     {
                         <div class="mw-pd__block">
                             <div class="mw-pd__block-head">
-                                <h3 class="mw-pd__label">Select Size</h3>
-                                <a href="/size-guide" class="mw-pd__sizeguide">Size Guide</a>
+                                <h3 class="mw-pd__label">Size</h3>
+                                <a href="/size-guide" class="mw-pd__sizeguide">Size guide</a>
                             </div>
                             <div class="mw-pd__sizes @(product.SizeList.Count == 1 ? "mw-pd__sizes--single" : "")">
                                 @foreach (var size in product.SizeList)
@@ -202,9 +204,11 @@ else
                                 <circle cx="19" cy="21" r="1" />
                                 <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
                             </svg>
-                            <span>@(product.Stock > 0 ? "Add to Bag" : "Out of Stock")</span>
+                            <span>@(product.Stock > 0 ? "Add to cart" : "Sold out")</span>
                         }
                     </button>
+                    <p class="mw-pd__desc">@PageCopy.FreeReturns</p>
+                    <p class="mw-pd__desc">@PageCopy.SecureCheckout</p>
 
                     @if (!string.IsNullOrEmpty(addToCartMessage))
                     {

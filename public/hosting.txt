@@ -1,1 +1,2 @@
-MuuqWear Hosting routes requests to Cloud Run.
+MuuqWear Hosting serves the WebAssembly static files from hosting-wwwroot.
+Unmatched routes still rewrite to Cloud Run service muuqwear-web in me-central1, which is the rollback target. DNS for muuqwear.com is unchanged.

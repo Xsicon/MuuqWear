@@ -5,6 +5,10 @@
     var circuitHasBeenUp = false;
     var pageLoadedAt = Date.now();
 
+    function needsCircuit() {
+        return document.documentElement.getAttribute('data-mw-host') === 'server';
+    }
+
     function hideDefaultReconnectUi() {
         var selectors = [
             '#components-reconnect-modal',
@@ -31,6 +35,10 @@
     }
 
     function reloadOnce(reason) {
+        if (!needsCircuit()) {
+            return;
+        }
+
         if (!navigator.onLine) {
             return;
         }
@@ -126,6 +134,9 @@
             reconnectionHandler: {
                 onConnectionDown: function () {
                     hideDefaultReconnectUi();
+                    if (!needsCircuit()) {
+                        return;
+                    }
                     currentReconnectionProcess = currentReconnectionProcess || startReconnectionProcess();
                 },
                 onConnectionUp: function () {

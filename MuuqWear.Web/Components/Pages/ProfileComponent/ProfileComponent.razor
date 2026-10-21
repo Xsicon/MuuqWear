@@ -1,5 +1,6 @@
 @page "/profile"
 @page "/settings"
+@page "/account"
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
@@ -35,6 +36,8 @@
 @inject IAffiliateService AffiliateService
 @inject IJSRuntime JSRuntime
 @inject WishlistStateService WishlistStateService
+@inject FirebaseSession FirebaseSession
+@using MuuqWear.Client.Auth
 @implements IDisposable
 
 
@@ -918,6 +921,86 @@
                                                                                                                                                                                                                            opacity:@(isSavingSettings ? "0.7" : "1")">
                             @(isSavingSettings ? "Saving..." : "Save Changes")
                         </button>
+                    </div>
+
+                    <!-- SECTION 1b: AUTHENTICATOR -->
+                    <div style="border:1px solid rgba(169,183,204,0.4);padding:21px">
+                        <p style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;
+                                  font-weight:700;color:#4A5C7A;margin-bottom:8px">
+                            @AuthenticatorMfa.SettingsTitle
+                        </p>
+                        <p style="color:#4A5C7A;font-size:12px;margin:0 0 8px">
+                            @AuthenticatorMfa.SettingsHelp
+                        </p>
+                        <p style="color:#1E2A47;font-size:12px;font-weight:600;margin:0 0 16px">
+                            @AuthenticatorMfa.OfferLine
+                        </p>
+
+                        @if (mfaEnrolled)
+                        {
+                            <p style="color:#1D9E75;font-size:13px;margin:0 0 12px">Authenticator app is on.</p>
+                            <button type="button" @onclick="HandleTurnOffMfa" disabled="@mfaBusy"
+                                    style="background:transparent;color:#C44545;border:1px solid #C44545;
+                                           padding:10px 20px;font-size:13px;font-weight:700;letter-spacing:0.5px;
+                                           text-transform:uppercase;opacity:@(mfaBusy ? "0.7" : "1")">
+                                @(mfaBusy ? "Working..." : "Turn off")
+                            </button>
+                        }
+                        else if (mfaSetupOpen)
+                        {
+                            @if (!string.IsNullOrEmpty(mfaQrCodeUrl))
+                            {
+                                <img src="@($"https://api.qrserver.com/v1/create-qr-code/?size=180x180&data={Uri.EscapeDataString(mfaQrCodeUrl)}")"
+                                     width="180" height="180" alt="Authenticator QR code"
+                                     style="display:block;margin:0 0 12px" />
+                            }
+                            @if (!string.IsNullOrEmpty(mfaSecretKey))
+                            {
+                                <p style="font-size:12px;color:#4A5C7A;margin:0 0 8px">
+                                    Or type this key into your authenticator app:
+                                </p>
+                                <p style="font-family:monospace;font-size:13px;color:#1E2A47;margin:0 0 12px;word-break:break-all">
+                                    @mfaSecretKey
+                                </p>
+                            }
+                            <label style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;font-weight:700;
+                                          color:#4A5C7A;display:block;margin-bottom:5px">
+                                Authenticator code
+                            </label>
+                            <input @bind="mfaCode" maxlength="8"
+                                   style="width:100%;max-width:220px;border:1px solid rgba(169,183,204,0.4);
+                                          padding:10px 13px;font-size:14px;color:#1E2A47;outline:none" />
+                            <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
+                                <button type="button" @onclick="HandleFinishMfa" disabled="@mfaBusy"
+                                        style="background:#1E2A47;color:white;border:none;padding:10px 20px;
+                                               font-size:13px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;
+                                               opacity:@(mfaBusy ? "0.7" : "1")">
+                                    @(mfaBusy ? "Checking..." : "Confirm")
+                                </button>
+                                <button type="button" @onclick="HandleCancelMfa" disabled="@mfaBusy"
+                                        style="background:transparent;color:#1E2A47;border:1px solid rgba(169,183,204,0.4);
+                                               padding:10px 20px;font-size:13px;font-weight:700;letter-spacing:0.5px;
+                                               text-transform:uppercase">
+                                    Cancel
+                                </button>
+                            </div>
+                        }
+                        else
+                        {
+                            <button type="button" @onclick="HandleStartMfa" disabled="@mfaBusy"
+                                    style="background:#1E2A47;color:white;border:none;padding:10px 20px;
+                                           font-size:13px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;
+                                           opacity:@(mfaBusy ? "0.7" : "1")">
+                                @(mfaBusy ? "Working..." : "Turn on authenticator app")
+                            </button>
+                        }
+
+                        @if (!string.IsNullOrEmpty(mfaMessage))
+                        {
+                            <p style="color:@(mfaMessageCss == "ok" ? "#1D9E75" : "#C44545");font-size:13px;margin:12px 0 0">
+                                @mfaMessage
+                            </p>
+                        }
                     </div>
 
                     <!-- SECTION 2: NOTIFICATIONS -->

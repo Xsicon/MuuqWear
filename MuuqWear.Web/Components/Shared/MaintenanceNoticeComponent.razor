@@ -1,0 +1,19 @@
+@using Microsoft.Extensions.Configuration
+@using MuuqWear.Model.Site
+@inject IConfiguration Config
+
+@if (Visible)
+{
+    <div id="mw-maintenance-banner" role="status">@Banner</div>
+}
+
+@code {
+    private bool Notice =>
+        string.Equals(Config["Cutover:ShowMaintenanceNotice"], "true", StringComparison.OrdinalIgnoreCase);
+
+    private bool Frozen => CutoverFreeze.Enabled(Config["Cutover:FreezeWrites"]);
+
+    private bool Visible => Notice || Frozen;
+
+    private string Banner => Frozen ? PageCopy.WritesPaused : PageCopy.MaintenanceNotice;
+}

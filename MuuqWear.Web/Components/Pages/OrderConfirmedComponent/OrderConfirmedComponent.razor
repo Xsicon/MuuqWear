@@ -1,4 +1,5 @@
-﻿@page "/order-confirmed/{OrderId:guid}"
+﻿@page "/order-confirmed"
+@page "/order-confirmed/{OrderId}"
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.Components.Authorization
 @using MuuqWear.Application.Services.OrderService
@@ -20,9 +21,15 @@
 }
 else if (order == null)
 {
-    <!-- ERROR STATE -->
     <div class="mw-oc text-center">
-        <p class="text-muted">Order not found.</p>
+        <h1 class="mw-oc__title">Payment received</h1>
+        <p class="text-muted">
+            Stripe accepted this test payment. A receipt is sent to the checkout email.
+            @if (!string.IsNullOrWhiteSpace(OrderId))
+            {
+                <span> Reference @OrderId</span>
+            }
+        </p>
         <a href="/" class="mw-btn-primary mt-3">
             Back to Home
         </a>
@@ -185,18 +192,19 @@ else
 
 @code {
     [Parameter]
-    public Guid OrderId { get; set; }
+    public string? OrderId { get; set; }
 
     private OrderModel? order;
     private bool isLoading = true;
 
     protected override async Task OnInitializedAsync()
     {
-        // fetch order from API 
-        var result = await OrderService.GetOrder(OrderId);
-
-        if (result.Success && result.Data != null)
-            order = result.Data;
+        if (Guid.TryParse(OrderId, out var id))
+        {
+            var result = await OrderService.GetOrder(id);
+            if (result.Success && result.Data != null)
+                order = result.Data;
+        }
 
         isLoading = false;
     }

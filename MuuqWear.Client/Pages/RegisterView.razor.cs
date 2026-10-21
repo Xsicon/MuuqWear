@@ -1,11 +1,48 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.Extensions.Configuration;
+using Microsoft.JSInterop;
 using MuuqWear.Application.Services.AuthService;
+using MuuqWear.Client.Auth;
 using MuuqWear.Model.Authentication;
+using MuuqWear.Model.Site;
 
 namespace MuuqWear.Client.Pages;
 public partial class RegisterView
 {
+    private bool writesFrozen;
+    private bool showConfirm;
+    private bool isBusy;
+    private string? confirmEmail;
+    private bool pendingRestored;
+
+    protected override void OnInitialized()
+    {
+        writesFrozen = CutoverFreeze.Enabled(Config["Cutover:FreezeWrites"]);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || pendingRestored || !OperatingSystem.IsBrowser())
+            return;
+        pendingRestored = true;
+        try
+        {
+            confirmEmail = await JS.InvokeAsync<string?>("sessionStorage.getItem", SignupPending.StorageKey);
+        }
+        catch (JSException)
+        {
+            confirmEmail = await AuthStateService.GetPendingEmailAsync();
+        }
+
+        if (string.IsNullOrWhiteSpace(confirmEmail))
+            return;
+
+        showConfirm = true;
+        registerModel.Email = confirmEmail;
+        await AuthStateService.SetPendingEmailAsync(confirmEmail);
+        StateHasChanged();
+    }
 
     RegisterModel registerModel = new();
     string message = string.Empty;
@@ -20,6 +57,15 @@ public partial class RegisterView
     private string StrengthText = "";
     async Task HandleRegister()
     {
+        if (writesFrozen)
+        {
+            message = PageCopy.WritesPaused;
+            messageCssClass = "text-danger";
+            return;
+        }
+
+        isBusy = true;
+        message = string.Empty;
         try
         {
             var result = await IAuthService.Register(registerModel);
@@ -27,16 +73,55 @@ public partial class RegisterView
             if (result.Success)
             {
                 messageCssClass = "text-success";
+                confirmEmail = registerModel.Email;
+                showConfirm = true;
                 await AuthStateService.SetPendingEmailAsync(registerModel.Email!);
-                NavigationManager.NavigateTo("/verify-2fa");
+                try
+                {
+                    await JS.InvokeVoidAsync("sessionStorage.setItem", SignupPending.StorageKey, registerModel.Email);
+                }
+                catch (JSException) { }
             }
             else
                 messageCssClass = "text-danger";
         }
         catch (Exception ex)
         {
+            message = "Unable to create the account. Please try again.";
+            messageCssClass = "text-danger";
             Console.WriteLine(ex.Message.ToString());
         }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+
+    private async Task ResendConfirmation()
+    {
+        if (string.IsNullOrWhiteSpace(confirmEmail) || isBusy)
+            return;
+
+        isBusy = true;
+        message = string.Empty;
+        var result = await FirebaseSession.SendEmailVerificationAsync();
+        message = result.Ok
+            ? "Confirmation email sent. Check your inbox."
+            : result.Message ?? "Unable to send the confirmation email.";
+        messageCssClass = result.Ok ? "text-success" : "text-danger";
+        isBusy = false;
+    }
+
+    private async Task BackToForm()
+    {
+        showConfirm = false;
+        message = string.Empty;
+        await AuthStateService.ClearPendingEmailAsync();
+        try
+        {
+            await JS.InvokeVoidAsync("sessionStorage.removeItem", SignupPending.StorageKey);
+        }
+        catch (JSException) { }
     }
 
     [CascadingParameter]

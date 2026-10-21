@@ -1,13 +1,16 @@
+@page "/checkout"
+@layout ShopperAuthLayout
 @using MuuqWear.Application.Services.CartService
-@using MuuqWear.Application.Services.PaymentService
+@using MuuqWear.Client.Auth
+@using MuuqWear.Client.Checkout
 @using MuuqWear.Model.Cart
-@using MuuqWear.Application.Services.OrderService
-@using MuuqWear.Model.Orders
+@using MuuqWear.Model.Site
 @inject CartStateService CartStateService
 @inject NavigationManager NavigationManager
-@inject IPaymentService PaymentService
+@inject CheckoutSessionClient CheckoutSessions
+@inject FirebaseSession Firebase
+@inject IConfiguration Config
 @implements IAsyncDisposable
-@inject IOrderService OrderService
 @inject IJSRuntime JS
 
 <PageTitle>Checkout — MuuqWear</PageTitle>
@@ -128,6 +131,10 @@
     <!-- CONTACT INFORMATION -->
     <section class="mw-checkout__section">
         <h2 class="mw-checkout__label">Contact Information</h2>
+        @if (string.IsNullOrWhiteSpace(Email))
+        {
+            <p class="text-muted small mb-2">Checking out as a guest. <a href="/login">Sign in</a> if you already have an account.</p>
+        }
         <input type="email" class="mw-checkout__input" readonly="@paymentReady" placeholder="Email address" @bind="email" />
     </section>
 
@@ -152,41 +159,33 @@
     <section class="mw-checkout__section">
         <h2 class="mw-checkout__label">Payment Details</h2>
         <div class="mw-checkout__payment">
-            @if (!paymentReady)
-            {
-                <p class="text-muted small">
-                    Card details will appear after you click below.
-                </p>
-            }
-            <div id="mw-stripe-payment-element"></div>
+            <p class="text-muted small">
+                You'll pay on Stripe's secure page. Card details never touch this site.
+            </p>
         </div>
     </section>
     <!-- PAY BUTTON -->
+    @if (writesFrozen)
+    {
+        <div class="text-danger small text-center mb-3">@PageCopy.WritesPaused</div>
+    }
     @if (!isOnline)
     {
-        <div class="text-danger small text-center mb-3">Checkout needs a connection. Payment stays disabled until you are back online.</div>
+        <div class="text-danger small text-center mb-3">Payment needs a connection. Your bag is still here.</div>
     }
     @if (!string.IsNullOrEmpty(paymentError))
     {
         <div class="text-danger small text-center mb-3">@paymentError</div>
     }
-    <button class="mw-checkout__pay-btn" @onclick="HandlePay" disabled="@(!isOnline || isPlacingOrder)">
+    <button class="mw-checkout__pay-btn" @onclick="HandlePay" disabled="@(writesFrozen || !isOnline || isPlacingOrder)">
         @if (isPlacingOrder)
         {
             <span class="mw-btn-spinner"></span>
             <span>@(paymentReady ? "Confirming..." : "Preparing...")</span>
         }
-        else if (!paymentReady)
-        {
-            <span>Continue to Payment</span>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M5 12h14"></path>
-                <path d="m12 5 7 7-7 7"></path>
-            </svg>
-        }
         else
         {
-            <span>Pay $@CartStateService.Cart.Total.ToString("F2")</span>
+            <span>Continue to Payment</span>
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M5 12h14"></path>
                 <path d="m12 5 7 7-7 7"></path>
@@ -221,18 +220,16 @@
     private string address = string.Empty;
     private string city = string.Empty;
     private string postalCode = string.Empty;
-    private string cardNumber = string.Empty;
-    private string expiry = string.Empty;
-    private string cvc = string.Empty;
     private bool isPlacingOrder = false;
     private string errorMessage = string.Empty;
 
     [Parameter] public string? Email { get; set; }
+    [Parameter] public bool IsAuthenticated { get; set; }
+    [Parameter] public string? UserId { get; set; }
 
-    // Payment state
-    private Guid? pendingOrderId = null;
-    private bool paymentReady = false;      // true once Stripe Elements is mounted
+    private bool paymentReady;
     private string? paymentError = null;
+    private bool writesFrozen;
     private bool isOnline = true;
     private bool _cartReady;
     private bool _watchingOnline;
@@ -241,6 +238,7 @@
 
     protected override void OnInitialized()
     {
+        writesFrozen = CutoverFreeze.Enabled(Config["Cutover:FreezeWrites"]);
         CartStateService.OnCartChanged += OnCartChanged;
         if (!string.IsNullOrWhiteSpace(Email))
             email = Email;
@@ -248,7 +246,7 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender)
+        if (!firstRender || !OperatingSystem.IsBrowser())
             return;
 
         _self = DotNetObjectReference.Create(this);
@@ -261,7 +259,20 @@
         catch (JSException) { }
         catch (InvalidOperationException) { }
 
-        await CartStateService.InitializeAsync(true, null);
+        if (!IsAuthenticated)
+        {
+            var user = await Firebase.CurrentUserAsync();
+            if (!string.IsNullOrWhiteSpace(user?.Uid))
+            {
+                IsAuthenticated = true;
+                UserId = user.Uid;
+                Email = user.Email;
+                if (!string.IsNullOrWhiteSpace(user.Email))
+                    email = user.Email;
+            }
+        }
+
+        await CartStateService.InitializeAsync(IsAuthenticated, UserId);
         _cartReady = true;
         if (CartStateService.Cart.IsEmpty)
         {
@@ -313,21 +324,19 @@
 
     private async Task HandlePay()
     {
+        if (writesFrozen)
+        {
+            paymentError = PageCopy.WritesPaused;
+            return;
+        }
+
         if (!isOnline)
         {
             paymentError = "Checkout needs a connection.";
             return;
         }
 
-        // If we haven't loaded Stripe yet, the click means "prepare payment"
-        if (!paymentReady)
-        {
-            await PreparePayment();
-            return;
-        }
-
-        // Step 6 will fill this in — the real confirm-payment call
-        await ConfirmPayment();
+        await PreparePayment();
     }
 
     private async Task PreparePayment()
@@ -352,56 +361,21 @@
 
         try
         {
-            // 2. Create the real pending order
-            var orderResult = await OrderService.PlaceOrder(new PlaceOrderModel
-            {
-                Email = email,
-                FirstName = firstName,
-                LastName = lastName,
-                Address = address,
-                City = city,
-                PostalCode = postalCode
-            });
+            var origin = NavigationManager.BaseUri.TrimEnd('/');
+            var started = await CheckoutSessions.StartAsync(
+                email,
+                CartStateService.Cart.Items,
+                $"{origin}/order-confirmed",
+                $"{origin}/checkout");
 
-            if (!orderResult.Success || orderResult.Data == null)
+            if (string.IsNullOrWhiteSpace(started.Url))
             {
-                paymentError = orderResult.Message ?? "Failed to create order";
+                paymentError = started.Error ?? "Failed to start checkout.";
                 return;
             }
 
-            pendingOrderId = orderResult.Data.Id;
-
-            // 3. Create the Stripe PaymentIntent
-            var intentResult = await PaymentService.CreateIntent(pendingOrderId.Value);
-            if (!intentResult.Success || intentResult.Data == null)
-            {
-                paymentError = intentResult.Message ?? "Failed to initialize payment";
-                return;
-            }
-
-            // 4. Initialize Stripe.js
-            await JS.InvokeVoidAsync("mwLoadScripts.ensureStripe");
-            var initOk = await JS.InvokeAsync<bool>(
-                "mwStripe.init", intentResult.Data.PublishableKey);
-            if (!initOk)
-            {
-                paymentError = "Payment system failed to initialize";
-                return;
-            }
-
-            // 5. Mount the payment element
-            var mountOk = await JS.InvokeAsync<bool>(
-                "mwStripe.mount",
-                "#mw-stripe-payment-element",
-                intentResult.Data.ClientSecret);
-            if (!mountOk)
-            {
-                paymentError = "Payment form failed to load";
-                return;
-            }
-
-            // We're ready — Stripe Elements is on screen, awaiting card entry
             paymentReady = true;
+            NavigationManager.NavigateTo(started.Url, forceLoad: true);
         }
         catch (Exception ex)
         {
@@ -414,54 +388,6 @@
             StateHasChanged();
         }
     }
-
-    private async Task ConfirmPayment()
-    {
-        if (!pendingOrderId.HasValue)
-        {
-            paymentError = "No pending order found. Please reload.";
-            return;
-        }
-
-        isPlacingOrder = true;
-        paymentError = null;
-        StateHasChanged();
-
-        try
-        {
-            // The return_url is where Stripe sends the user back if 3D Secure
-            // bounces them away (rare for test cards, common for real EU cards).
-            var returnUrl = $"{NavigationManager.BaseUri}order-confirmed/{pendingOrderId.Value}";
-
-            var result = await JS.InvokeAsync<StripeConfirmResult>(
-                "mwStripe.confirm", returnUrl);
-
-            if (!result.Success)
-            {
-                // Card declined, invalid CVC, etc. — Stripe gives us a friendly message.
-                paymentError = result.Error ?? "Payment failed. Please check your card details.";
-                return;
-            }
-
-            // Success path. Two scenarios:
-            //   - status = "succeeded" → payment cleared inline, navigate to confirmation
-            //   - status = "processing" → async payment (bank transfer, etc.) — still navigate
-            // The webhook (Step 7) is the authoritative confirmation. We're navigating
-            // optimistically; the confirmation page handles the "still processing" case.
-            NavigationManager.NavigateTo($"/order-confirmed/{pendingOrderId.Value}");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"[Checkout] ConfirmPayment error: {ex.Message}");
-            paymentError = "Something went wrong. Your card was not charged.";
-        }
-        finally
-        {
-            isPlacingOrder = false;
-            StateHasChanged();
-        }
-    }
-
 
     public async ValueTask DisposeAsync()
     {
@@ -480,12 +406,5 @@
 
         _self?.Dispose();
         CartStateService.OnCartChanged -= OnCartChanged;
-    }
-    private class StripeConfirmResult
-    {
-        public bool Success { get; set; }
-        public string? Error { get; set; }
-        public string? PaymentIntentId { get; set; }
-        public string? Status { get; set; }
     }
 }

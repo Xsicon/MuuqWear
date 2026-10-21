@@ -59,6 +59,14 @@ public class WishlistStateService
 
             NotifyChanged();
 
+            var online = true;
+            try { online = await _js.InvokeAsync<bool>("mwIsOnline"); } catch { }
+            if (!online)
+            {
+                await _js.InvokeVoidAsync("mwOutbox.enqueue", "wishlist", new { add = !wasActive, productId = item.ProductId });
+                return IsWishlisted(item.ProductId);
+            }
+
             var result = wasActive
                 ? await _wishlistService.RemoveItem(item.ProductId)
                 : await _wishlistService.AddItem(item.ProductId);

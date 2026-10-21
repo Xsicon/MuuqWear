@@ -1,0 +1,17 @@
+@inherits LayoutComponentBase
+@using MuuqWear.Model.Site
+@inject IConfiguration Config
+
+@if (ShowNotice)
+{
+    <div id="mw-maintenance-banner" role="status">@Banner</div>
+}
+@Body
+
+@code {
+    private bool Frozen => CutoverFreeze.Enabled(Config["Cutover:FreezeWrites"]);
+    private bool Notice =>
+        string.Equals(Config["Cutover:ShowMaintenanceNotice"], "true", StringComparison.OrdinalIgnoreCase);
+    private bool ShowNotice => Notice || Frozen;
+    private string Banner => Frozen ? PageCopy.WritesPaused : PageCopy.MaintenanceNotice;
+}

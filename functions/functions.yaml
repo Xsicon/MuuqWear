@@ -1,0 +1,22 @@
+specVersion: v1alpha1
+endpoints:
+  createCheckoutSession:
+    platform: gcfv2
+    region:
+      - europe-west2
+    httpsTrigger: {}
+    entryPoint: createCheckoutSession
+  stripeWebhook:
+    platform: gcfv2
+    region:
+      - europe-west2
+    httpsTrigger: {}
+    entryPoint: stripeWebhook
+  refundOrder:
+    platform: gcfv2
+    region:
+      - europe-west2
+    httpsTrigger: {}
+    entryPoint: refundOrder
+requiredAPIs: []
+extensions: {}

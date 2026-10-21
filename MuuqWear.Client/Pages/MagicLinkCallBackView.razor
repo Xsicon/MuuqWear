@@ -1,4 +1,6 @@
-﻿@inject IJSRuntime JS
+﻿@page "/auth/magic-link-callback"
+@layout ShopperAuthLayout
+@inject IJSRuntime JS
 @inject NavigationManager NavigationManager
 @inject IAuthService IAuthService
 @inject AuthStateService AuthStateService
@@ -62,11 +64,10 @@
                     p => p[0],
                     p => Uri.UnescapeDataString(p[1]));
 
-            // check type is magiclink
             if (!parameters.TryGetValue("type", out var type)
-                || type != "magiclink")
+                || (type != "magiclink" && type != "signup" && type != "email"))
             {
-                errorMessage = "Invalid magic link type.";
+                errorMessage = "Invalid confirmation link.";
                 isVerifying = false;
                 StateHasChanged();
                 return;

@@ -1,81 +1,58 @@
-﻿<footer class="mw-footer">
+﻿@inject NavigationManager NavigationManager
 
+<footer class="mw-footer">
     <div class="container">
-
         <div class="row gy-4">
-
-            <!-- Logo + Text -->
             <div class="col-12 col-sm-6 col-lg-3">
-                <a href="/" class="mw-footer__logo d-flex align-items-center gap-2">
-                    <img src="/images/muuqwearlogo.png" />
+                <a href="/" class="mw-footer__logo d-flex align-items-center gap-2" @onclick="@(() => GoShopper("/"))" @onclick:preventDefault>
+                    <img src="/images/muuqwearlogo.png" alt="MuuqWear" />
                     <span>MuuqWear</span>
                 </a>
-
-                <p class="mw-footer__desc">
-                    Redefining performance through minimalist design.
-                    Crafted for the modern explorer.
-                </p>
+                <p class="mw-footer__desc">Modern essentials, designed clean and made to last.</p>
+                <p class="mb-0"><a href="mailto:Info@KobNeti.com">Info@KobNeti.com</a></p>
             </div>
 
-            <!-- Support -->
             <div class="col-12 col-sm-6 col-lg-3">
-                <h4>Support</h4>
+                <h4>Shop</h4>
                 <ul>
-                    <li><a href="/help">Help Center</a></li>
-                    <li><a href="/affiliate">Affiliate Program</a></li>
-                    <li><a href="/careers">Careers</a></li>
+                    <li><a href="/shop" @onclick="@(() => GoShopper("/shop"))" @onclick:preventDefault>Shop all</a></li>
+                    <li><a href="/shop/apparel" @onclick="@(() => GoShopper("/shop/apparel"))" @onclick:preventDefault>New arrivals</a></li>
+                    <li><a href="/shop/apparel" @onclick="@(() => GoShopper("/shop/apparel"))" @onclick:preventDefault>Essentials</a></li>
                 </ul>
             </div>
 
-            <!-- Company -->
             <div class="col-12 col-sm-6 col-lg-3">
-                <h4>Company</h4>
+                <h4>Help</h4>
                 <ul>
-                    <li><a href="/about">About</a></li>
-                    <li><a href="/design-history">The Archive</a></li>
-                    <li><a href="/muuqsimo">Muuqsimo</a></li>
+                    <li><a href="/size-guide" @onclick="@(() => GoShopper("/size-guide"))" @onclick:preventDefault>Size guide</a></li>
+                    <li><a href="/shipping-return">Shipping</a></li>
+                    <li><a href="/shipping-return">Returns &amp; exchanges</a></li>
+                    <li><a href="/faq" @onclick="@(() => GoShopper("/faq"))" @onclick:preventDefault>FAQ</a></li>
+                    <li><a href="/contact" @onclick="@(() => GoShopper("/contact"))" @onclick:preventDefault>Contact</a></li>
                 </ul>
             </div>
 
-            <!-- Newsletter -->
-            <div class="col-12 col-sm-6 col-lg-3">
-                <h4>Follow Us →</h4>
-
-                <div class="mw-footer__social mb-2">
-                    <!-- SVGs -->
-                </div>
-
-                <p class="mb-1">Be the first to see new drops.</p>
-                <p>Join for exclusive early access.</p>
-
-                <div class="mw-footer__form">
-                    <input type="email" placeholder="Email address" />
-                    <button>Join</button>
-                </div>
+            <div class="col-12 col-sm-6 col-lg-3" id="newsletter">
+                <h4>Be first through the door.</h4>
+                <p>Launch news and early access. About one email a month, unsubscribe anytime.</p>
+                <p class="mb-0"><a href="/#notify">Notify me</a></p>
             </div>
-
         </div>
-
     </div>
 
-    <!-- Bottom bar -->
     <div class="mw-footer__bottom">
-
         <div class="container">
             <div class="mw-footer__bottom-inner d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
-
-                <p class="mb-0 text-center text-md-start">
-                    © 2026 MUUQWEAR. ALL RIGHTS RESERVED.
-                </p>
-
+                <p class="mb-0 text-center text-md-start">Copyright 2026 KobNeti LLC. MuuqWear is built and powered by KobNeti.</p>
                 <div class="d-flex gap-3">
-                    <a href="/privacy">Privacy Policy</a>
-                    <a href="/terms">Terms of Service</a>
+                    <a href="/terms" @onclick="@(() => GoShopper("/terms"))" @onclick:preventDefault>Terms and conditions</a>
+                    <a href="/privacy" @onclick="@(() => GoShopper("/privacy"))" @onclick:preventDefault>Privacy policy</a>
                 </div>
-
             </div>
         </div>
-
     </div>
-
 </footer>
+
+@code {
+    private void GoShopper(string url) => NavigationManager.NavigateTo(url, forceLoad: true);
+}

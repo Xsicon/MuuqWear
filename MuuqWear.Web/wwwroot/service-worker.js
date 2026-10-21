@@ -1,4 +1,4 @@
-const SHELL = 'mw-shell-v3';
+const SHELL = 'mw-shell-v11';
 const CATALOG = 'mw-catalog-v1';
 
 const SHELL_ASSETS = [
@@ -7,7 +7,8 @@ const SHELL_ASSETS = [
     '/bootstrap/bootstrap.min.css',
     '/MuuqWear.Web.styles.css',
     '/MuuqWear.Client.styles.css',
-    '/js/site.js?v=20261019f',
+    '/js/site.js?v=20261021b',
+    '/js/firebase-auth.js?v=20261021f',
     '/js/blazor-boot.js',
     '/js/carousel.js',
     '/js/image-load.js',

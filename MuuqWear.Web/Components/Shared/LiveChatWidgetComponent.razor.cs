@@ -198,6 +198,15 @@ public partial class LiveChatWidgetComponent : IDisposable
                 GuestEmail = isAuthenticated ? null : guestEmail
             };
 
+            var online = true;
+            try { online = await JS.InvokeAsync<bool>("mwIsOnline"); } catch { }
+            if (!online)
+            {
+                await JS.InvokeVoidAsync("mwOutbox.enqueue", "chat", request);
+                chatErrorMessage = "Will send when you are back online.";
+                return;
+            }
+
             var result = await ChatService.SendMessage(request);
 
             if (result.Success && result.Data != null)

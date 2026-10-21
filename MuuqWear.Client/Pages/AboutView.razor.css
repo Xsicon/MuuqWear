@@ -1,1 +1,11 @@
-﻿
+﻿.about-promise {
+    margin: 16px 0 0;
+    padding-left: 18px;
+    color: #1E2A47;
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+.about-promise li + li {
+    margin-top: 8px;
+}

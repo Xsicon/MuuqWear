@@ -71,9 +71,10 @@ public partial class CommunityVoteComponent
         //  wire event → updates local list for this circuit
         _realtimeSub.OnVoteUpdated += HandleRealtimeVoteUpdate;
 
-        await _realtimeSub.SubscribeAsync(
-            Configuration["Supabase:Url"]!,
-            Configuration["Supabase:AnonKey"]!);
+        var supabaseUrl = Configuration["Supabase:Url"];
+        var supabaseKey = Configuration["Supabase:AnonKey"];
+        if (!string.IsNullOrWhiteSpace(supabaseUrl) && !string.IsNullOrWhiteSpace(supabaseKey))
+            await _realtimeSub.SubscribeAsync(supabaseUrl, supabaseKey);
     }
 
     //  called when any user votes → updates count on all clients

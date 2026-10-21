@@ -1,0 +1,32 @@
+@page "/faq"
+@using MuuqWear.Model.Site
+
+<PageTitle>FAQ — MuuqWear</PageTitle>
+
+<section class="mw-faq">
+    <div class="mw-faq__inner">
+        <p class="mw-faq__eyebrow">FAQ</p>
+        <h1>Questions</h1>
+        <p class="mw-faq__intro">@FaqCopy.Intro</p>
+
+        @foreach (var group in FaqCopy.Groups)
+        {
+            <section class="mw-faq__group" id="@group.Id">
+                <h2>@group.Title</h2>
+                @foreach (var item in group.Items)
+                {
+                    <details class="mw-faq__item">
+                        <summary>
+                            @item.Question
+                            @if (item.AtLaunch)
+                            {
+                                <span class="mw-faq__when">At launch</span>
+                            }
+                        </summary>
+                        <p>@item.Answer</p>
+                    </details>
+                }
+            </section>
+        }
+    </div>
+</section>

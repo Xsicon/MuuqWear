@@ -30,7 +30,7 @@
             <div class="mw-header__inner">
 
                 <!-- LOGO -->
-                <a href="/" class="mw-logo text-decoration-none">
+                <a href="/" class="mw-logo text-decoration-none" @onclick="@(() => GoShopper("/"))" @onclick:preventDefault>
                     <img src="/images/muuqwearlogo.png"
                          alt="MuuqWear logo"
                          class="mw-logo__img img-fluid" />
@@ -40,11 +40,11 @@
                 <!-- DESKTOP: nav + actions -->
                 <div class="mw-header__desktop d-none d-md-flex">
                     <nav class="mw-nav">
-                        <NavLink class="mw-nav__link" href="/" Match="NavLinkMatch.All">Home</NavLink>
-                        <NavLink class="mw-nav__link" href="/shop/apparel">Apparel</NavLink>
-                        <NavLink class="mw-nav__link" href="/shop/accessories">Accessories</NavLink>
+                        <a class="mw-nav__link" href="/" @onclick="@(() => GoShopper("/"))" @onclick:preventDefault>Home</a>
+                        <a class="mw-nav__link" href="/shop/apparel" @onclick="@(() => GoShopper("/shop/apparel"))" @onclick:preventDefault>Apparel</a>
+                        <a class="mw-nav__link" href="/shop/accessories" @onclick="@(() => GoShopper("/shop/accessories"))" @onclick:preventDefault>Accessories</a>
                         <NavLink class="mw-nav__link" href="/community">Community</NavLink>
-                        <NavLink class="mw-nav__link" href="/journal">Journal</NavLink>
+                        <a class="mw-nav__link" href="/journal" @onclick="@(() => GoShopper("/journal"))" @onclick:preventDefault>Journal</a>
                     </nav>
 
                     <div class="mw-header__icons">
@@ -110,7 +110,7 @@
                                     }
                                 </Authorized>
                                 <NotAuthorized>
-                                    <a href="/login" class="mw-signin-btn">Sign In</a>
+                                    <a href="/login" class="mw-signin-btn" @onclick="@(() => GoShopper("/login"))" @onclick:preventDefault>Sign In</a>
                                 </NotAuthorized>
                             </AuthorizeView>
                         </div>
@@ -157,7 +157,7 @@
                             }
                         </Authorized>
                         <NotAuthorized>
-                            <a href="/login" class="mw-icon-btn mw-icon-btn--mobile" aria-label="Sign in">
+                            <a href="/login" class="mw-icon-btn mw-icon-btn--mobile" aria-label="Sign in" @onclick="@(() => GoShopper("/login"))" @onclick:preventDefault>
                                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22"
                                      viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                      stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -326,7 +326,8 @@
                                 {
                                     <a href="/productdetail/@product.Id"
                                        class="mw-search-result"
-                                       @onclick="CloseSearch">
+                                       @onclick="@(() => GoShopper($"/productdetail/{product.Id}"))"
+                                       @onclick:preventDefault>
 
                                         <!-- IMAGE -->
                                         <div class="mw-search-result__img">
@@ -353,7 +354,8 @@
                             <div class="col-12 text-center mt-3">
                                 <a href="@GetViewAllHref()"
                                    class="mw-search-viewall"
-                                   @onclick="CloseSearch">
+                                   @onclick="@(() => GoShopper(GetViewAllHref()))"
+                                   @onclick:preventDefault>
                                     View all results for "@searchQuery" →
                                 </a>
                             </div>
@@ -401,32 +403,32 @@
                 else if (!isUserAuthenticated)
                 {
                     <div class="mw-mobile-nav__auth">
-                        <a href="/login" class="mw-mobile-nav__auth-btn mw-mobile-nav__auth-btn--outline" @onclick="CloseMenu">Sign In</a>
-                        <a href="/register" class="mw-mobile-nav__auth-btn mw-mobile-nav__auth-btn--solid" @onclick="CloseMenu">Sign Up</a>
+                        <a href="/login" class="mw-mobile-nav__auth-btn mw-mobile-nav__auth-btn--outline" @onclick="@(() => GoShopper("/login"))">Sign In</a>
+                        <a href="/register" class="mw-mobile-nav__auth-btn mw-mobile-nav__auth-btn--solid" @onclick="@(() => GoShopper("/register"))">Sign Up</a>
                     </div>
                 }
 
                 <nav class="mw-mobile-nav__body">
-                    <NavLink class="mw-mobile-nav__link" href="/" Match="NavLinkMatch.All" @onclick="CloseMenu">
+                    <a class="mw-mobile-nav__link" href="/" @onclick="@(() => GoShopper("/"))">
                         <span>Home</span>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
-                    </NavLink>
-                    <NavLink class="mw-mobile-nav__link" href="/shop/apparel" @onclick="CloseMenu">
+                    </a>
+                    <a class="mw-mobile-nav__link" href="/shop/apparel" @onclick="@(() => GoShopper("/shop/apparel"))">
                         <span>Apparel</span>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
-                    </NavLink>
-                    <NavLink class="mw-mobile-nav__link" href="/shop/accessories" @onclick="CloseMenu">
+                    </a>
+                    <a class="mw-mobile-nav__link" href="/shop/accessories" @onclick="@(() => GoShopper("/shop/accessories"))">
                         <span>Accessories</span>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
-                    </NavLink>
+                    </a>
                     <NavLink class="mw-mobile-nav__link" href="/community" @onclick="CloseMenu">
                         <span>Community</span>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
                     </NavLink>
-                    <NavLink class="mw-mobile-nav__link" href="/journal" @onclick="CloseMenu">
+                    <a class="mw-mobile-nav__link" href="/journal" @onclick="@(() => GoShopper("/journal"))">
                         <span>Journal</span>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
-                    </NavLink>
+                    </a>
                 </nav>
             </div>
 
@@ -464,7 +466,8 @@
                         <p class="text-muted mb-3">Your bag is empty</p>
                         <a href="/shop/apparel"
                            class="mw-btn-primary"
-                           @onclick="CloseCart">
+                           @onclick="@(() => GoShopper("/shop/apparel"))"
+                           @onclick:preventDefault>
                             Shop Now
                         </a>
                     </div>
@@ -560,13 +563,15 @@
 
                 <a href="/checkout"
                    class="mw-checkout-btn w-100 mt-3 d-block text-center text-decoration-none"
-                   @onclick="CloseCart">
+                   @onclick="@(() => GoShopper("/checkout"))"
+                   @onclick:preventDefault>
                     Checkout Securely
                 </a>
 
                 <a href="/cart"
                    class="mw-view-cart d-block text-center mt-2"
-                   @onclick="CloseCart">
+                   @onclick="@(() => GoShopper("/cart"))"
+                   @onclick:preventDefault>
                     View Cart
                 </a>
 
@@ -616,6 +621,14 @@
     //Object
     private CancellationTokenSource? _searchCts;
 
+
+    private void GoShopper(string url)
+    {
+        isMenuOpen = false;
+        isCartOpen = false;
+        isSearchOpen = false;
+        NavigationManager.NavigateTo(url, forceLoad: true);
+    }
 
     async Task ToggleMenu()
     {
