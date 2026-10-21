@@ -1,0 +1,117 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn() && request.auth.token.admin == true;
+    }
+
+    function isAmbassador() {
+      return signedIn() && request.auth.token.ambassador == true;
+    }
+
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function isPublished() {
+      return resource.data.status == 'published';
+    }
+
+    function ownReferralCode() {
+      return get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.referralCode;
+    }
+
+    function threadCustomer(threadId) {
+      return get(/databases/$(database)/documents/chatThreads/$(threadId)).data.customerId;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    match /products/{productId} {
+      allow read: if isPublished() || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /collections/{collectionId} {
+      allow read: if isPublished() || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /siteContent/{pageId} {
+      allow read: if isPublished() || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /customers/{uid} {
+      allow read, write: if isOwner(uid) || isAdmin();
+
+      match /addresses/{addressId} {
+        allow read: if isOwner(uid) || isAdmin();
+        allow write: if isOwner(uid);
+      }
+
+      match /cart/{cartId} {
+        allow read, write: if isOwner(uid) || isAdmin();
+      }
+    }
+
+    match /orders/{orderId} {
+      allow read: if isAdmin()
+        || (signedIn() && resource.data.customerId == request.auth.uid)
+        || (isAmbassador() && resource.data.referralCode == ownReferralCode());
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
+      allow create, delete: if false;
+    }
+
+    match /commissions/{commissionId} {
+      allow read: if isAdmin()
+        || (isAmbassador() && resource.data.ambassadorId == request.auth.uid);
+      allow write: if isAdmin();
+    }
+
+    // A public get succeeds only when the document stores status and type.
+    // The owner stays on the customer document, so knowing a code does not reveal who holds it.
+    match /referralCodes/{code} {
+      allow get: if isAdmin()
+        || (signedIn() && ownReferralCode() == code)
+        || resource.data.keys().hasOnly(['status', 'type']);
+      allow list: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /newsletterSubscribers/{email} {
+      allow create: if request.resource.data.keys().hasOnly(['email', 'consent', 'consentAt'])
+        && request.resource.data.email == email
+        && request.resource.data.consent == true;
+      allow read: if isAdmin();
+      allow update, delete: if false;
+    }
+
+    match /chatThreads/{threadId} {
+      allow read: if isAdmin()
+        || (signedIn() && resource.data.customerId == request.auth.uid);
+      allow create: if signedIn()
+        && request.resource.data.customerId == request.auth.uid;
+      allow update: if isAdmin();
+      allow delete: if false;
+
+      match /messages/{messageId} {
+        allow read: if isAdmin()
+          || (signedIn() && threadCustomer(threadId) == request.auth.uid);
+        allow create: if isAdmin()
+          || (signedIn()
+            && threadCustomer(threadId) == request.auth.uid
+            && request.resource.data.senderId == request.auth.uid);
+        allow update, delete: if false;
+      }
+    }
+  }
+}
