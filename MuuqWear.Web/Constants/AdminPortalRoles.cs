@@ -39,7 +39,7 @@ public static class AdminPortalRoles
     private static readonly IReadOnlyDictionary<string, IReadOnlySet<string>> SectionsByRole =
         new Dictionary<string, IReadOnlySet<string>>(StringComparer.OrdinalIgnoreCase)
         {
-            [Admin] = AllSections,
+            [Admin] = AllSections, // includes Users
             [OperationsManager] = SectionSet(
                 AdminPortalSection.Overview,
                 AdminPortalSection.Orders,
@@ -85,6 +85,16 @@ public static class AdminPortalRoles
             .Where(sections.Contains)
             .ToList();
     }
+
+    public static IReadOnlyList<(string Key, string Label)> StaffRoleChoices { get; } =
+    [
+        (Admin, "Admin"),
+        (OperationsManager, "Operations Manager"),
+        (SupportTeam, "Customer Support"),
+        (Merchandising, "Merchandising"),
+        (ContentTeam, "Creative & Content"),
+        (TechnologySystems, "Technology & Systems")
+    ];
 
     public static string GetDisplayName(string? role)
     {

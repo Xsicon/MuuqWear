@@ -1,59 +1,59 @@
-@rendermode InteractiveServer
-@inject IJSRuntime JS
-@inject NavigationManager NavigationManager
-@inject NavigationLoadingService NavigationLoading
-@using MuuqWear.Web.Services
-@implements IDisposable
-
-@code {
-    private IDisposable? _locationChangingRegistration;
-
-    protected override void OnInitialized()
-    {
-        _locationChangingRegistration =
-            NavigationManager.RegisterLocationChangingHandler(OnLocationChanging);
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (!firstRender)
-            return;
-
-        try
-        {
-            await JS.InvokeVoidAsync("mwNavProgress.init");
-            await JS.InvokeVoidAsync("mwAdminNav.init");
-            await JS.InvokeVoidAsync("mwStorefrontNav.init");
-        }
-        catch
-        {
-            // JS not ready during prerender
-        }
-    }
-
-    private ValueTask OnLocationChanging(LocationChangingContext context)
-    {
-        NavigationLoading.BeginNavigation();
-
-        _ = InvokeAsync(async () =>
-        {
-            try
-            {
-                await JS.InvokeVoidAsync("mwNavProgress.start");
-                await JS.InvokeVoidAsync("mwAdminNav.startFallbackTimeout");
-            }
-            catch
-            {
-                // Ignore if scripts are unavailable
-            }
-        });
-
-        return ValueTask.CompletedTask;
-    }
-
-    public void Dispose()
-    {
-        _locationChangingRegistration?.Dispose();
-    }
-}
+@rendermode InteractiveServer
+@inject IJSRuntime JS
+@inject NavigationManager NavigationManager
+@inject NavigationLoadingService NavigationLoading
+@using MuuqWear.Web.Services
+@implements IDisposable
+
+@code {
+    private IDisposable? _locationChangingRegistration;
+
+    protected override void OnInitialized()
+    {
+        _locationChangingRegistration =
+            NavigationManager.RegisterLocationChangingHandler(OnLocationChanging);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        try
+        {
+            await JS.InvokeVoidAsync("mwNavProgress.init");
+            await JS.InvokeVoidAsync("mwAdminNav.init");
+            await JS.InvokeVoidAsync("mwStorefrontNav.init");
+        }
+        catch
+        {
+            // JS not ready during prerender
+        }
+    }
+
+    private ValueTask OnLocationChanging(LocationChangingContext context)
+    {
+        NavigationLoading.BeginNavigation();
+
+        _ = InvokeAsync(async () =>
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("mwNavProgress.start");
+                await JS.InvokeVoidAsync("mwAdminNav.startFallbackTimeout");
+            }
+            catch
+            {
+                // Ignore if scripts are unavailable
+            }
+        });
+
+        return ValueTask.CompletedTask;
+    }
+
+    public void Dispose()
+    {
+        _locationChangingRegistration?.Dispose();
+    }
+}
 

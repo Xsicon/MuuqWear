@@ -1,0 +1,164 @@
+@page "/admin/users/{Uid}"
+@layout Layout.AdminLayoutComponent.AdminDashboardLayoutComponent
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using Microsoft.AspNetCore.Authorization
+@using MuuqWear.Model.Staff
+@using MuuqWear.Web.Constants
+@using MuuqWear.Web.Helpers
+@using MuuqWear.Web.Services
+@attribute [Authorize(Policy = AdminPortalPolicies.Users)]
+@inject IStaffUserService StaffUsers
+
+<PageTitle>User details</PageTitle>
+
+<div class="users-page">
+    <div class="users-header">
+        <div>
+            <h1 class="users-header__title">@(user?.DisplayName ?? "User")</h1>
+            <p class="users-header__subtitle">@(user?.Email ?? "Staff account details")</p>
+        </div>
+        <div class="users-header__actions">
+            <a class="btn-secondary" href="/admin/users">Back to users</a>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(error))
+    {
+        <p class="users-error">@error</p>
+    }
+    @if (!string.IsNullOrEmpty(notice))
+    {
+        <p class="users-success">@notice</p>
+    }
+
+    @if (isLoading)
+    {
+        <div class="users-details-panel">
+            <p class="users-empty">Loading user…</p>
+        </div>
+    }
+    else if (user is not null)
+    {
+        <div class="users-details-panel">
+            <p class="users-panel__eyebrow">Staff profile</p>
+
+            <div class="users-panel__section">
+                <p class="users-panel__label">Email</p>
+                <p class="users-panel__value">@user.Email</p>
+            </div>
+            <div class="users-panel__section">
+                <p class="users-panel__label">Created</p>
+                <p class="users-panel__value">@AdminRelativeTime.Format(user.CreatedAt)</p>
+            </div>
+            <div class="users-panel__section">
+                <p class="users-panel__label">Last sign-in</p>
+                <p class="users-panel__value">@AdminRelativeTime.Format(user.LastSignInAt)</p>
+            </div>
+            <div class="users-panel__section">
+                <p class="users-panel__label">Status</p>
+                <p class="users-panel__value">
+                    <span class="users-status-badge @(user.Disabled ? "users-status-badge--disabled" : "users-status-badge--active")">
+                        @(user.Disabled ? "Disabled" : "Active")
+                    </span>
+                </p>
+            </div>
+
+            <form class="users-form" @onsubmit="SaveAsync" @onsubmit:preventDefault="true">
+                <div class="users-field">
+                    <label class="users-label" for="edit-name">Full name</label>
+                    <input id="edit-name" class="users-input" @bind="name" />
+                </div>
+                <div class="users-field">
+                    <label class="users-label" for="edit-role">Role</label>
+                    <select id="edit-role" class="users-input" @bind="role">
+                        @foreach (var choice in AdminPortalRoles.StaffRoleChoices)
+                        {
+                            <option value="@choice.Key">@choice.Label</option>
+                        }
+                    </select>
+                </div>
+                <div class="users-actions">
+                    <button class="btn-primary" type="submit" disabled="@saving">@(saving ? "Saving…" : "Save changes")</button>
+                    <button class="btn-secondary" type="button" disabled="@saving" @onclick="SendResetAsync">Send password-reset email</button>
+                    <button class="@(user.Disabled ? "btn-primary" : "btn-danger")" type="button" disabled="@saving" @onclick="ToggleDisabledAsync">
+                        @(user.Disabled ? "Enable account" : "Disable account")
+                    </button>
+                </div>
+            </form>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Uid { get; set; } = "";
+
+    private StaffUserModel? user;
+    private string name = "";
+    private string role = AdminPortalRoles.SupportTeam;
+    private bool isLoading = true;
+    private bool saving;
+    private string? error;
+    private string? notice;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        isLoading = true;
+        var result = await StaffUsers.GetAsync(Uid);
+        if (result.Success && result.Data != null)
+        {
+            user = result.Data;
+            name = user.DisplayName;
+            role = user.Role;
+            error = null;
+        }
+        else
+        {
+            error = result.Message;
+            user = null;
+        }
+        isLoading = false;
+    }
+
+    private async Task SaveAsync() =>
+        await ApplyAsync(new UpdateStaffUserModel { DisplayName = name, Role = role });
+
+    private async Task ToggleDisabledAsync()
+    {
+        if (user is null)
+            return;
+        await ApplyAsync(new UpdateStaffUserModel { Disabled = !user.Disabled });
+    }
+
+    private async Task SendResetAsync()
+    {
+        saving = true;
+        notice = null;
+        error = null;
+        var result = await StaffUsers.SendPasswordResetAsync(Uid);
+        saving = false;
+        if (result.Success)
+            notice = result.Message;
+        else
+            error = result.Message;
+    }
+
+    private async Task ApplyAsync(UpdateStaffUserModel request)
+    {
+        saving = true;
+        notice = null;
+        error = null;
+        var result = await StaffUsers.UpdateAsync(Uid, request);
+        saving = false;
+        if (!result.Success || result.Data is null)
+        {
+            error = result.Message;
+            return;
+        }
+        user = result.Data;
+        name = user.DisplayName;
+        role = user.Role;
+        notice = "Saved.";
+    }
+}

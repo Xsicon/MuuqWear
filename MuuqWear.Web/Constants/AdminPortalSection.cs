@@ -11,6 +11,7 @@ public static class AdminPortalSection
     public const string Support = "support";
     public const string Careers = "careers";
     public const string System = "system";
+    public const string Users = "users";
 
     public static IReadOnlyList<string> All { get; } =
     [
@@ -22,6 +23,7 @@ public static class AdminPortalSection
         Affiliates,
         Support,
         Careers,
-        System
+        System,
+        Users
     ];
 }

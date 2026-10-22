@@ -71,7 +71,7 @@ public static class AdminHeaderNotificationsBuilder
             Link = $"/admin/products?view=low-stock&productId={product.Id}",
             CreatedAt = createdAt,
             IsRead = isRead,
-            TimeAgo = $"{stock} unit{(stock == 1 ? "" : "s")} left · below {ProductStockHelper.LowStockThreshold}"
+            TimeAgo = $"{stock} unit{(stock == 1 ? "" : "s")} total · a size is below {ProductStockHelper.LowStockThreshold}"
         };
     }
 }

@@ -1,0 +1,170 @@
+@page "/admin/users"
+@layout Layout.AdminLayoutComponent.AdminDashboardLayoutComponent
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using Microsoft.AspNetCore.Authorization
+@using MuuqWear.Application.Shared
+@using MuuqWear.Model.Staff
+@using MuuqWear.Web.Components.Shared
+@using MuuqWear.Web.Constants
+@using MuuqWear.Web.Helpers
+@using MuuqWear.Web.Services
+@attribute [Authorize(Policy = AdminPortalPolicies.Users)]
+@inject IStaffUserService StaffUsers
+@inject NavigationManager NavigationManager
+
+<PageTitle>Users</PageTitle>
+
+<div class="users-page">
+    <div class="users-header">
+        <div>
+            <h1 class="users-header__title">Users</h1>
+            <p class="users-header__subtitle">
+                Staff accounts that can sign in to this dashboard
+                @if (users.Count > 0)
+                {
+                    <span> · @users.Count total</span>
+                }
+            </p>
+        </div>
+        <div class="users-header__actions">
+            <a class="btn-primary" href="/admin/users/new">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M5 12h14"></path>
+                    <path d="M12 5v14"></path>
+                </svg>
+                Create user
+            </a>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(loadError))
+    {
+        <p class="users-error">@loadError</p>
+    }
+
+    <div class="users-search-row">
+        <div class="users-search">
+            <svg class="users-search__icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.3-4.3"></path>
+            </svg>
+            <input class="users-search__input"
+                   type="search"
+                   placeholder="Search by name or email…"
+                   value="@search"
+                   @oninput="OnSearch" />
+        </div>
+        <label class="users-status-filter">
+            <span class="users-status-filter__label">Status</span>
+            <select class="users-status-filter__select" @bind="statusFilter">
+                <option value="">All</option>
+                <option value="active">Active</option>
+                <option value="disabled">Disabled</option>
+            </select>
+        </label>
+    </div>
+
+    <div class="users-table-card">
+        <div class="users-table-card__header">
+            <h2 class="users-table-card__title">Staff list (@Filtered.Count())</h2>
+        </div>
+        @if (isLoading)
+        {
+            <MwSkeletonSection Layout="MwSkeletonSection.SkeletonLayout.AdminTable"
+                               Count="6"
+                               Columns="6"
+                               AriaLabel="Loading users" />
+        }
+        else if (!Filtered.Any())
+        {
+            <p class="users-empty">No staff users found.</p>
+        }
+        else
+        {
+            <div class="users-table-scroll">
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Last sign-in</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var user in Filtered)
+                        {
+                            <tr @key="user.Uid">
+                                <td class="users-table__name">@user.DisplayName</td>
+                                <td class="users-table__muted">@user.Email</td>
+                                <td>@AdminPortalRoles.GetDisplayName(user.Role)</td>
+                                <td class="users-table__muted">@AdminRelativeTime.Format(user.LastSignInAt)</td>
+                                <td>
+                                    <span class="users-status-badge @(user.Disabled ? "users-status-badge--disabled" : "users-status-badge--active")">
+                                        @(user.Disabled ? "Disabled" : "Active")
+                                    </span>
+                                </td>
+                                <td>
+                                    <a class="users-view-btn"
+                                       href="@($"/admin/users/{Uri.EscapeDataString(user.Uid)}")"
+                                       title="View user"
+                                       aria-label="View @user.DisplayName">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                             viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"></path>
+                                            <circle cx="12" cy="12" r="3"></circle>
+                                        </svg>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private List<StaffUserModel> users = [];
+    private string search = "";
+    private string statusFilter = "";
+    private bool isLoading = true;
+    private string? loadError;
+
+    private IEnumerable<StaffUserModel> Filtered
+    {
+        get
+        {
+            IEnumerable<StaffUserModel> query = users;
+            if (!string.IsNullOrWhiteSpace(search))
+                query = query.Where(u =>
+                    (u.DisplayName ?? "").Contains(search, StringComparison.OrdinalIgnoreCase)
+                    || (u.Email ?? "").Contains(search, StringComparison.OrdinalIgnoreCase));
+            if (statusFilter == "active")
+                query = query.Where(u => !u.Disabled);
+            if (statusFilter == "disabled")
+                query = query.Where(u => u.Disabled);
+            return query;
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await StaffUsers.ListAsync();
+        if (result.Success && result.Data != null)
+            users = result.Data;
+        else
+            loadError = result.Message;
+        isLoading = false;
+    }
+
+    private void OnSearch(ChangeEventArgs e) => search = e.Value?.ToString() ?? "";
+}

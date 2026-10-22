@@ -26,6 +26,11 @@ public partial class AdminOrdersComponent : IDisposable
     [SupplyParameterFromQuery(Name = "status")]
     public string? StatusQuery { get; set; }
 
+    [SupplyParameterFromQuery(Name = "order")]
+    public string? OrderQuery { get; set; }
+
+    [Inject] private AdminFirestore AdminStore { get; set; } = default!;
+
     private string? loadedCacheKey;
 
     private string searchTerm = string.Empty;
@@ -267,7 +272,10 @@ new("Denied",   "denied")
         try
         {
             if (activeMainTab == "orders")
+            {
                 await LoadOrders();
+                await OpenOrderFromQueryAsync();
+            }
             else if (activeMainTab == "returns")
                 await LoadReturns();
             else if (activeMainTab == "refunds")
@@ -475,6 +483,35 @@ new("Denied",   "denied")
         await LoadOrders();
     }
 
+    private async Task OpenOrderFromQueryAsync()
+    {
+        var needle = OrderQuery;
+        if (string.IsNullOrWhiteSpace(needle))
+        {
+            var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+            if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("order", out var orderVal))
+                needle = orderVal.ToString();
+        }
+
+        if (string.IsNullOrWhiteSpace(needle))
+            return;
+
+        needle = needle.Trim().TrimStart('#');
+        var match = orders.FirstOrDefault(o =>
+            string.Equals(o.OrderNumber, needle, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(o.Id.ToString(), needle, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(o.FirestoreId, needle, StringComparison.OrdinalIgnoreCase));
+        if (match is null)
+        {
+            var fetched = await AdminStore.GetOrderByNumberAsync(needle);
+            if (fetched is null)
+                return;
+            match = fetched;
+        }
+
+        await OpenViewPanel(match.Id);
+    }
+
     // ─── VIEW PANEL ───────────────────────────────────────────
     private async Task OpenViewPanel(Guid orderId)
     {
@@ -494,7 +531,7 @@ new("Denied",   "denied")
             {
                 viewOrder = result.Data;
             }
-            else
+            else if (viewOrder is null)
             {
                 viewDetailError = AdminUiErrorHelper.FromApi(result.Message, "Failed to load order details.");
             }

@@ -11,6 +11,7 @@ public static class AdminPortalPolicies
     public const string Support = "AdminSection:support";
     public const string Careers = "AdminSection:careers";
     public const string System = "AdminSection:system";
+    public const string Users = "AdminSection:users";
 
     public static string ForSection(string section) => $"AdminSection:{section}";
 }

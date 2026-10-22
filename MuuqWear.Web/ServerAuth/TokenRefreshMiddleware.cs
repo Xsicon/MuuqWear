@@ -3,8 +3,10 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using MuuqWear.Model.Authentication;
 using MuuqWear.Model.Profile;
+using MuuqWear.Web.Constants;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Json;
 using System.Security.Claims;
@@ -17,16 +19,18 @@ public class TokenRefreshMiddleware
     private readonly IConfiguration _configuration;
     private readonly IMemoryCache _cache;
     private readonly AuthSessionService _authSession; // ← add
+    private readonly ILogger<TokenRefreshMiddleware> _logger;
     private static readonly SemaphoreSlim _lock = new SemaphoreSlim(1, 1);
 
 
     public TokenRefreshMiddleware(RequestDelegate next, IConfiguration configuration, IMemoryCache cache,
-         AuthSessionService authSession)
+         AuthSessionService authSession, ILogger<TokenRefreshMiddleware> logger)
     {
         _next = next;
         _configuration = configuration;
         _cache = cache;
         _authSession = authSession;
+        _logger = logger;
     }
 
     public async Task InvokeAsync(HttpContext context)
@@ -47,11 +51,19 @@ public class TokenRefreshMiddleware
         {
             // check if they HAD a cookie — if cookie exists but invalid = session expired
             var hadCookie = context.Request.Cookies
-                .ContainsKey("muuqwear_auth");
+                .ContainsKey("__session");
+
+            if (path.StartsWith("/admin", StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogWarning(
+                    "Admin request is unauthenticated. hadCookie={HadCookie} path={Path}",
+                    hadCookie,
+                    path);
+            }
 
             if (hadCookie)
                 _authSession.NotifySessionExpired();
-            context.Response.Cookies.Delete("muuqwear_auth");
+            context.Response.Cookies.Delete("__session");
 
 
             await _next(context);
@@ -62,7 +74,9 @@ public class TokenRefreshMiddleware
         var accessToken = context.User.FindFirst("AccessToken")?.Value;
         var refreshToken = context.User.FindFirst("RefreshToken")?.Value;
         var userId = context.User.FindFirst("UserId")?.Value;
-        var isActive = await CheckIsActive(accessToken, userId);
+        var role = MuuqWear.Web.Helpers.AdminPortalUserContext.GetRole(context.User);
+        var staffSession = AdminPortalRoles.IsAllowed(role);
+        var isActive = staffSession || await CheckIsActive(accessToken, userId);
         if (!isActive)
         {
             await context.SignOutAsync(
@@ -75,6 +89,18 @@ public class TokenRefreshMiddleware
 
         if (!string.IsNullOrEmpty(accessToken) && IsTokenExpired(accessToken))
         {
+            if (string.IsNullOrEmpty(refreshToken))
+            {
+                await context.SignOutAsync(
+                    CookieAuthenticationDefaults.AuthenticationScheme);
+                context.Response.Cookies.Append("session_message",
+                    "Your session has expired. Please sign in again.");
+                context.Response.Redirect(staffSession
+                    ? "/admin/f8e2a947-3c1b-4d9e-b562-7a0f1e8d3c92/login"
+                    : "/login?expired=true");
+                return;
+            }
+
             await _lock.WaitAsync();
             try
             {
@@ -82,7 +108,8 @@ public class TokenRefreshMiddleware
                 if (_cache.TryGetValue(cacheKey, out string? cachedToken)
                     && !IsTokenExpired(cachedToken!))
                 {
-                    TryScheduleLastActive(userId);
+                    if (!staffSession)
+                        TryScheduleLastActive(userId);
                     await _next(context);
                     return;
                 }
@@ -105,7 +132,8 @@ public class TokenRefreshMiddleware
                 _lock.Release();
             }
         }
-        TryScheduleLastActive(userId);
+        if (!staffSession)
+            TryScheduleLastActive(userId);
 
         await _next(context);
     }

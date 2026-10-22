@@ -12,14 +12,16 @@ public class AuthService : IAuthService
     private readonly HttpClient _http;
     private readonly ProtectedSessionStorage _sessionStorage;
     private readonly IConfiguration _config;
+    private readonly StaffSessionJwt _staffJwt;
     public bool IsNewSignup { get; private set; } = false;
 
 
-    public AuthService(HttpClient http, ProtectedSessionStorage sessionStorage, IConfiguration config)
+    public AuthService(HttpClient http, ProtectedSessionStorage sessionStorage, IConfiguration config, StaffSessionJwt staffJwt)
     {
         this._http = http;
         this._sessionStorage = sessionStorage;
         _config = config;
+        _staffJwt = staffJwt;
     }
     public async Task<Response<int>> Register(RegisterModel request)
     {
@@ -146,18 +148,22 @@ public class AuthService : IAuthService
                 };
             }
 
+            var email = body.Email ?? request.Email;
+            var uid = body.LocalId ?? "";
+            var role = FirebaseIdTokenRole.FromAccessToken(body.IdToken);
+            var name = body.DisplayName ?? "";
             return new Response<AuthResponseModel>
             {
                 Success = true,
                 Message = "Login Successful",
                 Data = new AuthResponseModel
                 {
-                    AccessToken = body.IdToken,
-                    RefreshToken = body.RefreshToken,
-                    Email = body.Email ?? request.Email,
-                    UserId = body.LocalId,
-                    UserName = body.DisplayName ?? "",
-                    Role = FirebaseIdTokenRole.FromAccessToken(body.IdToken)
+                    AccessToken = _staffJwt.Create(uid, email, role, name),
+                    RefreshToken = null,
+                    Email = email,
+                    UserId = uid,
+                    UserName = name,
+                    Role = role
                 }
             };
         }

@@ -35,7 +35,7 @@ public class AdminPortalRolesTests
     [InlineData(AdminPortalRoles.Merchandising, 2)]
     [InlineData(AdminPortalRoles.ContentTeam, 2)]
     [InlineData(AdminPortalRoles.TechnologySystems, 2)]
-    [InlineData(AdminPortalRoles.Admin, 9)]
+    [InlineData(AdminPortalRoles.Admin, 10)]
     public void GetSections_returns_expected_count(string role, int expectedCount) =>
         Assert.Equal(expectedCount, AdminPortalRoles.GetSections(role).Count);
 
@@ -77,6 +77,8 @@ public class AdminPortalRouteAccessTests
     [InlineData(AdminPortalRoles.SupportTeam, "/admin/support?tab=tickets", true)]
     [InlineData(AdminPortalRoles.SupportTeam, "/admin/customers?view=notes", false)]
     [InlineData(AdminPortalRoles.Admin, "/admin/customers", true)]
+    [InlineData(AdminPortalRoles.Admin, "/admin/users", true)]
+    [InlineData(AdminPortalRoles.OperationsManager, "/admin/users", false)]
     [InlineData(AdminPortalRoles.OperationsManager, "/admin/affiliates?tab=pending", true)]
     public void CanAccessPath_enforces_route_matrix(string role, string path, bool expected) =>
         Assert.Equal(expected, AdminPortalRouteAccess.CanAccessPath(role, path));
@@ -86,6 +88,7 @@ public class AdminPortalRouteAccessTests
     [InlineData("/admin/customers?view=notes", AdminPortalSection.Customers)]
     [InlineData("/admin/live-chat", AdminPortalSection.Support)]
     [InlineData("/admin/jobs/abc/applications", AdminPortalSection.Careers)]
+    [InlineData("/admin/users/new", AdminPortalSection.Users)]
     public void GetSectionFromPath_maps_routes(string path, string expectedSection) =>
         Assert.Equal(expectedSection, AdminPortalRouteAccess.GetSectionFromPath(path));
 }
@@ -116,6 +119,18 @@ public class AdminHeaderNotificationAccessTests
             AdminHeaderNotificationAccess.ResolveLink(
                 AdminPortalRoles.SupportTeam,
                 "/admin/customers?view=notes&customerId=abc"));
+    }
+
+    [Fact]
+    public void AppRoleClaimMapsToSuperAdminDisplay()
+    {
+        var user = new System.Security.Claims.ClaimsPrincipal(
+            new System.Security.Claims.ClaimsIdentity(
+            [
+                new System.Security.Claims.Claim("app_role", AdminPortalRoles.Admin)
+            ], "test"));
+        Assert.Equal(AdminPortalRoles.Admin, MuuqWear.Web.Helpers.AdminPortalUserContext.GetRole(user));
+        Assert.Equal("Admin", AdminPortalRoles.GetDisplayName(AdminPortalRoles.Admin));
     }
 
     [Fact]

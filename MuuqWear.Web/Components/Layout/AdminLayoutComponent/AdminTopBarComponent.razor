@@ -1089,6 +1089,10 @@
         if (query.StartsWith("TKT-", StringComparison.OrdinalIgnoreCase))
             return $"/admin/tickets?search={Uri.EscapeDataString(query)}";
 
+        var orderLike = query.Trim().TrimStart('#');
+        if (orderLike.Length is >= 6 and <= 12 && orderLike.All(char.IsLetterOrDigit))
+            return $"/admin/orders?tab=orders&order={Uri.EscapeDataString(orderLike)}";
+
         return $"/admin/products?search={Uri.EscapeDataString(query)}";
     }
 

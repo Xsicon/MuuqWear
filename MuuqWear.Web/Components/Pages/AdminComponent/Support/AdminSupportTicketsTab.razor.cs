@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Web;
 using MuuqWear.Application.Services.HelpCenterService;
+using MuuqWear.Application.Shared;
 using MuuqWear.Model.HelpCenter;
 using MuuqWear.Web.Helpers;
 using MuuqWear.Web.Services;
@@ -56,6 +57,7 @@ public partial class AdminSupportTicketsTab : IDisposable
         {
             var q = search.Trim().ToLowerInvariant();
             return tickets.Where(t =>
+                !AdminDirectoryFilter.IsNoiseTicket(t.Subject, t.Name) &&
                 (string.IsNullOrEmpty(q) ||
                  t.Subject.Contains(q, StringComparison.OrdinalIgnoreCase) ||
                  t.Name.Contains(q, StringComparison.OrdinalIgnoreCase) ||

@@ -71,7 +71,7 @@ public partial class AdminProductComponent : IDisposable
     private string ViewContextLabel => activeView switch
     {
         "stock" => "Stock Levels view — size breakdown and Update Stock actions",
-        "low-stock" => $"Low Stock Alerts — products with fewer than {ProductStockHelper.LowStockThreshold} units",
+        "low-stock" => $"Low Stock Alerts — a size has fewer than {ProductStockHelper.LowStockThreshold} units",
         "restock" => "Restock Requests — products with zero total stock",
         _ => string.Empty
     };

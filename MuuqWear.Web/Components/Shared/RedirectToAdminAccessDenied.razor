@@ -1,6 +1,7 @@
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Components.Authorization
 @using MuuqWear.Web.Constants
+@using MuuqWear.Web.Helpers
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthStateProvider
 
@@ -8,7 +9,7 @@
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        var role = authState.User.FindFirst(ClaimTypes.Role)?.Value;
+        var role = AdminPortalUserContext.GetRole(authState.User);
 
         NavigationManager.NavigateTo(
             AdminPortalRoles.IsAllowed(role) ? "/admin/access-denied" : "/not-found",

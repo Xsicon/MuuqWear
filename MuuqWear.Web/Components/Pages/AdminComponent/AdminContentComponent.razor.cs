@@ -294,7 +294,9 @@ public partial class AdminContentComponent : IDisposable
 
         var view = query.TryGetValue("view", out var value) && !string.IsNullOrEmpty(value)
             ? value.ToString()
-            : ViewQuery;
+            : query.TryGetValue("tab", out var tabValue) && !string.IsNullOrEmpty(tabValue)
+                ? tabValue.ToString()
+                : ViewQuery;
 
         activeView = AdminContentTabCoordinator.NormalizeView(view);
     }

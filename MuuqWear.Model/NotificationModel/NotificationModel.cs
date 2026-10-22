@@ -22,7 +22,11 @@ public class NotificationModel
             var diff = DateTime.UtcNow - CreatedAt;
             if (diff.TotalMinutes < 1) return "Just now";
             if (diff.TotalMinutes < 60) return $"{(int)diff.TotalMinutes} min ago";
-            if (diff.TotalHours < 24) return $"{(int)diff.TotalHours} hour ago";
+            if (diff.TotalHours < 24)
+            {
+                var hours = Math.Max(1, (int)diff.TotalHours);
+                return $"{hours} hour{(hours == 1 ? "" : "s")} ago";
+            }
             return $"{(int)diff.TotalDays} days ago";
         }
     }

@@ -1,0 +1,86 @@
+@page "/admin/users/new"
+@layout Layout.AdminLayoutComponent.AdminDashboardLayoutComponent
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using Microsoft.AspNetCore.Authorization
+@using MuuqWear.Model.Staff
+@using MuuqWear.Web.Constants
+@using MuuqWear.Web.Services
+@attribute [Authorize(Policy = AdminPortalPolicies.Users)]
+@inject IStaffUserService StaffUsers
+@inject NavigationManager NavigationManager
+
+<PageTitle>Create user</PageTitle>
+
+<div class="users-page">
+    <div class="users-header">
+        <div>
+            <h1 class="users-header__title">Create user</h1>
+            <p class="users-header__subtitle">They receive an email to set their own password.</p>
+        </div>
+        <div class="users-header__actions">
+            <a class="btn-secondary" href="/admin/users">Back to users</a>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(error))
+    {
+        <p class="users-error">@error</p>
+    }
+
+    <div class="users-details-panel">
+        <p class="users-panel__eyebrow">New staff account</p>
+        <form class="users-form" @onsubmit="SaveAsync" @onsubmit:preventDefault="true">
+            <div class="users-field">
+                <label class="users-label" for="staff-name">Full name</label>
+                <input id="staff-name" class="users-input" @bind="name" autocomplete="name" />
+            </div>
+            <div class="users-field">
+                <label class="users-label" for="staff-email">Email</label>
+                <input id="staff-email" class="users-input" type="email" @bind="email" autocomplete="email" />
+            </div>
+            <div class="users-field">
+                <label class="users-label" for="staff-role">Role</label>
+                <select id="staff-role" class="users-input" @bind="role">
+                    @foreach (var choice in AdminPortalRoles.StaffRoleChoices)
+                    {
+                        <option value="@choice.Key">@choice.Label</option>
+                    }
+                </select>
+            </div>
+            <div class="users-actions">
+                <button class="btn-primary" type="submit" disabled="@saving">
+                    @(saving ? "Sending…" : "Create user")
+                </button>
+                <a class="btn-secondary" href="/admin/users">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@code {
+    private string name = "";
+    private string email = "";
+    private string role = AdminPortalRoles.SupportTeam;
+    private bool saving;
+    private string? error;
+
+    private async Task SaveAsync()
+    {
+        saving = true;
+        error = null;
+        var result = await StaffUsers.CreateAsync(new CreateStaffUserModel
+        {
+            DisplayName = name,
+            Email = email,
+            Role = role
+        });
+        saving = false;
+        if (!result.Success || result.Data is null)
+        {
+            error = string.IsNullOrWhiteSpace(result.Message) ? "Unable to create the user." : result.Message;
+            return;
+        }
+
+        NavigationManager.NavigateTo($"/admin/users/{Uri.EscapeDataString(result.Data.Uid)}");
+    }
+}

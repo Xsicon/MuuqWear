@@ -1,3 +1,4 @@
+using MuuqWear.Application.Shared;
 using MuuqWear.Model.AffiliateApplication;
 using MuuqWear.Model.Customer;
 using MuuqWear.Model.NotificationModel;
@@ -30,9 +31,9 @@ public static class AdminHeaderOperationalNotificationsBuilder
                     Id = order.Id,
                     Type = NotificationType.Order,
                     Message = $"Pending sale: {label}",
-                    Link = "/admin/orders?tab=orders&status=pending",
+                    Link = $"/admin/orders?tab=orders&order={Uri.EscapeDataString(order.OrderNumber ?? order.Id.ToString())}",
                     CreatedAt = order.CreatedAt ?? DateTime.UtcNow,
-                    TimeAgo = $"{order.Total:C} · awaiting fulfillment"
+                    TimeAgo = $"{AdminMoney.Format(order.Total)} · awaiting fulfillment · {AdminRelativeTime.Format(order.CreatedAt)}"
                 };
             });
 

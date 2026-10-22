@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using MuuqWear.Application.Services.HelpCenterService;
+using MuuqWear.Application.Shared;
 using MuuqWear.Model.HelpCenter;
 using MuuqWear.Web.Services;
 
@@ -85,6 +86,7 @@ public partial class AdminSupportKnowledgeBaseTab : IDisposable
         {
             var q = search.Trim().ToLowerInvariant();
             return articles.Where(a =>
+                !AdminDirectoryFilter.IsNoiseArticle(a.Title) &&
                 (string.IsNullOrEmpty(q) ||
                  a.Title.Contains(q, StringComparison.OrdinalIgnoreCase) ||
                  a.Content.Contains(q, StringComparison.OrdinalIgnoreCase)) &&

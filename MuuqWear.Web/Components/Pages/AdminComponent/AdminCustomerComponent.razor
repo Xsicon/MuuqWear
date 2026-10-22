@@ -2,6 +2,7 @@
 @layout Layout.AdminLayoutComponent.AdminDashboardLayoutComponent
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @using Microsoft.AspNetCore.Authorization
+@using MuuqWear.Application.Shared
 @using MuuqWear.Model.Customer
 @using MuuqWear.Web.Components.Shared
 @using MuuqWear.Web.Helpers
@@ -143,7 +144,7 @@
                                         </td>
                                         <td class="customers-table__muted">@customer.Email</td>
                                         <td>@customer.OrderCount</td>
-                                        <td class="customers-table__spent">@customer.TotalSpent.ToString("C")</td>
+                                        <td class="customers-table__spent">@AdminMoney.Format(customer.TotalSpent)</td>
                                         <td class="customers-table__muted">@FormatDate(customer.CreatedAt)</td>
                                         <td class="customers-table__muted">@FormatDate(customer.LastOrderAt)</td>
                                         <td>
@@ -208,7 +209,7 @@
                                             </span>
                                             <span class="customers-details-picker__email">@customer.Email</span>
                                             <span class="customers-details-picker__meta">
-                                                @customer.OrderCount orders · @customer.TotalSpent.ToString("C")
+                                                @customer.OrderCount orders · @AdminMoney.Format(customer.TotalSpent)
                                             </span>
                                         </button>
                                     </li>
@@ -254,7 +255,7 @@
                     <div class="customers-panel__section">
                         <p class="customers-panel__label">Total Spent</p>
                         <p class="customers-panel__value customers-panel__value--emphasis">
-                            @selectedCustomerForDetails.TotalSpent.ToString("C")
+                            @AdminMoney.Format(selectedCustomerForDetails.TotalSpent)
                         </p>
                     </div>
 
@@ -425,7 +426,7 @@
         <div class="customers-panel__section">
             <p class="customers-panel__label">Total Spent</p>
             <p class="customers-panel__value customers-panel__value--emphasis">
-                @selectedCustomer.TotalSpent.ToString("C")
+                @AdminMoney.Format(selectedCustomer.TotalSpent)
             </p>
         </div>
 

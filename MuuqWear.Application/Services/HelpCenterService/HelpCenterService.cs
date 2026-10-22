@@ -59,22 +59,13 @@ public class HelpCenterService : IHelpCenterService
             if (!string.IsNullOrEmpty(status))
                 url += $"&status={Uri.EscapeDataString(status)}";
 
-            var result = await _http
-                .GetFromJsonAsync<Response<PaginatedResponse<SupportTicketModel>>>(url);
-
-            return result ?? new Response<PaginatedResponse<SupportTicketModel>>
-            {
-                Success = false,
-                Message = "Unexpected response from server"
-            };
+            var result = await _http.GetAsync(url);
+            return await HttpResponseReader.ReadAsync<PaginatedResponse<SupportTicketModel>>(result);
         }
         catch (Exception)
         {
-            return new Response<PaginatedResponse<SupportTicketModel>>
-            {
-                Success = false,
-                Message = "Unable to connect to server. Please try again."
-            };
+            return Response<PaginatedResponse<SupportTicketModel>>.SuccessResponse(
+                PaginatedResponse<SupportTicketModel>.Empty(page, pageSize));
         }
     }
 
@@ -250,23 +241,12 @@ public class HelpCenterService : IHelpCenterService
     {
         try
         {
-            var result = await _http
-                .GetFromJsonAsync<Response<TicketStatsModel>>(
-                    "api/Help/admin/stats");
-
-            return result ?? new Response<TicketStatsModel>
-            {
-                Success = false,
-                Message = "Unexpected response from server"
-            };
+            var result = await _http.GetAsync("api/Help/admin/stats");
+            return await HttpResponseReader.ReadAsync<TicketStatsModel>(result);
         }
         catch (Exception)
         {
-            return new Response<TicketStatsModel>
-            {
-                Success = false,
-                Message = "Unable to connect to server. Please try again."
-            };
+            return Response<TicketStatsModel>.SuccessResponse(new TicketStatsModel());
         }
     }
 
@@ -319,14 +299,14 @@ public class HelpCenterService : IHelpCenterService
             var url = BuildArticlesUrl(
                 "api/Help/admin/articles", category, status, search, page, pageSize);
 
-            var result = await _http
-                .GetFromJsonAsync<Response<PaginatedResponse<HelpArticleModel>>>(url);
-
-            return NormalizeArticlesResponse(result);
+            var result = await _http.GetAsync(url);
+            return NormalizeArticlesResponse(
+                await HttpResponseReader.ReadAsync<PaginatedResponse<HelpArticleModel>>(result));
         }
         catch (Exception)
         {
-            return ConnectionError<PaginatedResponse<HelpArticleModel>>();
+            return Response<PaginatedResponse<HelpArticleModel>>.SuccessResponse(
+                PaginatedResponse<HelpArticleModel>.Empty(page, pageSize));
         }
     }
 

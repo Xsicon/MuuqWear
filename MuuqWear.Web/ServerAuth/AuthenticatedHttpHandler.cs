@@ -6,6 +6,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using MuuqWear.Application.Services.AuthService;
 using MuuqWear.Model.Authentication;
+using MuuqWear.Web.Constants;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -72,7 +73,10 @@ public class AuthenticatedHttpHandler : DelegatingHandler
                 }
             }
 
-            await HandleSignOut(context);
+            var staff = MuuqWear.Web.Helpers.AdminPortalUserContext.GetRole(
+                await ResolveUserAsync(context) ?? new ClaimsPrincipal());
+            if (!AdminPortalRoles.IsAllowed(staff))
+                await HandleSignOut(context);
         }
 
         return response;

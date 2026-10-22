@@ -108,7 +108,7 @@
                 <p class="ov-stat__label">Low Stock Items</p>
                 @if (lowStockCount > 0)
                 {
-                    <p class="ov-stat__hint">Below @ProductStockHelper.LowStockThreshold units · View alerts</p>
+                    <p class="ov-stat__hint">A size is below @ProductStockHelper.LowStockThreshold units · View alerts</p>
                 }
                 </a>
             </div>
@@ -267,7 +267,7 @@
         if (result.Success && result.Data != null)
         {
             var overview = result.Data;
-            systemHealthHealthy = overview.DatabaseIsHealthy && overview.StripeIsHealthy && overview.SupabaseIsHealthy;
+            systemHealthHealthy = overview.DatabaseIsHealthy && overview.StripeIsHealthy;
             systemHealthValue = systemHealthHealthy ? "Healthy" : "Degraded";
         }
         else
@@ -424,6 +424,7 @@
             [AdminPortalSection.Support] = new("Customer Support", "Support system access", "/admin/support?tab=tickets", SupportAccessIcon()),
             [AdminPortalSection.Careers] = new("Career Management", "Job posting & hiring", "/admin/careers?tab=postings", CareersAccessIcon()),
             [AdminPortalSection.System] = new("System & Technology", "System administration", "/admin/system?tab=health", SystemAccessIcon()),
+            [AdminPortalSection.Users] = new("Users", "Create and manage dashboard staff", "/admin/users", UsersAccessIcon()),
         };
 
         return AdminPortalRoles.GetSections(role)
@@ -433,16 +434,8 @@
             .ToList();
     }
 
-    private static string FormatRelativeTime(DateTime? utc)
-    {
-        if (utc is null) return "Recently";
-        var diff = DateTime.UtcNow - utc.Value.ToUniversalTime();
-        if (diff.TotalMinutes < 1) return "Just now";
-        if (diff.TotalMinutes < 60) return $"{(int)diff.TotalMinutes} min ago";
-        if (diff.TotalHours < 24) return $"{(int)diff.TotalHours} hr ago";
-        if (diff.TotalDays < 7) return $"{(int)diff.TotalDays} days ago";
-        return utc.Value.ToLocalTime().ToString("MMM d, yyyy");
-    }
+    private static string FormatRelativeTime(DateTime? utc) =>
+        AdminRelativeTime.Format(utc);
 
     private sealed class AccessModule(string label, string description, string href, RenderFragment icon)
     {
@@ -474,4 +467,5 @@
     private static RenderFragment SupportAccessIcon() => @<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"></path></svg>;
     private static RenderFragment CareersAccessIcon() => @<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="6" rx="2"></rect><path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>;
     private static RenderFragment SystemAccessIcon() => @<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="8" x="2" y="2" rx="2"></rect><rect width="20" height="8" x="2" y="14" rx="2"></rect><line x1="6" x2="6.01" y1="6" y2="6"></line><line x1="6" x2="6.01" y1="18" y2="18"></line></svg>;
+    private static RenderFragment UsersAccessIcon() => @<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>;
 }

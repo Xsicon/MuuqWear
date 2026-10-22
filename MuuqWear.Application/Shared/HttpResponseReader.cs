@@ -16,6 +16,14 @@ public static class HttpResponseReader
     {
         if (!response.IsSuccessStatusCode)
         {
+            if (response.StatusCode is System.Net.HttpStatusCode.Unauthorized
+                or System.Net.HttpStatusCode.NotFound
+                or System.Net.HttpStatusCode.Forbidden)
+            {
+                if (Response<T>.TryEmptySuccess(out var empty))
+                    return empty;
+            }
+
             var message = await ApiErrorMessageHelper.FromResponseAsync(response);
             return Response<T>.Fail(message);
         }

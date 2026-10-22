@@ -17,6 +17,23 @@ public static class AuthNavigationHelper
         bool rememberMe = false)
     {
         var session = CookieAuthHelper.FromAuthResponse(data, returnUrl, rememberMe);
+        var ticket = data.AccessToken ?? session.Token;
+        if (!string.IsNullOrEmpty(ticket)
+            && returnUrl.StartsWith("/admin", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                await js.InvokeVoidAsync("mwCompleteStaffSignIn", ticket, returnUrl);
+                return;
+            }
+            catch (JSException)
+            {
+                navigationManager.NavigateTo(
+                    $"/auth/complete?ticket={Uri.EscapeDataString(ticket)}&returnUrl={Uri.EscapeDataString(returnUrl)}",
+                    forceLoad: true);
+                return;
+            }
+        }
 
         try
         {

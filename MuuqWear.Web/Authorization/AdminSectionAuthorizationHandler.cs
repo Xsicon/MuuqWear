@@ -1,6 +1,6 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using MuuqWear.Web.Constants;
+using MuuqWear.Web.Helpers;
 
 namespace MuuqWear.Web.Authorization;
 
@@ -11,7 +11,7 @@ public sealed class AdminSectionAuthorizationHandler
         AuthorizationHandlerContext context,
         AdminSectionRequirement requirement)
     {
-        var role = context.User.FindFirst(ClaimTypes.Role)?.Value;
+        var role = AdminPortalUserContext.GetRole(context.User);
         if (AdminPortalRoles.CanAccess(role, requirement.Section))
             context.Succeed(requirement);
 

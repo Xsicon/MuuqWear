@@ -18,6 +18,7 @@ public static class CutoverFreeze
             or "/api/auth/refresh-token"
             or "/api/auth/verify-magic-link"
             or "/auth/sign-in"
-            or "/auth/prepare-cookie";
+            or "/auth/prepare-cookie"
+            or "/auth/complete";
     }
 }

@@ -45,6 +45,9 @@ public static class AdminPortalRouteAccess
         if (normalized.StartsWith("/admin/system", StringComparison.Ordinal))
             return AdminPortalSection.System;
 
+        if (normalized.StartsWith("/admin/users", StringComparison.Ordinal))
+            return AdminPortalSection.Users;
+
         if (normalized.StartsWith("/admin/access-denied", StringComparison.Ordinal))
             return AdminPortalSection.Overview;
 

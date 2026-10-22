@@ -15,13 +15,20 @@ public static class CookieAuthHelper
             new(ClaimTypes.Name, session.Username ?? ""),
             new(ClaimTypes.Email, session.Email ?? ""),
             new(ClaimTypes.Role, session.Role ?? "user"),
-            new("AccessToken", session.Token ?? ""),
-            new("RefreshToken", session.RefreshToken ?? ""),
+            new("role", session.Role ?? "user"),
+            new("app_role", session.Role ?? "user"),
             new("UserId", session.UserId ?? "")
         };
+        if (!string.IsNullOrEmpty(session.Token))
+            claims.Add(new("AccessToken", session.Token));
+        if (!string.IsNullOrEmpty(session.RefreshToken))
+            claims.Add(new("RefreshToken", session.RefreshToken));
 
         var identity = new ClaimsIdentity(
-            claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            claims,
+            CookieAuthenticationDefaults.AuthenticationScheme,
+            ClaimTypes.Name,
+            ClaimTypes.Role);
 
         return new ClaimsPrincipal(identity);
     }
@@ -42,7 +49,7 @@ public static class CookieAuthHelper
         new()
         {
             Token = data.AccessToken ?? "",
-            RefreshToken = data.RefreshToken ?? "",
+            RefreshToken = string.IsNullOrEmpty(data.RefreshToken) ? null : data.RefreshToken,
             Username = data.UserName ?? "",
             Email = data.Email ?? "",
             Role = data.Role ?? "user",

@@ -23,4 +23,23 @@ public class Response<T>
             Message = message
         };
     }
+
+    public static bool TryEmptySuccess(out Response<T> response)
+    {
+        response = Fail("Unavailable");
+        var type = typeof(T);
+        if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>))
+        {
+            response = SuccessResponse((T)Activator.CreateInstance(type)!);
+            return true;
+        }
+
+        if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(MuuqWear.Model.Shared.PaginatedResponse<>))
+        {
+            response = SuccessResponse((T)Activator.CreateInstance(type)!);
+            return true;
+        }
+
+        return false;
+    }
 }

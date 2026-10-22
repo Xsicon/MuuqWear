@@ -410,6 +410,25 @@ window.mwSignIn = function (session) {
         });
 };
 
+window.mwCompleteStaffSignIn = function (ticket, returnUrl) {
+    var form = document.createElement("form");
+    form.method = "POST";
+    form.action = "/auth/complete";
+    form.style.display = "none";
+    function field(name, value) {
+        var input = document.createElement("input");
+        input.type = "hidden";
+        input.name = name;
+        input.value = value || "";
+        form.appendChild(input);
+    }
+    field("ticket", ticket);
+    field("returnUrl", returnUrl || "/admin");
+    document.body.appendChild(form);
+    form.submit();
+    return true;
+};
+
 // Legacy cache-key path (fallback only).
 window.mwSetCookieFromKey = function (key) {
     return fetch(

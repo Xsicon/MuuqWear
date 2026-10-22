@@ -1,4 +1,6 @@
 using BlazorBootstrap;
+using FirebaseAdmin;
+using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -36,6 +38,8 @@ using MuuqWear.Client.Offline;
 using MuuqWear.Model.Site;
 using MuuqWear.Web.Authorization;
 using MuuqWear.Web.Components;
+using MuuqWear.Web.Constants;
+using MuuqWear.Web.Helpers;
 using MuuqWear.Web.Services;
 using Microsoft.AspNetCore.HttpOverrides;
 using System.Security.Claims;
@@ -63,11 +67,22 @@ builder.Services.AddHttpClient<IAuthService, AuthService>(client =>
 {
 });
 
-builder.Services.AddHttpClient<IProductService, ProductService>(client =>
+if (FirebaseApp.DefaultInstance is null)
 {
-    client.BaseAddress = new Uri(apiBaseUrl);
-})
-.AddHttpMessageHandler<AuthenticatedHttpHandler>();
+    FirebaseApp.Create(new AppOptions
+    {
+        Credential = GoogleCredential.GetApplicationDefault(),
+        ProjectId = builder.Configuration["Firebase:ProjectId"] ?? "muuqwear-6e2e0"
+    });
+}
+
+builder.Services.AddSingleton<StaffSessionJwt>();
+builder.Services.AddSingleton<AdminFirestore>();
+builder.Services.AddSingleton<StaffWelcomeMail>();
+builder.Services.AddScoped<IStaffUserService, FirebaseStaffUserService>();
+builder.Services.AddScoped<IProductService, FirestoreProductService>();
+builder.Services.AddScoped<IOrderService, FirestoreOrderService>();
+builder.Services.AddScoped<ICustomerService, FirestoreCustomerService>();
 builder.Services.AddHttpClient<ICategoryService, CategoryService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
@@ -81,21 +96,10 @@ builder.Services.AddHttpClient<IWishlistService, WishlistService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
 }).AddHttpMessageHandler<AuthenticatedHttpHandler>();
-builder.Services.AddHttpClient<IOrderService, OrderService>(client =>
-{
-    client.BaseAddress = new Uri(apiBaseUrl);
-}).AddHttpMessageHandler<AuthenticatedHttpHandler>()
-.AddHttpMessageHandler<AffiliateCookieHandler>();
 
 
-builder.Services.AddHttpClient<IOrderReturnService, OrderReturnService>(client =>
-{
-    client.BaseAddress = new Uri(apiBaseUrl);
-}).AddHttpMessageHandler<AuthenticatedHttpHandler>();
-builder.Services.AddHttpClient<IRefundService, RefundService>(client =>
-{
-    client.BaseAddress = new Uri(apiBaseUrl);
-}).AddHttpMessageHandler<AuthenticatedHttpHandler>();
+builder.Services.AddScoped<IOrderReturnService, FirestoreOrderReturnService>();
+builder.Services.AddScoped<IRefundService, FirestoreRefundService>();
 builder.Services.AddHttpClient<IAddressService, AddressService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
@@ -120,14 +124,7 @@ builder.Services.AddHttpClient<IMuuqsimoService, MuuqsimoService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
 });
-builder.Services.AddHttpClient<IAdminSystemService, AdminSystemService>(client =>
-{
-    client.BaseAddress = new Uri(apiBaseUrl);
-}).AddHttpMessageHandler<AuthenticatedHttpHandler>();
-builder.Services.AddHttpClient<ICustomerService, CustomerService>(client =>
-{
-    client.BaseAddress = new Uri(apiBaseUrl);
-}).AddHttpMessageHandler<AuthenticatedHttpHandler>();
+builder.Services.AddScoped<IAdminSystemService, FirestoreAdminSystemService>();
 builder.Services.AddHttpClient<IProfileService, ProfileService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
@@ -174,10 +171,7 @@ builder.Services.AddTransient<AffiliateCookieHandler>();
 
 builder.Services.AddScoped<AuthenticationStateProvider>(sp =>
     sp.GetRequiredService<CustomAuthenticationStateProvider>());
-builder.Services.AddHttpClient<IContentService, ContentService>(client =>
-{
-    client.BaseAddress = new Uri(apiBaseUrl);
-}).AddHttpMessageHandler<AuthenticatedHttpHandler>();
+builder.Services.AddScoped<IContentService, FirestoreContentService>();
 builder.Services.AddHttpClient<IArchiveService, ArchiveService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
@@ -192,18 +186,8 @@ builder.Services.AddHttpClient<INotificationService, NotificationService>(client
 }).AddHttpMessageHandler<AuthenticatedHttpHandler>();
 builder.Services.AddSingleton<NotificationRealtimeService>();
 // Add after other services
-builder.Services.AddHttpClient<IAffiliateService, AffiliateService>(client =>
-{
-    client.BaseAddress = new Uri(apiBaseUrl);
-})
-.AddHttpMessageHandler<AuthenticatedHttpHandler>();
-
-builder.Services.AddHttpClient<IChatService,
-                               ChatService>(client =>
-                               {
-                                   client.BaseAddress = new Uri(apiBaseUrl);
-                               })
-.AddHttpMessageHandler<AuthenticatedHttpHandler>();
+builder.Services.AddScoped<IAffiliateService, FirestoreAffiliateService>();
+builder.Services.AddScoped<IChatService, FirestoreChatService>();
 builder.Services.AddHttpClient<IPaymentService,
                                PaymentService>(client =>
                                {
@@ -211,26 +195,23 @@ builder.Services.AddHttpClient<IPaymentService,
                                })
 .AddHttpMessageHandler<AuthenticatedHttpHandler>();
 
-builder.Services.AddHttpClient<IAdminBadgeService, AdminBadgeService>(client =>
-    {
-        client.BaseAddress = new Uri(apiBaseUrl);
-    })
-.AddHttpMessageHandler<AuthenticatedHttpHandler>();
+builder.Services.AddScoped<IAdminBadgeService, FirestoreAdminBadgeService>();
 
-builder.Services.AddHttpClient<IJobPostingService, JobPostingService>(client =>
-{
-    client.BaseAddress = new Uri(apiBaseUrl);
-})
-.AddHttpMessageHandler<AuthenticatedHttpHandler>();
+builder.Services.AddScoped<IJobPostingService, FirestoreJobPostingService>();
 
 
 
+builder.Services.AddSingleton<HmacAuthTicketFormat>();
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
     {
-        options.Cookie.Name = "muuqwear_auth";
+        options.Cookie.Name = "__session";
+        options.Cookie.HttpOnly = true;
+        options.Cookie.IsEssential = true;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
         options.SlidingExpiration = true;
-        options.ExpireTimeSpan = TimeSpan.FromHours(5);
+        options.ExpireTimeSpan = TimeSpan.FromHours(12);
         options.Events = new CookieAuthenticationEvents
         {
             OnRedirectToLogin = context =>
@@ -252,6 +233,11 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
                 return Task.CompletedTask;
             }
         };
+    });
+builder.Services.AddOptions<CookieAuthenticationOptions>(CookieAuthenticationDefaults.AuthenticationScheme)
+    .PostConfigure<HmacAuthTicketFormat>((options, format) =>
+    {
+        options.TicketDataFormat = format;
     });
 
 builder.Services.AddServerSideBlazor(options =>
@@ -333,6 +319,45 @@ app.MapPost("/auth/sign-in", async (
         CookieAuthHelper.CreateProperties(session));
 
     return Results.Ok(new { success = true });
+}).DisableAntiforgery();
+
+app.MapMethods("/auth/complete", new[] { HttpMethods.Get, HttpMethods.Post }, async (
+    HttpContext ctx,
+    StaffSessionJwt staffJwt) =>
+{
+    var ticket = ctx.Request.Query["ticket"].ToString();
+    var returnUrl = ctx.Request.Query["returnUrl"].ToString();
+    if (ctx.Request.HasFormContentType)
+    {
+        if (string.IsNullOrEmpty(ticket))
+            ticket = ctx.Request.Form["ticket"].ToString();
+        if (string.IsNullOrEmpty(returnUrl))
+            returnUrl = ctx.Request.Form["returnUrl"].ToString();
+    }
+
+    var principal = staffJwt.Validate(ticket);
+    var role = principal is null ? null : AdminPortalUserContext.GetRole(principal);
+    if (principal is null || !AdminPortalRoles.IsAllowed(role))
+        return Results.Redirect("/admin/access-denied");
+
+    if (string.IsNullOrWhiteSpace(returnUrl) || !returnUrl.StartsWith("/admin", StringComparison.Ordinal))
+        returnUrl = AdminPortalRoles.GetDefaultHome(role);
+
+    var session = new CookieAuthSession
+    {
+        Token = ticket,
+        Email = principal.FindFirst(ClaimTypes.Email)?.Value,
+        Username = principal.FindFirst(ClaimTypes.Name)?.Value,
+        Role = role,
+        UserId = principal.FindFirst("UserId")?.Value,
+        ReturnUrl = returnUrl,
+        RememberMe = true
+    };
+    await ctx.SignInAsync(
+        CookieAuthenticationDefaults.AuthenticationScheme,
+        CookieAuthHelper.CreatePrincipal(session),
+        CookieAuthHelper.CreateProperties(session));
+    return Results.Redirect(returnUrl);
 }).DisableAntiforgery();
 
 app.MapPost("/auth/prepare-cookie", (

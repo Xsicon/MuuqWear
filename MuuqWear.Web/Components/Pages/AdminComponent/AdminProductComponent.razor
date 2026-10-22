@@ -111,7 +111,7 @@
                     <path d="M12 9v4"></path>
                     <path d="M12 17h.01"></path>
                 </svg>
-                @LowStockCount product@(LowStockCount == 1 ? "" : "s") below threshold (@ProductStockHelper.LowStockThreshold units)
+                @LowStockCount product@(LowStockCount == 1 ? "" : "s") with a size below @ProductStockHelper.LowStockThreshold units
                 <span class="low-stock-banner__link">View alerts →</span>
             </button>
         }
@@ -253,7 +253,7 @@
                                 {
                                     <span>SKU: @item.Sku · </span>
                                 }
-                                <span>Price: @item.Price.ToString("C") · </span>
+                                <span>Price: @AdminMoney.Format(item.Price) · </span>
                                 <span>
                                     @(Categories.FirstOrDefault(c => c.Id == item.CategoryId)?.Name
                                         ?? "Uncategorised")

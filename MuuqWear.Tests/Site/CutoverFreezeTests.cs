@@ -27,5 +27,6 @@ public class CutoverFreezeTests
     {
         Assert.True(CutoverFreeze.Allows("POST", "/api/Auth/login"));
         Assert.True(CutoverFreeze.Allows("POST", "/api/Auth/refresh-token"));
+        Assert.True(CutoverFreeze.Allows("POST", "/auth/complete"));
     }
 }

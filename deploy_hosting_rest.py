@@ -76,7 +76,7 @@ def main() -> int:
                 "rewrites": [
                     {
                         "glob": "**",
-                        "run": {"serviceId": "muuqwear-web", "region": "me-central1"},
+                        "run": {"serviceId": "muuqwear-web", "region": "europe-west2"},
                     }
                 ],
             }
@@ -97,7 +97,7 @@ def main() -> int:
         request(f"{upload_url}/{digest}", access, blobs[digest], method="POST")
 
     request(f"{API}/{name}?updateMask=status", access, {"status": "FINALIZED"}, method="PATCH")
-    request(f"{API}/sites/{SITE}/releases", access, {"versionName": name}, method="POST")
+    request(f"{API}/sites/{SITE}/releases?versionName={name}", access, {}, method="POST")
     print(f"hosting_ok files={len(files)} uploaded={len(required)} version={name}")
     return 0
 
