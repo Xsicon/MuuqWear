@@ -1,20 +1,18 @@
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
+using Microsoft.Extensions.Configuration;
 using Microsoft.JSInterop;
-using MuuqWear.Application.Shared;
 using MuuqWear.Model.Authentication;
 
 namespace MuuqWear.Client.Auth;
 
 public sealed class BrowserTokenStore
 {
-    private readonly IHttpClientFactory _httpClientFactory;
     private readonly IJSRuntime _js;
+    private readonly IConfiguration _config;
 
-    public BrowserTokenStore(IHttpClientFactory httpClientFactory, IJSRuntime js)
+    public BrowserTokenStore(IJSRuntime js, IConfiguration config)
     {
-        _httpClientFactory = httpClientFactory;
         _js = js;
+        _config = config;
     }
 
     public string? AccessToken { get; private set; }
@@ -47,28 +45,42 @@ public sealed class BrowserTokenStore
             return;
         }
 
-        if (!string.IsNullOrWhiteSpace(RefreshToken))
+        if (!string.IsNullOrWhiteSpace(RefreshToken) && RefreshToken != "firebase")
             await TryRefreshAsync();
     }
 
     public async Task<bool> TryRefreshAsync()
     {
-        if (string.IsNullOrWhiteSpace(RefreshToken))
+        if (string.IsNullOrWhiteSpace(RefreshToken) || RefreshToken == "firebase")
+            return false;
+
+        var apiKey = _config["Firebase:ApiKey"];
+        if (string.IsNullOrWhiteSpace(apiKey))
             return false;
 
         try
         {
-            var client = _httpClientFactory.CreateClient("MuuqWearApiRaw");
-            var response = await client.PostAsJsonAsync(
-                "api/Auth/refresh-token",
-                new RefreshTokenBody(RefreshToken));
-            var body = await response.Content.ReadFromJsonAsync<Response<AuthResponseModel>>();
-            if (body?.Success != true || body.Data?.AccessToken is null)
+            using var client = new HttpClient();
+            using var content = new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["grant_type"] = "refresh_token",
+                ["refresh_token"] = RefreshToken
+            });
+            using var response = await client.PostAsync(
+                $"https://securetoken.googleapis.com/v1/token?key={Uri.EscapeDataString(apiKey)}",
+                content);
+            if (!response.IsSuccessStatusCode)
                 return false;
 
-            AccessToken = body.Data.AccessToken;
-            if (!string.IsNullOrWhiteSpace(body.Data.RefreshToken))
-                await SaveAsync(body.Data);
+            var body = await response.Content.ReadAsStringAsync();
+            var id = JsonValue(body, "id_token");
+            var refresh = JsonValue(body, "refresh_token");
+            if (string.IsNullOrWhiteSpace(id))
+                return false;
+
+            AccessToken = id;
+            if (!string.IsNullOrWhiteSpace(refresh))
+                RefreshToken = refresh;
             return true;
         }
         catch
@@ -77,5 +89,13 @@ public sealed class BrowserTokenStore
         }
     }
 
-    private sealed record RefreshTokenBody(string RefreshToken);
+    private static string? JsonValue(string json, string key)
+    {
+        var needle = $"\"{key}\":\"";
+        var start = json.IndexOf(needle, StringComparison.Ordinal);
+        if (start < 0) return null;
+        start += needle.Length;
+        var end = json.IndexOf('"', start);
+        return end < 0 ? null : json[start..end];
+    }
 }

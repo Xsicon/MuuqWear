@@ -81,15 +81,12 @@ serve("createCheckoutSession", async (req, res) => {
         const referred = await store.referral(code);
         const orderRef = store.db.collection("orders").doc();
         const urls = siteUrl(body);
-        const successUrl = urls.success.includes(orderRef.id)
-            ? urls.success
-            : `${String(urls.success).replace(/\/$/, "")}/${orderRef.id}`;
-
-        const session = await stripe.checkout.sessions.create({
+        const successBase = String(urls.success).replace(/\/$/, "").replace(/\/[0-9a-f-]{20,}$/i, "");
+        const sessionParams = {
             mode: "payment",
             customer_email: email,
             client_reference_id: orderRef.id,
-            success_url: successUrl,
+            success_url: `${successBase}?session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: urls.cancel,
             line_items: priced.map((line) => ({
                 quantity: line.quantity,
@@ -100,7 +97,14 @@ serve("createCheckoutSession", async (req, res) => {
                 },
             })),
             metadata: { orderId: orderRef.id, customerKey },
-        }, { idempotencyKey: key });
+        };
+        let session;
+        try {
+            session = await stripe.checkout.sessions.create(sessionParams, { idempotencyKey: key });
+        } catch (error) {
+            if (!/idempotent/i.test(error.message || "")) throw error;
+            session = await stripe.checkout.sessions.create(sessionParams, { idempotencyKey: `${key}_${orderRef.id}` });
+        }
 
         await store.db.runTransaction(async (tx) => {
             await store.holdStock(priced, tx);

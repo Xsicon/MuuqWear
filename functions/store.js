@@ -92,15 +92,36 @@ async function restoreCart(order) {
     await ref.set({ items: order.items || [] }, { merge: true });
 }
 
-async function releaseStock(order, tx) {
-    for (const line of order.items || []) {
-        const ref = db.collection("products").doc(line.productId);
-        const snap = await tx.get(ref);
-        if (!snap.exists) continue;
-        const data = snap.data() || {};
-        const sizeStock = rules.moveStock(data.sizeStock || {}, line.size, Number(line.quantity || 0), 1);
-        tx.update(ref, { sizeStock });
+async function applyStockMoves(lines, tx, direction, { requireProduct = false } = {}) {
+    const byProduct = new Map();
+    for (const line of lines || []) {
+        const id = String(line.productId || "");
+        if (!id) continue;
+        if (!byProduct.has(id)) byProduct.set(id, []);
+        byProduct.get(id).push(line);
     }
+
+    const ids = [...byProduct.keys()];
+    const refs = ids.map((id) => db.collection("products").doc(id));
+    const snaps = refs.length ? await tx.getAll(...refs) : [];
+
+    snaps.forEach((snap, index) => {
+        const ref = refs[index];
+        if (!snap.exists) {
+            if (requireProduct) throw new Error(`Unknown product ${ref.id}.`);
+            return;
+        }
+        const data = snap.data() || {};
+        let sizeStock = { ...(data.sizeStock || {}) };
+        for (const line of byProduct.get(ref.id) || []) {
+            sizeStock = rules.moveStock(sizeStock, line.size, Number(line.quantity || 0), direction);
+        }
+        tx.update(ref, { sizeStock });
+    });
+}
+
+async function releaseStock(order, tx) {
+    await applyStockMoves(order.items || [], tx, 1);
 }
 
 async function appendRollbackLog(orderId, event) {
@@ -117,14 +138,7 @@ async function appendRollbackLog(orderId, event) {
 }
 
 async function holdStock(priced, tx) {
-    for (const line of priced) {
-        const ref = db.collection("products").doc(line.productId);
-        const snap = await tx.get(ref);
-        if (!snap.exists) throw new Error(`Unknown product ${line.productId}.`);
-        const data = snap.data() || {};
-        const sizeStock = rules.moveStock(data.sizeStock || {}, line.size, line.quantity, -1);
-        tx.update(ref, { sizeStock });
-    }
+    await applyStockMoves(priced, tx, -1, { requireProduct: true });
 }
 
 module.exports = {

@@ -1,5 +1,7 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.JSInterop;
 using MuuqWear.Application.Services.CartService;
@@ -57,6 +59,20 @@ public partial class ProfileComponent
     private ProfileModel userProfile = new();
 
     public string LoggedInUserName = "";
+    private string UserInitials
+    {
+        get
+        {
+            var name = LoggedInUserName?.Trim();
+            if (string.IsNullOrWhiteSpace(name))
+                return "MW";
+            var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length >= 2)
+                return $"{char.ToUpperInvariant(parts[0][0])}{char.ToUpperInvariant(parts[1][0])}";
+            return char.ToUpperInvariant(name[0]).ToString();
+        }
+    }
+    private decimal TotalSpent => userOrders.Sum(o => o.Total);
 
     // notification settings
     private bool emailNotifications = true;
@@ -81,6 +97,7 @@ public partial class ProfileComponent
     protected override void OnInitialized()
     {
         WishlistStateService.OnWishlistChanged += OnWishlistChanged;
+        NavigationManager.LocationChanged += OnLocationChanged;
     }
 
     protected override async Task OnInitializedAsync()
@@ -89,30 +106,63 @@ public partial class ProfileComponent
 
         var authState = await AuthenticationStateTask;
         AuthStateProvider.SyncFromPrincipal(authState.User);
+        ApplyClaimProfile(authState.User);
 
-        var profileTask = ProfileService.GetProfile();
-        var ordersTask = OrderService.GetUserOrders();
-        var affiliateTask = LoadAffiliateStatus();
-
-        await Task.WhenAll(profileTask, ordersTask, affiliateTask);
-
-        var profileResult = await profileTask;
-        if (profileResult.Success && profileResult.Data != null)
+        try
         {
-            LoggedInUserName = profileResult.Data.FullName ?? "";
-            settingsFullName = profileResult.Data.FullName ?? "";
-            settingsEmail = profileResult.Data.Email ?? "";
-        }
+            var profileTask = ProfileService.GetProfile();
+            var ordersTask = OrderService.GetUserOrders();
+            var addressesTask = AddressService.GetAll();
+            var affiliateTask = LoadAffiliateStatus();
+            await Task.WhenAll(profileTask, ordersTask, addressesTask, affiliateTask);
 
-        var ordersResult = await ordersTask;
-        if (ordersResult.Success && ordersResult.Data != null)
-            userOrders = ordersResult.Data;
+            var profileResult = await profileTask;
+            if (profileResult.Success && profileResult.Data != null)
+            {
+                if (!string.IsNullOrWhiteSpace(profileResult.Data.FullName))
+                    LoggedInUserName = profileResult.Data.FullName;
+                settingsFullName = string.IsNullOrWhiteSpace(profileResult.Data.FullName)
+                    ? LoggedInUserName
+                    : profileResult.Data.FullName;
+                if (!string.IsNullOrWhiteSpace(profileResult.Data.Email))
+                    settingsEmail = profileResult.Data.Email;
+            }
+
+            var ordersResult = await ordersTask;
+            if (ordersResult.Success && ordersResult.Data != null)
+                userOrders = ordersResult.Data;
+
+            var addressResult = await addressesTask;
+            if (addressResult.Success && addressResult.Data != null)
+                addresses = addressResult.Data;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Profile load failed: {ex.Message}");
+        }
 
         await WishlistStateService.InitializeAsync(
             authState.User.Identity?.IsAuthenticated == true,
             authState.User.FindFirst("UserId")?.Value);
         await ApplyInitialTabFromRouteAsync();
     }
+
+    private void ApplyClaimProfile(ClaimsPrincipal user)
+    {
+        var name = user.FindFirst(ClaimTypes.Name)?.Value;
+        var email = user.FindFirst(ClaimTypes.Email)?.Value;
+        if (string.IsNullOrWhiteSpace(LoggedInUserName))
+            LoggedInUserName = string.IsNullOrWhiteSpace(name)
+                ? (email ?? "").Split('@')[0]
+                : name;
+        if (string.IsNullOrWhiteSpace(settingsFullName))
+            settingsFullName = LoggedInUserName;
+        if (string.IsNullOrWhiteSpace(settingsEmail))
+            settingsEmail = email ?? "";
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e) =>
+        _ = InvokeAsync(ApplyInitialTabFromRouteAsync);
 
     private void OnWishlistChanged() => InvokeAsync(StateHasChanged);
 
@@ -122,6 +172,7 @@ public partial class ProfileComponent
             return;
 
         await FirebaseSession.RestoreAsync();
+        await WishlistStateService.RefreshAsync();
         await RefreshMfaAsync();
         await InvokeAsync(StateHasChanged);
     }
@@ -208,7 +259,15 @@ public partial class ProfileComponent
     public void Dispose()
     {
         WishlistStateService.OnWishlistChanged -= OnWishlistChanged;
+        NavigationManager.LocationChanged -= OnLocationChanged;
     }
+
+    private static string TabHref(string tab) => tab switch
+    {
+        "overview" => "/profile",
+        "settings" => "/settings",
+        _ => $"/profile?tab={tab}"
+    };
 
     private async Task ApplyInitialTabFromRouteAsync()
     {
@@ -308,29 +367,32 @@ public partial class ProfileComponent
 
     private async Task SelectTab(string tab)
     {
-        activeTab = tab;
-        isMobileMenuOpen = false;
-        if (tab == "wishlist")
+        try
         {
-            await WishlistStateService.RefreshAsync();
-        }
-        if (tab == "affiliate")
-        {
-            //await LoadAffiliateStatus();
-            if (affiliateStatus?.ApplicationStatus == "approved")
+            activeTab = tab;
+            isMobileMenuOpen = false;
+            if (tab == "wishlist")
+                await WishlistStateService.RefreshAsync();
+            if (tab == "affiliate" && affiliateStatus?.ApplicationStatus == "approved")
             {
                 await LoadAffiliateInfo();
-
                 await LoadPerformanceChart();
                 await LoadRecentReferrals();
-                //isLoadingOrders = false;
+            }
+            if (tab == "addresses")
+            {
+                var addressResult = await AddressService.GetAll();
+                if (addressResult.Success && addressResult.Data != null)
+                    addresses = addressResult.Data;
             }
         }
-        else if (tab == "address")
+        catch (Exception ex)
         {
-            var addressResult = await AddressService.GetAll();
-            if (addressResult.Success && addressResult.Data != null)
-                addresses = addressResult.Data;
+            Console.WriteLine($"Profile tab '{tab}' failed: {ex.Message}");
+        }
+        finally
+        {
+            await InvokeAsync(StateHasChanged);
         }
     }
     private string GetActiveTabLabel()

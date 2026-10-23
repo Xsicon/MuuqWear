@@ -86,22 +86,8 @@ public class AuthService : IAuthService
         [JsonPropertyName("message")]
         public string? Message { get; set; }
     }
-    public async Task<Response<AuthResponseModel>> VerifyOTP(VerifyOTPModel request)
-    {
-        var result = await _http.PostAsJsonAsync("api/Auth/verifyotp", request);
-
-
-        var response = await result.Content.ReadFromJsonAsync<Response<AuthResponseModel>>();
-        if (response?.Success == true && response.Data != null)
-        {
-            IsNewSignup = true; // User is now fully registered and logged in
-        }
-        return response ?? new Response<AuthResponseModel>
-        {
-            Success = false,
-            Message = "Empty response from server"
-        };
-    }
+    public Task<Response<AuthResponseModel>> VerifyOTP(VerifyOTPModel request) =>
+        Task.FromResult(Response<AuthResponseModel>.Fail("Enter the authenticator code on the sign-in screen."));
 
     public async Task<bool> IsUserLoggedIn()
     {
@@ -176,132 +162,17 @@ public class AuthService : IAuthService
             };
         }
     }
-    public async Task<Response<int>> Logout()
-    {
-        try
-        {
-            var result = await _http.PostAsync("api/Auth/logout", null);
-            var response = await result.Content.ReadFromJsonAsync<Response<int>>();
-            if (response != null)
-                return response;
+    public Task<Response<int>> Logout() =>
+        Task.FromResult(Response<int>.SuccessResponse(1));
 
-            return new Response<int>
-            {
-                Success = false,
-                Message = result.IsSuccessStatusCode
-                    ? "Unexpected response from server"
-                    : $"Server error: {result.StatusCode}"
-            };
-        }
-        catch (Exception ex)
-        {
-            return new Response<int>
-            {
-                Success = false,
-                Message = "Unable to connect to server. Please try again."
-            };
-        }
-    }
+    public Task<Response<int>> SendMagicLink(MagicLinkModel request) =>
+        SendPasswordReset(new ForgotPasswordModel { Email = request.Email });
 
-    public async Task<Response<int>> SendMagicLink(MagicLinkModel request)
-    {
-        try
-        {
-            if (string.IsNullOrWhiteSpace(request.Email))
-                return new Response<int>
-                {
-                    Success = false,
-                    Message = "Email is required"
-                };
+    public Task<Response<AuthResponseModel>> VerifyMagicLink(MagicLinkVerifyModel request) =>
+        Task.FromResult(Response<AuthResponseModel>.Fail("Open the reset email, then sign in with your new password."));
 
-            var result = await _http.PostAsJsonAsync(
-         "api/Auth/magic-link", request);
-
-
-            var response = await result.Content
-                .ReadFromJsonAsync<Response<int>>();
-
-            if (response != null)
-                return response;
-
-            return new Response<int>
-            {
-                Success = false,
-                Message = result.IsSuccessStatusCode
-                    ? "Unexpected response from server"
-                    : $"Server error: {result.StatusCode}"
-            };
-        }
-        catch (Exception ex)
-        {
-            //  network errors, timeouts, JSON parse failures
-            return new Response<int>
-            {
-                Success = false,
-                Message = "Unable to connect to server. Please try again."
-            };
-        }
-    }
-
-    public async Task<Response<AuthResponseModel>> VerifyMagicLink(
-    MagicLinkVerifyModel request)
-    {
-        try
-        {
-            var result = await _http.PostAsJsonAsync(
-                "api/Auth/verify-magic-link", request);
-
-
-            var response = await result.Content
-                .ReadFromJsonAsync<Response<AuthResponseModel>>();
-
-            if (response != null)
-                return response;
-
-            return new Response<AuthResponseModel>
-            {
-                Success = false,
-                Message = result.IsSuccessStatusCode
-                    ? "Unexpected response from server"
-                    : $"Server error: {result.StatusCode}"
-            };
-        }
-        catch (Exception ex)
-        {
-            return new Response<AuthResponseModel>
-            {
-                Success = false,
-                Message = "Unable to connect to server. Please try again."
-            };
-        }
-    }
-
-    public async Task<Response<string>> GetGoogleSignInUrl(string? redirectTo = null)
-    {
-        try
-        {
-            var url = "api/Auth/google-signin-url";
-            if (!string.IsNullOrWhiteSpace(redirectTo))
-                url += $"?redirectTo={Uri.EscapeDataString(redirectTo)}";
-
-            var response = await _http
-                .GetFromJsonAsync<Response<string>>(url);
-
-            return response ?? new Response<string>
-            {
-                Success = false,
-                Message = "Unexpected response from server"
-            };
-        }
-        catch (Exception ex)
-        {
-            return new Response<string>
-            {
-                Success = false,
-                Message = "Unable to connect to server. Please try again."
-            };
-        }
-    }
+    public Task<Response<string>> GetGoogleSignInUrl(string? redirectTo = null) =>
+        Task.FromResult(Response<string>.Fail("Sign in with email and password."));
 
     public async Task<Response<int>> SendPasswordReset(ForgotPasswordModel request)
     {
@@ -315,27 +186,19 @@ public class AuthService : IAuthService
 
         try
         {
-            var result = await _http.PostAsJsonAsync(
-                "api/Auth/forgot-password", request);
-
-            var response = await result.Content
-                .ReadFromJsonAsync<Response<int>>();
-
-            return response ?? new Response<int>
-            {
-                Success = false,
-                Message = result.IsSuccessStatusCode
-                    ? "Unexpected response from server"
-                    : $"Server error: {result.StatusCode}"
-            };
+            var apiKey = _config["Firebase:ApiKey"];
+            if (string.IsNullOrWhiteSpace(apiKey))
+                return Response<int>.Fail("Unable to send the reset email.");
+            using var result = await _http.PostAsJsonAsync(
+                IdentityUrl("accounts:sendOobCode", apiKey),
+                new { requestType = "PASSWORD_RESET", email = request.Email });
+            if (!result.IsSuccessStatusCode)
+                return Response<int>.Fail("Unable to send the reset email.");
+            return Response<int>.SuccessResponse(1, "Check your email");
         }
         catch (Exception)
         {
-            return new Response<int>
-            {
-                Success = false,
-                Message = "Unable to connect to server. Please try again."
-            };
+            return Response<int>.Fail("Unable to send the reset email.");
         }
     }
 
@@ -356,29 +219,6 @@ public class AuthService : IAuthService
                 Message = "Passwords do not match"
             };
 
-        try
-        {
-            var result = await _http.PostAsJsonAsync(
-                "api/Auth/reset-password", request);
-
-            var response = await result.Content
-                .ReadFromJsonAsync<Response<int>>();
-
-            return response ?? new Response<int>
-            {
-                Success = false,
-                Message = result.IsSuccessStatusCode
-                    ? "Unexpected response from server"
-                    : $"Server error: {result.StatusCode}"
-            };
-        }
-        catch (Exception)
-        {
-            return new Response<int>
-            {
-                Success = false,
-                Message = "Unable to connect to server. Please try again."
-            };
-        }
+        return Response<int>.Fail("Use the reset link from your email.");
     }
 }

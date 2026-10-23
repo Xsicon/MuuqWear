@@ -8,9 +8,6 @@ public class StaffPathsTests
     [Theory]
     [InlineData("/admin")]
     [InlineData("/admin/orders")]
-    [InlineData("/profile")]
-    [InlineData("/settings")]
-    [InlineData("/account")]
     [InlineData("/community")]
     [InlineData("/help")]
     [InlineData("/careers")]
@@ -37,6 +34,9 @@ public class StaffPathsTests
     [InlineData("/about")]
     [InlineData("/faq")]
     [InlineData("/journal")]
+    [InlineData("/profile")]
+    [InlineData("/settings")]
+    [InlineData("/account")]
     public void ShopperScreensStayInWasm(string path)
     {
         Assert.False(StaffPaths.IsServerOwned(path));

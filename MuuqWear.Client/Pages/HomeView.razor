@@ -24,7 +24,7 @@
                             {
                                 <p class="mw-slide__subline">@slide.Subline</p>
                             }
-                            <a href="@slide.Link" class="mw-slide__cta">
+                            <a href="@slide.Link" class="mw-slide__cta" data-enhance-nav="@(slide.Link == "/community" ? "false" : null)">
                                 @slide.Cta
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                     <path d="M5 12h14" />
@@ -338,22 +338,6 @@
                 </li>
             }
         </ul>
-    </div>
-</section>
-
-<section class="mw-home-section mw-home-section--muted" id="notify">
-    <div class="mw-home-container mw-notify">
-        <h2>@PageCopy.NewsletterHeading</h2>
-        <p>@PageCopy.NewsletterText</p>
-        <form class="mw-notify__form" @onsubmit="RequestLaunchNotice" @onsubmit:preventDefault>
-            <label class="mw-notify__label" for="notify-email">Email</label>
-            <input id="notify-email" type="email" required @bind="notifyEmail" @bind:event="oninput" placeholder="Email address" />
-            <button type="submit">@PageCopy.NewsletterButton</button>
-        </form>
-        @if (!string.IsNullOrWhiteSpace(notifyStatus))
-        {
-            <p role="status">@notifyStatus</p>
-        }
     </div>
 </section>
 

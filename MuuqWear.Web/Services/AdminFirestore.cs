@@ -4,6 +4,7 @@ using MuuqWear.Application.Shared;
 using MuuqWear.Model.Customer;
 using MuuqWear.Model.Orders;
 using MuuqWear.Model.Products;
+using MuuqWear.Model.Profile;
 using MuuqWear.Model.Shared;
 
 namespace MuuqWear.Web.Services;
@@ -264,6 +265,89 @@ public sealed partial class AdminFirestore
         return await GetCustomerAsync(customerId, cancellationToken);
     }
 
+    public async Task<ProfileModel> GetShopperProfileAsync(string uid, string? email, string? name, CancellationToken cancellationToken = default)
+    {
+        var doc = await FindShopperDocAsync(uid, email, cancellationToken);
+        if (doc is not null
+            && !string.IsNullOrWhiteSpace(uid)
+            && !string.Equals(doc.Id, uid, StringComparison.Ordinal)
+            && !string.IsNullOrWhiteSpace(email)
+            && !string.Equals(Str(doc, "email"), email, StringComparison.OrdinalIgnoreCase))
+        {
+            doc = null;
+        }
+
+        var customer = doc is null ? null : ToCustomer(doc, []);
+        var id = customer?.Id ?? (Guid.TryParse(uid, out var parsed) ? parsed : StaffSessionJwt.StableUserGuid(uid));
+        var fullName = customer?.FullName;
+        if (string.IsNullOrWhiteSpace(fullName)
+            || (!string.IsNullOrWhiteSpace(email)
+                && fullName.Contains('@', StringComparison.Ordinal)
+                && !string.Equals(fullName, email, StringComparison.OrdinalIgnoreCase)))
+        {
+            fullName = string.IsNullOrWhiteSpace(name) ? email : name;
+        }
+
+        return new ProfileModel
+        {
+            Id = id,
+            FullName = fullName ?? "",
+            Email = string.IsNullOrWhiteSpace(email) ? customer?.Email : email
+        };
+    }
+
+    public async Task<ProfileModel> UpsertShopperProfileAsync(string uid, string email, string fullName, CancellationToken cancellationToken = default)
+    {
+        var doc = await FindShopperDocAsync(uid, email, cancellationToken);
+        var payload = new Dictionary<string, object>
+        {
+            ["email"] = email,
+            ["name"] = fullName,
+            ["updatedAt"] = Timestamp.FromDateTime(DateTime.UtcNow)
+        };
+        if (doc is null)
+        {
+            payload["createdAt"] = Timestamp.FromDateTime(DateTime.UtcNow);
+            payload["accountStatus"] = "active";
+            await _db.Collection("customers").Document(uid).SetAsync(payload, cancellationToken: cancellationToken);
+        }
+        else
+        {
+            await doc.Reference.SetAsync(payload, SetOptions.MergeAll, cancellationToken);
+        }
+        _customers.Clear();
+        return await GetShopperProfileAsync(uid, email, fullName, cancellationToken);
+    }
+
+    public async Task DisableShopperAsync(string uid, string? email, CancellationToken cancellationToken = default)
+    {
+        var doc = await FindShopperDocAsync(uid, email, cancellationToken);
+        if (doc is null)
+            return;
+        await doc.Reference.UpdateAsync(new Dictionary<string, object>
+        {
+            ["accountStatus"] = "deleted"
+        }, cancellationToken: cancellationToken);
+        _customers.Clear();
+    }
+
+    private async Task<DocumentSnapshot?> FindShopperDocAsync(string uid, string? email, CancellationToken cancellationToken)
+    {
+        if (!string.IsNullOrWhiteSpace(uid))
+        {
+            var byUid = await _db.Collection("customers").Document(uid).GetSnapshotAsync(cancellationToken);
+            if (byUid.Exists)
+                return byUid;
+        }
+
+        if (string.IsNullOrWhiteSpace(email))
+            return null;
+
+        var all = await SnapshotAsync("customers", _customers, cancellationToken);
+        return all.Documents.FirstOrDefault(d =>
+            string.Equals(Str(d, "email"), email, StringComparison.OrdinalIgnoreCase));
+    }
+
     private async Task<DocumentSnapshot?> FindCustomerDocAsync(Guid customerId, CancellationToken cancellationToken)
     {
         var byId = await _db.Collection("customers").Document(customerId.ToString()).GetSnapshotAsync(cancellationToken);
@@ -410,6 +494,14 @@ public sealed partial class AdminFirestore
 
     private static string Str(DocumentSnapshot doc, string field) =>
         doc.ContainsField(field) ? Convert.ToString(doc.GetValue<object>(field)) ?? "" : "";
+
+    private static int Int(DocumentSnapshot doc, string field)
+    {
+        if (!doc.ContainsField(field))
+            return 0;
+        try { return Convert.ToInt32(doc.GetValue<object>(field)); }
+        catch { return 0; }
+    }
 
     private static List<OrderItemModel> ParseItems(DocumentSnapshot doc)
     {

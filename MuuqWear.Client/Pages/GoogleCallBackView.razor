@@ -83,7 +83,7 @@
 
             if (result.Success && result.Data != null)
             {
-                if (!string.Equals(result.Data.Role, "user", StringComparison.OrdinalIgnoreCase))
+                if (!ShopperAccount.CanUseStorefront(result.Data.Role))
                 {
                     errorMessage = "Access denied. Staff accounts must use the admin portal.";
                     isVerifying = false;

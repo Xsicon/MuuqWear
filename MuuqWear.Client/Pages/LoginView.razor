@@ -230,7 +230,7 @@
             if (result.Success && result.Data != null)
             {
                 var authData = result.Data;
-                if (authData.Role != "user")
+                if (!ShopperAccount.CanUseStorefront(authData.Role))
                 {
                     message = "Access denied.";
                     messageCssClass = "text-danger";

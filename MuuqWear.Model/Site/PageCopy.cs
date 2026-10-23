@@ -33,7 +33,7 @@ public static class PageCopy
 
     public const string SignIn = "Welcome back.";
     public const string SignUp = "Create your account.";
-    public const string FooterCopyright = "Copyright 2026 KobNeti LLC. MuuqWear is built and powered by KobNeti.";
+    public const string FooterCopyright = "© 2026 MUUQWEAR INTERNATIONAL. ALL RIGHTS RESERVED.";
 
     public const string MaintenanceNotice = "Short maintenance: we are updating the store. You can still browse. The window date and time are still to be set.";
     public const string WritesPaused = "Checkout and account changes are paused. You can still browse.";

@@ -14,6 +14,26 @@ public static class PublicSignIn
         string returnUrl = "/profile",
         bool rememberMe = false)
     {
+        try
+        {
+            var ok = await SyncCookieAsync(data, js, rememberMe, returnUrl);
+            if (!ok)
+                return;
+
+            navigation.NavigateTo(returnUrl, forceLoad: true);
+        }
+        catch (JSException)
+        {
+            navigation.NavigateTo(returnUrl, forceLoad: true);
+        }
+    }
+
+    public static async Task<bool> SyncCookieAsync(
+        AuthResponseModel data,
+        IJSRuntime js,
+        bool rememberMe = true,
+        string returnUrl = "/profile")
+    {
         var session = new CookieAuthSession
         {
             Token = data.AccessToken ?? "",
@@ -28,15 +48,11 @@ public static class PublicSignIn
 
         try
         {
-            var ok = await js.InvokeAsync<bool>("mwSignIn", session);
-            if (!ok)
-                return;
-
-            navigation.NavigateTo(returnUrl, forceLoad: true);
+            return await js.InvokeAsync<bool>("mwSignIn", session);
         }
         catch (JSException)
         {
-            navigation.NavigateTo(returnUrl, forceLoad: true);
+            return false;
         }
     }
 }

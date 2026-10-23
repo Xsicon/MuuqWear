@@ -291,7 +291,10 @@ window.muuqFirebase = (function () {
         },
         sendPasswordReset: function (email) {
             return withUser(async function () {
-                await authMod.sendPasswordResetEmail(auth, email);
+                await authMod.sendPasswordResetEmail(auth, email, {
+                    url: "https://muuqwear.com/auth/action",
+                    handleCodeInApp: true
+                });
                 return { ok: true };
             });
         },

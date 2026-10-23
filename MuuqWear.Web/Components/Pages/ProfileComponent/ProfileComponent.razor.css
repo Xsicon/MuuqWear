@@ -222,6 +222,11 @@
     margin: 20px 0;
 }
 
+a.mw-nav-item,
+a.mw-mobile-nav-item {
+    text-decoration: none;
+}
+
 .mw-nav-item {
     width: 100%;
     display: flex;

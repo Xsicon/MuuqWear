@@ -162,37 +162,7 @@ public class AuthenticatedHttpHandler : DelegatingHandler
             !IsTokenExpired(cached!))
             return cached;
 
-        try
-        {
-            var apiBaseUrl = _configuration["ApiBaseUrl"];
-            using var http = new HttpClient();
-
-            var result = await http.PostAsJsonAsync(
-                $"{apiBaseUrl}api/Auth/refresh-token",
-                new { refreshToken });
-
-            if (!result.IsSuccessStatusCode)
-                return null;
-
-            var response = await result.Content
-                .ReadFromJsonAsync<Response<AuthResponseModel>>();
-
-            if (response?.Success != true || response.Data == null)
-                return null;
-
-            _cache.Set($"access_token_{userId}",
-                response.Data.AccessToken,
-                TimeSpan.FromMinutes(1.5));
-
-            if (context != null)
-                await UpdateCookieAsync(context, response.Data);
-
-            return response.Data.AccessToken;
-        }
-        catch
-        {
-            return null;
-        }
+        return null;
     }
 
     private async Task UpdateCookieAsync(HttpContext context, AuthResponseModel data)

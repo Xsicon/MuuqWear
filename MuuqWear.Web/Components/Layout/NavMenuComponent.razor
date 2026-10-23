@@ -33,7 +33,9 @@
                 <a href="/" class="mw-logo text-decoration-none" @onclick="@(() => GoShopper("/"))" @onclick:preventDefault>
                     <img src="/images/muuqwearlogo.png"
                          alt="MuuqWear logo"
-                         class="mw-logo__img img-fluid" />
+                         class="mw-logo__img"
+                         width="32"
+                         height="32" />
                     <span class="mw-logo__text text-uppercase fw-bolder ms-2 d-none d-md-flex">MuuqWear</span>
                 </a>
 
@@ -72,11 +74,20 @@
                         </button>
 
                         <div class="mw-profile-dropdown">
+                            <a href="/profile" class="mw-icon-btn mw-header-member mw-header-member-fallback" aria-label="Profile">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                            </a>
                             <AuthorizeView>
                                 <Authorized>
                                     @if (!isAdmin)
                                     {
-                                        <button class="mw-icon-btn" aria-label="Profile" @onclick="ToggleProfile">
+                                        <div class="mw-header-auth-ready">
+                                        <button class="mw-icon-btn mw-header-member" aria-label="Profile" @onclick="ToggleProfile">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
                                                  viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -107,10 +118,11 @@
                                                 </button>
                                             </div>
                                         }
+                                        </div>
                                     }
                                 </Authorized>
                                 <NotAuthorized>
-                                    <a href="/login" class="mw-signin-btn" @onclick="@(() => GoShopper("/login"))" @onclick:preventDefault>Sign In</a>
+                                    <a href="/login" class="mw-signin-btn mw-header-guest" @onclick="@(() => GoShopper("/login"))" @onclick:preventDefault>Sign In</a>
                                 </NotAuthorized>
                             </AuthorizeView>
                         </div>
@@ -142,11 +154,19 @@
                         }
                     </button>
 
+                    <a href="/profile" class="mw-icon-btn mw-icon-btn--mobile mw-header-member mw-header-member-fallback" aria-label="Profile">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22"
+                             viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </a>
                     <AuthorizeView>
                         <Authorized>
                             @if (!isAdmin)
                             {
-                                <a href="/profile" class="mw-icon-btn mw-icon-btn--mobile" aria-label="Profile">
+                                <a href="/profile" class="mw-icon-btn mw-icon-btn--mobile mw-header-member mw-header-auth-ready" aria-label="Profile">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22"
                                          viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -157,7 +177,7 @@
                             }
                         </Authorized>
                         <NotAuthorized>
-                            <a href="/login" class="mw-icon-btn mw-icon-btn--mobile" aria-label="Sign in" @onclick="@(() => GoShopper("/login"))" @onclick:preventDefault>
+                            <a href="/login" class="mw-icon-btn mw-icon-btn--mobile mw-header-guest" aria-label="Sign in" @onclick="@(() => GoShopper("/login"))" @onclick:preventDefault>
                                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22"
                                      viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                      stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

@@ -40,6 +40,7 @@ using MuuqWear.Web.Authorization;
 using MuuqWear.Web.Components;
 using MuuqWear.Web.Constants;
 using MuuqWear.Web.Helpers;
+using MuuqWear.Web.ServerAuth;
 using MuuqWear.Web.Services;
 using Microsoft.AspNetCore.HttpOverrides;
 using System.Security.Claims;
@@ -49,23 +50,19 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
-    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor
+        | ForwardedHeaders.XForwardedProto
+        | ForwardedHeaders.XForwardedHost;
     options.KnownNetworks.Clear();
     options.KnownProxies.Clear();
+    options.RequireHeaderSymmetry = false;
 });
-var apiBaseUrl = builder.Configuration["ApiBaseUrl"]!;
-
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
     .AddInteractiveWebAssemblyComponents();
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddHttpClient<IAuthService, AuthService>(client =>
-{
-    client.BaseAddress = new Uri(apiBaseUrl);
-}).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
-{
-});
+builder.Services.AddHttpClient<IAuthService, AuthService>();
 
 if (FirebaseApp.DefaultInstance is null)
 {
@@ -83,56 +80,18 @@ builder.Services.AddScoped<IStaffUserService, FirebaseStaffUserService>();
 builder.Services.AddScoped<IProductService, FirestoreProductService>();
 builder.Services.AddScoped<IOrderService, FirestoreOrderService>();
 builder.Services.AddScoped<ICustomerService, FirestoreCustomerService>();
-builder.Services.AddHttpClient<ICategoryService, CategoryService>(client =>
-{
-    client.BaseAddress = new Uri(apiBaseUrl);
-}).AddHttpMessageHandler<AuthenticatedHttpHandler>();
-
-builder.Services.AddHttpClient<ICartService, CartService>(client =>
-{
-    client.BaseAddress = new Uri(apiBaseUrl);
-}).AddHttpMessageHandler<AuthenticatedHttpHandler>();
-builder.Services.AddHttpClient<IWishlistService, WishlistService>(client =>
-{
-    client.BaseAddress = new Uri(apiBaseUrl);
-}).AddHttpMessageHandler<AuthenticatedHttpHandler>();
+builder.Services.AddScoped<ICategoryService, FirestoreCategoryService>();
 
 
 builder.Services.AddScoped<IOrderReturnService, FirestoreOrderReturnService>();
 builder.Services.AddScoped<IRefundService, FirestoreRefundService>();
-builder.Services.AddHttpClient<IAddressService, AddressService>(client =>
-{
-    client.BaseAddress = new Uri(apiBaseUrl);
-}).AddHttpMessageHandler<AuthenticatedHttpHandler>();
-// Public endpoint — no auth handler
-builder.Services.AddHttpClient<IJournalService, JournalService>(client =>
-{
-    client.BaseAddress = new Uri(apiBaseUrl);
-});
+builder.Services.AddScoped<IAddressService, FirestoreAddressService>();
+builder.Services.AddScoped<IJournalService, FirestoreJournalService>();
 builder.Services.AddSingleton<StorefrontFirestore>();
-builder.Services.AddHttpClient("CatalogProxy", client =>
-{
-    client.BaseAddress = new Uri(apiBaseUrl);
-});
-builder.Services.AddHttpClient("CheckoutProxy", client =>
-{
-    client.BaseAddress = new Uri(apiBaseUrl);
-})
-.AddHttpMessageHandler<AuthenticatedHttpHandler>()
-.AddHttpMessageHandler<AffiliateCookieHandler>();
-builder.Services.AddHttpClient<IMuuqsimoService, MuuqsimoService>(client =>
-{
-    client.BaseAddress = new Uri(apiBaseUrl);
-});
+builder.Services.AddScoped<IMuuqsimoService, FirestoreMuuqsimoService>();
 builder.Services.AddScoped<IAdminSystemService, FirestoreAdminSystemService>();
-builder.Services.AddHttpClient<IProfileService, ProfileService>(client =>
-{
-    client.BaseAddress = new Uri(apiBaseUrl);
-}).AddHttpMessageHandler<AuthenticatedHttpHandler>();
-builder.Services.AddHttpClient<IVoteService, VoteService>(client =>
-{
-    client.BaseAddress = new Uri(apiBaseUrl);
-}).AddHttpMessageHandler<AuthenticatedHttpHandler>();
+builder.Services.AddScoped<IProfileService, FirestoreProfileService>();
+builder.Services.AddScoped<IVoteService, FirestoreVoteService>();
 builder.Services.AddScoped<AuthStateService>();
 builder.Services.AddScoped<AdminOrdersTabCoordinator>();
 builder.Services.AddScoped<AdminProductsTabCoordinator>();
@@ -172,28 +131,14 @@ builder.Services.AddTransient<AffiliateCookieHandler>();
 builder.Services.AddScoped<AuthenticationStateProvider>(sp =>
     sp.GetRequiredService<CustomAuthenticationStateProvider>());
 builder.Services.AddScoped<IContentService, FirestoreContentService>();
-builder.Services.AddHttpClient<IArchiveService, ArchiveService>(client =>
-{
-    client.BaseAddress = new Uri(apiBaseUrl);
-});
-builder.Services.AddHttpClient<IHelpCenterService, HelpCenterService>(client =>
-{
-    client.BaseAddress = new Uri(apiBaseUrl);
-}).AddHttpMessageHandler<AuthenticatedHttpHandler>();
-builder.Services.AddHttpClient<INotificationService, NotificationService>(client =>
-{
-    client.BaseAddress = new Uri(apiBaseUrl);
-}).AddHttpMessageHandler<AuthenticatedHttpHandler>();
+builder.Services.AddScoped<IArchiveService, FirestoreArchiveService>();
+builder.Services.AddScoped<IHelpCenterService, FirestoreHelpCenterService>();
+builder.Services.AddScoped<INotificationService, LocalNotificationService>();
 builder.Services.AddSingleton<NotificationRealtimeService>();
 // Add after other services
 builder.Services.AddScoped<IAffiliateService, FirestoreAffiliateService>();
 builder.Services.AddScoped<IChatService, FirestoreChatService>();
-builder.Services.AddHttpClient<IPaymentService,
-                               PaymentService>(client =>
-                               {
-                                   client.BaseAddress = new Uri(apiBaseUrl);
-                               })
-.AddHttpMessageHandler<AuthenticatedHttpHandler>();
+builder.Services.AddScoped<IPaymentService, LocalPaymentService>();
 
 builder.Services.AddScoped<IAdminBadgeService, FirestoreAdminBadgeService>();
 
@@ -228,7 +173,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
                 if (context.Request.Path.StartsWithSegments("/admin"))
                     context.Response.Redirect("/admin/access-denied");
                 else
-                    context.Response.Redirect("/not-found");
+                    context.Response.Redirect("/login");
 
                 return Task.CompletedTask;
             }
@@ -264,6 +209,29 @@ builder.Services.AddAdminPortalAuthorization();
 var app = builder.Build();
 
 app.UseForwardedHeaders();
+app.Use(async (ctx, next) =>
+{
+    var host = ctx.Request.Host.Host;
+    if (host.Contains("run.app", StringComparison.OrdinalIgnoreCase)
+        || host.Contains("web.app", StringComparison.OrdinalIgnoreCase)
+        || host.Contains("firebaseapp.com", StringComparison.OrdinalIgnoreCase))
+    {
+        var forwarded = ctx.Request.Headers["X-Forwarded-Host"].FirstOrDefault()?
+            .Split(',')[0].Trim();
+        if (!string.IsNullOrWhiteSpace(forwarded)
+            && !forwarded.Contains("run.app", StringComparison.OrdinalIgnoreCase)
+            && !forwarded.Contains("web.app", StringComparison.OrdinalIgnoreCase))
+        {
+            ctx.Request.Host = HostString.FromUriComponent(forwarded);
+        }
+        else
+        {
+            ctx.Request.Host = new HostString("muuqwear.com");
+        }
+    }
+
+    await next();
+});
 
 if (app.Environment.IsDevelopment())
 {
@@ -281,6 +249,7 @@ app.UseWebSockets(new WebSocketOptions
 });
 app.UseRouting();
 app.UseAuthentication();
+app.UseMiddleware<FirebaseBearerMiddleware>();
 app.UseAuthorization();
 app.UseMiddleware<TokenRefreshMiddleware>(); // ← add this line
 app.UseMiddleware<AffiliateTrackingMiddleware>();
@@ -407,6 +376,9 @@ app.MapGet("/auth/set-cookie", async (
         : Results.Redirect(session.ReturnUrl!);
 }).DisableAntiforgery();
 
+app.MapGet("/auth/action", ServeAuthAction);
+app.MapGet("/__/auth/action", ServeAuthAction);
+
 app.MapGet("/auth/clear", async (HttpContext ctx, bool expired = false) =>
 {
     await ctx.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
@@ -417,12 +389,7 @@ app.MapGet("/api/Product/{**rest}", ServeStorefrontCatalog);
 app.MapGet("/api/Category/{**rest}", ServeStorefrontCatalog);
 app.MapGet("/api/Journal", ServeStorefrontCatalog);
 app.MapGet("/api/Journal/{**rest}", ServeStorefrontCatalog);
-
-var checkoutVerbs = new[] { HttpMethods.Get, HttpMethods.Post, HttpMethods.Put, HttpMethods.Delete };
-app.MapMethods("/api/Cart", checkoutVerbs, ForwardCheckout).DisableAntiforgery();
-app.MapMethods("/api/Cart/{**rest}", checkoutVerbs, ForwardCheckout).DisableAntiforgery();
-app.MapPost("/api/Order/place", ForwardCheckout).DisableAntiforgery();
-app.MapPost("/api/Payment/create-intent/{orderId:guid}", ForwardCheckout).DisableAntiforgery();
+app.MapShopperAccount();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
@@ -431,35 +398,12 @@ app.MapRazorComponents<App>()
 
 app.Run();
 
+static IResult ServeAuthAction(IWebHostEnvironment env) =>
+    Results.File(Path.Combine(env.WebRootPath, "auth", "action.html"), "text/html; charset=utf-8");
+
 static async Task ServeStorefrontCatalog(HttpContext ctx, StorefrontFirestore store)
 {
     var payload = await store.HandleAsync(ctx.Request, ctx.RequestAborted);
     ctx.Response.StatusCode = StatusCodes.Status200OK;
     await ctx.Response.WriteAsJsonAsync(payload, ctx.RequestAborted);
-}
-
-static async Task ForwardCheckout(HttpContext ctx, IHttpClientFactory factory)
-{
-    if (ctx.User.Identity?.IsAuthenticated != true)
-    {
-        ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
-        return;
-    }
-
-    var client = factory.CreateClient("CheckoutProxy");
-    var relative = (ctx.Request.Path.Value ?? "/").TrimStart('/') + ctx.Request.QueryString.Value;
-    using var outbound = new HttpRequestMessage(new HttpMethod(ctx.Request.Method), relative);
-    if (ctx.Request.ContentLength is > 0)
-    {
-        outbound.Content = new StreamContent(ctx.Request.Body);
-        if (!string.IsNullOrEmpty(ctx.Request.ContentType))
-            outbound.Content.Headers.TryAddWithoutValidation("Content-Type", ctx.Request.ContentType);
-    }
-
-    using var response = await client.SendAsync(
-        outbound, HttpCompletionOption.ResponseHeadersRead, ctx.RequestAborted);
-    ctx.Response.StatusCode = (int)response.StatusCode;
-    if (response.Content.Headers.ContentType is { } contentType)
-        ctx.Response.ContentType = contentType.ToString();
-    await response.Content.CopyToAsync(ctx.Response.Body, ctx.RequestAborted);
 }

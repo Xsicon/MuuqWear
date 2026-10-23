@@ -22,9 +22,6 @@ public static class StaffPaths
     private static readonly string[] Prefixes =
     [
         "/admin",
-        "/profile",
-        "/settings",
-        "/account",
         "/muuqsimo",
         "/order-confirmed"
     ];

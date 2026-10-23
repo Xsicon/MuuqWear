@@ -1,39 +1,59 @@
+@inject NavigationManager Navigation
+@using MuuqWear.Model.Site
+
 <footer class="mw-footer">
     <div class="container">
         <div class="row gy-4">
             <div class="col-12 col-sm-6 col-lg-3">
                 <a href="/" class="mw-footer__logo d-flex align-items-center gap-2">
-                    <img src="/images/muuqwearlogo.png" alt="MuuqWear" />
+                    <img src="/images/muuqwearlogo.png" alt="MuuqWear" width="34" height="34" />
                     <span>MuuqWear</span>
                 </a>
-                <p class="mw-footer__desc">Modern essentials, designed clean and made to last.</p>
-                <p class="mb-0"><a href="mailto:Info@KobNeti.com">Info@KobNeti.com</a></p>
+                <p class="mw-footer__desc">
+                    Redefining performance through minimalist design.
+                    Crafted for the modern explorer.
+                </p>
             </div>
 
             <div class="col-12 col-sm-6 col-lg-3">
-                <h4>Shop</h4>
+                <h4>Support</h4>
                 <ul>
-                    <li><a href="/shop">Shop all</a></li>
-                    <li><a href="/shop/apparel">New arrivals</a></li>
-                    <li><a href="/shop/apparel">Essentials</a></li>
+                    <li><a href="/help" data-enhance-nav="false">Help Center</a></li>
+                    <li><a href="/shipping-return" data-enhance-nav="false">Shipping &amp; Returns</a></li>
+                    <li><a href="/size-guide">Size Guide</a></li>
+                    <li><a href="/affiliate" data-enhance-nav="false">Affiliate Program</a></li>
                 </ul>
             </div>
 
             <div class="col-12 col-sm-6 col-lg-3">
-                <h4>Help</h4>
+                <h4>Company</h4>
                 <ul>
-                    <li><a href="/size-guide">Size guide</a></li>
-                    <li><a href="/shipping-return" data-enhance-nav="false">Shipping</a></li>
-                    <li><a href="/shipping-return" data-enhance-nav="false">Returns &amp; exchanges</a></li>
-                    <li><a href="/faq">FAQ</a></li>
-                    <li><a href="/contact">Contact</a></li>
+                    <li><a href="/about">About</a></li>
+                    <li><a href="/careers" data-enhance-nav="false">Careers</a></li>
+                    <li><a href="/muuqsimo" data-enhance-nav="false">Muuqsimo</a></li>
+                    <li><a href="/design-history" data-enhance-nav="false">The Archive</a></li>
                 </ul>
             </div>
 
-            <div class="col-12 col-sm-6 col-lg-3" id="newsletter">
-                <h4>Be first through the door.</h4>
-                <p>Launch news and early access. About one email a month, unsubscribe anytime.</p>
-                <p class="mb-0"><a href="/#notify">Notify me</a></p>
+            <div class="col-12 col-sm-6 col-lg-3">
+                <h4>Follow Us →</h4>
+                <div class="mw-footer__social mb-2">
+                    <a href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" /><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" /><line x1="17.5" x2="17.51" y1="6.5" y2="6.5" /></svg>
+                    </a>
+                    <a href="https://www.tiktok.com/" target="_blank" rel="noopener noreferrer" aria-label="TikTok">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.44a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.81-2.89 2.89 2.89 0 0 1 2.88-2.89c.28 0 .54.05.79.13V9.01a6.27 6.27 0 0 0-.79-.05 6.34 6.34 0 0 0-6.33 6.33 6.34 6.34 0 0 0 6.33 6.34 6.34 6.34 0 0 0 6.33-6.34V8.73a8.18 8.18 0 0 0 4.7 1.47V6.7z" /></svg>
+                    </a>
+                    <a href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" /></svg>
+                    </a>
+                </div>
+                <p class="mb-1">Be the first to see new drops.</p>
+                <p>Join for exclusive early access.</p>
+                <form class="mw-footer__form" @onsubmit="Join" @onsubmit:preventDefault>
+                    <input type="email" required @bind="joinEmail" @bind:event="oninput" placeholder="Email address" aria-label="Email address" />
+                    <button type="submit">Join</button>
+                </form>
             </div>
         </div>
     </div>
@@ -41,12 +61,25 @@
     <div class="mw-footer__bottom">
         <div class="container">
             <div class="mw-footer__bottom-inner d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
-                <p class="mb-0 text-center text-md-start">Copyright 2026 KobNeti LLC. MuuqWear is built and powered by KobNeti.</p>
+                <p class="mb-0 text-center text-md-start">@PageCopy.FooterCopyright</p>
                 <div class="d-flex gap-3">
-                    <a href="/terms">Terms and conditions</a>
-                    <a href="/privacy">Privacy policy</a>
+                    <a href="/privacy">Privacy Policy</a>
+                    <a href="/terms">Terms of Service</a>
                 </div>
             </div>
         </div>
     </div>
 </footer>
+
+@code {
+    private string joinEmail = "";
+
+    private void Join()
+    {
+        if (string.IsNullOrWhiteSpace(joinEmail))
+            return;
+        var email = joinEmail.Trim();
+        var body = Uri.EscapeDataString($"Please add me for exclusive early access.\n\n{email}");
+        Navigation.NavigateTo($"mailto:{PageCopy.SupportEmail}?subject=Join%20early%20access&body={body}", forceLoad: true);
+    }
+}

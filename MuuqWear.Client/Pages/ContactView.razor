@@ -1,88 +1,11 @@
 @page "/contact"
-@using MuuqWear.Client.Offline
-@using MuuqWear.Model.Site
 @inject NavigationManager Navigation
-@inject OfflineQueue Queue
 
-<PageTitle>Contact — MuuqWear</PageTitle>
-
-<section class="mw-contact">
-    <div class="mw-contact__inner">
-        <p class="mw-contact__eyebrow">Contact</p>
-        <h1>@PageCopy.ContactHeading</h1>
-        <p>@PageCopy.ContactText</p>
-
-        @if (sent)
-        {
-            <p class="mw-contact__confirm" role="status">@(queued ? OfflineAction.Queued : PageCopy.ContactConfirmation)</p>
-        }
-        else
-        {
-            <EditForm Model="form" OnValidSubmit="Send" FormName="contact">
-                <DataAnnotationsValidator />
-                <div class="mw-contact__field">
-                    <label for="contact-name">Name</label>
-                    <InputText id="contact-name" @bind-Value="form.Name" />
-                    <ValidationMessage For="() => form.Name" />
-                </div>
-                <div class="mw-contact__field">
-                    <label for="contact-email">Email</label>
-                    <InputText id="contact-email" type="email" @bind-Value="form.Email" />
-                    <ValidationMessage For="() => form.Email" />
-                </div>
-                <div class="mw-contact__field">
-                    <label for="contact-topic">Topic</label>
-                    <InputSelect id="contact-topic" @bind-Value="form.Topic">
-                        @foreach (var topic in PageCopy.ContactTopics)
-                        {
-                            <option value="@topic">@topic</option>
-                        }
-                    </InputSelect>
-                </div>
-                <div class="mw-contact__field">
-                    <label for="contact-message">Message</label>
-                    <InputTextArea id="contact-message" @bind-Value="form.Message" rows="6" />
-                    <ValidationMessage For="() => form.Message" />
-                </div>
-                <button class="mw-contact__send" type="submit">Send message</button>
-            </EditForm>
-        }
-    </div>
-</section>
+<PageTitle>Help Center — MuuqWear</PageTitle>
 
 @code {
-    private readonly ContactForm form = new();
-    private bool sent;
-    private bool queued;
-
-    private async Task Send()
+    protected override void OnInitialized()
     {
-        var subject = Uri.EscapeDataString(form.Topic);
-        var body = Uri.EscapeDataString($"{form.Name} ({form.Email})\n\n{form.Message}");
-        var mailto = $"mailto:{PageCopy.SupportEmail}?subject={subject}&body={body}";
-        sent = true;
-        if (!await Queue.IsOnlineAsync())
-        {
-            queued = true;
-            await Queue.EnqueueAsync("contact", new { mailto, form.Name, form.Email, form.Topic, form.Message });
-            return;
-        }
-
-        Navigation.NavigateTo(mailto, forceLoad: true);
-    }
-
-    private sealed class ContactForm
-    {
-        [System.ComponentModel.DataAnnotations.Required]
-        public string Name { get; set; } = "";
-
-        [System.ComponentModel.DataAnnotations.Required]
-        [System.ComponentModel.DataAnnotations.EmailAddress]
-        public string Email { get; set; } = "";
-
-        public string Topic { get; set; } = PageCopy.ContactTopics[0];
-
-        [System.ComponentModel.DataAnnotations.Required]
-        public string Message { get; set; } = "";
+        Navigation.NavigateTo("/help", forceLoad: true);
     }
 }

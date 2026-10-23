@@ -1,7 +1,4 @@
-@page "/profile"
-@page "/settings"
-@page "/account"
-@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@rendermode @(new InteractiveServerRenderMode(prerender: true))
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @using MuuqWear.Application.Interfaces
@@ -19,7 +16,7 @@
 @inject IAuthService IAuthService
 @inject NavigationManager NavigationManager
 @inject CartStateService CartStateService
-@attribute [Authorize(Roles = "user")]
+@attribute [Authorize]
 @using MuuqWear.Model.Address
 @using MuuqWear.Application.Services.AddressService
 @inject IAddressService AddressService
@@ -70,45 +67,57 @@
 
             <!-- USER INFO -->
             <div class="mw-mobile-menu__user">
-                <div class="mw-avatar">SA</div>
+                <div class="mw-avatar">@UserInitials</div>
                 <div>
                     <h6 class="mw-user-name">@LoggedInUserName</h6>
-                    <p class="mw-user-meta">Member since October 2024</p>
+                    <p class="mw-user-meta">Member since @GetMemberDate()</p>
                 </div>
             </div>
 
             <!-- NAV ITEMS -->
             <nav class="mw-mobile-menu__nav">
-                <button class="mw-mobile-nav-item @(activeTab == "overview" ? "active" : "")"
-                        @onclick='() => SelectTab("overview")'>
+                <a href="@TabHref("overview")"
+                   class="mw-mobile-nav-item @(activeTab == "overview" ? "active" : "")"
+                   @onclick='() => SelectTab("overview")'
+                   @onclick:preventDefault="true">
                     @Lucide("dashboard")
                     <span>Overview</span>
-                </button>
-                <button class="mw-mobile-nav-item @(activeTab == "orders" ? "active" : "")"
-                        @onclick='() => SelectTab("orders")'>
+                </a>
+                <a href="@TabHref("orders")"
+                   class="mw-mobile-nav-item @(activeTab == "orders" ? "active" : "")"
+                   @onclick='() => SelectTab("orders")'
+                   @onclick:preventDefault="true">
                     @Lucide("package")
                     <span>Orders</span>
-                </button>
-                <button class="mw-mobile-nav-item @(activeTab == "wishlist" ? "active" : "")"
-                        @onclick='() => SelectTab("wishlist")'>
+                </a>
+                <a href="@TabHref("wishlist")"
+                   class="mw-mobile-nav-item @(activeTab == "wishlist" ? "active" : "")"
+                   @onclick='() => SelectTab("wishlist")'
+                   @onclick:preventDefault="true">
                     @Lucide("heart")
                     <span>Wishlist</span>
-                </button>
-                <button class="mw-mobile-nav-item @(activeTab == "addresses" ? "active" : "")"
-                        @onclick='() => SelectTab("addresses")'>
+                </a>
+                <a href="@TabHref("addresses")"
+                   class="mw-mobile-nav-item @(activeTab == "addresses" ? "active" : "")"
+                   @onclick='() => SelectTab("addresses")'
+                   @onclick:preventDefault="true">
                     @Lucide("mappin")
                     <span>Addresses</span>
-                </button>
-                <button class="mw-mobile-nav-item @(activeTab == "affiliate" ? "active" : "")"
-                        @onclick='() => SelectTab("affiliate")'>
+                </a>
+                <a href="@TabHref("affiliate")"
+                   class="mw-mobile-nav-item @(activeTab == "affiliate" ? "active" : "")"
+                   @onclick='() => SelectTab("affiliate")'
+                   @onclick:preventDefault="true">
                     @Lucide("users")
                     <span>Affiliate Hub</span>
-                </button>
-                <button class="mw-mobile-nav-item @(activeTab == "settings" ? "active" : "")"
-                        @onclick='() => SelectTab("settings")'>
+                </a>
+                <a href="@TabHref("settings")"
+                   class="mw-mobile-nav-item @(activeTab == "settings" ? "active" : "")"
+                   @onclick='() => SelectTab("settings")'
+                   @onclick:preventDefault="true">
                     @Lucide("settings")
                     <span>Settings</span>
-                </button>
+                </a>
             </nav>
 
             <!-- AFFILIATE STATUS -->
@@ -140,43 +149,55 @@
 
             <!-- USER INFO -->
             <div class="mw-profile-user text-md-end">
-                <div class="mw-avatar">SA</div>
+                <div class="mw-avatar">@UserInitials</div>
                 <h6 class="mw-user-name">@LoggedInUserName</h6>
-                <p class="mw-user-meta">Member since October 2024</p>
+                <p class="mw-user-meta">Member since @GetMemberDate()</p>
             </div>
 
             <!-- NAV -->
             <nav class="mw-profile-nav">
-                <button class="mw-nav-item @(activeTab == "overview" ? "active" : "")"
-                        @onclick='() => activeTab = "overview"'>
+                <a href="@TabHref("overview")"
+                   class="mw-nav-item @(activeTab == "overview" ? "active" : "")"
+                   @onclick='() => SelectTab("overview")'
+                   @onclick:preventDefault="true">
                     <span>Overview</span>
                     @Lucide("dashboard")
-                </button>
-                <button class="mw-nav-item @(activeTab == "orders" ? "active" : "")"
-                        @onclick='() => activeTab = "orders"'>
+                </a>
+                <a href="@TabHref("orders")"
+                   class="mw-nav-item @(activeTab == "orders" ? "active" : "")"
+                   @onclick='() => SelectTab("orders")'
+                   @onclick:preventDefault="true">
                     <span>Orders</span>
                     @Lucide("package")
-                </button>
-                <button class="mw-nav-item @(activeTab == "wishlist" ? "active" : "")"
-                        @onclick='() => SelectTab("wishlist")'>
+                </a>
+                <a href="@TabHref("wishlist")"
+                   class="mw-nav-item @(activeTab == "wishlist" ? "active" : "")"
+                   @onclick='() => SelectTab("wishlist")'
+                   @onclick:preventDefault="true">
                     <span>Wishlist</span>
                     @Lucide("heart")
-                </button>
-                <button class="mw-nav-item @(activeTab == "addresses" ? "active" : "")"
-                        @onclick='() => activeTab = "addresses"'>
+                </a>
+                <a href="@TabHref("addresses")"
+                   class="mw-nav-item @(activeTab == "addresses" ? "active" : "")"
+                   @onclick='() => SelectTab("addresses")'
+                   @onclick:preventDefault="true">
                     <span>Addresses</span>
                     @Lucide("mappin")
-                </button>
-                <button class="mw-nav-item @(activeTab == "affiliate" ? "active" : "")"
-                        @onclick='() => SelectTab("affiliate")'>
+                </a>
+                <a href="@TabHref("affiliate")"
+                   class="mw-nav-item @(activeTab == "affiliate" ? "active" : "")"
+                   @onclick='() => SelectTab("affiliate")'
+                   @onclick:preventDefault="true">
                     <span>Affiliate Hub</span>
                     @Lucide("users")
-                </button>
-                <button class="mw-nav-item @(activeTab == "settings" ? "active" : "")"
-                        @onclick='() => SelectTab("settings")'>
+                </a>
+                <a href="@TabHref("settings")"
+                   class="mw-nav-item @(activeTab == "settings" ? "active" : "")"
+                   @onclick='() => SelectTab("settings")'
+                   @onclick:preventDefault="true">
                     <span>Settings</span>
                     @Lucide("settings")
-                </button>
+                </a>
             </nav>
 
             <!-- AFFILIATE -->
@@ -289,7 +310,7 @@
                     <div class="col-6 col-md-3">
                         <div class="mw-stat-card">
                             <span class="mw-stat-icon">@Lucide("dashboard", 18)</span>
-                            <p class="mw-stat-value">$1251</p>
+                            <p class="mw-stat-value">$@TotalSpent.ToString("F0")</p>
                             <p class="mw-stat-label">Total Spent</p>
                         </div>
                     </div>

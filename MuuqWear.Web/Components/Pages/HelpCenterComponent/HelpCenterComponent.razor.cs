@@ -12,7 +12,7 @@ public partial class HelpCenterComponent
     private ElementReference topicsTrackRef;
     private ElementReference faqRef;
 
-    private string activeTopic = string.Empty;
+    private string activeTopic = "Orders";
     private string expandedFaq = string.Empty;
     private bool isLoadingFaqs = true;
 

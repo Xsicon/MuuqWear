@@ -3,14 +3,97 @@
    ================================ */
 
 .mw-checkout {
-    max-width: 720px;
+    max-width: 1280px;
     margin: 0 auto;
-    padding: 34px 16px 55px;
+    padding: 21px 16px 55px;
+    font-family: 'Manrope', sans-serif;
 }
 
 @media (min-width: 768px) {
     .mw-checkout {
-        padding: 55px 34px;
+        padding: 21px 34px 55px;
+    }
+}
+
+.mw-checkout__breadcrumb {
+    font-size: 14px;
+    color: #4A5C7A;
+    margin-bottom: 21px;
+}
+
+.mw-checkout__breadcrumb a {
+    color: #4A5C7A;
+    text-decoration: none;
+}
+
+.mw-checkout__breadcrumb a:hover {
+    color: #1E2A47;
+}
+
+.mw-checkout__breadcrumb span {
+    margin: 0 8px;
+}
+
+.mw-checkout__breadcrumb-active {
+    color: #1E2A47;
+    font-weight: 600;
+}
+
+.mw-checkout__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 34px;
+}
+
+.mw-checkout__title {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: #1E2A47;
+    margin: 0;
+}
+
+.mw-checkout__back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #4A5C7A;
+    text-decoration: none;
+    flex-shrink: 0;
+}
+
+.mw-checkout__back:hover {
+    color: #1E2A47;
+}
+
+.mw-checkout__layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 34px;
+}
+
+@media (min-width: 992px) {
+    .mw-checkout__layout {
+        grid-template-columns: minmax(0, 1fr) 400px;
+        gap: 55px;
+        align-items: start;
+    }
+}
+
+.mw-checkout__summary {
+    background: #FAFBFD;
+    border: 1px solid rgba(169, 183, 204, 0.4);
+    padding: 21px;
+}
+
+@media (min-width: 992px) {
+    .mw-checkout__summary {
+        position: sticky;
+        top: 88px;
     }
 }
 
@@ -336,6 +419,7 @@
 .mw-checkout__payment {
     border: 1px solid #A9B7CC;
     overflow: hidden;
+    padding: 16px 21px;
 }
 
 .mw-checkout__payment-header {
@@ -438,12 +522,6 @@
         letter-spacing: 0.5px;
         text-transform: uppercase;
     }
-
-.mw-logo__img {
-    width: 32px;
-    height: 32px;
-    object-fit: contain;
-}
 
 .mw-checkout__input[readonly] {
     background-color: #F4F6F9;

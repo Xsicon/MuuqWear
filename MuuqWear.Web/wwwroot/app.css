@@ -9,8 +9,9 @@
 /* =========================
    NAVBAR (FIGMA STYLE)
 ========================= */
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,800;1,400;1,700;1,800&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+/* Fonts load from App.razor <link> tags. Do not @import them here: that
+   blocks this whole file on fonts.googleapis.com and leaves the header
+   unstyled on the first visit (huge logo, menu dumped in the page). */
 
 /* Design tokens — global so scoped components can resolve var(--mw-*).
    (Blazor scoped CSS does not apply :host, so these must live in :root.) */
@@ -23,6 +24,50 @@
     --mw-hover: #E6ECF5;
     --mw-danger: #C44545;
     --mw-muted: #A9B7CC;
+}
+
+/* Unscoped chrome — same rules as ShopperNav scoped CSS, so first paint
+   does not wait for MuuqWear.Client.styles.css. */
+.mw-logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.mw-logo__img {
+    width: 32px;
+    height: 32px;
+    max-width: 32px;
+    object-fit: contain;
+    display: block;
+    flex-shrink: 0;
+}
+
+.mw-header {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: #fff;
+}
+
+.mw-header__inner {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 16px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-sizing: border-box;
+}
+
+.mw-mobile-nav:not(.mw-mobile-nav--open) {
+    display: none;
+}
+
+.mw-mobile-nav.mw-mobile-nav--open {
+    display: block;
 }
 
 
@@ -41,6 +86,26 @@ body.no-scroll {
 html, body {
     margin: 0;
     padding: 0;
+}
+
+/* Keep footer at the bottom while the page body is still arriving
+   (server islands / WASM boot). Otherwise header+footer sit on top of empty space. */
+.page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.page > main {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.page > main > article {
+    flex: 1 1 auto;
+    min-height: 60vh;
+    overflow: visible;
 }
 /* GLOBAL */
 .mw-container {
@@ -1066,6 +1131,19 @@ body.mw-nav-loading::before {
 
 body.mw-offline .hc-chat-launcher,
 body.mw-offline .hc-widget {
+    display: none !important;
+}
+
+html[data-mw-auth="in"] .mw-header-guest {
+    display: none !important;
+}
+
+html:not([data-mw-auth="in"]) .mw-header-member {
+    display: none !important;
+}
+
+.mw-profile-dropdown:has(.mw-header-auth-ready) .mw-header-member-fallback,
+.mw-header__mobile:has(.mw-header-auth-ready) .mw-header-member-fallback {
     display: none !important;
 }
 

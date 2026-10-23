@@ -5,7 +5,6 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MuuqWear.Model.Authentication;
-using MuuqWear.Model.Profile;
 using MuuqWear.Web.Constants;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Json;
@@ -76,16 +75,6 @@ public class TokenRefreshMiddleware
         var userId = context.User.FindFirst("UserId")?.Value;
         var role = MuuqWear.Web.Helpers.AdminPortalUserContext.GetRole(context.User);
         var staffSession = AdminPortalRoles.IsAllowed(role);
-        var isActive = staffSession || await CheckIsActive(accessToken, userId);
-        if (!isActive)
-        {
-            await context.SignOutAsync(
-                CookieAuthenticationDefaults.AuthenticationScheme);
-            context.Response.Cookies.Append("session_message",
-                "Your account is no longer active. Please contact support if you need help.");
-            context.Response.Redirect("/login?inactive=true");
-            return;
-        }
 
         if (!string.IsNullOrEmpty(accessToken) && IsTokenExpired(accessToken))
         {
@@ -108,8 +97,6 @@ public class TokenRefreshMiddleware
                 if (_cache.TryGetValue(cacheKey, out string? cachedToken)
                     && !IsTokenExpired(cachedToken!))
                 {
-                    if (!staffSession)
-                        TryScheduleLastActive(userId);
                     await _next(context);
                     return;
                 }
@@ -132,25 +119,7 @@ public class TokenRefreshMiddleware
                 _lock.Release();
             }
         }
-        if (!staffSession)
-            TryScheduleLastActive(userId);
-
         await _next(context);
-    }
-
-    private static readonly TimeSpan LastActiveInterval = TimeSpan.FromMinutes(5);
-
-    private void TryScheduleLastActive(string? userId)
-    {
-        if (string.IsNullOrEmpty(userId))
-            return;
-
-        var cacheKey = $"last-active-throttle-{userId}";
-        if (_cache.TryGetValue(cacheKey, out _))
-            return;
-
-        _cache.Set(cacheKey, true, LastActiveInterval);
-        _ = UpdateLastActive(userId);
     }
 
     private bool IsTokenExpired(string token)
@@ -177,36 +146,10 @@ public class TokenRefreshMiddleware
         try
         {
             var firebase = await TryFirebaseRefreshAsync(refreshToken);
-            if (firebase != null)
-            {
-                _cache.Set($"access_token_{userId}", firebase.AccessToken, TimeSpan.FromMinutes(50));
-                await RewriteCookieAsync(context, firebase);
-                return true;
-            }
-
-            var apiBaseUrl = _configuration["ApiBaseUrl"];
-            using var http = new HttpClient();
-
-            var body = new { refreshToken = refreshToken };
-            var result = await http.PostAsJsonAsync(
-                $"{apiBaseUrl}api/Auth/refresh-token", body);
-
-            if (!result.IsSuccessStatusCode)
-            {
-                var error = await result.Content.ReadAsStringAsync();
+            if (firebase is null)
                 return false;
-            }
-            var response = await result.Content
-                .ReadFromJsonAsync<Response<AuthResponseModel>>();
-
-            if (response?.Success != true || response.Data == null) return false;
-            var cacheKey = $"access_token_{userId}";
-            _cache.Set(cacheKey, response.Data.AccessToken,
-                TimeSpan.FromMinutes(1.5));
-
-            // rewrite cookie with fresh tokens 
-            await RewriteCookieAsync(context, response.Data);
-
+            _cache.Set($"access_token_{userId}", firebase.AccessToken, TimeSpan.FromMinutes(50));
+            await RewriteCookieAsync(context, firebase);
             return true;
         }
         catch (Exception ex)
@@ -251,7 +194,6 @@ public class TokenRefreshMiddleware
         identity.AddClaim(new Claim(type, value));
     }
 
-    private static readonly TimeSpan AccountStatusInterval = TimeSpan.FromMinutes(1);
     private static readonly HttpClient AccountStatusClient = new()
     {
         Timeout = TimeSpan.FromSeconds(5)
@@ -302,60 +244,5 @@ public class TokenRefreshMiddleware
         public string? RefreshToken { get; set; }
         [JsonPropertyName("user_id")]
         public string? UserId { get; set; }
-    }
-
-    private async Task<bool> CheckIsActive(string? accessToken, string? userId)
-    {
-        if (string.IsNullOrEmpty(accessToken)) return true; // not logged in → skip
-
-        // Only positive results are cached, so a suspension still takes effect within the interval
-        // while healthy sessions avoid an API round trip on every request.
-        var cacheKey = $"account-active-{userId}";
-        if (!string.IsNullOrEmpty(userId) && _cache.TryGetValue(cacheKey, out bool cachedActive) && cachedActive)
-            return true;
-
-        try
-        {
-            var apiBaseUrl = _configuration["ApiBaseUrl"];
-            using var request = new HttpRequestMessage(
-                HttpMethod.Get, $"{apiBaseUrl}api/Profile/is-active");
-            request.Headers.Authorization =
-                new System.Net.Http.Headers.AuthenticationHeaderValue(
-                    "Bearer", accessToken);
-
-            using var result = await AccountStatusClient.SendAsync(request);
-
-            if (!result.IsSuccessStatusCode) return true; // if check fails → don't block
-
-            var response = await result.Content
-                .ReadFromJsonAsync<Response<ProfileAccountStatusModel>>();
-
-            var isActive = response?.Data?.IsActive != false;
-
-            if (isActive && !string.IsNullOrEmpty(userId))
-                _cache.Set(cacheKey, true, AccountStatusInterval);
-
-            return isActive;
-        }
-        catch
-        {
-            return true;
-        }
-    }
-
-    private async Task UpdateLastActive(string? userId)
-    {
-        if (string.IsNullOrEmpty(userId)) return;
-
-        try
-        {
-            var apiBaseUrl = _configuration["ApiBaseUrl"];
-            using var http = new HttpClient();
-            await http.PostAsync(
-                $"{apiBaseUrl}api/Profile/last-active/{userId}", null);
-        }
-        catch
-        {
-        }
     }
 }

@@ -3,18 +3,20 @@
 @inject WishlistStateService WishlistStateService
 @inject IAuthService Auth
 @inject FirebaseSession Firebase
+@inject IJSRuntime JS
 @implements IDisposable
 @using MuuqWear.Application.Services.AuthService
 @using MuuqWear.Application.Services.CartService
 @using MuuqWear.Application.Services.WishlistService
 @using MuuqWear.Client.Auth
+@using MuuqWear.Model.Authentication
 
 <div>
     <header class="mw-header" role="banner">
         <div class="mw-header__bar">
             <div class="mw-header__inner">
                 <a href="/" class="mw-logo text-decoration-none">
-                    <img src="/images/muuqwearlogo.png" alt="MuuqWear logo" class="mw-logo__img img-fluid" />
+                    <img src="/images/muuqwearlogo.png" alt="MuuqWear logo" class="mw-logo__img" width="32" height="32" />
                     <span class="mw-logo__text text-uppercase fw-bolder ms-2 d-none d-md-flex">MuuqWear</span>
                 </a>
 
@@ -48,39 +50,33 @@
                         </button>
 
                         <div class="mw-profile-dropdown">
-                            @if (_signedIn)
+                            <button class="mw-icon-btn mw-header-member" aria-label="Profile" @onclick="ToggleProfile">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                            </button>
+                            @if (_signedIn && _profileOpen)
                             {
-                                <button class="mw-icon-btn" aria-label="Profile" @onclick="ToggleProfile">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
-                                        <circle cx="12" cy="7" r="4"></circle>
-                                    </svg>
-                                </button>
-                                @if (_profileOpen)
-                                {
-                                    <div class="mw-profile-overlay" @onclick="CloseProfile"></div>
-                                    <div class="mw-profile-menu">
-                                        <div class="mw-profile-menu__header">
-                                            <p class="mw-profile-menu__name">Account</p>
-                                            <p class="mw-profile-menu__email">@_email</p>
-                                        </div>
-                                        <a href="/profile" class="mw-profile-menu__item" data-enhance-nav="false" @onclick="CloseProfile">
-                                            <span>My Orders</span>
-                                        </a>
-                                        <a href="/settings" class="mw-profile-menu__item" data-enhance-nav="false" @onclick="CloseProfile">
-                                            <span>Settings</span>
-                                        </a>
-                                        <div class="mw-profile-menu__divider"></div>
-                                        <button class="mw-profile-menu__item mw-profile-menu__signout" @onclick="HandleSignOut">
-                                            <span>Sign Out</span>
-                                        </button>
+                                <div class="mw-profile-overlay" @onclick="CloseProfile"></div>
+                                <div class="mw-profile-menu">
+                                    <div class="mw-profile-menu__header">
+                                        <p class="mw-profile-menu__name">Account</p>
+                                        <p class="mw-profile-menu__email">@_email</p>
                                     </div>
-                                }
+                                    <a href="/profile" class="mw-profile-menu__item" data-enhance-nav="false" @onclick="CloseProfile">
+                                        <span>My Orders</span>
+                                    </a>
+                                    <a href="/settings" class="mw-profile-menu__item" data-enhance-nav="false" @onclick="CloseProfile">
+                                        <span>Settings</span>
+                                    </a>
+                                    <div class="mw-profile-menu__divider"></div>
+                                    <button class="mw-profile-menu__item mw-profile-menu__signout" @onclick="HandleSignOut">
+                                        <span>Sign Out</span>
+                                    </button>
+                                </div>
                             }
-                            else
-                            {
-                                <NavLink href="/login" class="mw-signin-btn">Sign In</NavLink>
-                            }
+                            <NavLink href="/login" class="mw-signin-btn mw-header-guest">Sign In</NavLink>
                         </div>
                     </div>
                 </div>
@@ -103,24 +99,18 @@
                             <span class="mw-cart-badge mw-cart-badge--mobile" aria-hidden="true">@CartItemCount</span>
                         }
                     </button>
-                    @if (_signedIn)
-                    {
-                        <a href="/profile" class="mw-icon-btn mw-icon-btn--mobile" aria-label="Profile" data-enhance-nav="false">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="12" cy="7" r="4"></circle>
-                            </svg>
-                        </a>
-                    }
-                    else
-                    {
-                        <NavLink href="/login" class="mw-icon-btn mw-icon-btn--mobile" aria-label="Sign in">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="12" cy="7" r="4"></circle>
-                            </svg>
-                        </NavLink>
-                    }
+                    <a href="/profile" class="mw-icon-btn mw-icon-btn--mobile mw-header-member" aria-label="Profile" data-enhance-nav="false">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </a>
+                    <NavLink href="/login" class="mw-icon-btn mw-icon-btn--mobile mw-header-guest" aria-label="Sign in">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </NavLink>
                     <button class="mw-icon-btn mw-hamburger mw-icon-btn--mobile"
                             aria-label="@(_menuOpen ? "Close menu" : "Open menu")"
                             aria-expanded="@_menuOpen"
@@ -156,7 +146,7 @@
             <div class="mw-mobile-nav__scroll">
                 @if (_signedIn)
                 {
-                    <div class="mw-mobile-nav__user">
+                    <div class="mw-mobile-nav__user mw-header-member">
                         <p class="mw-mobile-nav__user-name">Account</p>
                         @if (!string.IsNullOrEmpty(_email))
                         {
@@ -165,13 +155,10 @@
                         <button type="button" class="mw-mobile-nav__signout" @onclick="HandleSignOut">Sign Out</button>
                     </div>
                 }
-                else
-                {
-                    <div class="mw-mobile-nav__auth">
-                        <NavLink href="/login" class="mw-mobile-nav__auth-btn mw-mobile-nav__auth-btn--outline" @onclick="CloseMenu">Sign In</NavLink>
-                        <NavLink href="/register" class="mw-mobile-nav__auth-btn mw-mobile-nav__auth-btn--solid" @onclick="CloseMenu">Sign Up</NavLink>
-                    </div>
-                }
+                <div class="mw-mobile-nav__auth mw-header-guest">
+                    <NavLink href="/login" class="mw-mobile-nav__auth-btn mw-mobile-nav__auth-btn--outline" @onclick="CloseMenu">Sign In</NavLink>
+                    <NavLink href="/register" class="mw-mobile-nav__auth-btn mw-mobile-nav__auth-btn--solid" @onclick="CloseMenu">Sign Up</NavLink>
+                </div>
                 <nav class="mw-mobile-nav__body">
                     <NavLink class="mw-mobile-nav__link" href="/" Match="NavLinkMatch.All" @onclick="CloseMenu"><span>Home</span></NavLink>
                     <NavLink class="mw-mobile-nav__link" href="/shop/apparel" @onclick="CloseMenu"><span>Apparel</span></NavLink>
@@ -179,8 +166,7 @@
                     <a class="mw-mobile-nav__link" href="/community" data-enhance-nav="false" @onclick="CloseMenu"><span>Community</span></a>
                     <NavLink class="mw-mobile-nav__link" href="/journal" @onclick="CloseMenu"><span>Journal</span></NavLink>
                     <NavLink class="mw-mobile-nav__link" href="/about" @onclick="CloseMenu"><span>About</span></NavLink>
-                    <NavLink class="mw-mobile-nav__link" href="/faq" @onclick="CloseMenu"><span>FAQ</span></NavLink>
-                    <NavLink class="mw-mobile-nav__link" href="/contact" @onclick="CloseMenu"><span>Contact</span></NavLink>
+                    <a class="mw-mobile-nav__link" href="/help" data-enhance-nav="false" @onclick="CloseMenu"><span>Help Center</span></a>
                 </nav>
             </div>
         </div>
@@ -211,6 +197,27 @@
         var user = await Firebase.CurrentUserAsync();
         _signedIn = !string.IsNullOrWhiteSpace(user?.Uid);
         _email = user?.Email;
+        if (_signedIn)
+        {
+            var token = await Firebase.GetIdTokenAsync();
+            await PublicSignIn.SyncCookieAsync(new AuthResponseModel
+            {
+                AccessToken = token,
+                RefreshToken = "firebase",
+                Email = user?.Email,
+                UserId = user?.Uid,
+                UserName = user?.Email,
+                Role = "user"
+            }, JS);
+        }
+        try
+        {
+            await JS.InvokeVoidAsync("eval",
+                _signedIn
+                    ? "document.documentElement.dataset.mwAuth='in'"
+                    : "document.documentElement.dataset.mwAuth='out'");
+        }
+        catch (JSException) { }
         await CartStateService.InitializeAsync(_signedIn, user?.Uid);
         await WishlistStateService.InitializeAsync(_signedIn, user?.Uid);
         StateHasChanged();
@@ -219,7 +226,15 @@
     private void OnCartChanged() => InvokeAsync(StateHasChanged);
     private void ToggleMenu() => _menuOpen = !_menuOpen;
     private void CloseMenu() => _menuOpen = false;
-    private void ToggleProfile() => _profileOpen = !_profileOpen;
+    private void ToggleProfile()
+    {
+        if (!_signedIn)
+        {
+            NavigationManager.NavigateTo("/profile", forceLoad: true);
+            return;
+        }
+        _profileOpen = !_profileOpen;
+    }
     private void CloseProfile() => _profileOpen = false;
     private void GoShop() => NavigationManager.NavigateTo("/shop");
     private void GoCart() => NavigationManager.NavigateTo("/cart");
@@ -233,7 +248,9 @@
         await Auth.Logout();
         _signedIn = false;
         _email = null;
-        NavigationManager.NavigateTo("/");
+        try { await JS.InvokeVoidAsync("eval", "document.documentElement.dataset.mwAuth='out'"); }
+        catch (JSException) { }
+        NavigationManager.NavigateTo("/", forceLoad: true);
     }
 
     public void Dispose()

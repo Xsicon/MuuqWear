@@ -1,6 +1,7 @@
 @inherits LayoutComponentBase
 @using MuuqWear.Model.Site
 @inject IConfiguration Config
+@inject IJSRuntime JS
 
 <div class="page">
     @if (ShowNotice)
@@ -22,4 +23,14 @@
         string.Equals(Config["Cutover:ShowMaintenanceNotice"], "true", StringComparison.OrdinalIgnoreCase);
     private bool ShowNotice => Notice || Frozen;
     private string Banner => Frozen ? PageCopy.WritesPaused : PageCopy.MaintenanceNotice;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("mwNavProgress.pageReady");
+        }
+        catch (JSException) { }
+        catch (InvalidOperationException) { }
+    }
 }

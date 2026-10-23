@@ -1,5 +1,4 @@
 @page "/checkout"
-@layout ShopperAuthLayout
 @using MuuqWear.Application.Services.CartService
 @using MuuqWear.Client.Auth
 @using MuuqWear.Client.Checkout
@@ -16,23 +15,112 @@
 <PageTitle>Checkout — MuuqWear</PageTitle>
 
 <div class="mw-checkout">
+    <div class="mw-checkout__breadcrumb">
+        <a href="/">Home</a>
+        <span>&gt;</span>
+        <a href="/cart">Your Bag</a>
+        <span>&gt;</span>
+        <span class="mw-checkout__breadcrumb-active">Checkout</span>
+    </div>
+
+    <div class="mw-checkout__head">
+        <h1 class="mw-checkout__title">Checkout</h1>
+        <a href="/cart" class="mw-checkout__back">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m15 18-6-6 6-6" />
+            </svg>
+            Back to bag
+        </a>
+    </div>
+
     @if (!_cartReady)
     {
         <p class="text-muted">Loading checkout…</p>
     }
     else
     {
+    <div class="mw-checkout__layout">
+    <div class="mw-checkout__main">
 
-    <!-- ORDER SUMMARY -->
+    <!-- CONTACT INFORMATION -->
     <section class="mw-checkout__section">
-        <div class="mb-4">
-            <a href="/" class="mw-logo d-flex align-items-center text-decoration-none">
-                <img src="/images/muuqwearlogo.png" alt="MuuqWear logo" class="mw-logo__img img-fluid" />
-                <span class="mw-logo__text text-uppercase fw-bolder ms-2 d-none d-md-flex">
-                    MuuqWear
-                </span>
-            </a>
+        <h2 class="mw-checkout__label">Contact Information</h2>
+        @if (string.IsNullOrWhiteSpace(Email))
+        {
+            <p class="text-muted small mb-2">Checking out as a guest. <a href="/login">Sign in</a> if you already have an account.</p>
+        }
+        <input type="email" class="mw-checkout__input" readonly="@paymentReady" placeholder="Email address" @bind="email" />
+    </section>
+
+    <!-- SHIPPING ADDRESS -->
+    <section class="mw-checkout__section">
+        <h2 class="mw-checkout__label">Shipping Address</h2>
+
+        <div class="mw-checkout__grid-2 mb-3">
+            <input class="mw-checkout__input" placeholder="First name" readonly="@paymentReady" @bind="firstName" />
+            <input class="mw-checkout__input" placeholder="Last name" readonly="@paymentReady" @bind="lastName" />
         </div>
+
+        <input class="mw-checkout__input w-100 mb-3" placeholder="Address" readonly="@paymentReady" @bind="address" />
+
+        <div class="mw-checkout__grid-2">
+            <input class="mw-checkout__input" readonly="@paymentReady" placeholder="City" @bind="city" />
+            <input class="mw-checkout__input" readonly="@paymentReady" placeholder="Postal code" @bind="postalCode" />
+        </div>
+    </section>
+
+    <!-- PAYMENT DETAILS -->
+    <section class="mw-checkout__section">
+        <h2 class="mw-checkout__label">Payment Details</h2>
+        <div class="mw-checkout__payment">
+            <p class="text-muted small">
+                You'll pay on Stripe's secure page. Card details never touch this site.
+            </p>
+        </div>
+    </section>
+    @if (writesFrozen)
+    {
+        <div class="text-danger small text-center mb-3">@PageCopy.WritesPaused</div>
+    }
+    @if (!isOnline)
+    {
+        <div class="text-danger small text-center mb-3">Payment needs a connection. Your bag is still here.</div>
+    }
+    @if (!string.IsNullOrEmpty(paymentError))
+    {
+        <div class="text-danger small text-center mb-3">@paymentError</div>
+    }
+    <button class="mw-checkout__pay-btn" @onclick="HandlePay" disabled="@(writesFrozen || !isOnline || isPlacingOrder)">
+        @if (isPlacingOrder)
+        {
+            <span class="mw-btn-spinner"></span>
+            <span>@(paymentReady ? "Confirming..." : "Preparing...")</span>
+        }
+        else
+        {
+            <span>Continue to Payment</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h14"></path>
+                <path d="m12 5 7 7-7 7"></path>
+            </svg>
+        }
+    </button>
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="text-danger small text-center mb-3">
+            @errorMessage
+        </div>
+    }
+    <div class="mw-checkout__secure">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+        <span>Secure Encrypted Checkout</span>
+    </div>
+    </div>
+
+    <aside class="mw-checkout__summary">
         <h2 class="mw-checkout__section-title">Order Summary</h2>
 
         <!-- ITEMS -->
@@ -125,87 +213,7 @@
                 </div>
             </div>
         </div>
-
-    </section>
-
-    <!-- CONTACT INFORMATION -->
-    <section class="mw-checkout__section">
-        <h2 class="mw-checkout__label">Contact Information</h2>
-        @if (string.IsNullOrWhiteSpace(Email))
-        {
-            <p class="text-muted small mb-2">Checking out as a guest. <a href="/login">Sign in</a> if you already have an account.</p>
-        }
-        <input type="email" class="mw-checkout__input" readonly="@paymentReady" placeholder="Email address" @bind="email" />
-    </section>
-
-    <!-- SHIPPING ADDRESS -->
-    <section class="mw-checkout__section">
-        <h2 class="mw-checkout__label">Shipping Address</h2>
-
-        <div class="mw-checkout__grid-2 mb-3">
-            <input class="mw-checkout__input" placeholder="First name" readonly="@paymentReady" @bind="firstName" />
-            <input class="mw-checkout__input" placeholder="Last name" readonly="@paymentReady" @bind="lastName" />
-        </div>
-
-        <input class="mw-checkout__input w-100 mb-3" placeholder="Address" readonly="@paymentReady" @bind="address" />
-
-        <div class="mw-checkout__grid-2">
-            <input class="mw-checkout__input" readonly="@paymentReady" placeholder="City" @bind="city" />
-            <input class="mw-checkout__input" readonly="@paymentReady" placeholder="Postal code" @bind="postalCode" />
-        </div>
-    </section>
-
-    <!-- PAYMENT DETAILS -->
-    <section class="mw-checkout__section">
-        <h2 class="mw-checkout__label">Payment Details</h2>
-        <div class="mw-checkout__payment">
-            <p class="text-muted small">
-                You'll pay on Stripe's secure page. Card details never touch this site.
-            </p>
-        </div>
-    </section>
-    <!-- PAY BUTTON -->
-    @if (writesFrozen)
-    {
-        <div class="text-danger small text-center mb-3">@PageCopy.WritesPaused</div>
-    }
-    @if (!isOnline)
-    {
-        <div class="text-danger small text-center mb-3">Payment needs a connection. Your bag is still here.</div>
-    }
-    @if (!string.IsNullOrEmpty(paymentError))
-    {
-        <div class="text-danger small text-center mb-3">@paymentError</div>
-    }
-    <button class="mw-checkout__pay-btn" @onclick="HandlePay" disabled="@(writesFrozen || !isOnline || isPlacingOrder)">
-        @if (isPlacingOrder)
-        {
-            <span class="mw-btn-spinner"></span>
-            <span>@(paymentReady ? "Confirming..." : "Preparing...")</span>
-        }
-        else
-        {
-            <span>Continue to Payment</span>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M5 12h14"></path>
-                <path d="m12 5 7 7-7 7"></path>
-            </svg>
-        }
-    </button>
-    @if (!string.IsNullOrEmpty(errorMessage))
-    {
-        <div class="text-danger small text-center mb-3">
-            @errorMessage
-        </div>
-    }
-
-    <!-- SECURE TEXT -->
-    <div class="mw-checkout__secure">
-        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>
-            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-        </svg>
-        <span>Secure Encrypted Checkout</span>
+        </aside>
     </div>
     }
 

@@ -1,9 +1,9 @@
 const admin = require("firebase-admin");
 const store = require("./store");
 const { brandedHtml, brandedText } = require("./account-email-copy");
+const { ACTION_URL, brandedActionLink } = require("./account-email-link");
 
 const FROM = process.env.POSTMARK_FROM || "MuuqWear <noreply@muuqwear.com>";
-const CONTINUE_URL = "https://muuqwear.com/login";
 
 function postmarkToken() {
     return process.env.POSTMARK_SERVER_TOKEN || process.env["postmark-server-token"] || "";
@@ -57,10 +57,11 @@ async function sendVerificationEmail(req, res) {
             store.json(res, 200, { ok: true, alreadyVerified: true });
             return;
         }
-        const link = await admin.auth().generateEmailVerificationLink(record.email, {
-            url: CONTINUE_URL,
-            handleCodeInApp: false
+        const firebaseLink = await admin.auth().generateEmailVerificationLink(record.email, {
+            url: ACTION_URL,
+            handleCodeInApp: true
         });
+        const link = brandedActionLink(firebaseLink);
         await sendPostmark(
             record.email,
             "Confirm your MuuqWear email",

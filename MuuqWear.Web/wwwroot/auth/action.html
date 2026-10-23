@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MuuqWear</title>
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;display=swap" rel="stylesheet" />
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: #F5F6F8;
+            font-family: Manrope, Arial, Helvetica, sans-serif;
+            color: #1E2A47;
+        }
+        .wrap {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 16px;
+        }
+        .card {
+            width: 100%;
+            max-width: 420px;
+            background: #fff;
+            padding: 40px 32px;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+        .logo { width: 160px; height: auto; margin-bottom: 16px; }
+        h1 { margin: 0 0 8px; font-size: 24px; font-weight: 700; }
+        p { margin: 0 0 20px; color: #6c7a92; font-size: 14px; line-height: 1.5; }
+        .btn {
+            display: inline-block;
+            width: 100%;
+            background: #1E2A47;
+            color: #fff;
+            text-decoration: none;
+            border: none;
+            border-radius: 4px;
+            padding: 12px 16px;
+            font: 600 15px Manrope, Arial, sans-serif;
+            cursor: pointer;
+        }
+        .btn:hover { background: #162033; }
+        .btn:disabled { opacity: 0.7; cursor: wait; }
+        label {
+            display: block;
+            text-align: left;
+            font-size: 13px;
+            font-weight: 600;
+            margin: 0 0 6px;
+        }
+        input {
+            width: 100%;
+            border: 1px solid #d6dde8;
+            border-radius: 4px;
+            padding: 10px;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+        .err { color: #b42318; font-size: 14px; }
+        .ok { color: #1E2A47; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <main class="wrap">
+        <section class="card">
+            <a href="/"><img class="logo" src="/images/muuqwearlogo.png" alt="MuuqWear" /></a>
+            <h1 id="title">Confirming your email</h1>
+            <p id="copy">Just a moment.</p>
+            <form id="reset" class="hidden">
+                <label for="password">New password</label>
+                <input id="password" type="password" autocomplete="new-password" minlength="8" required />
+                <label for="confirm">Confirm password</label>
+                <input id="confirm" type="password" autocomplete="new-password" minlength="8" required />
+                <button class="btn" type="submit" id="save">Save password</button>
+            </form>
+            <p id="error" class="err hidden"></p>
+            <a id="next" class="btn hidden" href="/login">Continue to sign in</a>
+        </section>
+    </main>
+    <script>
+        (function () {
+            var params = new URLSearchParams(location.search);
+            var mode = params.get("mode") || "";
+            var code = params.get("oobCode") || "";
+            var apiKey = params.get("apiKey") || "";
+            var title = document.getElementById("title");
+            var copy = document.getElementById("copy");
+            var error = document.getElementById("error");
+            var next = document.getElementById("next");
+            var reset = document.getElementById("reset");
+
+            function showError(message) {
+                title.textContent = "Link expired";
+                copy.textContent = message;
+                error.classList.add("hidden");
+                next.classList.remove("hidden");
+                next.textContent = "Back to sign in";
+            }
+
+            function showOk(headline, message) {
+                title.textContent = headline;
+                copy.textContent = message;
+                copy.classList.add("ok");
+                next.classList.remove("hidden");
+            }
+
+            function endpoint(path) {
+                return "https://identitytoolkit.googleapis.com/v1/" + path + "?key=" + encodeURIComponent(apiKey);
+            }
+
+            async function applyCode() {
+                var response = await fetch(endpoint("accounts:update"), {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ oobCode: code })
+                });
+                var body = {};
+                try { body = await response.json(); } catch (e) { body = {}; }
+                if (!response.ok) throw new Error(body.error && body.error.message);
+            }
+
+            if (!code || !apiKey) {
+                showError("This confirmation link is missing details. Request a new email from sign in.");
+                return;
+            }
+
+            if (mode === "resetPassword") {
+                title.textContent = "Reset your password";
+                copy.textContent = "Choose a new password for your MuuqWear account.";
+                reset.classList.remove("hidden");
+                reset.addEventListener("submit", async function (event) {
+                    event.preventDefault();
+                    var password = document.getElementById("password").value;
+                    var confirm = document.getElementById("confirm").value;
+                    if (password !== confirm) {
+                        error.textContent = "Passwords do not match.";
+                        error.classList.remove("hidden");
+                        return;
+                    }
+                    document.getElementById("save").disabled = true;
+                    try {
+                        var response = await fetch(endpoint("accounts:resetPassword"), {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ oobCode: code, newPassword: password })
+                        });
+                        var body = {};
+                        try { body = await response.json(); } catch (e) { body = {}; }
+                        if (!response.ok) throw new Error(body.error && body.error.message);
+                        reset.classList.add("hidden");
+                        showOk("Password updated", "You can sign in with your new password.");
+                    } catch (e) {
+                        document.getElementById("save").disabled = false;
+                        showError("This reset link is invalid or has expired. Request a new one from forgot password.");
+                    }
+                });
+                return;
+            }
+
+            applyCode().then(function () {
+                showOk("Email confirmed", "Your MuuqWear account is ready. Sign in to continue.");
+            }).catch(function () {
+                showError("This confirmation link is invalid or has already been used. Sign in, or request a new email.");
+            });
+        })();
+    </script>
+</body>
+</html>

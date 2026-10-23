@@ -1,7 +1,5 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
-using MuuqWear.Client.Offline;
-using MuuqWear.Model.Site;
 using MuuqWear.Web.Services;
 
 namespace MuuqWear.Client.Pages;
@@ -15,32 +13,30 @@ public partial class HomeView : IAsyncDisposable
     private record CategoryCard(string Name, string Image, string Link);
 
     [Inject] private StorefrontHomeCacheService HomeCache { get; set; } = default!;
-    [Inject] private NavigationManager Navigation { get; set; } = default!;
-    [Inject] private OfflineQueue Queue { get; set; } = default!;
 
     private List<HeroSlide> HeroSlides { get; } = new()
     {
         new(
-            "https://images.unsplash.com/photo-1756361771567-e276865b77cb?w=1400&h=700&fit=crop",
-            "Coming soon",
-            PageCopy.HeroHeadline,
-            PageCopy.HeroSubline,
-            PageCopy.HeroButton,
-            "/#notify"),
-        new(
-            "https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=1600&h=900&fit=crop",
-            "New Arrivals",
-            "Modern Modest Essentials",
+            "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=1600&h=900&fit=crop",
+            "Limited Release",
+            "The Sapphire Collection",
             "",
-            "Shop Now",
+            "Explore the Collection",
             "/shop"),
+        new(
+            "https://images.unsplash.com/photo-1756361771567-e276865b77cb?w=1400&h=700&fit=crop",
+            "Limited Release",
+            "Texture. Refined.",
+            "",
+            "Discover Materials",
+            "/shop/apparel"),
         new(
             "https://images.unsplash.com/photo-1761957375235-46acb4862151?w=1400&h=700&fit=crop",
             "Limited Release",
             "Built by Community",
             "",
-            "Discover More",
-            "/shop/accessories")
+            "Join the Movement",
+            "/community")
     };
 
     private List<CategoryCard> Categories = new();
@@ -51,25 +47,6 @@ public partial class HomeView : IAsyncDisposable
     private bool _homeCarouselsReady;
     private bool isLoadingProducts = true;
     private bool isLoadingCategories = true;
-    private string notifyEmail = "";
-    private string notifyStatus = "";
-
-    private async Task RequestLaunchNotice()
-    {
-        if (string.IsNullOrWhiteSpace(notifyEmail))
-            return;
-        var email = notifyEmail.Trim();
-        var body = Uri.EscapeDataString($"Please tell me when MuuqWear opens.\n\n{email}");
-        var mailto = $"mailto:{PageCopy.SupportEmail}?subject=Notify%20me%20at%20launch&body={body}";
-        if (!await Queue.IsOnlineAsync())
-        {
-            await Queue.EnqueueAsync("newsletter", new { mailto, email });
-            notifyStatus = OfflineAction.Queued;
-            return;
-        }
-
-        Navigation.NavigateTo(mailto, forceLoad: true);
-    }
 
     private Dictionary<string, string> CategoryImages { get; } = new()
     {

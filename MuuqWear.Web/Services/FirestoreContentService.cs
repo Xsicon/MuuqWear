@@ -22,16 +22,7 @@ public sealed class FirestoreContentService : IContentService
     }
 
     public Task<Response<ContentItemModel>> Create(ContentCategory type, CreateContentItemModel request) =>
-        Upsert(type, new ContentItemModel
-        {
-            Title = request.Title,
-            Content = request.Content,
-            Status = request.Status ?? "draft",
-            Category = request.Category,
-            ImageUrl = request.ImageUrl,
-            Author = request.Author,
-            Excerpt = request.Excerpt
-        });
+        Upsert(type, MapCreate(type, request));
 
     public async Task<Response<ContentItemModel>> Update(ContentCategory type, Guid id, UpdateContentItemModel request)
     {
@@ -41,8 +32,19 @@ public sealed class FirestoreContentService : IContentService
         existing.Content = request.Content;
         existing.Status = request.Status ?? existing.Status;
         existing.ImageUrl = request.ImageUrl ?? existing.ImageUrl;
+        existing.SecondImageUrl = request.SecondImageUrl ?? existing.SecondImageUrl;
         existing.Author = request.Author ?? existing.Author;
         existing.Excerpt = request.Excerpt ?? existing.Excerpt;
+        existing.Slug = request.Slug ?? existing.Slug;
+        existing.Designer = request.Designer ?? existing.Designer;
+        existing.Year = request.Year ?? existing.Year;
+        existing.Inspiration = request.Inspiration ?? existing.Inspiration;
+        existing.Collection = request.Collection ?? existing.Collection;
+        existing.TechnicalFabric = request.TechnicalFabric ?? existing.TechnicalFabric;
+        existing.TechnicalTechniques = request.TechnicalTechniques ?? existing.TechnicalTechniques;
+        existing.TechnicalProduction = request.TechnicalProduction ?? existing.TechnicalProduction;
+        existing.TechnicalAvailability = request.TechnicalAvailability ?? existing.TechnicalAvailability;
+        existing.ProductId = request.ProductId ?? existing.ProductId;
         return await Upsert(type, existing);
     }
 
@@ -79,4 +81,26 @@ public sealed class FirestoreContentService : IContentService
 
     private async Task<Response<ContentItemModel>> Upsert(ContentCategory type, ContentItemModel item) =>
         Response<ContentItemModel>.SuccessResponse(await _store.UpsertContentAsync(type, item));
+
+    private static ContentItemModel MapCreate(ContentCategory type, CreateContentItemModel request) => new()
+    {
+        Title = request.Title,
+        Content = request.Content,
+        Status = request.Status ?? "draft",
+        Category = request.Category ?? type.ToString(),
+        ImageUrl = request.ImageUrl,
+        SecondImageUrl = request.SecondImageUrl,
+        Author = request.Author,
+        Excerpt = request.Excerpt,
+        Slug = request.Slug,
+        Designer = request.Designer,
+        Year = request.Year,
+        Inspiration = request.Inspiration,
+        Collection = request.Collection,
+        TechnicalFabric = request.TechnicalFabric,
+        TechnicalTechniques = request.TechnicalTechniques,
+        TechnicalProduction = request.TechnicalProduction,
+        TechnicalAvailability = request.TechnicalAvailability,
+        ProductId = request.ProductId
+    };
 }

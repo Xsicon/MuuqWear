@@ -1,6 +1,7 @@
 using Google.Cloud.Firestore;
 using MuuqWear.Application.Catalog;
 using MuuqWear.Application.Shared;
+using MuuqWear.Model.ContentItem;
 using MuuqWear.Model.Products;
 using MuuqWear.Model.Shared;
 
@@ -9,11 +10,13 @@ namespace MuuqWear.Web.Services;
 public sealed class StorefrontFirestore
 {
     private readonly FirestoreDb _db;
+    private readonly AdminFirestore _store;
 
-    public StorefrontFirestore(IConfiguration config)
+    public StorefrontFirestore(IConfiguration config, AdminFirestore store)
     {
         var projectId = config["Firebase:ProjectId"] ?? "muuqwear-6e2e0";
         _db = FirestoreDb.Create(projectId);
+        _store = store;
     }
 
     public async Task<object> HandleAsync(HttpRequest request, CancellationToken cancellationToken)
@@ -26,7 +29,18 @@ public sealed class StorefrontFirestore
         if (path.Equals("api/Category/all", StringComparison.OrdinalIgnoreCase))
             return Response<List<CategoryModel>>.SuccessResponse(await CategoriesAsync(cancellationToken));
         if (path.Equals("api/Journal", StringComparison.OrdinalIgnoreCase))
-            return Response<List<object>>.SuccessResponse(new List<object>());
+            return await JournalAsync(request, cancellationToken);
+
+        var journalOne = System.Text.RegularExpressions.Regex.Match(path, @"^api/Journal/([^/]+)$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        if (journalOne.Success)
+        {
+            Guid.TryParse(journalOne.Groups[1].Value, out var id);
+            var item = (await _store.ListContentAsync(ContentCategory.JournalArticles, cancellationToken))
+                .FirstOrDefault(i => i.Id == id);
+            return item is null
+                ? Response<ContentItemModel>.Fail("Article not found")
+                : Response<ContentItemModel>.SuccessResponse(item);
+        }
 
         var related = System.Text.RegularExpressions.Regex.Match(path, @"^api/Product/([^/]+)/related$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
         if (related.Success)
@@ -42,6 +56,33 @@ public sealed class StorefrontFirestore
         }
 
         return Response<object>.Fail("Not found");
+    }
+
+    private async Task<object> JournalAsync(HttpRequest request, CancellationToken cancellationToken)
+    {
+        var articles = (await _store.ListContentAsync(ContentCategory.JournalArticles, cancellationToken))
+            .Where(i => i.IsPublished)
+            .ToList();
+        if (!int.TryParse(request.Query["page"], out var page))
+            return Response<List<ContentItemModel>>.SuccessResponse(articles);
+
+        if (!int.TryParse(request.Query["pageSize"], out var pageSize) || pageSize < 1)
+            pageSize = 6;
+        if (page < 1)
+            page = 1;
+        var category = request.Query["category"].ToString();
+        if (!string.IsNullOrWhiteSpace(category))
+            articles = articles.Where(i => string.Equals(i.Category, category, StringComparison.OrdinalIgnoreCase)).ToList();
+        var total = articles.Count;
+        var pages = (int)Math.Ceiling(total / (double)pageSize);
+        return Response<PaginatedResponse<ContentItemModel>>.SuccessResponse(new PaginatedResponse<ContentItemModel>
+        {
+            Data = articles.Skip((page - 1) * pageSize).Take(pageSize).ToList(),
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = total,
+            TotalPages = pages
+        });
     }
 
     private async Task<List<ProductModel>> PublishedAsync(CancellationToken cancellationToken)

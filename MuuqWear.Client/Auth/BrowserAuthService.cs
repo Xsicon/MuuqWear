@@ -112,7 +112,7 @@ public sealed class BrowserAuthService : IAuthService
             Email = result.Email,
             UserId = result.Uid,
             UserName = result.Email,
-            Role = "Customer"
+            Role = "user"
         };
         await _tokens.SaveAsync(session);
         return session;

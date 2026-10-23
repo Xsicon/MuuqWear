@@ -237,6 +237,21 @@ public sealed partial class AdminFirestore
         return item;
     }
 
+    public async Task<int> IncrementContentViewsAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var doc = _db.Collection("content").Document(id.ToString());
+        try
+        {
+            await doc.UpdateAsync("views", FieldValue.Increment(1), cancellationToken: cancellationToken);
+            var snap = await doc.GetSnapshotAsync(cancellationToken);
+            return snap.Exists ? Int(snap, "views") : 0;
+        }
+        catch
+        {
+            return 0;
+        }
+    }
+
     public async Task<bool> DeleteContentAsync(Guid id, CancellationToken cancellationToken = default)
     {
         await _db.Collection("content").Document(id.ToString()).DeleteAsync(cancellationToken: cancellationToken);
@@ -482,6 +497,7 @@ public sealed partial class AdminFirestore
     private static ContentItemModel ToContent(DocumentSnapshot doc)
     {
         Guid.TryParse(doc.Id, out var id);
+        Guid.TryParse(Str(doc, "productId"), out var productId);
         return new ContentItemModel
         {
             Id = id,
@@ -490,22 +506,56 @@ public sealed partial class AdminFirestore
             Status = string.IsNullOrWhiteSpace(Str(doc, "status")) ? "draft" : Str(doc, "status"),
             Category = Str(doc, "category"),
             ImageUrl = Str(doc, "imageUrl"),
-            Author = Str(doc, "author"),
-            Excerpt = Str(doc, "excerpt"),
+            SecondImageUrl = EmptyToNull(Str(doc, "secondImageUrl")),
+            Author = EmptyToNull(Str(doc, "author")),
+            Excerpt = EmptyToNull(Str(doc, "excerpt")),
+            Slug = EmptyToNull(Str(doc, "slug")),
+            Designer = EmptyToNull(Str(doc, "designer")),
+            Year = EmptyToNull(Str(doc, "year")),
+            Collection = EmptyToNull(Str(doc, "collection")),
+            Inspiration = EmptyToNull(Str(doc, "inspiration")),
+            TechnicalFabric = EmptyToNull(Str(doc, "technicalFabric")),
+            TechnicalTechniques = EmptyToNull(Str(doc, "technicalTechniques")),
+            TechnicalProduction = EmptyToNull(Str(doc, "technicalProduction")),
+            TechnicalAvailability = EmptyToNull(Str(doc, "technicalAvailability")),
+            ProductId = productId == Guid.Empty ? null : productId,
+            Views = Int(doc, "views"),
             CreatedAt = ToDate(doc, "createdAt"),
             PublishedAt = ToDate(doc, "publishedAt")
         };
     }
 
-    private static Dictionary<string, object> ToContentFields(ContentItemModel item) => new()
+    private static Dictionary<string, object> ToContentFields(ContentItemModel item)
     {
-        ["title"] = item.Title,
-        ["body"] = item.Content ?? "",
-        ["status"] = item.Status,
-        ["category"] = item.Category ?? "",
-        ["imageUrl"] = item.ImageUrl ?? "",
-        ["author"] = item.Author ?? "",
-        ["excerpt"] = item.Excerpt ?? "",
-        ["createdAt"] = item.CreatedAt ?? DateTime.UtcNow
-    };
+        var fields = new Dictionary<string, object>
+        {
+            ["title"] = item.Title,
+            ["body"] = item.Content ?? "",
+            ["status"] = item.Status,
+            ["category"] = item.Category ?? "",
+            ["imageUrl"] = item.ImageUrl ?? "",
+            ["secondImageUrl"] = item.SecondImageUrl ?? "",
+            ["author"] = item.Author ?? "",
+            ["excerpt"] = item.Excerpt ?? "",
+            ["slug"] = item.Slug ?? "",
+            ["designer"] = item.Designer ?? "",
+            ["year"] = item.Year ?? "",
+            ["collection"] = item.Collection ?? "",
+            ["inspiration"] = item.Inspiration ?? "",
+            ["technicalFabric"] = item.TechnicalFabric ?? "",
+            ["technicalTechniques"] = item.TechnicalTechniques ?? "",
+            ["technicalProduction"] = item.TechnicalProduction ?? "",
+            ["technicalAvailability"] = item.TechnicalAvailability ?? "",
+            ["views"] = item.Views,
+            ["createdAt"] = item.CreatedAt ?? DateTime.UtcNow
+        };
+        if (item.ProductId is Guid productId && productId != Guid.Empty)
+            fields["productId"] = productId.ToString();
+        if (item.PublishedAt.HasValue)
+            fields["publishedAt"] = item.PublishedAt.Value;
+        return fields;
+    }
+
+    private static string? EmptyToNull(string value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value;
 }
