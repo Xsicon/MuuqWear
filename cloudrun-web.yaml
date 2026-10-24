@@ -1,3 +1,4 @@
 ASPNETCORE_ENVIRONMENT: "Production"
 ASPNETCORE_URLS: "http://+:8080"
 FrontendBaseUrl: "https://muuqwear-6e2e0.web.app"
+PublicHost: "muuqwear.com"

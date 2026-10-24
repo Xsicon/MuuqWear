@@ -5,6 +5,7 @@ public class OrderModel
     public Guid Id { get; set; }
     public string FirestoreId { get; set; } = string.Empty;
     public string? OrderNumber { get; set; }
+    public string? CustomerId { get; set; }
     public string? Email { get; set; }
     public decimal Subtotal { get; set; }
     public decimal Shipping { get; set; }

@@ -1,7 +1,7 @@
-using System.Security.Claims;
 using MuuqWear.Application.Interfaces;
 using MuuqWear.Application.Shared;
 using MuuqWear.Model.Profile;
+using MuuqWear.Web.ServerAuth;
 
 namespace MuuqWear.Web.Services;
 
@@ -46,12 +46,6 @@ public sealed class FirestoreProfileService : IProfileService
         return Response<bool>.SuccessResponse(true);
     }
 
-    private (string? Uid, string? Email, string? Name) Caller()
-    {
-        var user = _http.HttpContext?.User;
-        return (
-            user?.FindFirst("UserId")?.Value,
-            user?.FindFirst(ClaimTypes.Email)?.Value ?? user?.FindFirst("email")?.Value,
-            user?.FindFirst(ClaimTypes.Name)?.Value);
-    }
+    private (string? Uid, string? Email, string? Name) Caller() =>
+        VerifiedAuthSession.Shopper(_http.HttpContext?.User);
 }

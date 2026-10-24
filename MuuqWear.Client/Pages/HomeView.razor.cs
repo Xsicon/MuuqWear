@@ -136,18 +136,30 @@ public partial class HomeView : IAsyncDisposable
     private async Task LoadHomeProductsAsync()
     {
         isLoadingProducts = true;
-        var data = await HomeCache.GetHomeProductsAsync(allowStale: false);
-        if (data != null)
-            ApplyHomeProducts(data);
+        try
+        {
+            var data = await HomeCache.GetHomeProductsAsync(allowStale: false);
+            if (data != null)
+                ApplyHomeProducts(data);
+        }
+        catch
+        {
+        }
         isLoadingProducts = false;
     }
 
     private async Task LoadCategoriesAsync()
     {
         isLoadingCategories = true;
-        var data = await HomeCache.GetCategoriesAsync(allowStale: false);
-        if (data != null)
-            ApplyCategories(data);
+        try
+        {
+            var data = await HomeCache.GetCategoriesAsync(allowStale: false);
+            if (data != null)
+                ApplyCategories(data);
+        }
+        catch
+        {
+        }
         isLoadingCategories = false;
     }
 

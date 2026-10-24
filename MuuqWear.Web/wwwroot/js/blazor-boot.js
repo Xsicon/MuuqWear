@@ -150,6 +150,9 @@
                 }
             }
         }
+    }).then(function () {
+        window.__mwBlazorReady = true;
+        document.documentElement.setAttribute("data-mw-ready", "1");
     }).catch(function (err) {
         console.error('[Blazor] Failed to start:', err);
         reloadOnce('start failed');

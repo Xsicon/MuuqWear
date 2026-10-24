@@ -2,6 +2,8 @@ using System.Security.Claims;
 using MuuqWear.Application.Services.ChatService;
 using MuuqWear.Application.Shared;
 using MuuqWear.Model.Chat;
+using MuuqWear.Web.Constants;
+using MuuqWear.Web.Helpers;
 
 namespace MuuqWear.Web.Services;
 
@@ -19,8 +21,7 @@ public sealed class FirestoreChatService : IChatService
     public async Task<Response<ChatMessageModel>> SendMessage(SendMessageRequest request)
     {
         var user = _http.HttpContext?.User;
-        var role = user?.FindFirst(ClaimTypes.Role)?.Value;
-        var isStaff = !string.IsNullOrWhiteSpace(role) && role is not "user";
+        var isStaff = AdminPortalRoles.IsAllowed(AdminPortalUserContext.GetRole(user ?? new ClaimsPrincipal()));
         var name = user?.FindFirst(ClaimTypes.Name)?.Value
                    ?? user?.FindFirst(ClaimTypes.Email)?.Value
                    ?? request.GuestName

@@ -1,7 +1,7 @@
-using System.Security.Claims;
 using MuuqWear.Application.Services.AffiliateService;
 using MuuqWear.Application.Shared;
 using MuuqWear.Model.AffiliateApplication;
+using MuuqWear.Web.ServerAuth;
 using MuuqWear.Model.PartnerStoreProduct;
 using MuuqWear.Model.Shared;
 
@@ -64,8 +64,11 @@ public sealed class FirestoreAffiliateService : IAffiliateService
     public Task<Response<AffiliateInfoModel>> GetAffiliateInfo() =>
         Task.FromResult(Response<AffiliateInfoModel>.SuccessResponse(new AffiliateInfoModel()));
 
-    public Task<Response<bool>> ValidateAffiliateCode(string affiliateCode) =>
-        Task.FromResult(Response<bool>.SuccessResponse(!string.IsNullOrWhiteSpace(affiliateCode)));
+    public async Task<Response<bool>> ValidateAffiliateCode(string affiliateCode)
+    {
+        var ok = await _store.IsActiveReferralCodeAsync(affiliateCode);
+        return Response<bool>.SuccessResponse(ok);
+    }
 
     public Task<Response<bool>> TrackClick(TrackClickRequestModel request) =>
         Task.FromResult(Response<bool>.SuccessResponse(true));
@@ -178,6 +181,9 @@ public sealed class FirestoreAffiliateService : IAffiliateService
             .FirstOrDefault(a => a.Email.Equals(email, StringComparison.OrdinalIgnoreCase));
     }
 
-    private string? CurrentEmail() =>
-        _http.HttpContext?.User.FindFirst(ClaimTypes.Email)?.Value;
+    private string? CurrentEmail()
+    {
+        var (_, email, _) = VerifiedAuthSession.Shopper(_http.HttpContext?.User);
+        return email;
+    }
 }

@@ -400,7 +400,7 @@ window.mwSignIn = function (session) {
     return fetch("/auth/sign-in", {
         method: "POST",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "X-Requested-With": "MuuqWear" },
         body: JSON.stringify(session)
     })
         .then(function (res) { return res.ok; })

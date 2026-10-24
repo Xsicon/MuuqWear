@@ -28,9 +28,7 @@ public static class AuthNavigationHelper
             }
             catch (JSException)
             {
-                navigationManager.NavigateTo(
-                    $"/auth/complete?ticket={Uri.EscapeDataString(ticket)}&returnUrl={Uri.EscapeDataString(returnUrl)}",
-                    forceLoad: true);
+                navigationManager.NavigateTo("/admin/access-denied", forceLoad: true);
                 return;
             }
         }

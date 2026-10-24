@@ -217,13 +217,16 @@ public sealed partial class AdminFirestore
 
     public async Task<List<ContentItemModel>> ListContentAsync(ContentCategory type, CancellationToken cancellationToken = default)
     {
-        var snap = await _db.Collection("content").GetSnapshotAsync(cancellationToken);
-        return snap.Documents.Select(ToContent)
-            .Where(c => string.Equals(c.Category, type.ToString(), StringComparison.OrdinalIgnoreCase)
-                        || (type == ContentCategory.JournalArticles && string.IsNullOrWhiteSpace(c.Category)))
-            .Where(c => !AdminDirectoryFilter.IsNoiseArticle(c.Title))
-            .OrderByDescending(c => c.CreatedAt)
-            .ToList();
+        return await ReadOrEmpty(async () =>
+        {
+            var snap = await _db.Collection("content").GetSnapshotAsync(cancellationToken);
+            return snap.Documents.Select(ToContent)
+                .Where(c => string.Equals(c.Category, type.ToString(), StringComparison.OrdinalIgnoreCase)
+                            || (type == ContentCategory.JournalArticles && string.IsNullOrWhiteSpace(c.Category)))
+                .Where(c => !AdminDirectoryFilter.IsNoiseArticle(c.Title))
+                .OrderByDescending(c => c.CreatedAt)
+                .ToList();
+        }, []);
     }
 
     public async Task<ContentItemModel> UpsertContentAsync(
@@ -260,17 +263,20 @@ public sealed partial class AdminFirestore
 
     public async Task<List<JobPostingModel>> ListJobPostingsAsync(CancellationToken cancellationToken = default)
     {
-        var snap = await _db.Collection("jobPostings").GetSnapshotAsync(cancellationToken);
-        var apps = await _db.Collection("jobApplications").GetSnapshotAsync(cancellationToken);
-        var counts = apps.Documents
-            .GroupBy(d => Str(d, "jobId"))
-            .ToDictionary(g => g.Key, g => g.Count(), StringComparer.OrdinalIgnoreCase);
-        return snap.Documents.Select(d =>
+        return await ReadOrEmpty(async () =>
         {
-            var job = ToJob(d);
-            job.ApplicationCount = counts.GetValueOrDefault(d.Id);
-            return job;
-        }).OrderByDescending(j => j.CreatedAt).ToList();
+            var snap = await _db.Collection("jobPostings").GetSnapshotAsync(cancellationToken);
+            var apps = await _db.Collection("jobApplications").GetSnapshotAsync(cancellationToken);
+            var counts = apps.Documents
+                .GroupBy(d => Str(d, "jobId"))
+                .ToDictionary(g => g.Key, g => g.Count(), StringComparer.OrdinalIgnoreCase);
+            return snap.Documents.Select(d =>
+            {
+                var job = ToJob(d);
+                job.ApplicationCount = counts.GetValueOrDefault(d.Id);
+                return job;
+            }).OrderByDescending(j => j.CreatedAt).ToList();
+        }, []);
     }
 
     public async Task<JobPostingModel> UpsertJobPostingAsync(JobPostingModel job, CancellationToken cancellationToken = default)

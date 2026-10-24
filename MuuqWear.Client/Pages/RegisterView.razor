@@ -38,11 +38,15 @@
                         }
                     </div>
 
+                    @if (wasmReady)
+                    {
+                        <span id="mw-register-ready" hidden></span>
+                    }
                     @if (writesFrozen)
                     {
                         <p class="text-danger text-center">@PageCopy.WritesPaused</p>
                     }
-                    else if (showConfirm)
+                    @if (showConfirm)
                     {
                     <div class="mw-auth-panel text-center" @key="confirmEmail">
                         <h2 class="mw-auth-title mt-3">Confirm your email</h2>
@@ -69,7 +73,7 @@
                     else
                     {
                     <!-- FORM -->
-                    <EditForm Model="@registerModel" OnValidSubmit="HandleRegister" class="mw-auth-panel">
+                    <EditForm EditContext="registerContext" OnValidSubmit="HandleRegister" FormName="shopper-register" class="mw-auth-panel">
 
                         <DataAnnotationsValidator />
 
@@ -128,7 +132,7 @@
                         </div>
 
                         <!-- SUBMIT -->
-                        <button type="submit" class="mw-btn-primary w-100" disabled="@isBusy">
+                        <button type="button" class="mw-btn-primary w-100" disabled="@isBusy" @onclick="SubmitRegister">
                             @(isBusy ? "Creating account..." : "Create Account")
                         </button>
                         <div class="@messageCssClass">

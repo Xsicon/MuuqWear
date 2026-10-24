@@ -13,6 +13,10 @@
 @inject NavigationManager NavigationManager
 
 <section class="mw-auth">
+    @if (wasmReady)
+    {
+        <span id="mw-login-ready" hidden></span>
+    }
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-12 col-sm-10 col-md-6 col-lg-4 mt-5">
@@ -38,7 +42,7 @@
                     <!-- PASSWORD TAB -->
                     @if (activeTab == "password")
                     {
-                        <EditForm Model="@loginModel" OnValidSubmit="HandleLogin">
+                        <EditForm Model="@loginModel" OnValidSubmit="HandleLogin" FormName="shopper-login">
                             <DataAnnotationsValidator />
 
                             <div class="mb-3">
@@ -73,7 +77,7 @@
                                 </div>
                             </div>
 
-                            <button type="submit" class="mw-btn-primary w-100" disabled="@isSubmitting">
+                            <button type="button" class="mw-btn-primary w-100" disabled="@isSubmitting" @onclick="HandleLogin">
                                 @if (isSubmitting)
                                 {
                                     <span class="mw-btn-spinner"></span>
@@ -183,6 +187,7 @@
 @code {
     private bool isGoogleLoading = false;
     private bool isSubmitting = false;
+    private bool wasmReady;
     private string? expiredMessage;
 
     private string activeTab = "password"; // default tab
@@ -210,6 +215,23 @@
 
     private async Task HandleLogin()
     {
+        if (string.IsNullOrWhiteSpace(loginModel.Email) || string.IsNullOrWhiteSpace(loginModel.Password))
+        {
+            message = string.Join(" ", new[]
+            {
+                string.IsNullOrWhiteSpace(loginModel.Email) ? "Email is required" : null,
+                string.IsNullOrWhiteSpace(loginModel.Password) ? "Password is required" : null
+            }.Where(part => part != null));
+            messageCssClass = "text-danger";
+            return;
+        }
+        if (!MuuqWearUtils.IsValidEmail(loginModel.Email))
+        {
+            message = "Invalid email format";
+            messageCssClass = "text-danger";
+            return;
+        }
+
         isSubmitting = true;
         message = string.Empty;
         StateHasChanged();
@@ -270,6 +292,12 @@
     {
         if (!firstRender || !OperatingSystem.IsBrowser())
             return;
+
+        if (!wasmReady)
+        {
+            wasmReady = true;
+            StateHasChanged();
+        }
 
         var user = await Firebase.CurrentUserAsync();
         if (!string.IsNullOrWhiteSpace(user?.Uid) && user.EmailVerified)

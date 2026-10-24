@@ -1,8 +1,8 @@
-using System.Security.Claims;
 using Google.Cloud.Firestore;
 using MuuqWear.Application.Services.AddressService;
 using MuuqWear.Application.Shared;
 using MuuqWear.Model.Address;
+using MuuqWear.Web.ServerAuth;
 
 namespace MuuqWear.Web.Services;
 
@@ -86,8 +86,7 @@ public sealed class FirestoreAddressService : IAddressService
 
     private CollectionReference? Addresses()
     {
-        var uid = _http.HttpContext?.User.FindFirst("UserId")?.Value
-            ?? _http.HttpContext?.User.FindFirst(ClaimTypes.Email)?.Value;
+        var (uid, _, _) = VerifiedAuthSession.Shopper(_http.HttpContext?.User);
         if (string.IsNullOrWhiteSpace(uid))
             return null;
         return _db.Collection("customers").Document(uid).Collection("addresses");

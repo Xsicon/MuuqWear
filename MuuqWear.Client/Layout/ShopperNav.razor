@@ -30,14 +30,14 @@
                     </nav>
 
                     <div class="mw-header__icons">
-                        <button class="mw-icon-btn" aria-label="Search" @onclick="GoShop">
+                        <a href="/shop" class="mw-icon-btn" aria-label="Search">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <circle cx="11" cy="11" r="8" />
                                 <path d="m21 21-4.3-4.3" />
                             </svg>
-                        </button>
+                        </a>
 
-                        <button class="mw-icon-btn mw-icon-btn--cart" aria-label="@CartAriaLabel" @onclick="GoCart">
+                        <a href="/cart" class="mw-icon-btn mw-icon-btn--cart" aria-label="@CartAriaLabel">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <circle cx="8" cy="21" r="1" />
                                 <circle cx="19" cy="21" r="1" />
@@ -47,7 +47,7 @@
                             {
                                 <span class="mw-cart-badge" aria-hidden="true">@CartItemCount</span>
                             }
-                        </button>
+                        </a>
 
                         <div class="mw-profile-dropdown">
                             <button class="mw-icon-btn mw-header-member" aria-label="Profile" @onclick="ToggleProfile">
@@ -82,13 +82,13 @@
                 </div>
 
                 <div class="mw-header__mobile d-flex d-md-none">
-                    <button class="mw-icon-btn mw-icon-btn--mobile" aria-label="Search" @onclick="GoShop">
+                    <a href="/shop" class="mw-icon-btn mw-icon-btn--mobile" aria-label="Search">
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="11" cy="11" r="8" />
                             <path d="m21 21-4.3-4.3" />
                         </svg>
-                    </button>
-                    <button class="mw-icon-btn mw-icon-btn--mobile mw-icon-btn--cart" aria-label="@CartAriaLabel" @onclick="GoCart">
+                    </a>
+                    <a href="/cart" class="mw-icon-btn mw-icon-btn--mobile mw-icon-btn--cart" aria-label="@CartAriaLabel">
                         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <circle cx="8" cy="21" r="1" />
                             <circle cx="19" cy="21" r="1" />
@@ -98,7 +98,7 @@
                         {
                             <span class="mw-cart-badge mw-cart-badge--mobile" aria-hidden="true">@CartItemCount</span>
                         }
-                    </button>
+                    </a>
                     <a href="/profile" class="mw-icon-btn mw-icon-btn--mobile mw-header-member" aria-label="Profile" data-enhance-nav="false">
                         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>

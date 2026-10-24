@@ -23,9 +23,7 @@ public sealed class FirebaseBearerMiddleware
                     var decoded = await FirebaseAuth.DefaultInstance.VerifyIdTokenAsync(token);
                     var email = Claim(decoded, "email");
                     var name = Claim(decoded, "name");
-                    var role = Claim(decoded, "role");
-                    if (string.IsNullOrWhiteSpace(role))
-                        role = "user";
+                    var role = VerifiedAuthSession.RoleFromClaims(decoded.Claims);
                     var identity = new ClaimsIdentity(
                         [
                             new Claim("UserId", decoded.Uid),

@@ -95,6 +95,10 @@ public sealed class StorefrontHomeCacheService
                 _homeCachedAt = DateTime.UtcNow;
             }
         }
+        catch
+        {
+            // Keep the storefront renderable when catalog reads fail.
+        }
         finally
         {
             _gate.Release();
@@ -112,6 +116,10 @@ public sealed class StorefrontHomeCacheService
                 _categories = result.Data;
                 _categoriesCachedAt = DateTime.UtcNow;
             }
+        }
+        catch
+        {
+            // Keep the storefront renderable when catalog reads fail.
         }
         finally
         {

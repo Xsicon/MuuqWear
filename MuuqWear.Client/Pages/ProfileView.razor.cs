@@ -97,6 +97,7 @@ public partial class ProfileView
 
     protected override async Task OnInitializedAsync()
     {
+        await ApplyInitialTabFromRouteAsync();
         if (!OperatingSystem.IsBrowser())
             return;
 
@@ -129,10 +130,7 @@ public partial class ProfileView
             await Task.WhenAll(profileTask, ordersTask, addressesTask, affiliateTask);
 
             var profileResult = await profileTask;
-            if (!profileResult.Success)
-                return;
-
-            if (profileResult.Data != null)
+            if (profileResult.Success && profileResult.Data != null)
             {
                 settingsEmail = user.Email ?? profileResult.Data.Email ?? settingsEmail;
                 var sameAccount = string.IsNullOrWhiteSpace(profileResult.Data.Email)
@@ -167,6 +165,11 @@ public partial class ProfileView
         }
 
         await WishlistStateService.InitializeAsync(true, user.Uid);
+        await ApplyInitialTabFromRouteAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
         await ApplyInitialTabFromRouteAsync();
     }
 

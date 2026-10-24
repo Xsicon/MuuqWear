@@ -27,8 +27,11 @@ public sealed partial class AdminFirestore
 
     public async Task<List<ProductModel>> ListProductsAsync(CancellationToken cancellationToken = default)
     {
-        var snap = await SnapshotAsync("products", _products, cancellationToken);
-        return snap.Documents.Select(ToProduct).OrderBy(p => p.Name).ToList();
+        return await ReadOrEmpty(async () =>
+        {
+            var snap = await SnapshotAsync("products", _products, cancellationToken);
+            return snap.Documents.Select(ToProduct).OrderBy(p => p.Name).ToList();
+        }, []);
     }
 
     public async Task<ProductModel?> GetProductAsync(Guid id, CancellationToken cancellationToken = default)
@@ -142,6 +145,25 @@ public sealed partial class AdminFirestore
     {
         var doc = await FindOrderDocAsync(id, cancellationToken);
         return doc is null ? null : ToOrder(doc);
+    }
+
+    public async Task<bool> IsActiveReferralCodeAsync(string? code, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+            return false;
+        var trimmed = code.Trim();
+        var ids = new[] { trimmed, trimmed.ToUpperInvariant(), trimmed.ToLowerInvariant() }
+            .Distinct(StringComparer.Ordinal);
+        foreach (var id in ids)
+        {
+            var doc = await _db.Collection("referralCodes").Document(id).GetSnapshotAsync(cancellationToken);
+            if (!doc.Exists)
+                continue;
+            var status = Str(doc, "status");
+            if (string.Equals(status, "active", StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+        return false;
     }
 
     public async Task<OrderModel?> GetOrderByNumberAsync(string orderNumber, CancellationToken cancellationToken = default)
@@ -409,6 +431,7 @@ public sealed partial class AdminFirestore
             Id = id,
             FirestoreId = doc.Id,
             OrderNumber = orderNumber,
+            CustomerId = Str(doc, "customerId"),
             Email = Str(doc, "email"),
             Status = Str(doc, "status"),
             Subtotal = Cents(doc, "subtotal"),
@@ -577,6 +600,18 @@ public sealed partial class AdminFirestore
             return Uri.UnescapeDataString(rest);
         }
         return url;
+    }
+
+    private static async Task<T> ReadOrEmpty<T>(Func<Task<T>> run, T fallback)
+    {
+        try
+        {
+            return await run();
+        }
+        catch (Exception)
+        {
+            return fallback;
+        }
     }
 
     private async Task<QuerySnapshot> SnapshotAsync(string collection, SnapCache cache, CancellationToken cancellationToken)

@@ -13,17 +13,34 @@ public partial class RegisterView
     private bool writesFrozen;
     private bool showConfirm;
     private bool isBusy;
+    private bool wasmReady;
+    private EditContext? registerContext;
     private string? confirmEmail;
     private bool pendingRestored;
 
     protected override void OnInitialized()
     {
         writesFrozen = CutoverFreeze.Enabled(Config["Cutover:FreezeWrites"]);
+        registerContext = new EditContext(registerModel);
+    }
+
+    private async Task SubmitRegister()
+    {
+        if (registerContext != null && !registerContext.Validate())
+            return;
+        await HandleRegister();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender || pendingRestored || !OperatingSystem.IsBrowser())
+        if (!firstRender || !OperatingSystem.IsBrowser())
+            return;
+        if (!wasmReady)
+        {
+            wasmReady = true;
+            StateHasChanged();
+        }
+        if (pendingRestored)
             return;
         pendingRestored = true;
         try

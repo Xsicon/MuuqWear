@@ -56,13 +56,8 @@ window.muuqFirebase = (function () {
         return factors.find(function (factor) { return factor.factorId === totpId(); }) || null;
     }
 
-    function useEmulators() {
-        try {
-            var host = self.location && self.location.hostname;
-            return host === "localhost" || host === "127.0.0.1";
-        } catch (error) {
-            return false;
-        }
+    function useEmulators(config) {
+        return !!(config && (config.useEmulators === true || config.useEmulators === "true"));
     }
 
     async function sendBrandedVerification(user) {
@@ -86,7 +81,7 @@ window.muuqFirebase = (function () {
 
     async function doInit(config) {
         functionsBase = config && config.functionsBaseUrl ? String(config.functionsBaseUrl) : "";
-        var emulators = useEmulators();
+        var emulators = useEmulators(config);
         var appMod = await load("app");
         var app = appMod.initializeApp({
             apiKey: config.apiKey,

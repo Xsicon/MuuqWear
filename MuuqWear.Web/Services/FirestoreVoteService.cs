@@ -1,8 +1,8 @@
-using System.Security.Claims;
 using Google.Cloud.Firestore;
 using MuuqWear.Application.Services.VoteService;
 using MuuqWear.Application.Shared;
 using MuuqWear.Model.Vote;
+using MuuqWear.Web.ServerAuth;
 
 namespace MuuqWear.Web.Services;
 
@@ -38,7 +38,7 @@ public sealed class FirestoreVoteService : IVoteService
     {
         var doc = _db.Collection("communityVotes").Document(voteItemId.ToString());
         await doc.UpdateAsync("voteCount", FieldValue.Increment(1));
-        var uid = _http.HttpContext?.User.FindFirst("UserId")?.Value;
+        var (uid, _, _) = VerifiedAuthSession.Shopper(_http.HttpContext?.User);
         if (!string.IsNullOrWhiteSpace(uid))
         {
             await doc.Collection("ballots").Document(uid).SetAsync(new Dictionary<string, object>
@@ -56,11 +56,18 @@ public sealed class FirestoreVoteService : IVoteService
 
     private async Task<List<VoteItemModel>> List(string status)
     {
-        var snap = await _db.Collection("communityVotes").GetSnapshotAsync();
-        return snap.Documents.Select(ToVote)
-            .Where(v => string.Equals(v.Status, status, StringComparison.OrdinalIgnoreCase)
-                        || (status == "active" && string.IsNullOrWhiteSpace(v.Status)))
-            .ToList();
+        try
+        {
+            var snap = await _db.Collection("communityVotes").GetSnapshotAsync();
+            return snap.Documents.Select(ToVote)
+                .Where(v => string.Equals(v.Status, status, StringComparison.OrdinalIgnoreCase)
+                            || (status == "active" && string.IsNullOrWhiteSpace(v.Status)))
+                .ToList();
+        }
+        catch (Exception)
+        {
+            return [];
+        }
     }
 
     private static VoteItemModel ToVote(DocumentSnapshot doc)

@@ -37,6 +37,10 @@ MuuqWear.slnLaunch.user
 
 # Test results
 TestResults/
+playwright-report/
+tests/e2e/.e2e-user
+blob-report/
+test-results/
 *.trx
 *.coverage
 *.coveragexml

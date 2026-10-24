@@ -51,8 +51,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor
-        | ForwardedHeaders.XForwardedProto
-        | ForwardedHeaders.XForwardedHost;
+        | ForwardedHeaders.XForwardedProto;
     options.KnownNetworks.Clear();
     options.KnownProxies.Clear();
     options.RequireHeaderSymmetry = false;
@@ -74,6 +73,8 @@ if (FirebaseApp.DefaultInstance is null)
 }
 
 builder.Services.AddSingleton<StaffSessionJwt>();
+builder.Services.AddSingleton<IFirebaseIdTokenVerifier, FirebaseIdTokenVerifier>();
+builder.Services.AddSingleton<CookieSessionVerifier>();
 builder.Services.AddSingleton<AdminFirestore>();
 builder.Services.AddSingleton<StaffWelcomeMail>();
 builder.Services.AddScoped<IStaffUserService, FirebaseStaffUserService>();
@@ -216,18 +217,10 @@ app.Use(async (ctx, next) =>
         || host.Contains("web.app", StringComparison.OrdinalIgnoreCase)
         || host.Contains("firebaseapp.com", StringComparison.OrdinalIgnoreCase))
     {
-        var forwarded = ctx.Request.Headers["X-Forwarded-Host"].FirstOrDefault()?
-            .Split(',')[0].Trim();
-        if (!string.IsNullOrWhiteSpace(forwarded)
-            && !forwarded.Contains("run.app", StringComparison.OrdinalIgnoreCase)
-            && !forwarded.Contains("web.app", StringComparison.OrdinalIgnoreCase))
-        {
-            ctx.Request.Host = HostString.FromUriComponent(forwarded);
-        }
-        else
-        {
-            ctx.Request.Host = new HostString("muuqwear.com");
-        }
+        var canonical = ctx.RequestServices.GetRequiredService<IConfiguration>()["PublicHost"];
+        if (string.IsNullOrWhiteSpace(canonical))
+            canonical = "muuqwear.com";
+        ctx.Request.Host = new HostString(canonical);
     }
 
     await next();
@@ -269,112 +262,13 @@ app.Use(async (ctx, next) =>
     await next();
 });
 
-//Set Cookie
-
-app.MapPost("/auth/sign-in", async (
-    HttpContext ctx,
-    CookieAuthSession session,
-    AuthSessionService authSession) =>
-{
-    if (string.IsNullOrEmpty(session.Token) ||
-        string.IsNullOrEmpty(session.Role))
-        return Results.BadRequest("Invalid session data");
-
-    authSession.Reset();
-
-    await ctx.SignInAsync(
-        CookieAuthenticationDefaults.AuthenticationScheme,
-        CookieAuthHelper.CreatePrincipal(session),
-        CookieAuthHelper.CreateProperties(session));
-
-    return Results.Ok(new { success = true });
-}).DisableAntiforgery();
-
-app.MapMethods("/auth/complete", new[] { HttpMethods.Get, HttpMethods.Post }, async (
-    HttpContext ctx,
-    StaffSessionJwt staffJwt) =>
-{
-    var ticket = ctx.Request.Query["ticket"].ToString();
-    var returnUrl = ctx.Request.Query["returnUrl"].ToString();
-    if (ctx.Request.HasFormContentType)
-    {
-        if (string.IsNullOrEmpty(ticket))
-            ticket = ctx.Request.Form["ticket"].ToString();
-        if (string.IsNullOrEmpty(returnUrl))
-            returnUrl = ctx.Request.Form["returnUrl"].ToString();
-    }
-
-    var principal = staffJwt.Validate(ticket);
-    var role = principal is null ? null : AdminPortalUserContext.GetRole(principal);
-    if (principal is null || !AdminPortalRoles.IsAllowed(role))
-        return Results.Redirect("/admin/access-denied");
-
-    if (string.IsNullOrWhiteSpace(returnUrl) || !returnUrl.StartsWith("/admin", StringComparison.Ordinal))
-        returnUrl = AdminPortalRoles.GetDefaultHome(role);
-
-    var session = new CookieAuthSession
-    {
-        Token = ticket,
-        Email = principal.FindFirst(ClaimTypes.Email)?.Value,
-        Username = principal.FindFirst(ClaimTypes.Name)?.Value,
-        Role = role,
-        UserId = principal.FindFirst("UserId")?.Value,
-        ReturnUrl = returnUrl,
-        RememberMe = true
-    };
-    await ctx.SignInAsync(
-        CookieAuthenticationDefaults.AuthenticationScheme,
-        CookieAuthHelper.CreatePrincipal(session),
-        CookieAuthHelper.CreateProperties(session));
-    return Results.Redirect(returnUrl);
-}).DisableAntiforgery();
-
-app.MapPost("/auth/prepare-cookie", (
-    CookieAuthSession session,
-    IMemoryCache cache) =>
-{
-    if (string.IsNullOrEmpty(session.Token) ||
-        string.IsNullOrEmpty(session.Role))
-        return Results.BadRequest("Invalid session data");
-    var key = Guid.NewGuid().ToString();
-    cache.Set(key, session, TimeSpan.FromSeconds(30));
-    return Results.Ok(key);
-}).DisableAntiforgery();
+app.MapAuthCookies();
 
 app.MapGet("/logout", async (HttpContext ctx) =>
 {
     await ctx.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
     ctx.Response.Redirect("/login");
 });
-
-app.MapGet("/auth/set-cookie", async (
-    HttpContext ctx,
-    string key,
-    IMemoryCache cache,
-    AuthSessionService authSession,
-    bool json = false) =>
-{
-    if (!cache.TryGetValue(key, out CookieAuthSession? session) || session is null)
-    {
-        return json
-            ? Results.BadRequest("Invalid or expired sign-in key")
-            : Results.Redirect("/register");
-    }
-
-    cache.Remove(key);
-    authSession.Reset();
-
-    var principal = CookieAuthHelper.CreatePrincipal(session);
-
-    await ctx.SignInAsync(
-        CookieAuthenticationDefaults.AuthenticationScheme,
-        principal,
-        CookieAuthHelper.CreateProperties(session));
-
-    return json
-        ? Results.Ok(new { success = true })
-        : Results.Redirect(session.ReturnUrl!);
-}).DisableAntiforgery();
 
 app.MapGet("/auth/action", ServeAuthAction);
 app.MapGet("/__/auth/action", ServeAuthAction);
