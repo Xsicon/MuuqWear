@@ -267,6 +267,14 @@
             <!-- WELCOME — always visible -->
             @if (activeTab == "overview")
             {
+                @if (isProfileLoading)
+                {
+                    <MwSkeletonSection Layout="MwSkeletonSection.SkeletonLayout.ProfilePanel"
+                                       Count="3"
+                                       AriaLabel="Loading profile" />
+                }
+                else
+                {
                 <div class="mb-4">
                     <h2 class="mw-welcome">Welcome back, @LoggedInUserName</h2>
                     <p class="mw-subtext">Here's your Muuqwear at a glance.</p>
@@ -274,7 +282,6 @@
 
                 <!-- STATS -->
                 <div class="row g-3 mb-4">
-                    <!-- ... your stat cards ... -->
                     <div class="col-6 col-md-3">
                         <div class="mw-stat-card">
                             <span class="mw-stat-icon">@Lucide("package", 18)</span>
@@ -310,12 +317,22 @@
                     <p class="mw-section-title">Recent Orders</p>
                     <OrdersList Orders="userOrders.Take(3).ToList()" />
                 </div>
+                }
             }
             else if (activeTab == "orders")
             {
                 <div class="mw-orders">
                     <p class="mw-section-title">All Orders</p>
-                    <OrdersList Orders="userOrders" />
+                    @if (isProfileLoading)
+                    {
+                        <MwSkeletonSection Layout="MwSkeletonSection.SkeletonLayout.ProfilePanel"
+                                           Count="4"
+                                           AriaLabel="Loading orders" />
+                    }
+                    else
+                    {
+                        <OrdersList Orders="userOrders" />
+                    }
                 </div>
             }
             else if (activeTab == "wishlist")
@@ -323,7 +340,14 @@
                 <div class="mw-wishlist-section">
                     <p class="mw-section-title">My Wishlist</p>
 
-                    @if (!WishlistStateService.Items.Any())
+                    @if (isProfileLoading)
+                    {
+                        <MwSkeletonSection Layout="MwSkeletonSection.SkeletonLayout.ProductGrid"
+                                           Count="4"
+                                           ProductColumns="4"
+                                           AriaLabel="Loading wishlist" />
+                    }
+                    else if (!WishlistStateService.Items.Any())
                     {
                         <div class="mw-wishlist-empty">
                             <span class="mw-wishlist-empty__icon">@Lucide("heart", 40)</span>
@@ -388,7 +412,13 @@
                 </div>
 
                 <!-- EMPTY STATE -->
-                @if (!addresses.Any())
+                @if (isProfileLoading)
+                {
+                    <MwSkeletonSection Layout="MwSkeletonSection.SkeletonLayout.ProfilePanel"
+                                       Count="2"
+                                       AriaLabel="Loading addresses" />
+                }
+                else if (!addresses.Any())
                 {
                     <p style="color:#4A5C7A;font-size:14px">
                         No saved addresses yet. Add one to get started.

@@ -341,6 +341,9 @@ else
             return;
         }
 
+        if (!OperatingSystem.IsBrowser())
+            return;
+
         if (_loadedProductId == productId)
             return;
 

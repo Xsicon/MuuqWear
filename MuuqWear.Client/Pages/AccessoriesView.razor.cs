@@ -66,6 +66,9 @@ public partial class AccessoriesView : IAsyncDisposable
 
     protected override async Task OnInitializedAsync()
     {
+        if (!OperatingSystem.IsBrowser())
+            return;
+
         var categoryResult = await CategoryService.GetAll();
         if (!categoryResult.Success || categoryResult.Data == null)
         {

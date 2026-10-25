@@ -31,7 +31,8 @@ public partial class ProfileView
     private string? chartError = null;
 
     private List<RecentReferralModel>? recentReferrals;
-    private AffiliateStatusModel? affiliateStatus = new AffiliateStatusModel();
+    private AffiliateStatusModel? affiliateStatus;
+    private bool isProfileLoading = true;
     private bool showAffiliatePrompt = false;
 
     private AffiliateInfoModel? affiliateInfo;
@@ -166,6 +167,8 @@ public partial class ProfileView
 
         await WishlistStateService.InitializeAsync(true, user.Uid);
         await ApplyInitialTabFromRouteAsync();
+        affiliateStatus ??= new AffiliateStatusModel();
+        isProfileLoading = false;
     }
 
     protected override async Task OnParametersSetAsync()

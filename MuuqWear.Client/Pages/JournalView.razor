@@ -212,6 +212,9 @@
 
     protected override async Task OnInitializedAsync()
     {
+        if (!OperatingSystem.IsBrowser())
+            return;
+
         isLoading = true;
 
         var result = await JournalService.GetPublished(1, PageSize);

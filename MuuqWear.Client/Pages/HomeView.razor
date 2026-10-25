@@ -68,7 +68,7 @@
                     <h2 class="mw-carousel-section__title">Shop by Category</h2>
                     <div class="mw-carousel-section__underline"></div>
                 </div>
-                @if (!isLoadingCategories || Categories.Count > 0)
+                @if (Categories.Count > 0)
                 {
                     <div class="mw-carousel-section__controls">
                         <button type="button" class="mw-carousel-section__prev" aria-label="Previous categories">
@@ -131,7 +131,7 @@
                     <h2 class="mw-carousel-section__title">New Arrivals</h2>
                     <div class="mw-carousel-section__underline"></div>
                 </div>
-                @if (!isLoadingProducts || NewArrivals.Count > 0)
+                @if (NewArrivals.Count > 0)
                 {
                 <div class="mw-carousel-section__controls">
                     <button type="button" class="mw-carousel-section__prev" aria-label="Previous new arrivals">
@@ -198,7 +198,7 @@
                     <h2 class="mw-carousel-section__title">Featured Collections</h2>
                     <div class="mw-carousel-section__underline"></div>
                 </div>
-                @if (!isLoadingProducts || FeaturedProducts.Count > 0)
+                @if (FeaturedProducts.Count > 0)
                 {
                 <div class="mw-carousel-section__controls">
                     <button type="button" class="mw-carousel-section__prev" aria-label="Previous featured collections">
@@ -265,7 +265,7 @@
                 </div>
                 <div class="mw-carousel-section__header-right">
                     <a href="/shop/apparel" class="mw-view-all-link">View All Products</a>
-                    @if (!isLoadingProducts || BestSellerProducts.Count > 0)
+                    @if (BestSellerProducts.Count > 0)
                     {
                     <div class="mw-carousel-section__controls">
                         <button type="button" class="mw-carousel-section__prev" aria-label="Previous bestsellers">

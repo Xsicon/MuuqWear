@@ -246,6 +246,9 @@
 
     protected override async Task OnInitializedAsync()
     {
+        if (!OperatingSystem.IsBrowser())
+            return;
+
         LoadFiltersFromUrl();
         await Task.WhenAll(LoadProducts(), LoadCategories());
         SyncSlidersFromFilter();

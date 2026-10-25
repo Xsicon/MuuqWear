@@ -107,6 +107,9 @@ public partial class HomeView : IAsyncDisposable
 
     protected override async Task OnInitializedAsync()
     {
+        if (!OperatingSystem.IsBrowser())
+            return;
+
         var cachedProducts = HomeCache.GetHomeProductsCached();
         if (cachedProducts != null)
         {
