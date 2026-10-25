@@ -27,7 +27,7 @@
 }
 
 /* Unscoped chrome — same rules as ShopperNav scoped CSS, so first paint
-   does not wait for MuuqWear.Client.styles.css. */
+   does not wait for the host scoped bundle (MuuqWear.Web.styles.css). */
 .mw-logo {
     display: flex;
     align-items: center;

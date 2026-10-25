@@ -17,6 +17,11 @@ using MuuqWear.Client.Offline;
 using MuuqWear.Web.Services;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
+if (!builder.HostEnvironment.IsDevelopment())
+{
+    builder.Logging.SetMinimumLevel(LogLevel.Warning);
+    builder.Logging.AddFilter("System.Net.Http.HttpClient", LogLevel.Warning);
+}
 var site = new Uri(builder.HostEnvironment.BaseAddress);
 if (site.Host is "localhost" or "127.0.0.1")
 {
