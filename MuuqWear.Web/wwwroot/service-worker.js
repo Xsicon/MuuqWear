@@ -1,4 +1,4 @@
-const SHELL = 'mw-shell-v21';
+const SHELL = 'mw-shell-v22';
 const CATALOG = 'mw-catalog-v1';
 
 const SHELL_ASSETS = [
@@ -62,6 +62,13 @@ self.addEventListener('fetch', function (event) {
         return;
     }
 
+    // Framework/WASM must never be cache-first: filenames stay fixed across deploys
+    // while blazor.boot.json integrity hashes change.
+    if (isFrameworkAsset(url)) {
+        event.respondWith(networkFirst(request, SHELL));
+        return;
+    }
+
     if (isShellAsset(url)) {
         event.respondWith(cacheFirst(request, SHELL));
     }
@@ -92,16 +99,20 @@ function isDocument(request) {
     return (request.headers.get('accept') || '').indexOf('text/html') !== -1;
 }
 
+function isFrameworkAsset(url) {
+    var path = url.pathname;
+    return path.startsWith('/_framework/') || path.endsWith('.wasm');
+}
+
 function isShellAsset(url) {
     var path = url.pathname;
-    return path.startsWith('/_framework/')
-        || path.startsWith('/css/')
+    if (isFrameworkAsset(url)) return false;
+    return path.startsWith('/css/')
         || path.startsWith('/js/')
         || path.startsWith('/lib/')
         || path.startsWith('/images/')
         || path.endsWith('.css')
         || path.endsWith('.js')
-        || path.endsWith('.wasm')
         || path.endsWith('.png')
         || path.endsWith('.woff2');
 }

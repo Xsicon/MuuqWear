@@ -1136,6 +1136,6 @@ window.mwOutbox = {
     applyOffline(!navigator.onLine);
 
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/service-worker.js?v=20261022a').catch(function () { });
+        navigator.serviceWorker.register('/service-worker.js?v=20261029wasm').catch(function () { });
     }
 })();

@@ -73,8 +73,9 @@ def main() -> int:
             "config": {
                 "headers": [
                     {
+                        # Blazor keeps fixed .wasm names + integrity hashes — never immutable.
                         "glob": "/_framework/**",
-                        "headers": {"Cache-Control": "public, max-age=31536000, immutable"},
+                        "headers": {"Cache-Control": "no-cache, must-revalidate"},
                     }
                 ],
                 # Keep shopper static; only staff/auth/api paths hit Cloud Run.
