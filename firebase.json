@@ -69,13 +69,23 @@
       }
     ],
     "rewrites": [
-      {
-        "source": "**",
-        "run": {
-          "serviceId": "muuqwear-web",
-          "region": "europe-west2"
-        }
-      }
+      { "source": "/admin/**", "run": { "serviceId": "muuqwear-web", "region": "europe-west2" } },
+      { "source": "/muuqsimo/**", "run": { "serviceId": "muuqwear-web", "region": "europe-west2" } },
+      { "source": "/order-confirmed/**", "run": { "serviceId": "muuqwear-web", "region": "europe-west2" } },
+      { "source": "/_blazor/**", "run": { "serviceId": "muuqwear-web", "region": "europe-west2" } },
+      { "source": "/auth/**", "run": { "serviceId": "muuqwear-web", "region": "europe-west2" } },
+      { "source": "/__/auth/**", "run": { "serviceId": "muuqwear-web", "region": "europe-west2" } },
+      { "source": "/logout", "run": { "serviceId": "muuqwear-web", "region": "europe-west2" } },
+      { "source": "/api/**", "run": { "serviceId": "muuqwear-web", "region": "europe-west2" } },
+      { "source": "/community", "run": { "serviceId": "muuqwear-web", "region": "europe-west2" } },
+      { "source": "/help", "run": { "serviceId": "muuqwear-web", "region": "europe-west2" } },
+      { "source": "/careers", "run": { "serviceId": "muuqwear-web", "region": "europe-west2" } },
+      { "source": "/affiliate", "run": { "serviceId": "muuqwear-web", "region": "europe-west2" } },
+      { "source": "/shipping-return", "run": { "serviceId": "muuqwear-web", "region": "europe-west2" } },
+      { "source": "/design-history", "run": { "serviceId": "muuqwear-web", "region": "europe-west2" } },
+      { "source": "/partner-store", "run": { "serviceId": "muuqwear-web", "region": "europe-west2" } },
+      { "source": "/error", "run": { "serviceId": "muuqwear-web", "region": "europe-west2" } },
+      { "source": "**", "destination": "/index.html" }
     ]
   }
 }

@@ -2,10 +2,13 @@ window.muuqFirebase = (function () {
     var version = "11.10.0";
     var auth = null;
     var authMod = null;
+    var firestoreMod = null;
+    var db = null;
     var initPromise = null;
     var totpSecret = null;
     var mfaResolver = null;
     var functionsBase = "";
+    var imageHost = "https://firebasestorage.googleapis.com/v0/b/muuqwear-6e2e0.firebasestorage.app/o/";
 
     function load(name) {
         return import("https://www.gstatic.com/firebasejs/" + version + "/firebase-" + name + ".js");
@@ -105,13 +108,12 @@ window.muuqFirebase = (function () {
         }
 
         try {
-            var firestoreMod = await load("firestore");
-            var db;
+            firestoreMod = await load("firestore");
             if (emulators) {
                 db = firestoreMod.getFirestore(app);
                 firestoreMod.connectFirestoreEmulator(db, "127.0.0.1", 8080);
             } else {
-                firestoreMod.initializeFirestore(app, {
+                db = firestoreMod.initializeFirestore(app, {
                     localCache: firestoreMod.persistentLocalCache({
                         tabManager: firestoreMod.persistentMultipleTabManager()
                     })
@@ -119,6 +121,8 @@ window.muuqFirebase = (function () {
             }
         } catch (error) {
             console.warn("Firestore offline cache did not start", error);
+            db = null;
+            firestoreMod = null;
         }
 
         authMod = await load("auth");
@@ -297,6 +301,96 @@ window.muuqFirebase = (function () {
             if (initPromise) await initPromise;
             if (!auth || !auth.currentUser) return null;
             return await auth.currentUser.getIdToken(!!forceRefresh);
+        },
+        listProducts: function () { return catalogQuery("products"); },
+        listCollections: function () { return catalogQuery("collections"); },
+        listJournal: function () { return catalogQuery("content"); },
+        getProduct: async function (id) {
+            if (initPromise) await initPromise;
+            if (!db || !firestoreMod || !id) return null;
+            try {
+                var snap = await firestoreMod.getDoc(firestoreMod.doc(db, "products", String(id)));
+                if (!snap.exists()) return null;
+                var row = toCatalogRow(snap);
+                return row.status === "published" ? row : null;
+            } catch (error) {
+                console.warn("catalog get failed", error);
+                return null;
+            }
         }
     };
+
+    async function catalogQuery(name) {
+        if (initPromise) await initPromise;
+        if (!db || !firestoreMod) return [];
+        try {
+            var q = firestoreMod.query(
+                firestoreMod.collection(db, name),
+                firestoreMod.where("status", "==", "published"));
+            var snap = await firestoreMod.getDocs(q);
+            return snap.docs.map(toCatalogRow);
+        } catch (error) {
+            console.warn("catalog list failed", name, error);
+            return [];
+        }
+    }
+
+    function toCatalogRow(snap) {
+        var data = snap.data() || {};
+        return {
+            id: snap.id,
+            name: str(data.name) || str(data.title) || snap.id,
+            title: str(data.title),
+            body: str(data.body),
+            price: num(data.price),
+            status: str(data.status) || "draft",
+            sizeStock: toMap(data.sizeStock),
+            imagePaths: strs(data.imagePaths).map(imageUrl),
+            imageUrl: imageUrl(data.imageUrl),
+            colors: strs(data.colors),
+            collectionTags: strs(data.collectionTags),
+            collectionId: str(data.collectionId),
+            description: str(data.description),
+            sku: str(data.sku),
+            category: str(data.category),
+            author: str(data.author),
+            excerpt: str(data.excerpt),
+            slug: str(data.slug),
+            createdAt: ts(data.createdAt)
+        };
+    }
+
+    function imageUrl(path) {
+        var value = str(path);
+        if (!value) return "";
+        if (/^https?:/i.test(value)) return value;
+        return imageHost + encodeURIComponent(value.replace(/^\//, "")) + "?alt=media";
+    }
+
+    function str(value) {
+        return value == null ? "" : String(value);
+    }
+
+    function num(value) {
+        var n = Number(value);
+        return isFinite(n) ? n : 0;
+    }
+
+    function strs(value) {
+        return Array.isArray(value) ? value.map(str).filter(Boolean) : [];
+    }
+
+    function toMap(value) {
+        var out = {};
+        if (!value || typeof value !== "object") return out;
+        Object.keys(value).forEach(function (key) { out[key] = num(value[key]); });
+        return out;
+    }
+
+    function ts(value) {
+        if (!value) return null;
+        if (typeof value.toDate === "function") return value.toDate().toISOString();
+        if (typeof value === "string") return value;
+        return null;
+    }
 })();

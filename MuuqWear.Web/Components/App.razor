@@ -1,12 +1,15 @@
 ﻿@using Microsoft.AspNetCore.Http
+@using Microsoft.AspNetCore.Hosting
 @using MuuqWear.Client
 @using MuuqWear.Client.Layout
 @using static Microsoft.AspNetCore.Components.Web.RenderMode
 @inject IHttpContextAccessor HttpContextAccessor
+@inject IWebHostEnvironment HostEnv
 
 @{
     var adminTheme = ResolveAdminTheme();
     var serverHost = StaffPaths.IsServerOwned(HttpContextAccessor.HttpContext?.Request.Path.Value);
+    var hostedShopper = !serverHost && HostEnv.IsDevelopment();
 }
 
 <!DOCTYPE html>
@@ -58,7 +61,7 @@
     {
         <HeadOutlet />
     }
-    else
+    else if (hostedShopper)
     {
         <HeadOutlet @rendermode="@(new InteractiveWebAssemblyRenderMode(prerender: true))" />
     }
@@ -89,14 +92,18 @@
     {
         <Routes />
     }
-    else
+    else if (hostedShopper)
     {
         <ShopperRoutes @rendermode="@(new InteractiveWebAssemblyRenderMode(prerender: true))" />
+    }
+    else
+    {
+        <div id="app"></div>
     }
     <script src="lib/swiper/swiper-bundle.min.js"></script>
     <script src="js/carousel.js"></script>
     <script src="js/site.js?v=20261022a"></script>
-    <script src="js/firebase-auth.js?v=20261024e2e"></script>
+    <script src="js/firebase-auth.js?v=20261029off"></script>
     <script src="js/chat-scroll.js"></script>
     <script src="_framework/blazor.web.js" autostart="false"></script>
     <script src="js/blazor-boot.js?v=20261022a"></script>

@@ -1,4 +1,4 @@
-const SHELL = 'mw-shell-v20';
+const SHELL = 'mw-shell-v21';
 const CATALOG = 'mw-catalog-v1';
 
 const SHELL_ASSETS = [

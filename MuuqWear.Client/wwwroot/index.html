@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en" data-mw-host="wasm" data-mw-auth="out">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
+    <title>MuuqWear</title>
+    <style>
+        .mw-logo { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+        .mw-logo__img { width: 32px; height: 32px; max-width: 32px; object-fit: contain; display: block; flex-shrink: 0; }
+        .mw-header { position: sticky; top: 0; z-index: 1000; background: #fff; }
+        .mw-header__inner { display: flex; align-items: center; justify-content: space-between; height: 64px; max-width: 1280px; margin: 0 auto; padding: 0 16px; box-sizing: border-box; }
+        .mw-mobile-nav:not(.mw-mobile-nav--open) { display: none !important; }
+        .mw-mobile-nav.mw-mobile-nav--open { display: block; }
+        html[data-mw-auth="in"] .mw-header-guest { display: none !important; }
+        html:not([data-mw-auth="in"]) .mw-header-member { display: none !important; }
+        .mw-profile-dropdown:has(.mw-header-auth-ready) .mw-header-member-fallback { display: none !important; }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Playfair+Display:ital,wght@0,400;0,700;0,800;1,400;1,700;1,800&amp;display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="bootstrap/bootstrap.min.css" />
+    <link rel="stylesheet" href="app.css?v=20261023a" />
+    <link rel="stylesheet" href="MuuqWear.Web.styles.css" />
+    <link rel="stylesheet" href="lib/swiper/swiper-bundle.min.css" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <meta name="theme-color" content="#1E2A47" />
+</head>
+<body>
+    <div id="app"></div>
+    <script src="lib/swiper/swiper-bundle.min.js"></script>
+    <script src="js/carousel.js"></script>
+    <script src="js/site.js?v=20261022a"></script>
+    <script src="js/firebase-auth.js?v=20261029off"></script>
+    <script src="js/chat-scroll.js"></script>
+    <script src="_framework/blazor.webassembly.js" autostart="false"></script>
+    <script src="js/image-load.js"></script>
+    <script>
+        Blazor.start().then(function () {
+            document.documentElement.setAttribute("data-mw-ready", "1");
+        }).catch(function (err) {
+            console.error("[Blazor] Failed to start:", err);
+        });
+    </script>
+</body>
+</html>

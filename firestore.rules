@@ -49,6 +49,11 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    match /content/{pageId} {
+      allow read: if isPublished() || isAdmin();
+      allow write: if isAdmin();
+    }
+
     match /customers/{uid} {
       allow read, write: if isOwner(uid) || isAdmin();
 

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using MuuqWear.Application.Interfaces;
 using MuuqWear.Application.Services.AddressService;
@@ -12,6 +13,7 @@ using MuuqWear.Application.Services.ProfileService;
 using MuuqWear.Application.Services.WishlistService;
 using MuuqWear.Client.Auth;
 using MuuqWear.Client.Catalog;
+using MuuqWear.Client.Layout;
 using MuuqWear.Client.Checkout;
 using MuuqWear.Client.Offline;
 using MuuqWear.Web.Services;
@@ -37,13 +39,10 @@ builder.Services.AddTransient<FirebaseIdTokenHandler>();
 builder.Services.AddScoped<AuthStateService>();
 builder.Services.AddTransient<BearerTokenHandler>();
 builder.Services.AddScoped<IAuthService, BrowserAuthService>();
-builder.Services.AddTransient<CatalogCacheHandler>();
-builder.Services.AddHttpClient<IProductService, ProductService>(client => client.BaseAddress = site)
-    .AddHttpMessageHandler<CatalogCacheHandler>();
-builder.Services.AddHttpClient<ICategoryService, CategoryService>(client => client.BaseAddress = site)
-    .AddHttpMessageHandler<CatalogCacheHandler>();
-builder.Services.AddHttpClient<IJournalService, JournalService>(client => client.BaseAddress = site)
-    .AddHttpMessageHandler<CatalogCacheHandler>();
+builder.Services.AddScoped<BrowserCatalog>();
+builder.Services.AddScoped<IProductService, BrowserProductService>();
+builder.Services.AddScoped<ICategoryService, BrowserCategoryService>();
+builder.Services.AddScoped<IJournalService, BrowserJournalService>();
 builder.Services.AddHttpClient<IProfileService, ProfileService>(client => client.BaseAddress = site)
     .AddHttpMessageHandler<FirebaseIdTokenHandler>();
 builder.Services.AddHttpClient<IAddressService, AddressService>(client => client.BaseAddress = site)
@@ -64,6 +63,13 @@ builder.Services.AddScoped<CartStateService>();
 builder.Services.AddScoped<WishlistStateService>();
 builder.Services.AddScoped<StorefrontHomeCacheService>();
 builder.Services.AddScoped<OfflineQueue>();
+
+if (builder.Configuration.GetValue("Shopper:Standalone", false)
+    || builder.HostEnvironment.IsProduction())
+{
+    builder.RootComponents.Add<HeadOutlet>("head::after");
+    builder.RootComponents.Add<ShopperRoutes>("#app");
+}
 
 var host = builder.Build();
 await host.Services.GetRequiredService<BrowserTokenStore>().RestoreAsync();
