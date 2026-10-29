@@ -30,9 +30,8 @@
 
 <PageTitle>Profile</PageTitle>
 
-<section class="mw-profile container py-4 py-md-5">
+<section class="mw-profile mw-profile--figma container py-4 py-md-5">
 
-    <!-- MOBILE HEADER -->
     <div class="d-md-none mb-3">
         <button class="mw-profile-mobile-toggle"
                 @onclick="() => isMobileMenuOpen = !isMobileMenuOpen">
@@ -49,222 +48,118 @@
         </button>
     </div>
 
-
     @if (isMobileMenuOpen)
     {
         <div class="mw-mobile-menu d-md-none mb-3">
-
-            <!-- USER INFO -->
             <div class="mw-mobile-menu__user">
-                <div class="mw-avatar">@UserInitials</div>
+                <div class="mw-avatar" aria-hidden="true">@UserInitials</div>
                 <div>
                     <h6 class="mw-user-name">@LoggedInUserName</h6>
                     <p class="mw-user-meta">Member since @GetMemberDate()</p>
                 </div>
             </div>
 
-            <!-- NAV ITEMS -->
-            <nav class="mw-mobile-menu__nav">
-                <a href="@TabHref("overview")"
-                   class="mw-mobile-nav-item @(activeTab == "overview" ? "active" : "")"
-                   @onclick='() => SelectTab("overview")'
-                   @onclick:preventDefault="true">
-                    @Lucide("dashboard")
-                    <span>Overview</span>
+            <nav class="mw-mobile-menu__nav" aria-label="Account">
+                <a href="@TabHref("overview")" class="mw-mobile-nav-item @(activeTab == "overview" ? "active" : "")"
+                   @onclick='() => SelectTab("overview")' @onclick:preventDefault="true">
+                    @Lucide("dashboard")<span>Overview</span>
                 </a>
-                <a href="@TabHref("orders")"
-                   class="mw-mobile-nav-item @(activeTab == "orders" ? "active" : "")"
-                   @onclick='() => SelectTab("orders")'
-                   @onclick:preventDefault="true">
-                    @Lucide("package")
-                    <span>Orders</span>
+                <a href="@TabHref("orders")" class="mw-mobile-nav-item @(activeTab == "orders" ? "active" : "")"
+                   @onclick='() => SelectTab("orders")' @onclick:preventDefault="true">
+                    @Lucide("package")<span>Orders</span>
                 </a>
-                <a href="@TabHref("wishlist")"
-                   class="mw-mobile-nav-item @(activeTab == "wishlist" ? "active" : "")"
-                   @onclick='() => SelectTab("wishlist")'
-                   @onclick:preventDefault="true">
-                    @Lucide("heart")
-                    <span>Wishlist</span>
+                <a href="@TabHref("wishlist")" class="mw-mobile-nav-item @(activeTab == "wishlist" ? "active" : "")"
+                   @onclick='() => SelectTab("wishlist")' @onclick:preventDefault="true">
+                    @Lucide("heart")<span>Wishlist</span>
                 </a>
-                <a href="@TabHref("addresses")"
-                   class="mw-mobile-nav-item @(activeTab == "addresses" ? "active" : "")"
-                   @onclick='() => SelectTab("addresses")'
-                   @onclick:preventDefault="true">
-                    @Lucide("mappin")
-                    <span>Addresses</span>
+                <a href="@TabHref("addresses")" class="mw-mobile-nav-item @(activeTab == "addresses" ? "active" : "")"
+                   @onclick='() => SelectTab("addresses")' @onclick:preventDefault="true">
+                    @Lucide("mappin")<span>Addresses</span>
                 </a>
-                <a href="@TabHref("affiliate")"
-                   class="mw-mobile-nav-item @(activeTab == "affiliate" ? "active" : "")"
-                   @onclick='() => SelectTab("affiliate")'
-                   @onclick:preventDefault="true">
-                    @Lucide("users")
-                    <span>Affiliate Hub</span>
+                <a href="@TabHref("affiliate")" class="mw-mobile-nav-item @(activeTab == "affiliate" ? "active" : "")"
+                   @onclick='() => SelectTab("affiliate")' @onclick:preventDefault="true">
+                    @Lucide("users")<span>Affiliate Hub</span>
                 </a>
-                <a href="@TabHref("settings")"
-                   class="mw-mobile-nav-item @(activeTab == "settings" ? "active" : "")"
-                   @onclick='() => SelectTab("settings")'
-                   @onclick:preventDefault="true">
-                    @Lucide("settings")
-                    <span>Settings</span>
+                <a href="@TabHref("settings")" class="mw-mobile-nav-item @(activeTab == "settings" ? "active" : "")"
+                   @onclick='() => SelectTab("settings")' @onclick:preventDefault="true">
+                    @Lucide("settings")<span>Settings</span>
                 </a>
             </nav>
 
-            <!-- AFFILIATE STATUS -->
             <div class="mw-mobile-menu__affiliate">
                 <p class="mw-affiliate-label">Affiliate Status</p>
                 <p class="mw-affiliate-value">
                     <span class="mw-affiliate-star">@Lucide("star", 14)</span>
-                    @(affiliateStatus?.Tier is { Length: > 0 } tier
-                        ? char.ToUpper(tier[0]) + tier[1..]
-                        : "Silver")
+                    @GetOverviewTierLabel()
                 </p>
             </div>
 
-            <!-- SIGN OUT -->
             <button class="mw-mobile-menu__signout" @onclick="HandleSignOut">
-                <span>Sign Out</span>
                 @Lucide("logout")
+                <span>Sign Out</span>
             </button>
-
         </div>
     }
 
-
-
-    <div class="row g-4">
-
-        <!-- SIDEBAR -->
+    <div class="row g-4 g-lg-5">
         <aside class="col-md-4 col-lg-3 d-none d-md-block">
+            <div class="mw-profile-sidebar">
+                <div class="mw-profile-user">
+                    <div class="mw-avatar" aria-hidden="true">@UserInitials</div>
+                    <h6 class="mw-user-name">@LoggedInUserName</h6>
+                    <p class="mw-user-meta">Member since @GetMemberDate()</p>
+                </div>
 
-            <!-- USER INFO -->
-            <div class="mw-profile-user text-md-end">
-                <div class="mw-avatar">@UserInitials</div>
-                <h6 class="mw-user-name">@LoggedInUserName</h6>
-                <p class="mw-user-meta">Member since @GetMemberDate()</p>
-            </div>
+                <nav class="mw-profile-nav" aria-label="Account">
+                    <a href="@TabHref("overview")" class="mw-nav-item @(activeTab == "overview" ? "active" : "")"
+                       @onclick='() => SelectTab("overview")' @onclick:preventDefault="true">
+                        <span>Overview</span>@Lucide("dashboard")
+                    </a>
+                    <a href="@TabHref("orders")" class="mw-nav-item @(activeTab == "orders" ? "active" : "")"
+                       @onclick='() => SelectTab("orders")' @onclick:preventDefault="true">
+                        <span>Orders</span>@Lucide("package")
+                    </a>
+                    <a href="@TabHref("wishlist")" class="mw-nav-item @(activeTab == "wishlist" ? "active" : "")"
+                       @onclick='() => SelectTab("wishlist")' @onclick:preventDefault="true">
+                        <span>Wishlist</span>@Lucide("heart")
+                    </a>
+                    <a href="@TabHref("addresses")" class="mw-nav-item @(activeTab == "addresses" ? "active" : "")"
+                       @onclick='() => SelectTab("addresses")' @onclick:preventDefault="true">
+                        <span>Addresses</span>@Lucide("mappin")
+                    </a>
+                    <a href="@TabHref("affiliate")" class="mw-nav-item @(activeTab == "affiliate" ? "active" : "")"
+                       @onclick='() => SelectTab("affiliate")' @onclick:preventDefault="true">
+                        <span>Affiliate Hub</span>@Lucide("users")
+                    </a>
+                    <a href="@TabHref("settings")" class="mw-nav-item @(activeTab == "settings" ? "active" : "")"
+                       @onclick='() => SelectTab("settings")' @onclick:preventDefault="true">
+                        <span>Settings</span>@Lucide("settings")
+                    </a>
+                </nav>
 
-            <!-- NAV -->
-            <nav class="mw-profile-nav">
-                <a href="@TabHref("overview")"
-                   class="mw-nav-item @(activeTab == "overview" ? "active" : "")"
-                   @onclick='() => SelectTab("overview")'
-                   @onclick:preventDefault="true">
-                    <span>Overview</span>
-                    @Lucide("dashboard")
-                </a>
-                <a href="@TabHref("orders")"
-                   class="mw-nav-item @(activeTab == "orders" ? "active" : "")"
-                   @onclick='() => SelectTab("orders")'
-                   @onclick:preventDefault="true">
-                    <span>Orders</span>
-                    @Lucide("package")
-                </a>
-                <a href="@TabHref("wishlist")"
-                   class="mw-nav-item @(activeTab == "wishlist" ? "active" : "")"
-                   @onclick='() => SelectTab("wishlist")'
-                   @onclick:preventDefault="true">
-                    <span>Wishlist</span>
-                    @Lucide("heart")
-                </a>
-                <a href="@TabHref("addresses")"
-                   class="mw-nav-item @(activeTab == "addresses" ? "active" : "")"
-                   @onclick='() => SelectTab("addresses")'
-                   @onclick:preventDefault="true">
-                    <span>Addresses</span>
-                    @Lucide("mappin")
-                </a>
-                <a href="@TabHref("affiliate")"
-                   class="mw-nav-item @(activeTab == "affiliate" ? "active" : "")"
-                   @onclick='() => SelectTab("affiliate")'
-                   @onclick:preventDefault="true">
-                    <span>Affiliate Hub</span>
-                    @Lucide("users")
-                </a>
-                <a href="@TabHref("settings")"
-                   class="mw-nav-item @(activeTab == "settings" ? "active" : "")"
-                   @onclick='() => SelectTab("settings")'
-                   @onclick:preventDefault="true">
-                    <span>Settings</span>
-                    @Lucide("settings")
-                </a>
-            </nav>
-
-            <!-- AFFILIATE -->
-            <!-- AFFILIATE STATUS -->
-            @if (affiliateStatus != null)
-            {
                 <div class="mw-affiliate">
                     <p class="mw-affiliate-label">Affiliate Status</p>
-
-                    @if (affiliateStatus.ApplicationStatus == "not_applied")
+                    @if (affiliateStatus == null)
                     {
-                        <p class="mw-affiliate-value mw-affiliate-not-applied">
-                            Not Applied
-                        </p>
+                        <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Line" Width="100px" />
                     }
-                    else if (affiliateStatus.ApplicationStatus == "pending")
+                    else
                     {
-                        <p class="mw-affiliate-value mw-affiliate-pending">
-                            ⏳ Pending
-                        </p>
-                    }
-                    else if (affiliateStatus.ApplicationStatus == "approved")
-                    {
-                        @if (affiliateStatus.Tier == "bronze")
-                        {
-                            <p class="mw-affiliate-value mw-affiliate-bronze">
-                                🥉 Bronze
-                            </p>
-                        }
-                        else if (affiliateStatus.Tier == "silver")
-                        {
-                            <p class="mw-affiliate-value mw-affiliate-silver">
-                                ⭐ Silver
-                            </p>
-                        }
-                        else if (affiliateStatus.Tier == "gold")
-                        {
-                            <p class="mw-affiliate-value mw-affiliate-gold">
-                                ⭐⭐ Gold
-                            </p>
-                        }
-                    }
-                    else if (affiliateStatus.ApplicationStatus == "rejected")
-                    {
-                        <p class="mw-affiliate-value mw-affiliate-rejected">
-                             Rejected
-                        </p>
-                    }
-                    else if (affiliateStatus.ApplicationStatus == "waitlisted")
-                    {
-                        <p class="mw-affiliate-value mw-affiliate-waitlisted">
-                            📋 Waitlisted
+                        <p class="mw-affiliate-value">
+                            <span class="mw-affiliate-star">@Lucide("star", 14)</span>
+                            @GetOverviewTierLabel()
                         </p>
                     }
                 </div>
-            }
-            else
-            {
-                <!-- Loading state -->
-                <div class="mw-affiliate">
-                    <MwSkeleton Variant="MwSkeleton.SkeletonVariant.LineSm" Width="100px" />
-                    <MwSkeleton Variant="MwSkeleton.SkeletonVariant.Line" Width="120px" />
-                </div>
-            }
 
-            <!-- SIGN OUT -->
-            <button class="mw-signout" @onclick="HandleSignOut">
-                <span>Sign Out</span>
-                @Lucide("logout")
-            </button>
-
+                <button class="mw-signout" @onclick="HandleSignOut">
+                    <span>Sign Out</span>
+                    @Lucide("logout")
+                </button>
+            </div>
         </aside>
 
-        <!-- MAIN CONTENT -->
-        <!-- MAIN CONTENT -->
         <div class="col-12 col-md-8 col-lg-9">
-
-            <!-- WELCOME — always visible -->
             @if (activeTab == "overview")
             {
                 @if (isProfileLoading)
@@ -275,48 +170,48 @@
                 }
                 else
                 {
-                <div class="mb-4">
-                    <h2 class="mw-welcome">Welcome back, @LoggedInUserName</h2>
-                    <p class="mw-subtext">Here's your Muuqwear at a glance.</p>
-                </div>
+                    <div class="mw-overview">
+                        <div class="mw-overview__intro">
+                            <h2 class="mw-welcome">Welcome back, @GetFirstName()</h2>
+                            <p class="mw-subtext">Here's your Muuqwear at a glance.</p>
+                        </div>
 
-                <!-- STATS -->
-                <div class="row g-3 mb-4">
-                    <div class="col-6 col-md-3">
-                        <div class="mw-stat-card">
-                            <span class="mw-stat-icon">@Lucide("package", 18)</span>
-                            <p class="mw-stat-value">@userOrders.Count</p>
-                            <p class="mw-stat-label">Orders</p>
+                        <div class="row g-3 mb-4">
+                            <div class="col-6 col-lg-3">
+                                <div class="mw-stat-card">
+                                    <span class="mw-stat-icon">@Lucide("package", 18)</span>
+                                    <p class="mw-stat-value">@userOrders.Count</p>
+                                    <p class="mw-stat-label">Orders</p>
+                                </div>
+                            </div>
+                            <div class="col-6 col-lg-3">
+                                <div class="mw-stat-card">
+                                    <span class="mw-stat-icon">@Lucide("heart", 18)</span>
+                                    <p class="mw-stat-value">@WishlistStateService.Count</p>
+                                    <p class="mw-stat-label">Wishlist</p>
+                                </div>
+                            </div>
+                            <div class="col-6 col-lg-3">
+                                <div class="mw-stat-card">
+                                    <span class="mw-stat-icon">@Lucide("star", 18)</span>
+                                    <p class="mw-stat-value">@GetOverviewTierLabel()</p>
+                                    <p class="mw-stat-label">Affiliate Tier</p>
+                                </div>
+                            </div>
+                            <div class="col-6 col-lg-3">
+                                <div class="mw-stat-card">
+                                    <span class="mw-stat-icon">@Lucide("dashboard", 18)</span>
+                                    <p class="mw-stat-value">$@TotalSpent.ToString("F2")</p>
+                                    <p class="mw-stat-label">Total Spent</p>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="col-6 col-md-3">
-                        <div class="mw-stat-card">
-                            <span class="mw-stat-icon">@Lucide("heart", 18)</span>
-                            <p class="mw-stat-value">@WishlistStateService.Count</p>
-                            <p class="mw-stat-label">Wishlist</p>
-                        </div>
-                    </div>
-                    <div class="col-6 col-md-3">
-                        <div class="mw-stat-card">
-                            <span class="mw-stat-icon">@Lucide("star", 18)</span>
-                            <p class="mw-stat-value">@affiliateStatus?.Tier</p>
-                            <p class="mw-stat-label">Affiliate Tier</p>
-                        </div>
-                    </div>
-                    <div class="col-6 col-md-3">
-                        <div class="mw-stat-card">
-                            <span class="mw-stat-icon">@Lucide("dashboard", 18)</span>
-                            <p class="mw-stat-value">$@TotalSpent.ToString("F0")</p>
-                            <p class="mw-stat-label">Total Spent</p>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- RECENT ORDERS -->
-                <div class="mw-orders">
-                    <p class="mw-section-title">Recent Orders</p>
-                    <OrdersList Orders="userOrders.Take(3).ToList()" />
-                </div>
+                        <div class="mw-orders">
+                            <p class="mw-section-title">Recent Orders</p>
+                            <OrdersList Orders="userOrders.Take(3).ToList()" />
+                        </div>
+                    </div>
                 }
             }
             else if (activeTab == "orders")
@@ -504,6 +399,12 @@
             else if (activeTab == "affiliate")
             {
                 <div class="mw-tab-content">
+                    @if (!string.IsNullOrWhiteSpace(affiliateAppliedNotice))
+                    {
+                        <div class="mw-affiliate-applied-notice" role="status">
+                            @affiliateAppliedNotice
+                        </div>
+                    }
                     @if (affiliateStatus == null)
                     {
                         <MwSkeletonSection Layout="MwSkeletonSection.SkeletonLayout.ProfilePanel"
@@ -516,7 +417,7 @@
                         <div class="affiliate-not-applied">
                             <h2>Join the MuuqWear Affiliate Program</h2>
                             <p>Earn commission on every sale you refer!</p>
-                            <button class="btn btn-primary" @onclick='() => NavigationManager.NavigateTo("/affiliate")'>
+                            <button type="button" class="mw-affiliate-cta" @onclick='() => NavigationManager.NavigateTo("/affiliate", forceLoad: true)'>
                                 Apply Now
                             </button>
                         </div>
@@ -1190,11 +1091,10 @@
             {
                 <!-- User hasn't applied yet - show prompt -->
                 <div class="affiliate-prompt">
-                    <div class="prompt-icon">🎯</div>
                     <div class="prompt-content">
                         <h3>Become a MuuqWear Affiliate</h3>
                         <p>Join our community of content creators and earn commission on every sale. Limited to 500 members!</p>
-                        <button class="btn-apply" @onclick='() => NavigationManager.NavigateTo("/affiliate")'>
+                        <button type="button" class="mw-affiliate-cta" @onclick='() => NavigationManager.NavigateTo("/affiliate", forceLoad: true)'>
                             Apply Now
                         </button>
                     </div>

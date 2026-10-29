@@ -497,7 +497,7 @@
                         <div class="affiliate-not-applied">
                             <h2>Join the MuuqWear Affiliate Program</h2>
                             <p>Earn commission on every sale you refer!</p>
-                            <button class="btn btn-primary" @onclick='() => NavigationManager.NavigateTo("/affiliate")'>
+                            <button type="button" class="mw-affiliate-cta" @onclick='() => NavigationManager.NavigateTo("/affiliate", forceLoad: true)'>
                                 Apply Now
                             </button>
                         </div>
@@ -1169,11 +1169,10 @@
             {
                 <!-- User hasn't applied yet - show prompt -->
                 <div class="affiliate-prompt">
-                    <div class="prompt-icon">🎯</div>
                     <div class="prompt-content">
                         <h3>Become a MuuqWear Affiliate</h3>
                         <p>Join our community of content creators and earn commission on every sale. Limited to 500 members!</p>
-                        <button class="btn-apply" @onclick='() => NavigationManager.NavigateTo("/affiliate")'>
+                        <button type="button" class="mw-affiliate-cta" @onclick='() => NavigationManager.NavigateTo("/affiliate", forceLoad: true)'>
                             Apply Now
                         </button>
                     </div>

@@ -25,11 +25,15 @@ if (!builder.HostEnvironment.IsDevelopment())
     builder.Logging.AddFilter("System.Net.Http.HttpClient", LogLevel.Warning);
 }
 var site = new Uri(builder.HostEnvironment.BaseAddress);
-if (site.Host is "localhost" or "127.0.0.1")
+var localDev = site.Host is "localhost" or "127.0.0.1" or "::1"
+    || builder.HostEnvironment.IsDevelopment();
+if (localDev)
 {
+    // Local Web host renders ShopperRoutes from App.razor — never mount #app here.
     builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
     {
-        ["Cutover:FreezeWrites"] = "true"
+        ["Shopper:Standalone"] = "false",
+        ["Cutover:FreezeWrites"] = "false"
     });
 }
 builder.Services.AddScoped<BrowserTokenStore>();
@@ -64,8 +68,10 @@ builder.Services.AddScoped<WishlistStateService>();
 builder.Services.AddScoped<StorefrontHomeCacheService>();
 builder.Services.AddScoped<OfflineQueue>();
 
-if (builder.Configuration.GetValue("Shopper:Standalone", false)
-    || builder.HostEnvironment.IsProduction())
+// Static Hosting / Production Web shell uses #app.
+// Local Dev hosts ShopperRoutes from App.razor — never mount here (WASM often reports Production on localhost).
+if (!localDev && (builder.Configuration.GetValue("Shopper:Standalone", false)
+    || builder.HostEnvironment.IsProduction()))
 {
     builder.RootComponents.Add<HeadOutlet>("head::after");
     builder.RootComponents.Add<ShopperRoutes>("#app");

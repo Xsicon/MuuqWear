@@ -29,4 +29,22 @@ public class CutoverFreezeTests
         Assert.True(CutoverFreeze.Allows("POST", "/api/Auth/refresh-token"));
         Assert.True(CutoverFreeze.Allows("POST", "/auth/complete"));
     }
+
+    [Theory]
+    [InlineData("true", true)]
+    [InlineData("TRUE", true)]
+    [InlineData("false", false)]
+    [InlineData(null, false)]
+    [InlineData("", false)]
+    public void Enabled_reads_flag(string? flag, bool expected)
+    {
+        Assert.Equal(expected, CutoverFreeze.Enabled(flag));
+    }
+
+    [Fact]
+    public void AffiliateSubmitPausesWhenFrozen()
+    {
+        Assert.False(CutoverFreeze.Allows("POST", "/api/Affiliate"));
+        Assert.False(CutoverFreeze.Allows("POST", "/api/Affiliate/apply"));
+    }
 }

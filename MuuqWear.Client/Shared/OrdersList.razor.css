@@ -1,14 +1,79 @@
-﻿/* Orders List — mobile */
+.mw-orders-list__empty {
+    margin: 0;
+    padding: 8px 0;
+    color: #4a5c7a;
+    font-size: 14px;
+}
+
+.mw-orders-list-item {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(169, 183, 204, 0.25);
+}
+
+.mw-orders-list-item:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+}
+
+.mw-orders-list-item:first-child {
+    padding-top: 0;
+}
+
+.mw-orders-list-item__id {
+    margin: 0;
+    color: #1e2a47;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.mw-orders-list-item__meta {
+    margin: 4px 0 0;
+    color: #6b7a94;
+    font-size: 12px;
+}
+
+.mw-orders-list-item__aside {
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.mw-orders-list-item__price {
+    margin: 0;
+    color: #1e2a47;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.mw-orders-list-item__status {
+    margin: 4px 0 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: #4a5c7a;
+}
+
+.mw-orders-list-item__status.is-delivered {
+    color: #1d9e75;
+}
+
+.mw-orders-list-item__status.is-transit {
+    color: #c9852d;
+}
+
+.mw-orders-list-item__status.is-pending {
+    color: #4a5c7a;
+}
+
+.mw-orders-list-item__status.is-cancelled {
+    color: #c44545;
+}
+
 @media (max-width: 576px) {
-    .mw-orders-list-item {
-        padding: 12px !important;
+    .mw-orders-list-item__id,
+    .mw-orders-list-item__price {
+        font-size: 13px;
     }
-
-        .mw-orders-list-item .order-number {
-            font-size: 12px !important;
-        }
-
-        .mw-orders-list-item .order-price {
-            font-size: 12px !important;
-        }
 }

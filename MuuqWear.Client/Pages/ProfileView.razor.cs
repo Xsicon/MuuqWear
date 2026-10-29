@@ -34,6 +34,7 @@ public partial class ProfileView
     private AffiliateStatusModel? affiliateStatus;
     private bool isProfileLoading = true;
     private bool showAffiliatePrompt = false;
+    private string? affiliateAppliedNotice;
 
     private AffiliateInfoModel? affiliateInfo;
     private bool isLoadingAffiliateInfo = false;
@@ -69,6 +70,22 @@ public partial class ProfileView
         }
     }
     private decimal TotalSpent => userOrders.Sum(o => o.Total);
+
+    private string GetFirstName()
+    {
+        var name = LoggedInUserName?.Trim();
+        if (string.IsNullOrWhiteSpace(name))
+            return "there";
+        return name.Split(' ', StringSplitOptions.RemoveEmptyEntries)[0];
+    }
+
+    private string GetOverviewTierLabel()
+    {
+        var tier = affiliateStatus?.Tier;
+        if (string.IsNullOrWhiteSpace(tier))
+            return affiliateStatus?.ApplicationStatus == "approved" ? "Approved" : "—";
+        return char.ToUpperInvariant(tier[0]) + tier[1..].ToLowerInvariant();
+    }
 
     // notification settings
     private bool emailNotifications = true;
@@ -310,6 +327,12 @@ public partial class ProfileView
             var tab = QueryValue(uri.Query, "tab")?.ToLowerInvariant();
             if (!string.IsNullOrWhiteSpace(tab) && IsValidProfileTab(tab))
                 await SelectTab(tab);
+
+            if (string.Equals(QueryValue(uri.Query, "applied"), "1", StringComparison.OrdinalIgnoreCase))
+            {
+                affiliateAppliedNotice =
+                    "Your affiliate application was submitted. We'll email you when it's reviewed.";
+            }
         }
     }
 

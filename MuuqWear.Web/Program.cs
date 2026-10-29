@@ -235,6 +235,19 @@ else
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
 }
 
+if (app.Environment.IsDevelopment())
+{
+    app.Use(async (ctx, next) =>
+    {
+        if (ctx.Request.Path.StartsWithSegments("/_framework"))
+        {
+            ctx.Response.Headers.CacheControl = "no-cache, no-store, must-revalidate";
+            ctx.Response.Headers.Pragma = "no-cache";
+        }
+        await next();
+    });
+}
+
 app.UseStaticFiles();
 app.UseWebSockets(new WebSocketOptions
 {

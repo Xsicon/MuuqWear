@@ -1,4 +1,4 @@
-﻿@using Microsoft.AspNetCore.Http
+@using Microsoft.AspNetCore.Http
 @using Microsoft.AspNetCore.Hosting
 @using MuuqWear.Client
 @using MuuqWear.Client.Layout
@@ -94,6 +94,7 @@
     }
     else if (hostedShopper)
     {
+        @* Dev: InteractiveWASM from the host. Client Standalone is forced off so it does not also mount #app. *@
         <ShopperRoutes @rendermode="@(new InteractiveWebAssemblyRenderMode(prerender: true))" />
     }
     else
@@ -106,7 +107,7 @@
     <script src="js/firebase-auth.js?v=20261029off"></script>
     <script src="js/chat-scroll.js"></script>
     <script src="_framework/blazor.web.js" autostart="false"></script>
-    <script src="js/blazor-boot.js?v=20261022a"></script>
+    <script src="js/blazor-boot.js?v=20261029cat"></script>
     <script src="js/image-load.js"></script>
 
 

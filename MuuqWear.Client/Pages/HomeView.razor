@@ -100,7 +100,7 @@
                     {
                         <div class="swiper-slide">
                             <a href="@item.Link" class="mw-category__card">
-                                <img src="@item.Image" alt="@item.Name" loading="@(idx < 3 ? null : "lazy")" />
+                                <img src="@item.Image" alt="@item.Name" data-mw-cat="@item.Name" loading="@(idx < 3 ? null : "lazy")" />
                                 <div class="mw-category__overlay"></div>
                                 <div class="mw-category__content">
                                     <h3>@item.Name</h3>

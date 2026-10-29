@@ -1355,7 +1355,8 @@
             if (result.Success)
             {
                 submitted = true;
-                await LoadSpotsRemaining(); // Refresh spots count
+                await LoadSpotsRemaining();
+                NavigationManager.NavigateTo("/profile?tab=affiliate&applied=1", forceLoad: true);
             }
             else
             {

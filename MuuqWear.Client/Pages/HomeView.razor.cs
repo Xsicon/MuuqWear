@@ -48,14 +48,8 @@ public partial class HomeView : IAsyncDisposable
     private bool isLoadingProducts = true;
     private bool isLoadingCategories = true;
 
-    private Dictionary<string, string> CategoryImages { get; } = new()
-    {
-        { "Mens", "https://images.unsplash.com/photo-1762232975039-7b36432bcac6?w=600" },
-        { "Womens", "https://images.unsplash.com/photo-1506619928596-bb8c201545cc?w=600" },
-        { "Kids", "https://images.unsplash.com/photo-1759313560190-d160c3567170?w=600" },
-        { "Accessories", "https://images.unsplash.com/photo-1693592401248-c9544518318a?w=600" },
-        { "Outerwear", "https://images.unsplash.com/photo-1704716720991-cf3197cfb190?w=600" }
-    };
+    private const string CategoryImageFallback =
+        "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=600";
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -179,10 +173,21 @@ public partial class HomeView : IAsyncDisposable
         Categories = data
             .Select(c => new CategoryCard(
                 Name: c.Name!,
-                Image: CategoryImages.GetValueOrDefault(c.Name!,
-                    "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=600"),
+                Image: ResolveCategoryImage(c.Name),
                 Link: $"/shop/apparel?categoryId={c.Id}"))
             .ToList();
         _homeCarouselsReady = false;
     }
+
+    // Catalog category names are lowercase ("mens"); map must not be case-sensitive.
+    public static string ResolveCategoryImage(string? name) =>
+        (name ?? "").Trim().ToLowerInvariant() switch
+        {
+            "mens" => "https://images.unsplash.com/photo-1762232975039-7b36432bcac6?w=600",
+            "womens" => "https://images.unsplash.com/photo-1506619928596-bb8c201545cc?w=600",
+            "kids" => "https://images.unsplash.com/photo-1759313560190-d160c3567170?w=600",
+            "accessories" => "https://images.unsplash.com/photo-1693592401248-c9544518318a?w=600",
+            "outerwear" => "https://images.unsplash.com/photo-1704716720991-cf3197cfb190?w=600",
+            _ => CategoryImageFallback
+        };
 }

@@ -389,48 +389,72 @@ a.mw-mobile-nav-item {
     margin-top: 32px;
 }
 
-/* Affiliate Prompt Card */
+/* Affiliate Prompt Card — match /affiliate page CTA */
 .affiliate-prompt {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 32px;
-    border-radius: 12px;
+    background: #F7F8FB;
+    border: 1px solid rgba(169, 183, 204, 0.45);
+    color: #1E2A47;
+    padding: 28px 24px;
     display: flex;
     align-items: center;
     gap: 24px;
     margin-bottom: 24px;
 }
 
-.prompt-icon {
-    font-size: 48px;
-}
-
 .prompt-content h3 {
-    color: white;
+    color: #1E2A47;
+    font-family: "Playfair Display", Georgia, serif;
     font-size: 24px;
-    font-weight: 700;
-    margin-bottom: 8px;
+    font-weight: 500;
+    margin: 0 0 8px;
 }
 
 .prompt-content p {
-    color: rgba(255, 255, 255, 0.9);
-    margin-bottom: 16px;
+    color: #4A5C7A;
+    margin: 0 0 18px;
 }
 
-.btn-apply {
-    background: white;
-    color: #667eea;
+.affiliate-not-applied {
+    border: 1px solid rgba(169, 183, 204, 0.45);
+    padding: 32px 24px;
+    text-align: left;
+    background: #fff;
+}
+
+.affiliate-not-applied h2 {
+    margin: 0 0 8px;
+    color: #1E2A47;
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: clamp(1.5rem, 3vw, 1.85rem);
+    font-weight: 500;
+}
+
+.affiliate-not-applied p {
+    margin: 0 0 22px;
+    color: #4A5C7A;
+    font-size: 15px;
+}
+
+.mw-affiliate-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: #1E2A47;
+    color: #fff;
+    padding: 14px 28px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
     border: none;
-    padding: 12px 24px;
-    border-radius: 8px;
-    font-weight: 600;
     cursor: pointer;
-    transition: transform 0.2s;
+    transition: background 0.2s;
 }
 
-    .btn-apply:hover {
-        transform: translateY(-2px);
-    }
+.mw-affiliate-cta:hover {
+    background: #0B1A33;
+    color: #fff;
+}
 
 /* Affiliate Status Card */
 .affiliate-status-card {
