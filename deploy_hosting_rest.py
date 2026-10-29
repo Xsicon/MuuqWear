@@ -52,6 +52,7 @@ def gzip_hash(path: Path) -> tuple[str, bytes]:
 
 def main() -> int:
     access = token()
+    print("hashing files...", flush=True)
     files: dict[str, str] = {}
     blobs: dict[str, bytes] = {}
     for path in ROOT.rglob("*"):
@@ -61,7 +62,10 @@ def main() -> int:
         digest, compressed = gzip_hash(path)
         files[rel] = digest
         blobs[digest] = compressed
+    print(f"hashed {len(files)} files", flush=True)
 
+    run = {"serviceId": "muuqwear-web", "region": "europe-west2"}
+    print("creating version...", flush=True)
     version = request(
         f"{API}/sites/{SITE}/versions",
         access,
@@ -73,32 +77,52 @@ def main() -> int:
                         "headers": {"Cache-Control": "public, max-age=31536000, immutable"},
                     }
                 ],
+                # Keep shopper static; only staff/auth/api paths hit Cloud Run.
                 "rewrites": [
-                    {
-                        "glob": "**",
-                        "run": {"serviceId": "muuqwear-web", "region": "europe-west2"},
-                    }
+                    {"glob": "/admin/**", "run": run},
+                    {"glob": "/muuqsimo/**", "run": run},
+                    {"glob": "/order-confirmed/**", "run": run},
+                    {"glob": "/_blazor/**", "run": run},
+                    {"glob": "/auth/**", "run": run},
+                    {"glob": "/__/auth/**", "run": run},
+                    {"glob": "/logout", "run": run},
+                    {"glob": "/api/**", "run": run},
+                    {"glob": "/community", "run": run},
+                    {"glob": "/help", "run": run},
+                    {"glob": "/careers", "run": run},
+                    {"glob": "/affiliate", "run": run},
+                    {"glob": "/shipping-return", "run": run},
+                    {"glob": "/design-history", "run": run},
+                    {"glob": "/partner-store", "run": run},
+                    {"glob": "/error", "run": run},
+                    {"glob": "**", "path": "/index.html"},
                 ],
             }
         },
         method="POST",
     )
     name = version["name"]
+    print(f"version={name}", flush=True)
     keys = list(files)
     upload_url = ""
     required: list[str] = []
     for start in range(0, len(keys), 900):
         chunk = {key: files[key] for key in keys[start : start + 900]}
+        print(f"populateFiles {start}-{start + len(chunk)}...", flush=True)
         populated = request(f"{API}/{name}:populateFiles", access, {"files": chunk}, method="POST")
         upload_url = populated.get("uploadUrl") or upload_url
         required.extend(populated.get("uploadRequiredHashes") or [])
 
-    for digest in required:
+    print(f"uploading {len(required)} blobs...", flush=True)
+    for i, digest in enumerate(required, 1):
         request(f"{upload_url}/{digest}", access, blobs[digest], method="POST")
+        if i % 25 == 0 or i == len(required):
+            print(f"uploaded {i}/{len(required)}", flush=True)
 
+    print("finalizing...", flush=True)
     request(f"{API}/{name}?updateMask=status", access, {"status": "FINALIZED"}, method="PATCH")
     request(f"{API}/sites/{SITE}/releases?versionName={name}", access, {}, method="POST")
-    print(f"hosting_ok files={len(files)} uploaded={len(required)} version={name}")
+    print(f"hosting_ok files={len(files)} uploaded={len(required)} version={name}", flush=True)
     return 0
 
 
