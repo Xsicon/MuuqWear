@@ -6,6 +6,12 @@
     <base href="/" />
     <title>MuuqWear</title>
     <style>
+        html, body { margin: 0; padding: 0; background: #F7F8FA; }
+        .mw-boot { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; background: #F7F8FA; }
+        .mw-boot__logo { width: 40px; height: 40px; object-fit: contain; display: block; }
+        .mw-boot__bar { width: 120px; height: 3px; border-radius: 2px; background: linear-gradient(90deg, transparent 0%, #1E2A47 35%, #4A5C7A 50%, #1E2A47 65%, transparent 100%); background-size: 200% 100%; animation: mw-boot-bar 0.9s ease-in-out infinite; }
+        @keyframes mw-boot-bar { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+        html[data-mw-ready="1"] .mw-boot { display: none; }
         .mw-logo { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
         .mw-logo__img { width: 32px; height: 32px; max-width: 32px; object-fit: contain; display: block; flex-shrink: 0; }
         .mw-header { position: sticky; top: 0; z-index: 1000; background: #fff; }
@@ -16,11 +22,12 @@
         html:not([data-mw-auth="in"]) .mw-header-member { display: none !important; }
         .mw-profile-dropdown:has(.mw-header-auth-ready) .mw-header-member-fallback { display: none !important; }
     </style>
+    <link rel="preload" as="image" href="https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=1600&amp;h=900&amp;fit=crop" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Playfair+Display:ital,wght@0,400;0,700;0,800;1,400;1,700;1,800&amp;display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="bootstrap/bootstrap.min.css" />
-    <link rel="stylesheet" href="app.css?v=20261023a" />
+    <link rel="stylesheet" href="app.css?v=20261029load" />
     <link rel="stylesheet" href="MuuqWear.Web.styles.css" />
     <link rel="stylesheet" href="lib/swiper/swiper-bundle.min.css" />
     <link rel="icon" href="/favicon.ico" sizes="32x32" />
@@ -30,17 +37,23 @@
     <meta name="theme-color" content="#1E2A47" />
 </head>
 <body>
-    <div id="app"></div>
+    <div id="app">
+        <div class="mw-boot" aria-busy="true" aria-label="Loading MuuqWear">
+            <img class="mw-boot__logo" src="/images/muuqwearlogo.png" alt="MuuqWear" width="40" height="40" />
+            <div class="mw-boot__bar" aria-hidden="true"></div>
+        </div>
+    </div>
     <script src="lib/swiper/swiper-bundle.min.js"></script>
     <script src="js/carousel.js"></script>
     <script src="js/site.js?v=20261022a"></script>
     <script src="js/firebase-auth.js?v=20261029off"></script>
     <script src="js/chat-scroll.js"></script>
     <script src="_framework/blazor.webassembly.js" autostart="false"></script>
-    <script src="js/image-load.js"></script>
+    <script src="js/image-load.js?v=20261029load"></script>
     <script>
         Blazor.start().then(function () {
             document.documentElement.setAttribute("data-mw-ready", "1");
+            if (window.mwImageLoad && window.mwImageLoad.watch) window.mwImageLoad.watch();
         }).catch(function (err) {
             console.error("[Blazor] Failed to start:", err);
         });
