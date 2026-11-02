@@ -279,7 +279,7 @@ app.MapAuthCookies();
 
 app.MapGet("/logout", async (HttpContext ctx) =>
 {
-    await ctx.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+    await ClearSessionCookieAsync(ctx);
     ctx.Response.Redirect("/login");
 });
 
@@ -288,7 +288,7 @@ app.MapGet("/__/auth/action", ServeAuthAction);
 
 app.MapGet("/auth/clear", async (HttpContext ctx, bool expired = false) =>
 {
-    await ctx.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+    await ClearSessionCookieAsync(ctx);
     ctx.Response.Redirect(expired ? "/login?expired=true" : "/");
 });
 
@@ -307,6 +307,26 @@ app.Run();
 
 static IResult ServeAuthAction(IWebHostEnvironment env) =>
     Results.File(Path.Combine(env.WebRootPath, "auth", "action.html"), "text/html; charset=utf-8");
+
+static async Task ClearSessionCookieAsync(HttpContext ctx)
+{
+    await ctx.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+    // Explicit deletes cover SecurePolicy.Always + local http quirks.
+    ctx.Response.Cookies.Delete("__session", new CookieOptions
+    {
+        Path = "/",
+        Secure = true,
+        SameSite = SameSiteMode.Lax,
+        HttpOnly = true
+    });
+    ctx.Response.Cookies.Delete("__session", new CookieOptions
+    {
+        Path = "/",
+        Secure = false,
+        SameSite = SameSiteMode.Lax,
+        HttpOnly = true
+    });
+}
 
 static async Task ServeStorefrontCatalog(HttpContext ctx, StorefrontFirestore store)
 {

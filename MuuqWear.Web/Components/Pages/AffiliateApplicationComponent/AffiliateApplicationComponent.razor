@@ -32,14 +32,14 @@
                 </button>
             </Authorized>
             <NotAuthorized>
-                <!-- User is NOT logged in - show login prompt -->
-                <button class="mw-affiliate-cta" @onclick="RedirectToLogin">
-                    Login to Apply
+                <!-- Plain link so guests can sign in even if the Blazor circuit has not started -->
+                <a class="mw-affiliate-cta" href="@AffiliateLoginHref">
+                    Apply to Become an Ambassador
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M5 12h14"></path>
                         <path d="m12 5 7 7-7 7"></path>
                     </svg>
-                </button>
+                </a>
             </NotAuthorized>
         </AuthorizeView>
 
@@ -690,13 +690,13 @@
                     </button>
                 </Authorized>
                 <NotAuthorized>
-                    <button class="mw-cta-button" @onclick="RedirectToLogin">
-                        Login to Apply
+                    <a class="mw-cta-button" href="@AffiliateLoginHref">
+                        Apply to Become an Ambassador
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M5 12h14"></path>
                             <path d="m12 5 7 7-7 7"></path>
                         </svg>
-                    </button>
+                    </a>
                 </NotAuthorized>
             </AuthorizeView>
         </div>
@@ -900,13 +900,13 @@
                     </button>
                 </Authorized>
                 <NotAuthorized>
-                    <button class="mw-final-cta-button" @onclick="RedirectToLogin">
-                        Login to Apply
+                    <a class="mw-final-cta-button" href="@AffiliateLoginHref">
+                        Apply to Become an Ambassador
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M5 12h14"></path>
                             <path d="m12 5 7 7-7 7"></path>
                         </svg>
-                    </button>
+                    </a>
                 </NotAuthorized>
             </AuthorizeView>
 
@@ -1203,11 +1203,11 @@
 
 
 
-    private void RedirectToLogin()
-    {
-        // Save current URL so user returns here after login
-        NavigationManager.NavigateTo($"/login?returnUrl={Uri.EscapeDataString("/affiliate")}", true);
-    }
+    private string AffiliateLoginHref =>
+        $"/login?returnUrl={Uri.EscapeDataString("/affiliate")}";
+
+    private void RedirectToLogin() =>
+        NavigationManager.NavigateTo(AffiliateLoginHref, forceLoad: true);
 
     private async Task LoadSpotsRemaining()
     {

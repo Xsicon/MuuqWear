@@ -19,8 +19,11 @@
 @inject AuthSessionService AuthSession
 @inject AuthenticationStateProvider AuthStateProvider
 @inject CustomAuthenticationStateProvider CustomAuthStateProvider
+@inject FirebaseSession FirebaseSession
+@inject BrowserTokenStore TokenStore
 @implements IDisposable
 @using System.Security.Claims
+@using MuuqWear.Client.Auth
 
 
 <div>
@@ -1250,6 +1253,6 @@
         isProfileOpen = false;
         await CartStateService.ClearCartState();
         await WishlistStateService.ClearWishlistState();
-        NavigationManager.NavigateTo("/auth/clear", forceLoad: true);
+        await PublicSignOut.RunAsync(FirebaseSession, TokenStore, JS, NavigationManager);
     }
 }

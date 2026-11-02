@@ -47,6 +47,10 @@ public partial class HomeView : IAsyncDisposable
     private bool _homeCarouselsReady;
     private bool isLoadingProducts = true;
     private bool isLoadingCategories = true;
+    private bool _categoriesRequested;
+    private bool _productsRequested;
+    private bool _lazySectionsWired;
+    private DotNetObjectReference<HomeView>? _dotNetRef;
 
     private const string CategoryImageFallback =
         "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=600";
@@ -72,6 +76,8 @@ public partial class HomeView : IAsyncDisposable
                     $"window.location.href = '/auth/reset-password' + window.location.hash");
                 return;
             }
+
+            await WireLazySectionsAsync();
         }
 
         if (!_homeCarouselsReady &&
@@ -92,6 +98,17 @@ public partial class HomeView : IAsyncDisposable
     {
         try
         {
+            await JS.InvokeVoidAsync("mwLazySections.dispose");
+        }
+        catch (JSDisconnectedException) { }
+        catch (InvalidOperationException) { }
+        catch (JSException) { }
+
+        _dotNetRef?.Dispose();
+        _dotNetRef = null;
+
+        try
+        {
             await JS.InvokeVoidAsync("mwDestroyHeroCarousel");
             await JS.InvokeVoidAsync("mwDestroyHomeCarousels");
         }
@@ -99,16 +116,17 @@ public partial class HomeView : IAsyncDisposable
         catch (InvalidOperationException) { }
     }
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializedAsync()
     {
         if (!OperatingSystem.IsBrowser())
-            return;
+            return Task.CompletedTask;
 
         var cachedProducts = HomeCache.GetHomeProductsCached();
         if (cachedProducts != null)
         {
             ApplyHomeProducts(cachedProducts);
             isLoadingProducts = false;
+            _productsRequested = true;
         }
 
         var cachedCategories = HomeCache.GetCategoriesCached();
@@ -116,18 +134,64 @@ public partial class HomeView : IAsyncDisposable
         {
             ApplyCategories(cachedCategories);
             isLoadingCategories = false;
+            _categoriesRequested = true;
         }
 
-        var tasks = new List<Task>();
+        // Network fetches wait until sections approach the viewport.
+        return Task.CompletedTask;
+    }
 
-        if (isLoadingProducts)
-            tasks.Add(LoadHomeProductsAsync());
+    private async Task WireLazySectionsAsync()
+    {
+        if (_lazySectionsWired || !OperatingSystem.IsBrowser())
+            return;
 
-        if (isLoadingCategories)
-            tasks.Add(LoadCategoriesAsync());
+        _lazySectionsWired = true;
+        _dotNetRef = DotNetObjectReference.Create(this);
+        try
+        {
+            await JS.InvokeVoidAsync("mwLazySections.observe", _dotNetRef, "200px 0px");
+        }
+        catch (JSDisconnectedException) { }
+        catch (InvalidOperationException) { }
+        catch (JSException)
+        {
+            // Fallback if the helper is missing: load immediately.
+            await OnSectionVisible("categories");
+            await OnSectionVisible("products");
+        }
+    }
 
-        if (tasks.Count > 0)
-            await Task.WhenAll(tasks);
+    [JSInvokable]
+    public async Task OnSectionVisible(string id)
+    {
+        if (string.Equals(id, "categories", StringComparison.OrdinalIgnoreCase))
+            await EnsureCategoriesAsync();
+        else if (string.Equals(id, "products", StringComparison.OrdinalIgnoreCase))
+            await EnsureProductsAsync();
+    }
+
+    private async Task EnsureCategoriesAsync()
+    {
+        if (_categoriesRequested || Categories.Count > 0)
+            return;
+
+        _categoriesRequested = true;
+        await LoadCategoriesAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task EnsureProductsAsync()
+    {
+        if (_productsRequested
+            || NewArrivals.Count > 0
+            || FeaturedProducts.Count > 0
+            || BestSellerProducts.Count > 0)
+            return;
+
+        _productsRequested = true;
+        await LoadHomeProductsAsync();
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task LoadHomeProductsAsync()

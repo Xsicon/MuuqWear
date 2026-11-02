@@ -28,6 +28,13 @@
 
 /* Unscoped chrome — same rules as ShopperNav scoped CSS, so first paint
    does not wait for the host scoped bundle (MuuqWear.Web.styles.css). */
+/* Closed drawers must stay hidden even if scoped CSS fingerprints drift
+   between Cloud Run HTML and Hosting static styles. */
+.mw-cart-overlay:not(.open),
+.mw-search-overlay:not(.open) {
+    display: none !important;
+}
+
 .mw-logo {
     display: flex;
     align-items: center;
@@ -87,44 +94,6 @@ html, body {
     margin: 0;
     padding: 0;
     background: #F7F8FA;
-}
-
-/* Cold-load splash inside empty #app (static Hosting / prod shell). */
-.mw-boot {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 20px;
-    background: #F7F8FA;
-}
-
-.mw-boot__logo {
-    width: 40px;
-    height: 40px;
-    object-fit: contain;
-    display: block;
-}
-
-.mw-boot__bar {
-    width: 120px;
-    height: 3px;
-    border-radius: 2px;
-    background: linear-gradient(
-        90deg,
-        transparent 0%,
-        #1E2A47 35%,
-        #4A5C7A 50%,
-        #1E2A47 65%,
-        transparent 100%
-    );
-    background-size: 200% 100%;
-    animation: mw-nav-progress 0.9s ease-in-out infinite;
-}
-
-html[data-mw-ready="1"] .mw-boot {
-    display: none;
 }
 
 /* Soft reveal for storefront media once decoded. */

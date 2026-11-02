@@ -263,7 +263,7 @@
                     result.Data,
                     JS,
                     NavigationManager,
-                    "/profile",
+                    ResolveReturnUrl(),
                     rememberMe);
             }
             else
@@ -301,7 +301,36 @@
 
         var user = await Firebase.CurrentUserAsync();
         if (!string.IsNullOrWhiteSpace(user?.Uid) && user.EmailVerified)
-            NavigationManager.NavigateTo("/profile", forceLoad: true);
+            NavigationManager.NavigateTo(ResolveReturnUrl(), forceLoad: true);
+    }
+
+    private string ResolveReturnUrl()
+    {
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        var query = uri.Query.TrimStart('?');
+        foreach (var part in query.Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var eq = part.IndexOf('=');
+            if (eq <= 0)
+                continue;
+
+            var key = Uri.UnescapeDataString(part[..eq]);
+            if (!key.Equals("returnUrl", StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            var raw = Uri.UnescapeDataString(part[(eq + 1)..]);
+            if (string.IsNullOrWhiteSpace(raw))
+                break;
+
+            // Only allow same-site relative paths (block open redirects).
+            if (!raw.StartsWith('/') || raw.StartsWith("//") || raw.Contains('\\')
+                || raw.Contains("://", StringComparison.Ordinal))
+                break;
+
+            return raw;
+        }
+
+        return "/profile";
     }
 
     private async Task HandleMagicLink()

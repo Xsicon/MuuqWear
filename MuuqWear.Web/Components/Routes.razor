@@ -13,10 +13,13 @@
                 }
                 else
                 {
-                    <RedirectToRegister />
+                    @* Public marketing pages (e.g. /affiliate) must stay readable while logged out.
+                       Only [Authorize] pages hit this branch — send them to login with returnUrl. *@
+                    <RedirectToLogin />
                 }
             </NotAuthorized>
             <Authorizing>
+                @* Keep layout chrome; avoid a blank flash while auth resolves for guests. *@
             </Authorizing>
         </AuthorizeRouteView>
     </Found>

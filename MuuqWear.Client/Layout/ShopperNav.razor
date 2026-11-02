@@ -1,11 +1,10 @@
 @inject NavigationManager NavigationManager
 @inject CartStateService CartStateService
 @inject WishlistStateService WishlistStateService
-@inject IAuthService Auth
 @inject FirebaseSession Firebase
+@inject BrowserTokenStore Tokens
 @inject IJSRuntime JS
 @implements IDisposable
-@using MuuqWear.Application.Services.AuthService
 @using MuuqWear.Application.Services.CartService
 @using MuuqWear.Application.Services.WishlistService
 @using MuuqWear.Client.Auth
@@ -243,14 +242,11 @@
     {
         _profileOpen = false;
         _menuOpen = false;
-        await CartStateService.ClearCartState();
-        await WishlistStateService.ClearWishlistState();
-        await Auth.Logout();
         _signedIn = false;
         _email = null;
-        try { await JS.InvokeVoidAsync("eval", "document.documentElement.dataset.mwAuth='out'"); }
-        catch (JSException) { }
-        NavigationManager.NavigateTo("/", forceLoad: true);
+        await CartStateService.ClearCartState();
+        await WishlistStateService.ClearWishlistState();
+        await PublicSignOut.RunAsync(Firebase, Tokens, JS, NavigationManager);
     }
 
     public void Dispose()

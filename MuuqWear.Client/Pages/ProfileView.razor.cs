@@ -491,7 +491,7 @@ public partial class ProfileView
     {
         await CartStateService.ClearCartState();
         await WishlistStateService.ClearWishlistState();
-        NavigationManager.NavigateTo("/auth/clear", forceLoad: true);
+        await PublicSignOut.RunAsync(FirebaseSession, TokenStore, JSRuntime, NavigationManager);
     }
 
 
@@ -686,10 +686,9 @@ public partial class ProfileView
 
         if (result.Success)
         {
-            //  sign out and redirect to home
             await CartStateService.ClearCartState();
             await WishlistStateService.ClearWishlistState();
-            NavigationManager.NavigateTo("/auth/clear", forceLoad: true);
+            await PublicSignOut.RunAsync(FirebaseSession, TokenStore, JSRuntime, NavigationManager);
         }
         else
         {

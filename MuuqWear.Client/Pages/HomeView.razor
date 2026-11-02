@@ -11,11 +11,14 @@
 <section class="mw-hero-section">
     <div class="swiper mw-hero">
         <div class="swiper-wrapper">
-            @foreach (var slide in HeroSlides)
+            @foreach (var (slide, slideIdx) in HeroSlides.Select((s, i) => (s, i)))
             {
                 <div class="swiper-slide">
                     <div class="mw-slide">
-                        <img src="@slide.Image" alt="@slide.Headline" class="mw-slide__img" />
+                        <img src="@slide.Image"
+                             alt="@slide.Headline"
+                             class="mw-slide__img"
+                             loading="@(slideIdx == 0 ? null : "lazy")" />
                         <div class="mw-slide__overlay"></div>
                         <div class="mw-slide__content">
                             <p class="mw-slide__label">@slide.Eyebrow</p>
@@ -60,7 +63,7 @@
 </section>
 
 <!-- Shop by Category -->
-<section class="mw-home-section mw-home-section--muted">
+<section class="mw-home-section mw-home-section--muted" data-mw-lazy-section="categories">
     <div class="mw-home-container">
         <div class="mw-carousel-section" data-carousel="category">
             <div class="mw-carousel-section__header">
@@ -96,11 +99,11 @@
             {
             <div class="swiper mw-home-swiper">
                 <div class="swiper-wrapper">
-                    @foreach (var (item, idx) in Categories.Select((c, i) => (c, i)))
+                    @foreach (var item in Categories)
                     {
                         <div class="swiper-slide">
                             <a href="@item.Link" class="mw-category__card">
-                                <img src="@item.Image" alt="@item.Name" data-mw-cat="@item.Name" loading="@(idx < 3 ? null : "lazy")" />
+                                <img src="@item.Image" alt="@item.Name" data-mw-cat="@item.Name" loading="lazy" />
                                 <div class="mw-category__overlay"></div>
                                 <div class="mw-category__content">
                                     <h3>@item.Name</h3>
@@ -123,7 +126,7 @@
 </section>
 
 <!-- New Arrivals -->
-<section class="mw-home-section">
+<section class="mw-home-section" data-mw-lazy-section="products">
     <div class="mw-home-container">
         <div class="mw-carousel-section" data-carousel="product">
             <div class="mw-carousel-section__header">
@@ -159,13 +162,13 @@
             {
             <div class="swiper mw-home-swiper">
                 <div class="swiper-wrapper">
-                    @foreach (var (item, idx) in NewArrivals.Select((p, i) => (p, i)))
+                    @foreach (var item in NewArrivals)
                     {
                         <div class="swiper-slide">
                             <div class="mw-product-card">
                                 <div class="mw-product-card__image">
                                     <a href="/productdetail/@item.Id" class="mw-product-card__media-link">
-                                        <img src="@item.ImageUrl" alt="@item.Name" loading="@(idx < 4 ? null : "lazy")" />
+                                        <img src="@item.ImageUrl" alt="@item.Name" loading="lazy" />
                                         <div class="mw-product-card__badge">NEW</div>
                                     </a>
                                     <WishlistButtonComponent ProductId="@item.Id"
@@ -226,13 +229,13 @@
             {
             <div class="swiper mw-home-swiper">
                 <div class="swiper-wrapper">
-                    @foreach (var (item, idx) in FeaturedProducts.Select((p, i) => (p, i)))
+                    @foreach (var item in FeaturedProducts)
                     {
                         <div class="swiper-slide">
                             <div class="mw-featured__card">
                                 <div class="mw-featured__img-wrap">
                                     <a href="/productdetail/@item.Id">
-                                        <img src="@item.ImageUrl" alt="@item.Name" loading="@(idx < 2 ? null : "lazy")" />
+                                        <img src="@item.ImageUrl" alt="@item.Name" loading="lazy" />
                                     </a>
                                 </div>
                                 <div class="mw-featured__content">
@@ -294,13 +297,13 @@
             {
             <div class="swiper mw-home-swiper">
                 <div class="swiper-wrapper">
-                    @foreach (var (item, idx) in BestSellerProducts.Select((p, i) => (p, i)))
+                    @foreach (var item in BestSellerProducts)
                     {
                         <div class="swiper-slide">
                             <div class="mw-product-card">
                                 <div class="mw-product-card__image">
                                     <a href="/productdetail/@item.Id" class="mw-product-card__media-link">
-                                        <img src="@item.ImageUrl" alt="@item.Name" loading="@(idx < 4 ? null : "lazy")" />
+                                        <img src="@item.ImageUrl" alt="@item.Name" loading="lazy" />
                                         @if (!string.IsNullOrEmpty(item.Badge))
                                         {
                                             <div class="mw-product-card__badge">@item.Badge</div>

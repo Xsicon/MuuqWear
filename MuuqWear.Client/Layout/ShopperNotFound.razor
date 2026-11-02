@@ -1,13 +1,39 @@
 @page "/{*slug}"
+@inject NavigationManager Navigation
 
-<PageTitle>Not found</PageTitle>
-<section class="container py-5 text-center">
-    <h1 class="h3">That page is not here</h1>
-    <p class="text-muted">The link may be old, or it belongs to a staff screen.</p>
-    <a href="/">Back to home</a>
-</section>
+@* Catch-all for unknown shopper URLs. Server-owned paths (affiliate, help, …)
+   must hard-navigate so App.razor can host InteractiveServer Routes. *@
+
+@if (_redirecting)
+{
+    <PageTitle>Loading…</PageTitle>
+}
+else
+{
+    <PageTitle>Not found</PageTitle>
+    <section class="container py-5 text-center">
+        <h1 class="h3">That page is not here</h1>
+        <p class="text-muted">The link may be old, or it belongs to a staff screen.</p>
+        <a href="/">Back to home</a>
+    </section>
+}
 
 @code {
+    private bool _redirecting;
+
     [Parameter]
     public string? slug { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        var path = string.IsNullOrWhiteSpace(slug) ? "/" : "/" + slug.Trim().Trim('/');
+        if (!StaffPaths.IsServerOwned(path))
+        {
+            _redirecting = false;
+            return;
+        }
+
+        _redirecting = true;
+        Navigation.NavigateTo(path, forceLoad: true);
+    }
 }

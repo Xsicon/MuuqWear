@@ -3,6 +3,16 @@
 @code {
     protected override void OnInitialized()
     {
-        NavigationManager.NavigateTo("/login", forceLoad: false);
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        var path = uri.PathAndQuery;
+        if (string.IsNullOrWhiteSpace(path) || path.StartsWith("/login", StringComparison.OrdinalIgnoreCase))
+        {
+            NavigationManager.NavigateTo("/login", forceLoad: true);
+            return;
+        }
+
+        NavigationManager.NavigateTo(
+            $"/login?returnUrl={Uri.EscapeDataString(path)}",
+            forceLoad: true);
     }
 }

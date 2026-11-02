@@ -73,6 +73,8 @@
       { "source": "/muuqsimo/**", "run": { "serviceId": "muuqwear-web", "region": "europe-west2" } },
       { "source": "/order-confirmed/**", "run": { "serviceId": "muuqwear-web", "region": "europe-west2" } },
       { "source": "/_blazor/**", "run": { "serviceId": "muuqwear-web", "region": "europe-west2" } },
+      { "source": "/_framework/blazor.web.js", "run": { "serviceId": "muuqwear-web", "region": "europe-west2" } },
+      { "source": "/MuuqWear.Web.styles.css", "run": { "serviceId": "muuqwear-web", "region": "europe-west2" } },
       { "source": "/auth/**", "run": { "serviceId": "muuqwear-web", "region": "europe-west2" } },
       { "source": "/__/auth/**", "run": { "serviceId": "muuqwear-web", "region": "europe-west2" } },
       { "source": "/logout", "run": { "serviceId": "muuqwear-web", "region": "europe-west2" } },

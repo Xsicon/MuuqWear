@@ -84,6 +84,8 @@ def main() -> int:
                     {"glob": "/muuqsimo/**", "run": run},
                     {"glob": "/order-confirmed/**", "run": run},
                     {"glob": "/_blazor/**", "run": run},
+                    {"glob": "/_framework/blazor.web.js", "run": run},
+                    {"glob": "/MuuqWear.Web.styles.css", "run": run},
                     {"glob": "/auth/**", "run": run},
                     {"glob": "/__/auth/**", "run": run},
                     {"glob": "/logout", "run": run},
