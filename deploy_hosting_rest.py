@@ -8,6 +8,7 @@ import os
 import subprocess
 import ssl
 import sys
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -76,6 +77,19 @@ def main() -> int:
                         # Blazor keeps fixed .wasm names + integrity hashes — never immutable.
                         "glob": "/_framework/**",
                         "headers": {"Cache-Control": "no-cache, must-revalidate"},
+                    },
+                    {
+                        # Served from Cloud Run so scope ids match server HTML. Do not CDN-cache it.
+                        "glob": "/MuuqWear.Web.styles.css",
+                        "headers": {"Cache-Control": "no-cache, must-revalidate"},
+                    },
+                    {
+                        "glob": "/service-worker.js",
+                        "headers": {"Cache-Control": "no-cache, must-revalidate"},
+                    },
+                    {
+                        "glob": "/js/site.js",
+                        "headers": {"Cache-Control": "no-cache, must-revalidate"},
                     }
                 ],
                 # Keep shopper static; only staff/auth/api paths hit Cloud Run.
@@ -118,7 +132,20 @@ def main() -> int:
 
     print(f"uploading {len(required)} blobs...", flush=True)
     for i, digest in enumerate(required, 1):
-        request(f"{upload_url}/{digest}", access, blobs[digest], method="POST")
+        last_error: BaseException | None = None
+        for attempt in range(4):
+            try:
+                request(f"{upload_url}/{digest}", access, blobs[digest], method="POST")
+                last_error = None
+                break
+            except KeyboardInterrupt:
+                raise
+            except BaseException as error:
+                last_error = error
+                print(f"retry {attempt + 1} for blob {i}", flush=True)
+                time.sleep(2 * (attempt + 1))
+        if last_error is not None:
+            raise last_error
         if i % 25 == 0 or i == len(required):
             print(f"uploaded {i}/{len(required)}", flush=True)
 

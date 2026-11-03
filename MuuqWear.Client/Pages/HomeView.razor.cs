@@ -78,6 +78,7 @@ public partial class HomeView : IAsyncDisposable
             }
 
             await WireLazySectionsAsync();
+            _ = RetryCatalogIfEmptyAsync();
         }
 
         if (!_homeCarouselsReady &&
@@ -162,6 +163,34 @@ public partial class HomeView : IAsyncDisposable
         }
     }
 
+    private async Task RetryCatalogIfEmptyAsync()
+    {
+        for (var attempt = 0; attempt < 4; attempt++)
+        {
+            try
+            {
+                await Task.Delay(700);
+            }
+            catch (TaskCanceledException)
+            {
+                return;
+            }
+
+            if (Categories.Count == 0)
+                await EnsureCategoriesAsync();
+            if (NewArrivals.Count == 0
+                && FeaturedProducts.Count == 0
+                && BestSellerProducts.Count == 0)
+                await EnsureProductsAsync();
+
+            if (Categories.Count > 0
+                && (NewArrivals.Count > 0
+                    || FeaturedProducts.Count > 0
+                    || BestSellerProducts.Count > 0))
+                return;
+        }
+    }
+
     [JSInvokable]
     public async Task OnSectionVisible(string id)
     {
@@ -173,24 +202,34 @@ public partial class HomeView : IAsyncDisposable
 
     private async Task EnsureCategoriesAsync()
     {
-        if (_categoriesRequested || Categories.Count > 0)
+        if (Categories.Count > 0)
+            return;
+        if (_categoriesRequested && isLoadingCategories)
             return;
 
         _categoriesRequested = true;
         await LoadCategoriesAsync();
+        // Allow another pass if Firebase was not ready on the first try.
+        if (Categories.Count == 0)
+            _categoriesRequested = false;
         await InvokeAsync(StateHasChanged);
     }
 
     private async Task EnsureProductsAsync()
     {
-        if (_productsRequested
-            || NewArrivals.Count > 0
+        if (NewArrivals.Count > 0
             || FeaturedProducts.Count > 0
             || BestSellerProducts.Count > 0)
+            return;
+        if (_productsRequested && isLoadingProducts)
             return;
 
         _productsRequested = true;
         await LoadHomeProductsAsync();
+        if (NewArrivals.Count == 0
+            && FeaturedProducts.Count == 0
+            && BestSellerProducts.Count == 0)
+            _productsRequested = false;
         await InvokeAsync(StateHasChanged);
     }
 

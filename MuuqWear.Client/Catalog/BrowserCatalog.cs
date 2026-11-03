@@ -17,15 +17,19 @@ public sealed class BrowserCatalog
 
     public async Task<List<ProductModel>> ProductsAsync()
     {
-        if (_products is not null)
+        if (_products is { Count: > 0 })
             return _products;
         var rows = await ReadAsync("muuqFirebase.listProducts");
-        _products = rows
+        var mapped = rows
             .Select(ToProduct)
             .Where(p => p.IsActive)
             .OrderBy(p => p.Name)
             .ToList();
-        return _products;
+        // Do not memoize an empty list — first paint can race Firebase init and
+        // would otherwise stick the home page on permanent "Loading…"/blank grids.
+        if (mapped.Count > 0)
+            _products = mapped;
+        return mapped;
     }
 
     public async Task<ProductModel?> ProductAsync(string id)
@@ -55,10 +59,10 @@ public sealed class BrowserCatalog
 
     public async Task<List<CategoryModel>> CategoriesAsync()
     {
-        if (_categories is not null)
+        if (_categories is { Count: > 0 })
             return _categories;
         var rows = await ReadAsync("muuqFirebase.listCollections");
-        _categories = rows
+        var mapped = rows
             .Select(row =>
             {
                 Guid.TryParse(row.Id, out var id);
@@ -66,9 +70,9 @@ public sealed class BrowserCatalog
             })
             .OrderBy(c => c.Name)
             .ToList();
-        if (_categories.Count == 0)
+        if (mapped.Count == 0)
         {
-            _categories = (await ProductsAsync())
+            mapped = (await ProductsAsync())
                 .Where(p => p.CategoryId is Guid)
                 .GroupBy(p => p.CategoryId!.Value)
                 .Select(g => new CategoryModel
@@ -79,23 +83,27 @@ public sealed class BrowserCatalog
                 .OrderBy(c => c.Name)
                 .ToList();
         }
-        return _categories;
+        if (mapped.Count > 0)
+            _categories = mapped;
+        return mapped;
     }
 
     public async Task<List<ContentItemModel>> JournalAsync()
     {
-        if (_journal is not null)
+        if (_journal is { Count: > 0 })
             return _journal;
         var rows = await ReadAsync("muuqFirebase.listJournal");
         var type = ContentCategory.JournalArticles.ToString();
-        _journal = rows
+        var mapped = rows
             .Select(ToJournal)
             .Where(i => i.IsPublished)
             .Where(i => string.IsNullOrWhiteSpace(i.Category)
                         || string.Equals(i.Category, type, StringComparison.OrdinalIgnoreCase))
             .OrderByDescending(i => i.CreatedAt)
             .ToList();
-        return _journal;
+        if (mapped.Count > 0)
+            _journal = mapped;
+        return mapped;
     }
 
     private async Task<List<CatalogDoc>> ReadAsync(string name)

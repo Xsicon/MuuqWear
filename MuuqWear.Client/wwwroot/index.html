@@ -6,7 +6,39 @@
     <base href="/" />
     <title>MuuqWear</title>
     <style>
-        html, body { margin: 0; padding: 0; background: #F7F8FA; }
+        html, body, #app { margin: 0; padding: 0; background: #F7F8FA; }
+        .mw-boot .mw-header__mobile, .mw-boot .mw-header__desktop, .mw-boot .mw-header__icons { display: flex; align-items: center; }
+        .mw-boot .mw-logo { color: #1E2A47; text-decoration: none; }
+        .mw-boot .mw-nav { display: flex; align-items: center; gap: 21px; }
+        .mw-boot .mw-nav__link { color: #4A5C7A; text-decoration: none; text-transform: uppercase; letter-spacing: 1.2px; font: 600 13px/1 system-ui, sans-serif; }
+        .mw-boot .mw-header__mobile { gap: 6px; }
+        .mw-boot .mw-header__desktop { gap: 32px; }
+        .mw-boot .mw-header__icons { gap: 13px; }
+        .mw-boot .mw-icon-btn { display: flex; align-items: center; justify-content: center; border: 0; background: transparent; color: #1E2A47; padding: 10px; text-decoration: none; }
+        .mw-boot .mw-hero-section { position: relative; width: 100%; background: #0B1A33; }
+        .mw-boot .mw-hero, .mw-boot .mw-slide { position: relative; width: 100%; height: min(620px, 88vh); min-height: 480px; overflow: hidden; background: #0B1A33; }
+        .mw-boot .mw-slide__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+        .mw-boot .mw-slide__overlay { position: absolute; inset: 0; background: linear-gradient(to right, rgba(30,42,71,.75), rgba(30,42,71,.45) 55%, rgba(30,42,71,.15)); }
+        .mw-boot .mw-slide__content { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end; padding: 0 16px 56px; color: #fff; }
+        .mw-boot .mw-slide__label { margin: 0 0 13px; font: 700 12px/1.2 system-ui, sans-serif; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,.6); }
+        .mw-boot .mw-slide__title { margin: 0 0 21px; font: 800 clamp(28px, 8vw, 36px)/1.05 system-ui, sans-serif; letter-spacing: -1.5px; }
+        .mw-boot .mw-slide__cta { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px 21px; background: #fff; color: #1E2A47; font: 700 13px/1 system-ui, sans-serif; letter-spacing: 1px; text-transform: uppercase; text-decoration: none; }
+        .mw-boot .mw-hero-nav { position: absolute; top: 50%; transform: translateY(-50%); z-index: 2; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.3); color: #fff; }
+        .mw-boot .mw-hero-nav--prev { left: 8px; }
+        .mw-boot .mw-hero-nav--next { right: 8px; }
+        .mw-boot .mw-hero-progress { position: absolute; left: 16px; right: 16px; bottom: 16px; z-index: 2; display: flex; gap: 8px; }
+        .mw-boot .mw-hero-progress span { flex: 1; height: 3px; background: rgba(255,255,255,.2); }
+        .mw-boot .mw-hero-progress span:first-child { background: rgba(255,255,255,.85); }
+        @media (min-width: 768px) {
+            .mw-boot .mw-hero, .mw-boot .mw-slide { height: 700px; min-height: 700px; }
+            .mw-boot .mw-slide__content { justify-content: center; padding: 0 55px; }
+            .mw-boot .mw-slide__title { font-size: 72px; line-height: 1; letter-spacing: -3px; }
+            .mw-boot .mw-slide__cta { width: auto; align-self: flex-start; padding: 13px 34px; font-size: 14px; }
+            .mw-boot .mw-hero-nav { width: 55px; height: 55px; }
+            .mw-boot .mw-hero-nav--prev { left: 21px; }
+            .mw-boot .mw-hero-nav--next { right: 21px; }
+            .mw-boot .mw-hero-progress { left: 55px; right: 55px; bottom: 34px; }
+        }
         .mw-logo { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
         .mw-logo__img { width: 32px; height: 32px; max-width: 32px; object-fit: contain; display: block; flex-shrink: 0; }
         .mw-header { position: sticky; top: 0; z-index: 1000; background: #fff; }
@@ -25,7 +57,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Playfair+Display:ital,wght@0,400;0,700;0,800;1,400;1,700;1,800&amp;display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="bootstrap/bootstrap.min.css" />
     <link rel="stylesheet" href="app.css?v=20261102lazy" />
-    <link rel="stylesheet" href="MuuqWear.Web.styles.css" />
+    <link rel="stylesheet" href="MuuqWear.Shopper.styles.css" />
     <link rel="stylesheet" href="lib/swiper/swiper-bundle.min.css" />
     <link rel="icon" href="/favicon.ico" sizes="32x32" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
@@ -34,11 +66,63 @@
     <meta name="theme-color" content="#1E2A47" />
 </head>
 <body>
-    <div id="app"></div>
+    <div id="app">
+        <div id="mw-boot" class="mw-boot">
+            <header class="mw-header">
+                <div class="mw-header__inner">
+                    <a href="/" class="mw-logo text-decoration-none">
+                        <img src="/images/muuqwearlogo.png" alt="MuuqWear" class="mw-logo__img" width="32" height="32" />
+                        <span class="mw-logo__text text-uppercase fw-bolder ms-2 d-none d-md-flex">MuuqWear</span>
+                    </a>
+                    <div class="mw-header__desktop d-none d-md-flex">
+                        <nav class="mw-nav">
+                            <a class="mw-nav__link" href="/">Home</a>
+                            <a class="mw-nav__link" href="/shop/apparel">Apparel</a>
+                            <a class="mw-nav__link" href="/shop/accessories">Accessories</a>
+                            <a class="mw-nav__link" href="/community">Community</a>
+                            <a class="mw-nav__link" href="/journal">Journal</a>
+                        </nav>
+                    </div>
+                    <div class="mw-header__mobile d-flex d-md-none">
+                        <a href="/shop" class="mw-icon-btn" aria-label="Search"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></a>
+                        <a href="/cart" class="mw-icon-btn" aria-label="Cart"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg></a>
+                        <a href="/login" class="mw-icon-btn mw-header-guest" aria-label="Sign in"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></a>
+                        <a href="/profile" class="mw-icon-btn mw-header-member" aria-label="Profile"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></a>
+                        <a href="/" class="mw-icon-btn" aria-label="Menu"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="18" y2="18"/></svg></a>
+                    </div>
+                </div>
+            </header>
+            <section class="mw-hero-section">
+                <div class="mw-hero">
+                    <div class="mw-slide">
+                        <img class="mw-slide__img" alt="The Sapphire Collection" fetchpriority="high" src="https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=1600&amp;h=900&amp;fit=crop" />
+                        <div class="mw-slide__overlay"></div>
+                        <div class="mw-slide__content">
+                            <p class="mw-slide__label">Limited Release</p>
+                            <h1 class="mw-slide__title">The Sapphire Collection</h1>
+                            <a class="mw-slide__cta" href="/shop">Explore the Collection <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+                        </div>
+                    </div>
+                </div>
+                <span class="mw-hero-nav mw-hero-nav--prev" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg></span>
+                <span class="mw-hero-nav mw-hero-nav--next" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></span>
+                <div class="mw-hero-progress" aria-hidden="true"><span></span><span></span><span></span></div>
+            </section>
+        </div>
+    </div>
+    <script>
+        (function () {
+            var path = (location.pathname || "/").replace(/\/+$/, "") || "/";
+            if (path !== "/") {
+                var boot = document.getElementById("mw-boot");
+                if (boot) boot.remove();
+            }
+        })();
+    </script>
     <script src="lib/swiper/swiper-bundle.min.js"></script>
     <script src="js/carousel.js"></script>
     <script src="js/site.js?v=20261029wasm"></script>
-    <script src="js/firebase-auth.js?v=20261029off"></script>
+    <script src="js/firebase-auth.js?v=20261102server"></script>
     <script src="js/chat-scroll.js"></script>
     <script src="_framework/blazor.webassembly.js" autostart="false"></script>
     <script src="js/image-load.js?v=20261102lazy"></script>

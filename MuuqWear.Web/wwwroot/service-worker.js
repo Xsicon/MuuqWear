@@ -1,11 +1,11 @@
-const SHELL = 'mw-shell-v22';
+const SHELL = 'mw-shell-v23';
 const CATALOG = 'mw-catalog-v1';
 
 const SHELL_ASSETS = [
     '/',
     '/app.css',
     '/bootstrap/bootstrap.min.css',
-    '/MuuqWear.Web.styles.css',
+    '/MuuqWear.Shopper.styles.css',
     '/js/site.js?v=20261021b',
     '/js/firebase-auth.js?v=20261023a',
     '/js/blazor-boot.js',
@@ -77,6 +77,7 @@ self.addEventListener('fetch', function (event) {
 function isPassthrough(url) {
     var path = url.pathname;
     return path.startsWith('/admin')
+        || path === '/MuuqWear.Web.styles.css'
         || path.startsWith('/auth')
         || path.startsWith('/checkout')
         || path.startsWith('/_blazor')

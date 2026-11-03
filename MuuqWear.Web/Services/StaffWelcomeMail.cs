@@ -31,6 +31,7 @@ public sealed class StaffWelcomeMail
         request.Content = JsonContent.Create(new PostmarkPayload
         {
             From = from,
+            ReplyTo = _config["POSTMARK_REPLY_TO"] ?? "Info@muuqwear.com",
             To = email,
             Subject = "Set your MuuqWear dashboard password",
             HtmlBody = Html(safeName, email, link),
@@ -88,6 +89,7 @@ public sealed class StaffWelcomeMail
     private sealed class PostmarkPayload
     {
         [JsonPropertyName("From")] public string From { get; set; } = "";
+        [JsonPropertyName("ReplyTo")] public string ReplyTo { get; set; } = "";
         [JsonPropertyName("To")] public string To { get; set; } = "";
         [JsonPropertyName("Subject")] public string Subject { get; set; } = "";
         [JsonPropertyName("HtmlBody")] public string HtmlBody { get; set; } = "";

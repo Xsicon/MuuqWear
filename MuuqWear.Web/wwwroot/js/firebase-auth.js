@@ -113,14 +113,19 @@ window.muuqFirebase = (function () {
                 db = firestoreMod.getFirestore(app);
                 firestoreMod.connectFirestoreEmulator(db, "127.0.0.1", 8080);
             } else {
-                db = firestoreMod.initializeFirestore(app, {
-                    localCache: firestoreMod.persistentLocalCache({
-                        tabManager: firestoreMod.persistentMultipleTabManager()
-                    })
-                });
+                try {
+                    db = firestoreMod.initializeFirestore(app, {
+                        localCache: firestoreMod.persistentLocalCache({
+                            tabManager: firestoreMod.persistentMultipleTabManager()
+                        })
+                    });
+                } catch (cacheError) {
+                    console.warn("Firestore offline cache did not start; using memory cache", cacheError);
+                    db = firestoreMod.getFirestore(app);
+                }
             }
         } catch (error) {
-            console.warn("Firestore offline cache did not start", error);
+            console.warn("Firestore did not start", error);
             db = null;
             firestoreMod = null;
         }
@@ -302,14 +307,18 @@ window.muuqFirebase = (function () {
             if (!auth || !auth.currentUser) return null;
             return await auth.currentUser.getIdToken(!!forceRefresh);
         },
-        listProducts: function () { return catalogQuery("products"); },
-        listCollections: function () { return catalogQuery("collections"); },
-        listJournal: function () { return catalogQuery("content"); },
+        listProducts: function () { return catalogQuery("products", true); },
+        // Rules only allow guest list when the query constrains status == published.
+        listCollections: function () { return catalogQuery("collections", true); },
+        listJournal: function () { return catalogQuery("content", true); },
         getProduct: async function (id) {
             if (initPromise) await initPromise;
             if (!db || !firestoreMod || !id) return null;
             try {
-                var snap = await firestoreMod.getDoc(firestoreMod.doc(db, "products", String(id)));
+                var ref = firestoreMod.doc(db, "products", String(id));
+                var snap = firestoreMod.getDocFromServer
+                    ? await firestoreMod.getDocFromServer(ref)
+                    : await firestoreMod.getDoc(ref);
                 if (!snap.exists()) return null;
                 var row = toCatalogRow(snap);
                 return row.status === "published" ? row : null;
@@ -320,14 +329,21 @@ window.muuqFirebase = (function () {
         }
     };
 
-    async function catalogQuery(name) {
+    async function catalogQuery(name, publishedOnly) {
         if (initPromise) await initPromise;
         if (!db || !firestoreMod) return [];
         try {
-            var q = firestoreMod.query(
-                firestoreMod.collection(db, name),
-                firestoreMod.where("status", "==", "published"));
-            var snap = await firestoreMod.getDocs(q);
+            var col = firestoreMod.collection(db, name);
+            // Guest rules require status == published on list queries; unfiltered
+            // collection scans are permission-denied and must not be used.
+            var q = publishedOnly
+                ? firestoreMod.query(col, firestoreMod.where("status", "==", "published"))
+                : col;
+            // Persistent IndexedDB cache can serve a stale empty snapshot without
+            // hitting the network — always read catalog from the server.
+            var snap = firestoreMod.getDocsFromServer
+                ? await firestoreMod.getDocsFromServer(q)
+                : await firestoreMod.getDocs(q);
             return snap.docs.map(toCatalogRow);
         } catch (error) {
             console.warn("catalog list failed", name, error);

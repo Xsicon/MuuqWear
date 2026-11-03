@@ -3,7 +3,7 @@ namespace MuuqWear.Model.Site;
 public static class PageCopy
 {
     public const string SupportEmail = "Info@muuqwear.com";
-    public const string FooterEmail = "Info@KobNeti.com";
+    public const string FooterEmail = "Info@muuqwear.com";
 
     public const string HeroHeadline = "Wear your look.";
     public const string HeroSubline = "Modern essentials, designed clean and made to last. MuuqWear is coming soon.";

@@ -21,6 +21,7 @@ async function sendPostmark(to, subject, html, text) {
         },
         body: JSON.stringify({
             From: FROM,
+            ReplyTo: process.env.POSTMARK_REPLY_TO || "Info@muuqwear.com",
             To: to,
             Subject: subject,
             HtmlBody: html,

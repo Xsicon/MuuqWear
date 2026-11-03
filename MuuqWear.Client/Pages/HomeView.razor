@@ -17,7 +17,7 @@
                     <div class="mw-slide">
                         <img src="@slide.Image"
                              alt="@slide.Headline"
-                             class="mw-slide__img"
+                             class="mw-slide__img@(slideIdx == 0 ? " mw-img-ready" : "")"
                              loading="@(slideIdx == 0 ? null : "lazy")" />
                         <div class="mw-slide__overlay"></div>
                         <div class="mw-slide__content">

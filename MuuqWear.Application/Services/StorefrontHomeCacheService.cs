@@ -89,7 +89,9 @@ public sealed class StorefrontHomeCacheService
         try
         {
             var result = await _productService.GetHomeProducts();
-            if (result.Success && result.Data != null)
+            // Never memoize an empty home payload — a Firestore cache miss / race
+            // would otherwise blank New Arrivals for the full cache window.
+            if (result.Success && result.Data != null && HasAnyHomeProducts(result.Data))
             {
                 _homeProducts = result.Data;
                 _homeCachedAt = DateTime.UtcNow;
@@ -111,7 +113,7 @@ public sealed class StorefrontHomeCacheService
         try
         {
             var result = await _categoryService.GetAll();
-            if (result.Success && result.Data != null)
+            if (result.Success && result.Data is { Count: > 0 })
             {
                 _categories = result.Data;
                 _categoriesCachedAt = DateTime.UtcNow;
@@ -129,4 +131,9 @@ public sealed class StorefrontHomeCacheService
 
     private static bool IsFresh(DateTime cachedAt) =>
         cachedAt != default && DateTime.UtcNow - cachedAt < CacheDuration;
+
+    private static bool HasAnyHomeProducts(HomeProductsModel data) =>
+        (data.NewArrivals?.Count ?? 0) > 0
+        || (data.Featured?.Count ?? 0) > 0
+        || (data.BestSellers?.Count ?? 0) > 0;
 }
