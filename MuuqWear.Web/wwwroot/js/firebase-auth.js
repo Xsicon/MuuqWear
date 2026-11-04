@@ -295,10 +295,15 @@ window.muuqFirebase = (function () {
         },
         sendPasswordReset: function (email) {
             return withUser(async function () {
-                await authMod.sendPasswordResetEmail(auth, email, {
-                    url: "https://muuqwear.com/auth/action",
-                    handleCodeInApp: true
+                var response = await fetch("/api/auth/password-reset", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email: email })
                 });
+                var payload = {};
+                try { payload = await response.json(); } catch (error) { payload = {}; }
+                if (!response.ok || payload.success === false)
+                    return { ok: false, message: payload.message || "Unable to send the reset email." };
                 return { ok: true };
             });
         },

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using Microsoft.Extensions.Configuration;
 using MuuqWear.Application.Shared;
+using MuuqWear.Web.Services;
 using MuuqWear.Model.Authentication;
 using MuuqWear.Model.OrderReturn;
 using System.Net.Http.Json;
@@ -13,15 +14,22 @@ public class AuthService : IAuthService
     private readonly ProtectedSessionStorage _sessionStorage;
     private readonly IConfiguration _config;
     private readonly StaffSessionJwt _staffJwt;
+    private readonly ShopperPasswordReset _shopperReset;
     public bool IsNewSignup { get; private set; } = false;
 
 
-    public AuthService(HttpClient http, ProtectedSessionStorage sessionStorage, IConfiguration config, StaffSessionJwt staffJwt)
+    public AuthService(
+        HttpClient http,
+        ProtectedSessionStorage sessionStorage,
+        IConfiguration config,
+        StaffSessionJwt staffJwt,
+        ShopperPasswordReset shopperReset)
     {
         this._http = http;
         this._sessionStorage = sessionStorage;
         _config = config;
         _staffJwt = staffJwt;
+        _shopperReset = shopperReset;
     }
     public async Task<Response<int>> Register(RegisterModel request)
     {
@@ -174,33 +182,8 @@ public class AuthService : IAuthService
     public Task<Response<string>> GetGoogleSignInUrl(string? redirectTo = null) =>
         Task.FromResult(Response<string>.Fail("Sign in with email and password."));
 
-    public async Task<Response<int>> SendPasswordReset(ForgotPasswordModel request)
-    {
-        //  validate before hitting API — no need to waste a network call
-        if (string.IsNullOrWhiteSpace(request.Email))
-            return new Response<int>
-            {
-                Success = false,
-                Message = "Email is required"
-            };
-
-        try
-        {
-            var apiKey = _config["Firebase:ApiKey"];
-            if (string.IsNullOrWhiteSpace(apiKey))
-                return Response<int>.Fail("Unable to send the reset email.");
-            using var result = await _http.PostAsJsonAsync(
-                IdentityUrl("accounts:sendOobCode", apiKey),
-                new { requestType = "PASSWORD_RESET", email = request.Email });
-            if (!result.IsSuccessStatusCode)
-                return Response<int>.Fail("Unable to send the reset email.");
-            return Response<int>.SuccessResponse(1, "Check your email");
-        }
-        catch (Exception)
-        {
-            return Response<int>.Fail("Unable to send the reset email.");
-        }
-    }
+    public Task<Response<int>> SendPasswordReset(ForgotPasswordModel request) =>
+        _shopperReset.SendAsync(request.Email, CancellationToken.None);
 
     public async Task<Response<int>> UpdatePassword(ResetPasswordModel request)
     {

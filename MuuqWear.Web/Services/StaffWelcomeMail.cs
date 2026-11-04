@@ -4,7 +4,7 @@ using MuuqWear.Web.Constants;
 
 namespace MuuqWear.Web.Services;
 
-public sealed class StaffWelcomeMail
+public sealed class StaffWelcomeMail : IShopperResetMail
 {
     private readonly IHttpClientFactory _http;
     private readonly IConfiguration _config;
@@ -15,16 +15,50 @@ public sealed class StaffWelcomeMail
         _config = config;
     }
 
-    public async Task SendPasswordResetAsync(string email, string name, string link, CancellationToken cancellationToken)
+    public Task SendPasswordResetAsync(string email, string name, string link, CancellationToken cancellationToken)
+    {
+        var safeName = string.IsNullOrWhiteSpace(name) ? email : name;
+        var from = _config["POSTMARK_FROM"] ?? _config["Postmark:FromEmail"] ?? ShopperFrom;
+        return DeliverAsync(
+            email,
+            from,
+            "Set your MuuqWear dashboard password",
+            Html(safeName, email, link),
+            Text(safeName, email, link),
+            "staff-password",
+            cancellationToken);
+    }
+
+    public Task SendShopperPasswordResetAsync(string email, string name, string link, CancellationToken cancellationToken)
+    {
+        var safeName = string.IsNullOrWhiteSpace(name) ? email : name;
+        return DeliverAsync(
+            email,
+            ShopperFrom,
+            "Reset your MuuqWear password",
+            ShopperHtml(safeName, link),
+            ShopperText(safeName, link),
+            "shopper-password",
+            cancellationToken);
+    }
+
+    public const string ShopperFrom = "MuuqWear <noreply@muuqwear.com>";
+
+    private async Task DeliverAsync(
+        string email,
+        string from,
+        string subject,
+        string html,
+        string text,
+        string tag,
+        CancellationToken cancellationToken)
     {
         var token = _config["POSTMARK_SERVER_TOKEN"]
             ?? _config["Postmark:ServerToken"]
             ?? _config["postmark-server-token"];
-        var from = _config["POSTMARK_FROM"] ?? _config["Postmark:FromEmail"] ?? "MuuqWear <noreply@muuqwear.com>";
         if (string.IsNullOrWhiteSpace(token))
             throw new InvalidOperationException("Password email is not configured.");
 
-        var safeName = string.IsNullOrWhiteSpace(name) ? email : name;
         var client = _http.CreateClient();
         using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.postmarkapp.com/email");
         request.Headers.TryAddWithoutValidation("X-Postmark-Server-Token", token);
@@ -33,11 +67,11 @@ public sealed class StaffWelcomeMail
             From = from,
             ReplyTo = _config["POSTMARK_REPLY_TO"] ?? "Info@muuqwear.com",
             To = email,
-            Subject = "Set your MuuqWear dashboard password",
-            HtmlBody = Html(safeName, email, link),
-            TextBody = Text(safeName, email, link),
+            Subject = subject,
+            HtmlBody = html,
+            TextBody = text,
             MessageStream = "outbound",
-            Tag = "staff-password"
+            Tag = tag
         });
         using var response = await client.SendAsync(request, cancellationToken);
         if (!response.IsSuccessStatusCode)
@@ -85,6 +119,40 @@ public sealed class StaffWelcomeMail
 
     private static string Text(string name, string email, string link) =>
         $"Set your dashboard password\n\n{name}, set a password for {email}:\n{link}\n\nThen sign in at https://muuqwear.com{AdminPortalPaths.Login}\n";
+
+    private static string ShopperHtml(string name, string link)
+    {
+        var safeName = System.Net.WebUtility.HtmlEncode(name);
+        var safeLink = System.Net.WebUtility.HtmlEncode(link);
+        return $"""
+            <!DOCTYPE html>
+            <html lang="en">
+            <body style="margin:0;padding:0;background:#F5F6F8;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#F5F6F8;">
+                <tr><td align="center" style="padding:32px 16px;">
+                  <table role="presentation" width="560" cellspacing="0" cellpadding="0" style="max-width:560px;width:100%;background:#ffffff;border-radius:8px;">
+                    <tr><td align="center" style="padding:40px 32px 12px;">
+                      <img src="https://muuqwear.com/apple-touch-icon.png" width="56" height="56" alt="MuuqWear" style="display:block;border:0;">
+                    </td></tr>
+                    <tr><td align="center" style="padding:8px 32px 0;font-family:Arial,Helvetica,sans-serif;color:#1E2A47;font-size:24px;font-weight:700;">
+                      Reset your password
+                    </td></tr>
+                    <tr><td align="center" style="padding:12px 40px 28px;font-family:Arial,Helvetica,sans-serif;color:#6c7a92;font-size:15px;line-height:22px;">
+                      {safeName}, use this link to choose a new password for your MuuqWear account.
+                    </td></tr>
+                    <tr><td align="center" style="padding:0 32px 36px;">
+                      <a href="{safeLink}" style="display:inline-block;background:#1E2A47;color:#ffffff;text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:700;padding:14px 28px;border-radius:4px;">Reset password</a>
+                    </td></tr>
+                  </table>
+                </td></tr>
+              </table>
+            </body>
+            </html>
+            """;
+    }
+
+    private static string ShopperText(string name, string link) =>
+        $"Reset your password\n\n{name}, choose a new password for your MuuqWear account:\n{link}\n";
 
     private sealed class PostmarkPayload
     {

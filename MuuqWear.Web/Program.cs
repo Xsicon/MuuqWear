@@ -35,6 +35,7 @@ using MuuqWear.Application.Shared;
 using MuuqWear.Client.Auth;
 using MuuqWear.Client.Checkout;
 using MuuqWear.Client.Offline;
+using MuuqWear.Model.Authentication;
 using MuuqWear.Model.Site;
 using MuuqWear.Web.Authorization;
 using MuuqWear.Web.Components;
@@ -77,6 +78,16 @@ builder.Services.AddSingleton<IFirebaseIdTokenVerifier, FirebaseIdTokenVerifier>
 builder.Services.AddSingleton<CookieSessionVerifier>();
 builder.Services.AddSingleton<AdminFirestore>();
 builder.Services.AddSingleton<StaffWelcomeMail>();
+builder.Services.AddSingleton<IShopperResetMail>(sp => sp.GetRequiredService<StaffWelcomeMail>());
+builder.Services.AddSingleton<IShopperResetAccount, FirebaseShopperResetAccount>();
+builder.Services.AddSingleton<PasswordResetThrottle>();
+builder.Services.AddSingleton(sp => new ShopperPasswordReset(
+    sp.GetRequiredService<IShopperResetAccount>(),
+    sp.GetRequiredService<IShopperResetMail>(),
+    sp.GetRequiredService<PasswordResetThrottle>(),
+    sp.GetRequiredService<IHttpContextAccessor>(),
+    TimeProvider.System,
+    TimeSpan.FromMilliseconds(600)));
 builder.Services.AddScoped<IStaffUserService, FirebaseStaffUserService>();
 builder.Services.AddScoped<IProductService, FirestoreProductService>();
 builder.Services.AddScoped<IOrderService, FirestoreOrderService>();
@@ -297,6 +308,19 @@ app.MapGet("/api/Category/{**rest}", ServeStorefrontCatalog);
 app.MapGet("/api/Journal", ServeStorefrontCatalog);
 app.MapGet("/api/Journal/{**rest}", ServeStorefrontCatalog);
 app.MapShopperAccount();
+app.MapPost("/api/auth/password-reset", async (
+    ForgotPasswordModel body,
+    ShopperPasswordReset reset,
+    CancellationToken cancellationToken) =>
+{
+    var result = await reset.SendAsync(body.Email, cancellationToken);
+    if (result.Success)
+        return Results.Ok(result);
+    var status = result.Message.Contains("too many", StringComparison.OrdinalIgnoreCase)
+        ? StatusCodes.Status429TooManyRequests
+        : StatusCodes.Status400BadRequest;
+    return Results.Json(result, statusCode: status);
+}).DisableAntiforgery();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
