@@ -1,11 +1,14 @@
 using BlazorBootstrap;
 using FirebaseAdmin;
+using Google.Cloud.Firestore;
 using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
 using MuuqWear.Application.Interfaces;
 using MuuqWear.Application.Services.AddressService;
 using MuuqWear.Application.Services.AdminBadgeService;
@@ -44,7 +47,6 @@ using MuuqWear.Web.Constants;
 using MuuqWear.Web.Helpers;
 using MuuqWear.Web.ServerAuth;
 using MuuqWear.Web.Services;
-using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.HttpOverrides;
 using System.Security.Claims;
 
@@ -161,12 +163,15 @@ builder.Services.AddScoped<IJobPostingService, FirestoreJobPostingService>();
 
 
 
-var dataProtectionBucket = builder.Configuration["DataProtection:Bucket"];
-if (!builder.Environment.IsDevelopment() && !string.IsNullOrWhiteSpace(dataProtectionBucket))
+if (!builder.Environment.IsDevelopment())
 {
-    builder.Services.AddDataProtection()
-        .SetApplicationName("muuqwear-web")
-        .PersistKeysToGoogleCloudStorage(dataProtectionBucket.Trim(), "dataprotection/keys.xml");
+    builder.Services.AddDataProtection().SetApplicationName("muuqwear-web");
+    builder.Services.AddSingleton<IConfigureOptions<KeyManagementOptions>>(sp =>
+        new ConfigureOptions<KeyManagementOptions>(o =>
+        {
+            var projectId = sp.GetRequiredService<IConfiguration>()["Firebase:ProjectId"] ?? "muuqwear-6e2e0";
+            o.XmlRepository = new FirestoreXmlRepository(FirestoreDb.Create(projectId));
+        }));
 }
 
 builder.Services.AddSingleton<HmacAuthTicketFormat>();
@@ -364,7 +369,7 @@ var components = app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 components.Add(e =>
 {
-    var opts = e.Metadata.OfType<HttpConnectionDispatcherOptions>().FirstOrDefault();
+    var opts = e.Metadata.OfType<Microsoft.AspNetCore.Http.Connections.HttpConnectionDispatcherOptions>().FirstOrDefault();
     if (opts is not null)
         opts.LongPolling.PollTimeout = TimeSpan.FromSeconds(45);
 });
