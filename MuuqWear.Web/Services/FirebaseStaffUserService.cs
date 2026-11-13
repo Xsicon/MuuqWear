@@ -4,6 +4,7 @@ using MuuqWear.Application.Shared;
 using MuuqWear.Model.Staff;
 using MuuqWear.Web.Constants;
 using MuuqWear.Web.Helpers;
+using MuuqWear.Web.ServerAuth;
 
 namespace MuuqWear.Web.Services;
 
@@ -150,12 +151,12 @@ public sealed class FirebaseStaffUserService : IStaffUserService
 
     private async Task SendResetAsync(string email, string name, CancellationToken cancellationToken)
     {
-        var site = (_config["FrontendBaseUrl"] ?? "https://muuqwear.com").TrimEnd('/');
+        var signIn = HostRouting.AdminSignInUrl(_config["AdminHost"], _config["PublicHost"]);
         var link = await FirebaseAuth.DefaultInstance.GeneratePasswordResetLinkAsync(
             email,
             new ActionCodeSettings
             {
-                Url = site + AdminPortalPaths.Login,
+                Url = signIn,
                 HandleCodeInApp = false
             },
             cancellationToken);

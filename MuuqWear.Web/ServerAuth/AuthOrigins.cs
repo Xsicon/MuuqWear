@@ -27,6 +27,7 @@ public static class AuthOrigins
             "127.0.0.1"
         };
         Add(hosts, config["PublicHost"]);
+        Add(hosts, config["AdminHost"]);
         Add(hosts, config["FrontendBaseUrl"]);
         Add(hosts, config["Firebase:AuthDomain"]);
         if (hosts.Contains("muuqwear.com"))

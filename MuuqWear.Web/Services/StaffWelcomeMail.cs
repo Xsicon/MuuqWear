@@ -1,6 +1,6 @@
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
-using MuuqWear.Web.Constants;
+using MuuqWear.Web.ServerAuth;
 
 namespace MuuqWear.Web.Services;
 
@@ -18,13 +18,14 @@ public sealed class StaffWelcomeMail : IShopperResetMail
     public Task SendPasswordResetAsync(string email, string name, string link, CancellationToken cancellationToken)
     {
         var safeName = string.IsNullOrWhiteSpace(name) ? email : name;
+        var signIn = HostRouting.AdminSignInUrl(_config["AdminHost"], _config["PublicHost"]);
         var from = _config["POSTMARK_FROM"] ?? _config["Postmark:FromEmail"] ?? ShopperFrom;
         return DeliverAsync(
             email,
             from,
             "Set your MuuqWear dashboard password",
-            Html(safeName, email, link),
-            Text(safeName, email, link),
+            Html(safeName, email, link, signIn),
+            Text(safeName, email, link, signIn),
             "staff-password",
             cancellationToken);
     }
@@ -81,11 +82,12 @@ public sealed class StaffWelcomeMail : IShopperResetMail
         }
     }
 
-    private static string Html(string name, string email, string link)
+    private static string Html(string name, string email, string link, string signInUrl)
     {
         var safeName = System.Net.WebUtility.HtmlEncode(name);
         var safeEmail = System.Net.WebUtility.HtmlEncode(email);
         var safeLink = System.Net.WebUtility.HtmlEncode(link);
+        var safeSignIn = System.Net.WebUtility.HtmlEncode(signInUrl);
         return $"""
             <!DOCTYPE html>
             <html lang="en">
@@ -107,7 +109,7 @@ public sealed class StaffWelcomeMail : IShopperResetMail
                     </td></tr>
                     <tr><td align="center" style="padding:0 40px 36px;font-family:Arial,Helvetica,sans-serif;color:#A9B7CC;font-size:12px;line-height:18px;">
                       After you set a password, sign in at<br>
-                      <a href="https://muuqwear.com{AdminPortalPaths.Login}" style="color:#1E2A47;">{System.Net.WebUtility.HtmlEncode("https://muuqwear.com" + AdminPortalPaths.Login)}</a>
+                      <a href="{safeSignIn}" style="color:#1E2A47;">{safeSignIn}</a>
                     </td></tr>
                   </table>
                 </td></tr>
@@ -117,8 +119,8 @@ public sealed class StaffWelcomeMail : IShopperResetMail
             """;
     }
 
-    private static string Text(string name, string email, string link) =>
-        $"Set your dashboard password\n\n{name}, set a password for {email}:\n{link}\n\nThen sign in at https://muuqwear.com{AdminPortalPaths.Login}\n";
+    private static string Text(string name, string email, string link, string signInUrl) =>
+        $"Set your dashboard password\n\n{name}, set a password for {email}:\n{link}\n\nThen sign in at {signInUrl}\n";
 
     private static string ShopperHtml(string name, string link)
     {

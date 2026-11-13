@@ -13,6 +13,7 @@ public class AuthOriginsTests
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["PublicHost"] = "muuqwear.com",
+                ["AdminHost"] = "admin.muuqwear.com",
                 ["FrontendBaseUrl"] = "https://muuqwear-6e2e0.web.app",
                 ["Firebase:AuthDomain"] = "muuqwear-6e2e0.firebaseapp.com"
             })
@@ -21,6 +22,7 @@ public class AuthOriginsTests
         var hosts = AuthOrigins.AllowedHosts(config);
 
         Assert.Contains("muuqwear.com", hosts);
+        Assert.Contains("admin.muuqwear.com", hosts);
         Assert.Contains("www.muuqwear.com", hosts);
         Assert.Contains("muuqwear-6e2e0.web.app", hosts);
         Assert.Contains("muuqwear-6e2e0.firebaseapp.com", hosts);

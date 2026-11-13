@@ -52,7 +52,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor
-        | ForwardedHeaders.XForwardedProto;
+        | ForwardedHeaders.XForwardedProto
+        | ForwardedHeaders.XForwardedHost;
     options.KnownNetworks.Clear();
     options.KnownProxies.Clear();
     options.RequireHeaderSymmetry = false;
@@ -223,15 +224,39 @@ var app = builder.Build();
 app.UseForwardedHeaders();
 app.Use(async (ctx, next) =>
 {
+    var config = ctx.RequestServices.GetRequiredService<IConfiguration>();
+    var adminHost = HostRouting.NormalizeHost(config["AdminHost"]);
     var host = ctx.Request.Host.Host;
-    if (host.Contains("run.app", StringComparison.OrdinalIgnoreCase)
-        || host.Contains("web.app", StringComparison.OrdinalIgnoreCase)
-        || host.Contains("firebaseapp.com", StringComparison.OrdinalIgnoreCase))
+    var onAdminHost = !string.IsNullOrEmpty(adminHost)
+        && host.Equals(adminHost, StringComparison.OrdinalIgnoreCase);
+
+    if (!onAdminHost
+        && (host.Contains("run.app", StringComparison.OrdinalIgnoreCase)
+            || host.Contains("web.app", StringComparison.OrdinalIgnoreCase)
+            || host.Contains("firebaseapp.com", StringComparison.OrdinalIgnoreCase)))
     {
-        var canonical = ctx.RequestServices.GetRequiredService<IConfiguration>()["PublicHost"];
+        var canonical = config["PublicHost"];
         if (string.IsNullOrWhiteSpace(canonical))
             canonical = "muuqwear.com";
         ctx.Request.Host = new HostString(canonical);
+        host = ctx.Request.Host.Host;
+        onAdminHost = false;
+    }
+
+    if (!app.Environment.IsDevelopment())
+    {
+        var target = HostRouting.RedirectFor(
+            host,
+            ctx.Request.PathBase + ctx.Request.Path + ctx.Request.QueryString,
+            config["PublicHost"] ?? "muuqwear.com",
+            config["AdminHost"] ?? "");
+        if (!string.IsNullOrEmpty(target))
+        {
+            var permanent = !onAdminHost
+                && target.StartsWith("https://", StringComparison.OrdinalIgnoreCase);
+            ctx.Response.Redirect(target, permanent);
+            return;
+        }
     }
 
     await next();
@@ -291,7 +316,10 @@ app.MapAuthCookies();
 app.MapGet("/logout", async (HttpContext ctx) =>
 {
     await ClearSessionCookieAsync(ctx);
-    ctx.Response.Redirect("/login");
+    var adminHost = HostRouting.NormalizeHost(ctx.RequestServices.GetRequiredService<IConfiguration>()["AdminHost"]);
+    var onAdminHost = !string.IsNullOrEmpty(adminHost)
+        && ctx.Request.Host.Host.Equals(adminHost, StringComparison.OrdinalIgnoreCase);
+    ctx.Response.Redirect(onAdminHost ? AdminPortalPaths.Login : "/login");
 });
 
 app.MapGet("/auth/action", ServeAuthAction);
