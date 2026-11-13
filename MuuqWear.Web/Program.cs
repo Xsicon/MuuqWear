@@ -44,6 +44,7 @@ using MuuqWear.Web.Constants;
 using MuuqWear.Web.Helpers;
 using MuuqWear.Web.ServerAuth;
 using MuuqWear.Web.Services;
+using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.HttpOverrides;
 using System.Security.Claims;
 
@@ -359,8 +360,15 @@ app.MapPost("/api/auth/password-reset", async (
     return Results.Json(result, statusCode: status);
 }).DisableAntiforgery();
 
-app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode()
+var components = app.MapRazorComponents<App>()
+    .AddInteractiveServerRenderMode();
+components.Add(e =>
+{
+    var opts = e.Metadata.OfType<HttpConnectionDispatcherOptions>().FirstOrDefault();
+    if (opts is not null)
+        opts.LongPolling.PollTimeout = TimeSpan.FromSeconds(45);
+});
+components
     .AddInteractiveWebAssemblyRenderMode()
     .AddAdditionalAssemblies(typeof(MuuqWear.Client.ClientAssemblyMarker).Assembly);
 
