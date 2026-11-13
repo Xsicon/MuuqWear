@@ -301,14 +301,9 @@ public sealed partial class AdminFirestore
 
         var customer = doc is null ? null : ToCustomer(doc, []);
         var id = customer?.Id ?? (Guid.TryParse(uid, out var parsed) ? parsed : StaffSessionJwt.StableUserGuid(uid));
-        var fullName = customer?.FullName;
-        if (string.IsNullOrWhiteSpace(fullName)
-            || (!string.IsNullOrWhiteSpace(email)
-                && fullName.Contains('@', StringComparison.Ordinal)
-                && !string.Equals(fullName, email, StringComparison.OrdinalIgnoreCase)))
-        {
-            fullName = string.IsNullOrWhiteSpace(name) ? email : name;
-        }
+        var stored = customer?.FullName;
+        var alt = doc is null ? null : Str(doc, "fullName");
+        var fullName = ShopperDisplayName.Choose(stored, alt, name);
 
         return new ProfileModel
         {

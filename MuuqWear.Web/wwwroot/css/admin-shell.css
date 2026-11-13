@@ -424,6 +424,7 @@ html[data-admin-theme="dark"] .an-nav__subitem.an-nav--loading::after {
     color: var(--admin-muted);
     cursor: pointer;
     text-align: left;
+    text-decoration: none;
     transition: background 0.15s, color 0.15s;
 }
 

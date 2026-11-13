@@ -1,16 +1,9 @@
 ﻿@page "/admin/f8e2a947-3c1b-4d9e-b562-7a0f1e8d3c92/login"
 @rendermode InteractiveServer
-@using MuuqWear.Application.Services.AuthService
-@using MuuqWear.Application.Shared
 @using MuuqWear.Model.Authentication
-@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @layout Components.Layout.AuthLayoutComponent.AuthLayoutComponent
 @using Microsoft.AspNetCore.Hosting
-@inject IAuthService IAuthService
-@inject AuthStateService AuthStateService
 @inject NavigationManager NavigationManager
-@inject CustomAuthenticationStateProvider CustomAuthStateProvider
-@inject IJSRuntime JS
 @inject IWebHostEnvironment HostEnvironment
 
 
@@ -39,29 +32,29 @@
                         </div>
 
                         <!-- FORM -->
-                        <EditForm Model="@loginModel" OnSubmit="HandleLogin">
-                            <DataAnnotationsValidator />
-
-                            <!-- EMAIL -->
+                        <form method="post" action="/auth/staff-login" data-enhance="false">
                             <div class="mb-4">
-                                <label class="mw-admin-login__label">Admin Email</label>
-                                <InputText class="mw-admin-login__input"
-                                           placeholder="admin@muuqwear.com"
-                                           @bind-Value="loginModel.Email" />
-                                <ValidationMessage For="@(() => loginModel.Email)" />
-
+                                <label class="mw-admin-login__label" for="admin-email">Admin Email</label>
+                                <input id="admin-email"
+                                       class="mw-admin-login__input"
+                                       name="email"
+                                       type="email"
+                                       autocomplete="username"
+                                       placeholder="admin@muuqwear.com"
+                                       value="@loginModel.Email" />
                             </div>
 
-                            <!-- PASSWORD -->
                             <div class="mb-4">
-                                <label class="mw-admin-login__label">Admin Password</label>
-                                <InputText class="mw-admin-login__input"
-                                           placeholder="••••••••"
-                                           type="password"
-                                           @bind-Value="loginModel.Password" />
+                                <label class="mw-admin-login__label" for="admin-password">Admin Password</label>
+                                <input id="admin-password"
+                                       class="mw-admin-login__input"
+                                       name="password"
+                                       type="password"
+                                       autocomplete="current-password"
+                                       placeholder="••••••••"
+                                       value="@loginModel.Password" />
                             </div>
 
-                            <!-- ERROR -->
                             @if (!string.IsNullOrEmpty(message))
                             {
                                 <div class="@messageCssClass mb-3 small">
@@ -69,22 +62,10 @@
                                 </div>
                             }
 
-                            <!-- SUBMIT -->
-                            <button type="submit"
-                                    class="mw-admin-login__btn w-100"
-                                    disabled="@isSubmitting">
-                                @if (isSubmitting)
-                                {
-                                    <span class="mw-btn-spinner"></span>
-                                    <span>Verifying...</span>
-                                }
-                                else
-                                {
-                                    <span>Access Admin Portal</span>
-                                }
+                            <button type="submit" class="mw-admin-login__btn w-100">
+                                <span>Access Admin Portal</span>
                             </button>
-
-                        </EditForm>
+                        </form>
 
                         <!-- BACK LINK -->
                         <div class="text-center mt-4">
@@ -159,8 +140,17 @@
     private LoginModel loginModel = new();
     private string message = string.Empty;
     private string messageCssClass = string.Empty;
-    private bool isSubmitting = false;
     private bool ShowDemoAccounts => HostEnvironment.IsDevelopment();
+
+    protected override void OnInitialized()
+    {
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        if (!Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query).TryGetValue("error", out var error))
+            return;
+
+        messageCssClass = "text-danger";
+        message = error == "denied" ? "Access denied." : "Invalid email or password.";
+    }
 
     private void UseDemoAccount(AdminDemoAccount account)
     {
@@ -173,54 +163,5 @@
     {
         if (e.Key is "Enter" or " ")
             UseDemoAccount(account);
-    }
-
-    private async Task HandleLogin()
-    {
-        if (string.IsNullOrWhiteSpace(loginModel.Email))
-        {
-            message = "Email is required";
-            messageCssClass = "text-danger";
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(loginModel.Password))
-        {
-            message = "Password is required";
-            messageCssClass = "text-danger";
-            return;
-        }
-
-        isSubmitting = true;
-        message = string.Empty;
-        StateHasChanged();
-
-        var result = await IAuthService.Login(loginModel);
-
-        if (result.Success && result.Data != null)
-        {
-
-            var authData = result.Data;
-            if (!AdminPortalRoles.IsAllowed(authData.Role))
-            {
-                message = "Access denied.";
-                messageCssClass = "text-danger";
-                isSubmitting = false;
-                return;
-            }
-
-            await AuthNavigationHelper.PrepareAndNavigateAsync(
-                result.Data,
-                NavigationManager,
-                CustomAuthStateProvider,
-                JS,
-                AdminPortalRoles.GetDefaultHome(authData.Role));
-        }
-        else
-        {
-            message = result.Message;
-            messageCssClass = "text-danger";
-            isSubmitting = false;
-        }
     }
 }

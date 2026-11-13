@@ -19,12 +19,7 @@
 @inject NavigationManager NavigationManager
 @inject AdminOrdersTabCoordinator OrdersTabCoordinator
 @inject AdminProductsTabCoordinator ProductsTabCoordinator
-@inject AdminCustomersTabCoordinator CustomersTabCoordinator
-@inject AdminContentTabCoordinator ContentTabCoordinator
-@inject AdminAffiliatesTabCoordinator AffiliatesTabCoordinator
 @inject AdminSupportTabCoordinator SupportTabCoordinator
-@inject AdminCareersTabCoordinator CareersTabCoordinator
-@inject AdminSystemTechTabCoordinator SystemTechTabCoordinator
 @rendermode InteractiveServer
 @implements IDisposable
 
@@ -53,6 +48,7 @@
              class="an-nav__item"
              Match="NavLinkMatch.All"
              title="@(navCountsWarning ?? "Overview")"
+             data-enhance="false"
              onclick="window.adminSidebar.close()">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
              viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -73,10 +69,11 @@
     {
     <!-- Sales & Orders (expandable) -->
     <div class="an-nav-group @(salesOrdersOpen ? "an-nav-group--open" : "")">
-        <button type="button"
-                class="an-nav-group__header @(IsSalesOrdersSectionActive ? "an-nav-group__header--active" : "")"
-                aria-expanded="@salesOrdersOpen"
-                @onclick="ToggleSalesOrders">
+        <a href="/admin/orders?tab=orders"
+           data-enhance="false"
+           onclick="window.adminSidebar.close()"
+           class="an-nav-group__header @(IsSalesOrdersSectionActive ? "an-nav-group__header--active" : "")"
+           aria-expanded="@salesOrdersOpen">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
                  viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -94,25 +91,28 @@
                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="m6 9 6 6 6-6"></path>
             </svg>
-        </button>
+        </a>
         @if (salesOrdersOpen)
         {
             <div class="an-nav-group__children">
-                <button type="button"
-                        class="an-nav__subitem @(IsOrdersTabActive("orders") ? "an-nav__subitem--active" : "")"
-                        @onclick='() => NavigateToOrdersTab("orders")'>
+                <a href="/admin/orders?tab=orders"
+                   data-enhance="false"
+                   onclick="window.adminSidebar.close()"
+                   class="an-nav__subitem @(IsOrdersTabActive("orders") ? "an-nav__subitem--active" : "")">
                     All Orders
-                </button>
-                <button type="button"
-                        class="an-nav__subitem @(IsOrdersTabActive("returns") ? "an-nav__subitem--active" : "")"
-                        @onclick='() => NavigateToOrdersTab("returns")'>
+                </a>
+                <a href="/admin/orders?tab=returns"
+                   data-enhance="false"
+                   onclick="window.adminSidebar.close()"
+                   class="an-nav__subitem @(IsOrdersTabActive("returns") ? "an-nav__subitem--active" : "")">
                     Process Returns
-                </button>
-                <button type="button"
-                        class="an-nav__subitem @(IsOrdersTabActive("refunds") ? "an-nav__subitem--active" : "")"
-                        @onclick='() => NavigateToOrdersTab("refunds")'>
+                </a>
+                <a href="/admin/orders?tab=refunds"
+                   data-enhance="false"
+                   onclick="window.adminSidebar.close()"
+                   class="an-nav__subitem @(IsOrdersTabActive("refunds") ? "an-nav__subitem--active" : "")">
                     Refunds
-                </button>
+                </a>
             </div>
         }
     </div>
@@ -122,10 +122,11 @@
     {
     <!-- Customers (expandable) -->
     <div class="an-nav-group @(customersOpen ? "an-nav-group--open" : "")">
-        <button type="button"
-                class="an-nav-group__header @(IsCustomersSectionActive ? "an-nav-group__header--active" : "")"
-                aria-expanded="@customersOpen"
-                @onclick="ToggleCustomers">
+        <a href="/admin/customers?view=list"
+           data-enhance="false"
+           onclick="window.adminSidebar.close()"
+           class="an-nav-group__header @(IsCustomersSectionActive ? "an-nav-group__header--active" : "")"
+           aria-expanded="@customersOpen">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
                  viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -144,25 +145,28 @@
                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="m6 9 6 6 6-6"></path>
             </svg>
-        </button>
+        </a>
         @if (customersOpen)
         {
             <div class="an-nav-group__children">
-                <button type="button"
-                        class="an-nav__subitem @(IsCustomersViewActive("list") ? "an-nav__subitem--active" : "")"
-                        @onclick='() => NavigateToCustomersView("list")'>
+                <a href="/admin/customers?view=list"
+                   data-enhance="false"
+                   onclick="window.adminSidebar.close()"
+                   class="an-nav__subitem @(IsCustomersViewActive("list") ? "an-nav__subitem--active" : "")">
                     Customer List
-                </button>
-                <button type="button"
-                        class="an-nav__subitem @(IsCustomersViewActive("details") ? "an-nav__subitem--active" : "")"
-                        @onclick='() => NavigateToCustomersView("details")'>
+                </a>
+                <a href="/admin/customers?view=details"
+                   data-enhance="false"
+                   onclick="window.adminSidebar.close()"
+                   class="an-nav__subitem @(IsCustomersViewActive("details") ? "an-nav__subitem--active" : "")">
                     Customer Details
-                </button>
-                <button type="button"
-                        class="an-nav__subitem @(IsCustomersViewActive("notes") ? "an-nav__subitem--active" : "")"
-                        @onclick='() => NavigateToCustomersView("notes")'>
+                </a>
+                <a href="/admin/customers?view=notes"
+                   data-enhance="false"
+                   onclick="window.adminSidebar.close()"
+                   class="an-nav__subitem @(IsCustomersViewActive("notes") ? "an-nav__subitem--active" : "")">
                     Customer Notes
-                </button>
+                </a>
             </div>
         }
     </div>
@@ -172,10 +176,11 @@
     {
     <!-- Products & Inventory (expandable) -->
     <div class="an-nav-group @(productsInventoryOpen ? "an-nav-group--open" : "")">
-        <button type="button"
-                class="an-nav-group__header @(IsProductsSectionActive ? "an-nav-group__header--active" : "")"
-                aria-expanded="@productsInventoryOpen"
-                @onclick="ToggleProductsInventory">
+        <a href="/admin/products?view=catalog"
+           data-enhance="false"
+           onclick="window.adminSidebar.close()"
+           class="an-nav-group__header @(IsProductsSectionActive ? "an-nav-group__header--active" : "")"
+           aria-expanded="@productsInventoryOpen">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
                  viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -192,34 +197,38 @@
                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="m6 9 6 6 6-6"></path>
             </svg>
-        </button>
+        </a>
         @if (productsInventoryOpen)
         {
             <div class="an-nav-group__children">
-                <button type="button"
-                        class="an-nav__subitem @(IsProductsViewActive("catalog") ? "an-nav__subitem--active" : "")"
-                        @onclick='() => NavigateToProductsView("catalog")'>
+                <a href="/admin/products?view=catalog"
+                   data-enhance="false"
+                   onclick="window.adminSidebar.close()"
+                   class="an-nav__subitem @(IsProductsViewActive("catalog") ? "an-nav__subitem--active" : "")">
                     Product Catalog
-                </button>
-                <button type="button"
-                        class="an-nav__subitem @(IsProductsViewActive("stock") ? "an-nav__subitem--active" : "")"
-                        @onclick='() => NavigateToProductsView("stock")'>
+                </a>
+                <a href="/admin/products?view=stock"
+                   data-enhance="false"
+                   onclick="window.adminSidebar.close()"
+                   class="an-nav__subitem @(IsProductsViewActive("stock") ? "an-nav__subitem--active" : "")">
                     Stock Levels
-                </button>
-                <button type="button"
-                        class="an-nav__subitem @(IsProductsViewActive("low-stock") ? "an-nav__subitem--active" : "")"
-                        @onclick='() => NavigateToProductsView("low-stock")'>
+                </a>
+                <a href="/admin/products?view=low-stock"
+                   data-enhance="false"
+                   onclick="window.adminSidebar.close()"
+                   class="an-nav__subitem @(IsProductsViewActive("low-stock") ? "an-nav__subitem--active" : "")">
                     Low Stock Alerts
                     @if (lowStockCount > 0)
                     {
                         <span class="an-nav__subitem-badge">@lowStockCount</span>
                     }
-                </button>
-                <button type="button"
-                        class="an-nav__subitem @(IsProductsViewActive("restock") ? "an-nav__subitem--active" : "")"
-                        @onclick='() => NavigateToProductsView("restock")'>
+                </a>
+                <a href="/admin/products?view=restock"
+                   data-enhance="false"
+                   onclick="window.adminSidebar.close()"
+                   class="an-nav__subitem @(IsProductsViewActive("restock") ? "an-nav__subitem--active" : "")">
                     Restock Requests
-                </button>
+                </a>
             </div>
         }
     </div>
@@ -229,10 +238,11 @@
     {
     <!-- Content (expandable) -->
     <div class="an-nav-group @(contentOpen ? "an-nav-group--open" : "")">
-        <button type="button"
-                class="an-nav-group__header @(IsContentSectionActive ? "an-nav-group__header--active" : "")"
-                aria-expanded="@contentOpen"
-                @onclick="ToggleContent">
+        <a href="/admin/content?view=journal"
+           data-enhance="false"
+           onclick="window.adminSidebar.close()"
+           class="an-nav-group__header @(IsContentSectionActive ? "an-nav-group__header--active" : "")"
+           aria-expanded="@contentOpen">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
                  viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -245,25 +255,28 @@
                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="m6 9 6 6 6-6"></path>
             </svg>
-        </button>
+        </a>
         @if (contentOpen)
         {
             <div class="an-nav-group__children">
-                <button type="button"
-                        class="an-nav__subitem @(IsContentViewActive("journal") ? "an-nav__subitem--active" : "")"
-                        @onclick='() => NavigateToContentView("journal")'>
+                <a href="/admin/content?view=journal"
+                   data-enhance="false"
+                   onclick="window.adminSidebar.close()"
+                   class="an-nav__subitem @(IsContentViewActive("journal") ? "an-nav__subitem--active" : "")">
                     Journal Articles
-                </button>
-                <button type="button"
-                        class="an-nav__subitem @(IsContentViewActive("events") ? "an-nav__subitem--active" : "")"
-                        @onclick='() => NavigateToContentView("events")'>
+                </a>
+                <a href="/admin/content?view=events"
+                   data-enhance="false"
+                   onclick="window.adminSidebar.close()"
+                   class="an-nav__subitem @(IsContentViewActive("events") ? "an-nav__subitem--active" : "")">
                     Events
-                </button>
-                <button type="button"
-                        class="an-nav__subitem @(IsContentViewActive("design-history") ? "an-nav__subitem--active" : "")"
-                        @onclick='() => NavigateToContentView("design-history")'>
+                </a>
+                <a href="/admin/content?view=design-history"
+                   data-enhance="false"
+                   onclick="window.adminSidebar.close()"
+                   class="an-nav__subitem @(IsContentViewActive("design-history") ? "an-nav__subitem--active" : "")">
                     Design History
-                </button>
+                </a>
             </div>
         }
     </div>
@@ -273,10 +286,11 @@
     {
     <!-- Affiliates (expandable) -->
     <div class="an-nav-group @(affiliatesOpen ? "an-nav-group--open" : "")">
-        <button type="button"
-                class="an-nav-group__header @(IsAffiliatesSectionActive ? "an-nav-group__header--active" : "")"
-                aria-expanded="@affiliatesOpen"
-                @onclick="ToggleAffiliates">
+        <a href="/admin/affiliates?tab=pending"
+           data-enhance="false"
+           onclick="window.adminSidebar.close()"
+           class="an-nav-group__header @(IsAffiliatesSectionActive ? "an-nav-group__header--active" : "")"
+           aria-expanded="@affiliatesOpen">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
                  viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -296,38 +310,42 @@
                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="m6 9 6 6 6-6"></path>
             </svg>
-        </button>
+        </a>
         @if (affiliatesOpen)
         {
             <div class="an-nav-group__children">
-                <button type="button"
-                        class="an-nav__subitem @(IsAffiliatesTabActive("pending") ? "an-nav__subitem--active" : "")"
-                        @onclick='() => NavigateToAffiliatesTab("pending")'>
+                <a href="/admin/affiliates?tab=pending"
+                   data-enhance="false"
+                   onclick="window.adminSidebar.close()"
+                   class="an-nav__subitem @(IsAffiliatesTabActive("pending") ? "an-nav__subitem--active" : "")">
                     Pending Applications
                     @if (counts is not null && counts.AffiliateCounts.Pending > 0)
                     {
                         <span class="an-nav__badge an-nav__badge--red">@counts.AffiliateCounts.Pending</span>
                     }
-                </button>
-                <button type="button"
-                        class="an-nav__subitem @(IsAffiliatesTabActive("active") ? "an-nav__subitem--active" : "")"
-                        @onclick='() => NavigateToAffiliatesTab("active")'>
+                </a>
+                <a href="/admin/affiliates?tab=active"
+                   data-enhance="false"
+                   onclick="window.adminSidebar.close()"
+                   class="an-nav__subitem @(IsAffiliatesTabActive("active") ? "an-nav__subitem--active" : "")">
                     Active Affiliates
-                </button>
-                <button type="button"
-                        class="an-nav__subitem @(IsAffiliatesTabActive("payouts") ? "an-nav__subitem--active" : "")"
-                        @onclick='() => NavigateToAffiliatesTab("payouts")'>
+                </a>
+                <a href="/admin/affiliates?tab=payouts"
+                   data-enhance="false"
+                   onclick="window.adminSidebar.close()"
+                   class="an-nav__subitem @(IsAffiliatesTabActive("payouts") ? "an-nav__subitem--active" : "")">
                     Payouts
                     @if (counts is not null && counts.AffiliateCounts.PendingPayouts > 0)
                     {
                         <span class="an-nav__badge an-nav__badge--red">@counts.AffiliateCounts.PendingPayouts</span>
                     }
-                </button>
-                <button type="button"
-                        class="an-nav__subitem @(IsAffiliatesTabActive("tiers") ? "an-nav__subitem--active" : "")"
-                        @onclick='() => NavigateToAffiliatesTab("tiers")'>
+                </a>
+                <a href="/admin/affiliates?tab=tiers"
+                   data-enhance="false"
+                   onclick="window.adminSidebar.close()"
+                   class="an-nav__subitem @(IsAffiliatesTabActive("tiers") ? "an-nav__subitem--active" : "")">
                     Tier Settings
-                </button>
+                </a>
             </div>
         }
     </div>
@@ -338,10 +356,11 @@
     {
     <!-- Customer Support (expandable) -->
     <div class="an-nav-group">
-        <button type="button"
-                class="an-nav-group__header @(IsSupportSectionActive ? "an-nav-group__header--active" : "")"
-                aria-expanded="@supportOpen"
-                @onclick="ToggleSupport">
+        <a href="/admin/support?tab=live-chat"
+           data-enhance="false"
+           onclick="window.adminSidebar.close()"
+           class="an-nav-group__header @(IsSupportSectionActive ? "an-nav-group__header--active" : "")"
+           aria-expanded="@supportOpen">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
                  viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -361,33 +380,36 @@
                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="m6 9 6 6 6-6"></path>
             </svg>
-        </button>
+        </a>
         @if (supportOpen)
         {
             <div class="an-nav-group__children">
-                <button type="button"
-                        class="an-nav__subitem @(IsSupportTabActive("live-chat") ? "an-nav__subitem--active" : "")"
-                        @onclick='() => NavigateToSupportTab("live-chat")'>
+                <a href="/admin/support?tab=live-chat"
+                   data-enhance="false"
+                   onclick="window.adminSidebar.close()"
+                   class="an-nav__subitem @(IsSupportTabActive("live-chat") ? "an-nav__subitem--active" : "")">
                     Live Chat
                     @if (unreadLiveChatCount > 0)
                     {
                         <span class="an-nav__badge an-nav__badge--green">@unreadLiveChatCount</span>
                     }
-                </button>
-                <button type="button"
-                        class="an-nav__subitem @(IsSupportTabActive("tickets") ? "an-nav__subitem--active" : "")"
-                        @onclick='() => NavigateToSupportTab("tickets")'>
+                </a>
+                <a href="/admin/support?tab=tickets"
+                   data-enhance="false"
+                   onclick="window.adminSidebar.close()"
+                   class="an-nav__subitem @(IsSupportTabActive("tickets") ? "an-nav__subitem--active" : "")">
                     Support Tickets
                     @if (openTickets > 0)
                     {
                         <span class="an-nav__badge an-nav__badge--yellow">@openTickets</span>
                     }
-                </button>
-                <button type="button"
-                        class="an-nav__subitem @(IsSupportTabActive("knowledge") ? "an-nav__subitem--active" : "")"
-                        @onclick='() => NavigateToSupportTab("knowledge")'>
+                </a>
+                <a href="/admin/support?tab=knowledge"
+                   data-enhance="false"
+                   onclick="window.adminSidebar.close()"
+                   class="an-nav__subitem @(IsSupportTabActive("knowledge") ? "an-nav__subitem--active" : "")">
                     Knowledge Base
-                </button>
+                </a>
             </div>
         }
     </div>
@@ -397,10 +419,11 @@
     {
     <!-- Career Management (expandable) -->
     <div class="an-nav-group">
-        <button type="button"
-                class="an-nav-group__header @(IsCareersSectionActive ? "an-nav-group__header--active" : "")"
-                aria-expanded="@careersOpen"
-                @onclick="ToggleCareers">
+        <a href="/admin/careers?tab=postings"
+           data-enhance="false"
+           onclick="window.adminSidebar.close()"
+           class="an-nav-group__header @(IsCareersSectionActive ? "an-nav-group__header--active" : "")"
+           aria-expanded="@careersOpen">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
                  viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -413,25 +436,28 @@
                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="m6 9 6 6 6-6"></path>
             </svg>
-        </button>
+        </a>
         @if (careersOpen)
         {
             <div class="an-nav-group__children">
-                <button type="button"
-                        class="an-nav__subitem @(IsCareersTabActive("postings") ? "an-nav__subitem--active" : "")"
-                        @onclick='() => NavigateToCareersTab("postings")'>
+                <a href="/admin/careers?tab=postings"
+                   data-enhance="false"
+                   onclick="window.adminSidebar.close()"
+                   class="an-nav__subitem @(IsCareersTabActive("postings") ? "an-nav__subitem--active" : "")">
                     Job Postings
-                </button>
-                <button type="button"
-                        class="an-nav__subitem @(IsCareersTabActive("applications") ? "an-nav__subitem--active" : "")"
-                        @onclick='() => NavigateToCareersTab("applications")'>
+                </a>
+                <a href="/admin/careers?tab=applications"
+                   data-enhance="false"
+                   onclick="window.adminSidebar.close()"
+                   class="an-nav__subitem @(IsCareersTabActive("applications") ? "an-nav__subitem--active" : "")">
                     Applications Inbox
-                </button>
-                <button type="button"
-                        class="an-nav__subitem @(IsCareersTabActive("settings") ? "an-nav__subitem--active" : "")"
-                        @onclick='() => NavigateToCareersTab("settings")'>
+                </a>
+                <a href="/admin/careers?tab=settings"
+                   data-enhance="false"
+                   onclick="window.adminSidebar.close()"
+                   class="an-nav__subitem @(IsCareersTabActive("settings") ? "an-nav__subitem--active" : "")">
                     Career Page Settings
-                </button>
+                </a>
             </div>
         }
     </div>
@@ -442,6 +468,7 @@
     <NavLink href="/admin/users"
              class="an-nav__item"
              title="Users"
+             data-enhance="false"
              onclick="window.adminSidebar.close()">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
              viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -459,10 +486,11 @@
     {
     <!-- System & Technology (expandable) -->
     <div class="an-nav-group">
-        <button type="button"
-                class="an-nav-group__header @(IsSystemTechSectionActive ? "an-nav-group__header--active" : "")"
-                aria-expanded="@systemTechOpen"
-                @onclick="ToggleSystemTech">
+        <a href="/admin/system?tab=health"
+           data-enhance="false"
+           onclick="window.adminSidebar.close()"
+           class="an-nav-group__header @(IsSystemTechSectionActive ? "an-nav-group__header--active" : "")"
+           aria-expanded="@systemTechOpen">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
                  viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -477,35 +505,40 @@
                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="m6 9 6 6 6-6"></path>
             </svg>
-        </button>
+        </a>
         @if (systemTechOpen)
         {
             <div class="an-nav-group__children">
-                <button type="button"
-                        class="an-nav__subitem @(IsSystemTechTabActive("health") ? "an-nav__subitem--active" : "")"
-                        @onclick='() => NavigateToSystemTechTab("health")'>
+                <a href="/admin/system?tab=health"
+                   data-enhance="false"
+                   onclick="window.adminSidebar.close()"
+                   class="an-nav__subitem @(IsSystemTechTabActive("health") ? "an-nav__subitem--active" : "")">
                     System Health
-                </button>
-                <button type="button"
-                        class="an-nav__subitem @(IsSystemTechTabActive("integrations") ? "an-nav__subitem--active" : "")"
-                        @onclick='() => NavigateToSystemTechTab("integrations")'>
+                </a>
+                <a href="/admin/system?tab=integrations"
+                   data-enhance="false"
+                   onclick="window.adminSidebar.close()"
+                   class="an-nav__subitem @(IsSystemTechTabActive("integrations") ? "an-nav__subitem--active" : "")">
                     Integrations
-                </button>
-                <button type="button"
-                        class="an-nav__subitem @(IsSystemTechTabActive("sync") ? "an-nav__subitem--active" : "")"
-                        @onclick='() => NavigateToSystemTechTab("sync")'>
+                </a>
+                <a href="/admin/system?tab=sync"
+                   data-enhance="false"
+                   onclick="window.adminSidebar.close()"
+                   class="an-nav__subitem @(IsSystemTechTabActive("sync") ? "an-nav__subitem--active" : "")">
                     Sync Tools
-                </button>
-                <button type="button"
-                        class="an-nav__subitem @(IsSystemTechTabActive("logs") ? "an-nav__subitem--active" : "")"
-                        @onclick='() => NavigateToSystemTechTab("logs")'>
+                </a>
+                <a href="/admin/system?tab=logs"
+                   data-enhance="false"
+                   onclick="window.adminSidebar.close()"
+                   class="an-nav__subitem @(IsSystemTechTabActive("logs") ? "an-nav__subitem--active" : "")">
                     Logs
-                </button>
-                <button type="button"
-                        class="an-nav__subitem @(IsSystemTechTabActive("jobs") ? "an-nav__subitem--active" : "")"
-                        @onclick='() => NavigateToSystemTechTab("jobs")'>
+                </a>
+                <a href="/admin/system?tab=jobs"
+                   data-enhance="false"
+                   onclick="window.adminSidebar.close()"
+                   class="an-nav__subitem @(IsSystemTechTabActive("jobs") ? "an-nav__subitem--active" : "")">
                     Background Jobs
-                </button>
+                </a>
             </div>
         }
     </div>
@@ -758,18 +791,6 @@
             systemTechOpen = true;
     }
 
-    private void ToggleCareers()
-    {
-        careersOpen = !careersOpen;
-    }
-
-    private void NavigateToCareersTab(string tab)
-    {
-        var normalized = AdminCareersTabCoordinator.NormalizeTab(tab);
-        NavigationManager.NavigateTo($"/admin/careers?tab={normalized}");
-        CareersTabCoordinator.NotifyTabChanged(normalized);
-    }
-
     private bool IsCareersSectionActive
     {
         get
@@ -799,18 +820,6 @@
         return value.ToString().Equals(tab, StringComparison.OrdinalIgnoreCase);
     }
 
-    private void ToggleSystemTech()
-    {
-        systemTechOpen = !systemTechOpen;
-    }
-
-    private void NavigateToSystemTechTab(string tab)
-    {
-        var normalized = AdminSystemTechTabCoordinator.NormalizeTab(tab);
-        NavigationManager.NavigateTo($"/admin/system?tab={normalized}");
-        SystemTechTabCoordinator.NotifyTabChanged(normalized);
-    }
-
     private bool IsSystemTechSectionActive
     {
         get
@@ -832,18 +841,6 @@
             return tab == "health";
 
         return AdminSystemTechTabCoordinator.NormalizeTab(value) == tab;
-    }
-
-    private void ToggleSupport()
-    {
-        supportOpen = !supportOpen;
-    }
-
-    private void NavigateToSupportTab(string tab)
-    {
-        var normalized = AdminSupportTabCoordinator.NormalizeTab(tab);
-        NavigationManager.NavigateTo($"/admin/support?tab={normalized}");
-        SupportTabCoordinator.NotifyTabChanged(normalized);
     }
 
     private bool IsSupportSectionActive
@@ -877,18 +874,6 @@
         return value.ToString().Equals(tab, StringComparison.OrdinalIgnoreCase);
     }
 
-    private void ToggleAffiliates()
-    {
-        affiliatesOpen = !affiliatesOpen;
-    }
-
-    private void NavigateToAffiliatesTab(string tab)
-    {
-        var normalized = AdminAffiliatesTabCoordinator.NormalizeTab(tab);
-        NavigationManager.NavigateTo($"/admin/affiliates?tab={normalized}");
-        AffiliatesTabCoordinator.NotifyTabChanged(normalized);
-    }
-
     private bool IsAffiliatesSectionActive =>
         NavigationManager.ToBaseRelativePath(NavigationManager.Uri)
             .StartsWith("admin/affiliates", StringComparison.OrdinalIgnoreCase);
@@ -905,17 +890,6 @@
             return tab == "pending";
 
         return value.ToString().Equals(tab, StringComparison.OrdinalIgnoreCase);
-    }
-
-    private void ToggleCustomers()
-    {
-        customersOpen = !customersOpen;
-    }
-
-    private void NavigateToCustomersView(string view)
-    {
-        NavigationManager.NavigateTo($"/admin/customers?view={view}");
-        CustomersTabCoordinator.NotifyViewChanged(view);
     }
 
     private bool IsCustomersSectionActive =>
@@ -936,17 +910,6 @@
         return value.ToString().Equals(view, StringComparison.OrdinalIgnoreCase);
     }
 
-    private void ToggleProductsInventory()
-    {
-        productsInventoryOpen = !productsInventoryOpen;
-    }
-
-    private void NavigateToProductsView(string view)
-    {
-        NavigationManager.NavigateTo($"/admin/products?view={view}");
-        ProductsTabCoordinator.NotifyViewChanged(view);
-    }
-
     private bool IsProductsSectionActive =>
         NavigationManager.ToBaseRelativePath(NavigationManager.Uri)
             .StartsWith("admin/products", StringComparison.OrdinalIgnoreCase);
@@ -965,16 +928,6 @@
         return value.ToString().Equals(view, StringComparison.OrdinalIgnoreCase);
     }
 
-    private void ToggleContent()
-    {
-        contentOpen = !contentOpen;
-    }
-
-    private void NavigateToContentView(string view)
-    {
-        NavigationManager.NavigateTo($"/admin/content?view={view}");
-    }
-
     private bool IsContentSectionActive =>
         NavigationManager.ToBaseRelativePath(NavigationManager.Uri)
             .StartsWith("admin/content", StringComparison.OrdinalIgnoreCase);
@@ -991,17 +944,6 @@
             return view == "journal";
 
         return value.ToString().Equals(view, StringComparison.OrdinalIgnoreCase);
-    }
-
-    private void ToggleSalesOrders()
-    {
-        salesOrdersOpen = !salesOrdersOpen;
-    }
-
-    private void NavigateToOrdersTab(string tab)
-    {
-        NavigationManager.NavigateTo($"/admin/orders?tab={tab}");
-        OrdersTabCoordinator.NotifyTabChanged(tab);
     }
 
     private bool IsSalesOrdersSectionActive =>

@@ -94,9 +94,11 @@ def main() -> int:
                 ],
                 # Keep shopper static; only staff/auth/api paths hit Cloud Run.
                 "rewrites": [
+                    {"glob": "/admin", "run": run},
                     {"glob": "/admin/**", "run": run},
                     {"glob": "/muuqsimo/**", "run": run},
                     {"glob": "/order-confirmed/**", "run": run},
+                    {"glob": "/_blazor", "run": run},
                     {"glob": "/_blazor/**", "run": run},
                     {"glob": "/_framework/blazor.web.js", "run": run},
                     {"glob": "/MuuqWear.Web.styles.css", "run": run},

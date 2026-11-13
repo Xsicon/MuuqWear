@@ -1,6 +1,6 @@
 ﻿@page "/admin/affiliates"
 @layout Layout.AdminLayoutComponent.AdminDashboardLayoutComponent
-@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@rendermode InteractiveServer
 @using Microsoft.AspNetCore.Authorization
 @attribute [Authorize(Policy = AdminPortalPolicies.Affiliates)]
 @implements IDisposable

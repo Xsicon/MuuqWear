@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.Extensions.Caching.Memory;
+using MuuqWear.Application.Services.AuthService;
 using MuuqWear.Application.Shared;
+using MuuqWear.Model.Authentication;
 using MuuqWear.Web.Constants;
 
 namespace MuuqWear.Web.ServerAuth;
@@ -95,6 +97,30 @@ public static class AuthCookieEndpoints
             return json
                 ? Results.Ok(new { success = true })
                 : Results.Redirect(session.ReturnUrl ?? "/profile");
+        }).AddEndpointFilter(AuthOrigins.RequireSameOrigin).DisableAntiforgery();
+
+        // Firebase Hosting forwards only the __session cookie, so the Blazor
+        // antiforgery cookie never arrives and the login form POST returns 400.
+        app.MapPost("/auth/staff-login", async (HttpContext ctx, IAuthService auth) =>
+        {
+            if (!ctx.Request.HasFormContentType)
+                return Results.Redirect(AdminPortalPaths.Login + "?error=invalid");
+
+            var form = await ctx.Request.ReadFormAsync();
+            var result = await auth.Login(new LoginModel
+            {
+                Email = form["email"].ToString(),
+                Password = form["password"].ToString()
+            });
+            if (result.Success && result.Data is not null && AdminPortalRoles.IsAllowed(result.Data.Role))
+            {
+                var home = AdminPortalRoles.GetDefaultHome(result.Data.Role);
+                await SignInAsync(ctx, CookieAuthHelper.FromAuthResponse(result.Data, home, rememberMe: true));
+                return Results.Redirect(home);
+            }
+
+            var error = result.Success ? "denied" : "invalid";
+            return Results.Redirect(AdminPortalPaths.Login + "?error=" + error);
         }).AddEndpointFilter(AuthOrigins.RequireSameOrigin).DisableAntiforgery();
     }
 

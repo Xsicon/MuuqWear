@@ -280,7 +280,7 @@
             @if (activeTab == "overview")
             {
                 <div class="mb-4">
-                    <h2 class="mw-welcome">Welcome back, @LoggedInUserName</h2>
+                    <h2 class="mw-welcome">Welcome back, @ShopperDisplayName.Greeting(LoggedInUserName)</h2>
                     <p class="mw-subtext">Here's your Muuqwear at a glance.</p>
                 </div>
 
@@ -494,13 +494,16 @@
                     }
                     else if (affiliateStatus.ApplicationStatus == "not_applied")
                     {
-                        <!-- NOT APPLIED - Show Apply Prompt -->
-                        <div class="affiliate-not-applied">
-                            <h2>Join the MuuqWear Affiliate Program</h2>
-                            <p>Earn commission on every sale you refer!</p>
-                            <button type="button" class="mw-affiliate-cta" @onclick='() => NavigationManager.NavigateTo("/affiliate", forceLoad: true)'>
-                                Apply Now
-                            </button>
+                        <div class="affiliate-section">
+                            <div class="affiliate-prompt">
+                                <div class="prompt-content">
+                                    <h3>Become a MuuqWear Affiliate</h3>
+                                    <p>Join our community of content creators and earn commission on every sale. Limited to 500 members!</p>
+                                    <button type="button" class="mw-affiliate-cta" @onclick='() => NavigationManager.NavigateTo("/affiliate", forceLoad: true)'>
+                                        Apply Now
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     }
                     else if (affiliateStatus.ApplicationStatus == "pending")
@@ -1164,21 +1167,6 @@
             }
 
 
-        </div>
-        <div class="affiliate-section">
-            @if (showAffiliatePrompt)
-            {
-                <!-- User hasn't applied yet - show prompt -->
-                <div class="affiliate-prompt">
-                    <div class="prompt-content">
-                        <h3>Become a MuuqWear Affiliate</h3>
-                        <p>Join our community of content creators and earn commission on every sale. Limited to 500 members!</p>
-                        <button type="button" class="mw-affiliate-cta" @onclick='() => NavigationManager.NavigateTo("/affiliate", forceLoad: true)'>
-                            Apply Now
-                        </button>
-                    </div>
-                </div>
-            }
         </div>
     </div>
 </section>

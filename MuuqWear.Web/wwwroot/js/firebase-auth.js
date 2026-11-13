@@ -19,6 +19,7 @@ window.muuqFirebase = (function () {
         return {
             uid: user.uid,
             email: user.email || "",
+            displayName: user.displayName || "",
             emailVerified: !!user.emailVerified
         };
     }

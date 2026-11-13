@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.JSInterop;
 using MuuqWear.Application.Services.CartService;
+using MuuqWear.Application.Shared;
 using MuuqWear.Application.Services.WishlistService;
 using MuuqWear.Client.Auth;
 using MuuqWear.Model.Address;
@@ -33,7 +34,6 @@ public partial class ProfileView
     private List<RecentReferralModel>? recentReferrals;
     private AffiliateStatusModel? affiliateStatus;
     private bool isProfileLoading = true;
-    private bool showAffiliatePrompt = false;
     private string? affiliateAppliedNotice;
 
     private AffiliateInfoModel? affiliateInfo;
@@ -71,13 +71,7 @@ public partial class ProfileView
     }
     private decimal TotalSpent => userOrders.Sum(o => o.Total);
 
-    private string GetFirstName()
-    {
-        var name = LoggedInUserName?.Trim();
-        if (string.IsNullOrWhiteSpace(name))
-            return "there";
-        return name.Split(' ', StringSplitOptions.RemoveEmptyEntries)[0];
-    }
+    private string GetFirstName() => ShopperDisplayName.Greeting(LoggedInUserName);
 
     private string GetOverviewTierLabel()
     {
@@ -127,7 +121,8 @@ public partial class ProfileView
             return;
         }
 
-        ApplyClaimProfile(user.Email, user.Uid);
+        var registeredName = ShopperDisplayName.Choose(user.DisplayName);
+        ApplyClaimProfile(registeredName, user.Email);
         var idToken = await FirebaseSession.GetIdTokenAsync();
         await PublicSignIn.SyncCookieAsync(new AuthResponseModel
         {
@@ -135,7 +130,7 @@ public partial class ProfileView
             RefreshToken = "firebase",
             Email = user.Email,
             UserId = user.Uid,
-            UserName = user.Email,
+            UserName = registeredName,
             Role = "user"
         }, JSRuntime);
 
@@ -153,19 +148,12 @@ public partial class ProfileView
                 settingsEmail = user.Email ?? profileResult.Data.Email ?? settingsEmail;
                 var sameAccount = string.IsNullOrWhiteSpace(profileResult.Data.Email)
                     || string.Equals(profileResult.Data.Email, user.Email, StringComparison.OrdinalIgnoreCase);
-                if (sameAccount
-                    && !string.IsNullOrWhiteSpace(profileResult.Data.FullName)
-                    && !profileResult.Data.FullName.Contains('@', StringComparison.Ordinal))
+                if (sameAccount)
                 {
-                    LoggedInUserName = profileResult.Data.FullName;
-                    settingsFullName = profileResult.Data.FullName;
-                }
-                else
-                {
-                    LoggedInUserName = user.Email ?? LoggedInUserName;
-                    settingsFullName = string.IsNullOrWhiteSpace(settingsFullName)
-                        ? (user.Email ?? "").Split('@')[0]
-                        : settingsFullName;
+                    var chosen = ShopperDisplayName.Choose(profileResult.Data.FullName, registeredName);
+                    LoggedInUserName = chosen;
+                    if (!string.IsNullOrWhiteSpace(chosen))
+                        settingsFullName = chosen;
                 }
             }
 
@@ -193,12 +181,12 @@ public partial class ProfileView
         await ApplyInitialTabFromRouteAsync();
     }
 
-    private void ApplyClaimProfile(string? email, string uid)
+    private void ApplyClaimProfile(string? registeredName, string? email)
     {
         if (string.IsNullOrWhiteSpace(LoggedInUserName))
-            LoggedInUserName = string.IsNullOrWhiteSpace(email) ? uid : email.Split('@')[0];
+            LoggedInUserName = registeredName ?? "";
         if (string.IsNullOrWhiteSpace(settingsFullName))
-            settingsFullName = LoggedInUserName;
+            settingsFullName = registeredName ?? "";
         if (string.IsNullOrWhiteSpace(settingsEmail))
             settingsEmail = email ?? "";
     }
@@ -663,8 +651,12 @@ public partial class ProfileView
 
         if (result.Success && result.Data != null)
         {
-            LoggedInUserName = result.Data.FullName ?? "";
-            settingsFullName = result.Data.FullName ?? "";
+            var savedName = ShopperDisplayName.Choose(result.Data.FullName, settingsFullName);
+            if (!string.IsNullOrWhiteSpace(savedName))
+            {
+                LoggedInUserName = savedName;
+                settingsFullName = savedName;
+            }
             settingsSuccess = "Profile updated successfully";
         }
         else
@@ -707,9 +699,6 @@ public partial class ProfileView
             if (result.Success && result.Data != null)
             {
                 affiliateStatus = result.Data;
-
-                // Show prompt if user hasn't applied yet
-                showAffiliatePrompt = affiliateStatus.ApplicationStatus == "not_applied";
             }
         }
         catch (Exception ex)
