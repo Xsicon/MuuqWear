@@ -2,6 +2,7 @@ using BlazorBootstrap;
 using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Caching.Memory;
@@ -158,6 +159,14 @@ builder.Services.AddScoped<IAdminBadgeService, FirestoreAdminBadgeService>();
 builder.Services.AddScoped<IJobPostingService, FirestoreJobPostingService>();
 
 
+
+var dataProtectionBucket = builder.Configuration["DataProtection:Bucket"];
+if (!builder.Environment.IsDevelopment() && !string.IsNullOrWhiteSpace(dataProtectionBucket))
+{
+    builder.Services.AddDataProtection()
+        .SetApplicationName("muuqwear-web")
+        .PersistKeysToGoogleCloudStorage(dataProtectionBucket.Trim(), "dataprotection/keys.xml");
+}
 
 builder.Services.AddSingleton<HmacAuthTicketFormat>();
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
