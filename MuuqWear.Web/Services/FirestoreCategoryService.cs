@@ -12,6 +12,11 @@ public sealed class FirestoreCategoryService : ICategoryService
 
     public async Task<Response<List<CategoryModel>>> GetAll()
     {
+        var collections = await _store.ListCollectionsAsync();
+        if (collections.Count > 0)
+            return Response<List<CategoryModel>>.SuccessResponse(collections);
+
+        // Fallback for older catalogs that only tagged products without collections docs.
         var products = await _store.ListProductsAsync();
         var fromProducts = products
             .Where(p => !string.IsNullOrWhiteSpace(p.Category))
@@ -26,10 +31,10 @@ public sealed class FirestoreCategoryService : ICategoryService
         return Response<List<CategoryModel>>.SuccessResponse(fromProducts);
     }
 
-    public Task<Response<CategoryModel>> Add(AddCategoryModel request) =>
-        Task.FromResult(Response<CategoryModel>.SuccessResponse(new CategoryModel
-        {
-            Id = Guid.NewGuid(),
-            Name = request.Name
-        }));
+    public async Task<Response<CategoryModel>> Add(AddCategoryModel request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Name))
+            return Response<CategoryModel>.Fail("Category name is required");
+        return Response<CategoryModel>.SuccessResponse(await _store.UpsertCollectionAsync(request));
+    }
 }

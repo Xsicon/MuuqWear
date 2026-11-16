@@ -119,7 +119,7 @@ builder.Services.AddScoped<AdminSupportTabCoordinator>();
 builder.Services.AddScoped<AdminCareersTabCoordinator>();
 builder.Services.AddScoped<AdminSystemTechTabCoordinator>();
 builder.Services.AddScoped<AdminSystemTechIntegrationService>();
-builder.Services.AddSingleton<ICareerPageSettingsService, CareerPageSettingsService>();
+builder.Services.AddSingleton<ICareerPageSettingsService, FirestoreCareerPageSettingsService>();
 builder.Services.AddScoped<AdminLowStockCacheService>();
 builder.Services.AddScoped<AdminBadgeCountsCacheService>();
 builder.Services.AddScoped<AdminContentCountsCacheService>();

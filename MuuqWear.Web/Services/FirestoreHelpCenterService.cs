@@ -9,9 +9,13 @@ namespace MuuqWear.Web.Services;
 public sealed class FirestoreHelpCenterService : IHelpCenterService
 {
     private readonly FirestoreDb _db;
+    private readonly IConfiguration _config;
 
-    public FirestoreHelpCenterService(IConfiguration config) =>
+    public FirestoreHelpCenterService(IConfiguration config)
+    {
+        _config = config;
         _db = FirestoreDb.Create(config["Firebase:ProjectId"] ?? "muuqwear-6e2e0");
+    }
 
     public async Task<Response<SupportTicketModel>> SubmitTicket(SubmitTicketModel request)
     {
@@ -169,7 +173,7 @@ public sealed class FirestoreHelpCenterService : IHelpCenterService
     }
 
     public Task<Response<string>> UploadImage(string fileName, byte[] bytes, string contentType) =>
-        Task.FromResult(Response<string>.Fail("Upload images from the product editor for now."));
+        FirebaseStorageImages.UploadAsync(_config, "help", fileName, bytes, contentType);
 
     public async Task<Response<HelpArticleCommentModel>> AddArticleComment(Guid articleId, string body)
     {
@@ -224,6 +228,16 @@ public sealed class FirestoreHelpCenterService : IHelpCenterService
         ["status"] = request.Status,
         ["content"] = request.Content,
         ["heroImageUrl"] = request.HeroImageUrl ?? "",
+        ["steps"] = (request.Steps ?? [])
+            .OrderBy(s => s.SortOrder)
+            .Select(s => new Dictionary<string, object>
+            {
+                ["id"] = s.Id == Guid.Empty ? Guid.NewGuid().ToString() : s.Id.ToString(),
+                ["sortOrder"] = s.SortOrder,
+                ["detail"] = s.Detail ?? "",
+                ["imageUrl"] = s.ImageUrl ?? ""
+            })
+            .ToList(),
         ["updatedAt"] = Timestamp.FromDateTime(now)
     };
 
@@ -256,8 +270,51 @@ public sealed class FirestoreHelpCenterService : IHelpCenterService
             Category = string.IsNullOrWhiteSpace(Str(doc, "category")) ? "Orders" : Str(doc, "category"),
             Status = string.IsNullOrWhiteSpace(Str(doc, "status")) ? "Draft" : Str(doc, "status"),
             Content = Str(doc, "content"),
-            HeroImageUrl = Str(doc, "heroImageUrl")
+            HeroImageUrl = Str(doc, "heroImageUrl"),
+            Steps = ReadSteps(doc)
         };
+    }
+
+    private static List<HelpArticleStepModel> ReadSteps(DocumentSnapshot doc)
+    {
+        var steps = new List<HelpArticleStepModel>();
+        if (!doc.ContainsField("steps"))
+            return steps;
+
+        IEnumerable<object> rows;
+        try { rows = doc.GetValue<List<object>>("steps") ?? []; }
+        catch { return steps; }
+
+        foreach (var rowObj in rows)
+        {
+            Dictionary<string, object> row;
+            if (rowObj is Dictionary<string, object> dict)
+                row = dict;
+            else if (rowObj is IDictionary<string, object> map)
+                row = map.ToDictionary(p => p.Key, p => p.Value);
+            else
+                continue;
+
+            Guid.TryParse(Convert.ToString(row.GetValueOrDefault("id")), out var stepId);
+            var sortOrder = 0;
+            if (row.TryGetValue("sortOrder", out var sortObj))
+            {
+                try { sortOrder = Convert.ToInt32(sortObj); }
+                catch { sortOrder = 0; }
+            }
+
+            steps.Add(new HelpArticleStepModel
+            {
+                Id = stepId == Guid.Empty ? Guid.NewGuid() : stepId,
+                SortOrder = sortOrder,
+                Detail = Convert.ToString(row.GetValueOrDefault("detail")) ?? "",
+                ImageUrl = string.IsNullOrWhiteSpace(Convert.ToString(row.GetValueOrDefault("imageUrl")))
+                    ? null
+                    : Convert.ToString(row.GetValueOrDefault("imageUrl"))
+            });
+        }
+
+        return steps.OrderBy(s => s.SortOrder).ToList();
     }
 
     private static string Str(DocumentSnapshot doc, string field) =>

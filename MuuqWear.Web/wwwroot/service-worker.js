@@ -1,4 +1,4 @@
-const SHELL = 'mw-shell-v23';
+const SHELL = 'mw-shell-v25';
 const CATALOG = 'mw-catalog-v1';
 
 const SHELL_ASSETS = [
@@ -78,6 +78,7 @@ function isPassthrough(url) {
     var path = url.pathname;
     return path.startsWith('/admin')
         || path === '/MuuqWear.Web.styles.css'
+        || path.endsWith('.bundle.scp.css')
         || path.startsWith('/auth')
         || path.startsWith('/checkout')
         || path.startsWith('/_blazor')

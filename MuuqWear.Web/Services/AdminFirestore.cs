@@ -216,6 +216,19 @@ public sealed partial class AdminFirestore
         return Page(all, page, pageSize);
     }
 
+    public async Task<string?> GetCustomerDisplayNameAsync(string firebaseOrDocId, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(firebaseOrDocId))
+            return null;
+        var doc = await _db.Collection("customers").Document(firebaseOrDocId).GetSnapshotAsync(cancellationToken);
+        if (!doc.Exists)
+            return null;
+        var name = Str(doc, "name");
+        if (!string.IsNullOrWhiteSpace(name))
+            return name;
+        return EmptyToNull(Str(doc, "email"));
+    }
+
     public async Task<CustomerModel?> GetCustomerAsync(Guid customerId, CancellationToken cancellationToken = default)
     {
         var doc = await FindCustomerDocAsync(customerId, cancellationToken);
@@ -519,6 +532,14 @@ public sealed partial class AdminFirestore
             return 0;
         try { return Convert.ToInt32(doc.GetValue<object>(field)); }
         catch { return 0; }
+    }
+
+    private static bool Bool(DocumentSnapshot doc, string field, bool defaultValue = false)
+    {
+        if (!doc.ContainsField(field))
+            return defaultValue;
+        try { return Convert.ToBoolean(doc.GetValue<object>(field)); }
+        catch { return defaultValue; }
     }
 
     private static List<OrderItemModel> ParseItems(DocumentSnapshot doc)

@@ -11,16 +11,12 @@ public sealed class FirestoreAffiliateService : IAffiliateService
 {
     private readonly AdminFirestore _store;
     private readonly IHttpContextAccessor _http;
-    private static readonly List<AffiliateTierModel> DefaultTiers =
-    [
-        new() { Id = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1"), Slug = "starter", DisplayName = "Starter", CommissionRatePercent = 10, ReferralDiscountPercent = 5, IsActive = true, SortOrder = 1 },
-        new() { Id = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2"), Slug = "partner", DisplayName = "Partner", ItemsSoldThreshold = 10, CommissionRatePercent = 12, ReferralDiscountPercent = 8, IsActive = true, SortOrder = 2 }
-    ];
-
-    public FirestoreAffiliateService(AdminFirestore store, IHttpContextAccessor http)
+    private readonly IConfiguration _config;
+    public FirestoreAffiliateService(AdminFirestore store, IHttpContextAccessor http, IConfiguration config)
     {
         _store = store;
         _http = http;
+        _config = config;
     }
 
     public async Task<Response<AffiliateApplicationModel>> SubmitApplication(SubmitAffiliateApplicationModel request)
@@ -28,6 +24,15 @@ public sealed class FirestoreAffiliateService : IAffiliateService
         request.Email ??= CurrentEmail();
         return Response<AffiliateApplicationModel>.SuccessResponse(await _store.SubmitAffiliateAsync(request));
     }
+
+    public Task<Response<string>> UploadSampleFile(string fileName, byte[] bytes, string contentType) =>
+        FirebaseStorageImages.UploadAsync(
+            _config,
+            "affiliate-samples",
+            fileName,
+            bytes,
+            contentType,
+            FirebaseStorageImages.AllowAffiliateSample);
 
     public async Task<Response<AffiliateStatusModel>> GetStatus()
     {
@@ -107,47 +112,124 @@ public sealed class FirestoreAffiliateService : IAffiliateService
             : Response<bool>.Fail(result.Message);
     }
 
-    public Task<Response<List<AffiliateTierModel>>> GetAdminTiers() =>
-        Task.FromResult(Response<List<AffiliateTierModel>>.SuccessResponse(DefaultTiers));
+    public async Task<Response<List<AffiliateTierModel>>> GetAdminTiers() =>
+        Response<List<AffiliateTierModel>>.SuccessResponse(
+            AffiliateTierCatalog.FilterCanonical(await _store.ListAffiliateTiersAsync()));
 
-    public Task<Response<AffiliateTierModel>> GetAdminTier(string slug)
+    public async Task<Response<AffiliateTierModel>> GetAdminTier(string slug)
     {
-        var tier = DefaultTiers.FirstOrDefault(t => t.Slug.Equals(slug, StringComparison.OrdinalIgnoreCase));
-        return Task.FromResult(tier is null
+        var tier = await _store.GetAffiliateTierAsync(slug)
+            ?? AffiliateTierCatalog.DefaultTiers.FirstOrDefault(t =>
+                t.Slug.Equals(slug, StringComparison.OrdinalIgnoreCase));
+        return tier is null
             ? Response<AffiliateTierModel>.Fail("Tier not found")
-            : Response<AffiliateTierModel>.SuccessResponse(tier));
+            : Response<AffiliateTierModel>.SuccessResponse(tier);
     }
 
-    public Task<Response<AffiliateTierModel>> UpdateAdminTier(string slug, UpdateAffiliateTierModel request)
+    public async Task<Response<AffiliateTierModel>> UpdateAdminTier(string slug, UpdateAffiliateTierModel request)
     {
-        var tier = DefaultTiers.FirstOrDefault(t => t.Slug.Equals(slug, StringComparison.OrdinalIgnoreCase));
-        if (tier is null)
-            return Task.FromResult(Response<AffiliateTierModel>.Fail("Tier not found"));
+        var existing = await _store.GetAffiliateTierAsync(slug)
+            ?? AffiliateTierCatalog.DefaultTiers.FirstOrDefault(t =>
+                t.Slug.Equals(slug, StringComparison.OrdinalIgnoreCase))
+            ?? new AffiliateTierModel { Slug = slug };
+
         if (!string.IsNullOrWhiteSpace(request.DisplayName))
-            tier.DisplayName = request.DisplayName;
+            existing.DisplayName = request.DisplayName!;
+        if (request.ItemsSoldThreshold is int threshold)
+            existing.ItemsSoldThreshold = threshold;
         if (request.CommissionRatePercent is decimal rate)
-            tier.CommissionRatePercent = rate;
+            existing.CommissionRatePercent = rate;
+        if (request.ReferralDiscountPercent is decimal discount)
+            existing.ReferralDiscountPercent = discount;
+        if (request.QuarterlyBonusPercent is decimal bonus)
+            existing.QuarterlyBonusPercent = bonus;
+        if (request.MaxAffiliates is int max)
+            existing.MaxAffiliates = max;
+        if (request.Perks is not null)
+            existing.Perks = request.Perks;
+        if (request.SortOrder is int sort)
+            existing.SortOrder = sort;
         if (request.IsActive is bool active)
-            tier.IsActive = active;
-        return Task.FromResult(Response<AffiliateTierModel>.SuccessResponse(tier));
+            existing.IsActive = active;
+
+        return Response<AffiliateTierModel>.SuccessResponse(await _store.UpsertAffiliateTierAsync(existing));
     }
 
     public Task<Response<List<AffiliateTierModel>>> GetTiers() => GetAdminTiers();
 
-    public Task<Response<List<AffiliatePendingPayoutModel>>> GetAdminPendingPayouts() =>
-        Task.FromResult(Response<List<AffiliatePendingPayoutModel>>.SuccessResponse([]));
+    public async Task<Response<List<AffiliatePendingPayoutModel>>> GetAdminPendingPayouts()
+    {
+        var pending = await EnrichCommissionsAsync(await _store.ListPendingCommissionsAsync());
+        var groups = pending
+            .GroupBy(c => string.IsNullOrWhiteSpace(c.AmbassadorId) ? "unknown" : c.AmbassadorId)
+            .Select(g => new AffiliatePendingPayoutModel
+            {
+                AffiliateCode = g.Key,
+                AffiliateName = g.First().AmbassadorName,
+                AffiliateTier = "bronze",
+                TotalAmount = g.Sum(c => c.AmountCents) / 100m,
+                ReferralCount = g.Count(),
+                OldestPendingDate = g.Min(c => c.CreatedAt),
+                Status = "pending",
+                PaymentMethod = "manual"
+            })
+            .OrderByDescending(p => p.TotalAmount)
+            .ToList();
+        return Response<List<AffiliatePendingPayoutModel>>.SuccessResponse(groups);
+    }
 
-    public Task<Response<List<AffiliatePendingReferralModel>>> GetAdminPendingReferrals(string affiliateCode) =>
-        Task.FromResult(Response<List<AffiliatePendingReferralModel>>.SuccessResponse([]));
+    public async Task<Response<List<AffiliatePendingReferralModel>>> GetAdminPendingReferrals(string affiliateCode)
+    {
+        var pending = await EnrichCommissionsAsync(await _store.ListPendingCommissionsAsync());
+        var rows = pending
+            .Where(c => c.AmbassadorId.Equals(affiliateCode, StringComparison.OrdinalIgnoreCase))
+            .Select(c => new AffiliatePendingReferralModel
+            {
+                Id = Guid.TryParse(c.Id, out var id) ? id : Guid.NewGuid(),
+                OrderId = c.OrderId,
+                OrderNumber = c.OrderId == Guid.Empty ? c.Id[..Math.Min(8, c.Id.Length)].ToUpperInvariant() : c.OrderId.ToString("N")[..8].ToUpperInvariant(),
+                OrderTotal = c.OrderTotalCents / 100m,
+                CommissionAmount = c.AmountCents / 100m,
+                CommissionRate = (int)Math.Round(c.Rate * 100),
+                CreatedAt = c.CreatedAt,
+                MaskedCustomer = "Customer"
+            })
+            .OrderByDescending(r => r.CreatedAt)
+            .ToList();
+        return Response<List<AffiliatePendingReferralModel>>.SuccessResponse(rows);
+    }
 
-    public Task<Response<AffiliatePayoutResultModel>> ProcessAdminPayout(
-        string affiliateCode, ProcessAffiliatePayoutModel? request = null) =>
-        Task.FromResult(Response<AffiliatePayoutResultModel>.Fail("No pending payouts."));
+    public async Task<Response<AffiliatePayoutResultModel>> ProcessAdminPayout(
+        string affiliateCode, ProcessAffiliatePayoutModel? request = null)
+    {
+        var pending = await EnrichCommissionsAsync(await _store.ListPendingCommissionsAsync());
+        var rows = pending
+            .Where(c => c.AmbassadorId.Equals(affiliateCode, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        if (rows.Count == 0)
+            return Response<AffiliatePayoutResultModel>.Fail("No pending payouts.");
 
-    public Task<Response<PaginatedResponse<AffiliatePayoutResultModel>>> GetAdminPayoutHistory(
-        int page = 1, int pageSize = 20) =>
-        Task.FromResult(Response<PaginatedResponse<AffiliatePayoutResultModel>>.SuccessResponse(
-            PaginatedResponse<AffiliatePayoutResultModel>.Empty(page, pageSize)));
+        var result = await _store.ProcessAffiliatePayoutAsync(
+            affiliateCode, rows, request?.PaymentMethod, request?.AdminNotes);
+        await _store.WriteSystemLogAsync("info",
+            $"Processed payout {result.FormattedAmount} for {affiliateCode}", "affiliates");
+        return Response<AffiliatePayoutResultModel>.SuccessResponse(result);
+    }
+
+    public async Task<Response<PaginatedResponse<AffiliatePayoutResultModel>>> GetAdminPayoutHistory(
+        int page = 1, int pageSize = 20)
+    {
+        var all = await _store.ListAffiliatePayoutsAsync();
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 20;
+        return Response<PaginatedResponse<AffiliatePayoutResultModel>>.SuccessResponse(new PaginatedResponse<AffiliatePayoutResultModel>
+        {
+            Data = all.Skip((page - 1) * pageSize).Take(pageSize).ToList(),
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = all.Count
+        });
+    }
 
     public async Task<Response<AffiliateAdminStatsModel>> GetAdminStats()
     {
@@ -164,13 +246,55 @@ public sealed class FirestoreAffiliateService : IAffiliateService
         });
     }
 
-    public Task<Response<AffiliateApplicationModel>> UpdateAffiliateActiveStatus(
-        Guid userId, UpdateAffiliateActiveStatusModel request) =>
-        Task.FromResult(Response<AffiliateApplicationModel>.Fail("Affiliate not found"));
+    public async Task<Response<AffiliateApplicationModel>> UpdateAffiliateActiveStatus(
+        Guid idOrUserId, UpdateAffiliateActiveStatusModel request)
+    {
+        var updated = await _store.UpdateAffiliateActiveAsync(idOrUserId, request.IsActive);
+        return updated is null
+            ? Response<AffiliateApplicationModel>.Fail("Affiliate not found")
+            : Response<AffiliateApplicationModel>.SuccessResponse(updated);
+    }
 
-    public Task<Response<ProcessAllAffiliatePayoutsResultModel>> ProcessAllAdminPayouts(
-        ProcessAllAffiliatePayoutsModel? request = null) =>
-        Task.FromResult(Response<ProcessAllAffiliatePayoutsResultModel>.SuccessResponse(new ProcessAllAffiliatePayoutsResultModel()));
+    public async Task<Response<ProcessAllAffiliatePayoutsResultModel>> ProcessAllAdminPayouts(
+        ProcessAllAffiliatePayoutsModel? request = null)
+    {
+        var pending = await GetAdminPendingPayouts();
+        var groups = pending.Data ?? [];
+        var result = new ProcessAllAffiliatePayoutsResultModel();
+        foreach (var group in groups)
+        {
+            var payout = await ProcessAdminPayout(group.AffiliateCode, new ProcessAffiliatePayoutModel
+            {
+                PaymentMethod = request?.PaymentMethod,
+                AdminNotes = request?.AdminNotes
+            });
+            if (!payout.Success || payout.Data is null)
+                continue;
+            result.ProcessedCount++;
+            result.TotalAmount += payout.Data.TotalAmount;
+            result.PayoutIds.Add(payout.Data.PayoutId);
+        }
+
+        return Response<ProcessAllAffiliatePayoutsResultModel>.SuccessResponse(result);
+    }
+
+    private async Task<List<AdminFirestore.CommissionRow>> EnrichCommissionsAsync(
+        List<AdminFirestore.CommissionRow> rows)
+    {
+        var apps = await _store.ListAffiliateApplicationsAsync(null);
+        foreach (var row in rows)
+        {
+            var app = apps.FirstOrDefault(a =>
+                a.Id.ToString().Equals(row.AmbassadorId, StringComparison.OrdinalIgnoreCase)
+                || a.Email.Equals(row.AmbassadorId, StringComparison.OrdinalIgnoreCase));
+            var profileName = await _store.GetCustomerDisplayNameAsync(row.AmbassadorId);
+            row.AmbassadorName = !string.IsNullOrWhiteSpace(app?.FullName)
+                ? app!.FullName
+                : (!string.IsNullOrWhiteSpace(profileName) ? profileName! : row.AmbassadorId);
+        }
+
+        return rows;
+    }
 
     private async Task<AffiliateApplicationModel?> FindMineAsync()
     {

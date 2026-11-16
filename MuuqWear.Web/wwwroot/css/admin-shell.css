@@ -485,10 +485,75 @@ html[data-admin-theme="dark"] .an-nav__subitem.an-nav--loading::after {
     text-decoration: none;
 }
 
+a.an-nav__subitem.an-nav__subitem--active,
 .an-nav__subitem--active {
     background: var(--admin-active);
     color: var(--admin-active-text);
     text-decoration: none;
+}
+
+.mw-admin .mw-pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 16px 0;
+}
+
+.mw-admin .mw-pagination__size {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #374151;
+}
+
+.mw-admin .mw-pagination__select {
+    padding: 4px 8px;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #374151;
+    background: #fff;
+}
+
+.mw-admin .mw-pagination__info {
+    color: #6b7280;
+    font-size: 12px;
+}
+
+.mw-admin .mw-pagination__controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.mw-admin button.mw-pagination__btn {
+    min-width: 36px;
+    height: 36px;
+    padding: 0 10px;
+    border: 1.5px solid #e5e7eb;
+    background: #fff;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+    cursor: pointer;
+}
+
+.mw-admin button.mw-pagination__btn:hover:not(:disabled),
+.mw-admin button.mw-pagination__btn.active {
+    background: #1E2A47;
+    color: #fff;
+    border-color: #1E2A47;
+}
+
+.mw-admin button.mw-pagination__btn:disabled {
+    background: #f3f4f6;
+    color: #d1d5db;
+    cursor: not-allowed;
+    border-color: #e5e7eb;
 }
 
 .an-nav__subitem-badge {

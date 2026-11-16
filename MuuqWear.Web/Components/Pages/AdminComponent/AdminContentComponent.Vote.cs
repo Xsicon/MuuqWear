@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Components;
 using MuuqWear.Model.Vote;
 
 namespace MuuqWear.Web.Components.Pages.AdminComponent;
@@ -8,6 +9,9 @@ public partial class AdminContentComponent
     private VoteStatsModel? voteStats;
     private string voteStatusFilter = "All";
     private bool voteItemsLoading;
+    private bool showVoteEditor;
+    private bool isSavingVote;
+    private VoteItemModel voteForm = new();
 
     private static readonly string[] VoteStatusFilters =
         ["All", "Active", "Pre-Order Ready", "In Production", "Completed", "Draft"];
@@ -142,13 +146,105 @@ public partial class AdminContentComponent
 
     private void OpenVoteCampaignPanel(VoteItemModel? item = null)
     {
-        ShowToast(item == null
-            ? "Vote campaign creation will be available when admin write APIs are connected."
-            : $"Editing \"{item.StyleName}\" will be available when admin write APIs are connected.");
+        voteForm = item == null
+            ? new VoteItemModel
+            {
+                Status = "active",
+                Tag = "ACTIVE",
+                Season = DateTime.UtcNow.Year.ToString()
+            }
+            : new VoteItemModel
+            {
+                Id = item.Id,
+                StyleName = item.StyleName,
+                Subtitle = item.Subtitle,
+                Description = item.Description,
+                ImageUrl = item.ImageUrl,
+                Tag = item.Tag,
+                VoteCount = item.VoteCount,
+                Status = item.Status,
+                Season = item.Season,
+                ColorOptions = item.ColorOptions?.ToList() ?? new List<string>(),
+                CreatedAt = item.CreatedAt
+            };
+        showVoteEditor = true;
+        formError = string.Empty;
     }
 
-    private void AdvanceVoteCampaign(VoteItemModel item)
+    private void CloseVoteEditor() => showVoteEditor = false;
+
+    private void OnVoteColorsChanged(ChangeEventArgs e) =>
+        voteForm.ColorOptions = (e.Value?.ToString() ?? "")
+            .Split([';', ',', '|'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .ToList();
+
+    private async Task SaveVoteCampaignAsync()
     {
-        ShowToast($"Status advancement for \"{item.StyleName}\" requires admin write APIs.");
+        if (string.IsNullOrWhiteSpace(voteForm.StyleName))
+        {
+            formError = "Style name is required.";
+            return;
+        }
+
+        isSavingVote = true;
+        formError = string.Empty;
+        try
+        {
+            if (string.IsNullOrWhiteSpace(voteForm.Status))
+                voteForm.Status = "active";
+            if (string.IsNullOrWhiteSpace(voteForm.Tag))
+                voteForm.Tag = MapVoteDisplayStatus(voteForm).ToUpperInvariant();
+
+            var result = await VoteService.UpsertItem(voteForm);
+            if (!result.Success)
+            {
+                formError = result.Message ?? "Failed to save campaign.";
+                return;
+            }
+
+            showVoteEditor = false;
+            ShowToast(voteForm.Id == Guid.Empty ? "Campaign created" : "Campaign updated");
+            await LoadVoteItemsAsync();
+        }
+        finally
+        {
+            isSavingVote = false;
+        }
+    }
+
+    private async Task AdvanceVoteCampaign(VoteItemModel item)
+    {
+        var current = MapVoteDisplayStatus(item);
+        var (nextStatus, nextTag) = current switch
+        {
+            "Active" => ("pre-order ready", "PRE-ORDER"),
+            "Pre-Order Ready" => ("in production", "PRODUCTION"),
+            "In Production" => ("completed", "COMPLETED"),
+            "Draft" => ("active", "ACTIVE"),
+            _ => ("completed", "COMPLETED")
+        };
+
+        var result = await VoteService.UpdateItemStatus(item.Id, nextStatus, nextTag);
+        if (!result.Success)
+        {
+            ShowToast(result.Message ?? "Failed to update status.");
+            return;
+        }
+
+        ShowToast($"\"{item.StyleName}\" moved to {MapVoteDisplayStatus(result.Data!)}");
+        await LoadVoteItemsAsync();
+    }
+
+    private async Task DeleteVoteCampaignAsync(VoteItemModel item)
+    {
+        var result = await VoteService.DeleteItem(item.Id);
+        if (!result.Success)
+        {
+            ShowToast(result.Message ?? "Failed to delete campaign.");
+            return;
+        }
+
+        ShowToast($"\"{item.StyleName}\" deleted");
+        await LoadVoteItemsAsync();
     }
 }

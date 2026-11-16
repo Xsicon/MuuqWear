@@ -42,6 +42,26 @@ public class AffiliateService : IAffiliateService
         }
     }
 
+    public async Task<Response<string>> UploadSampleFile(string fileName, byte[] bytes, string contentType)
+    {
+        try
+        {
+            using var content = new MultipartFormDataContent();
+            var fileContent = new ByteArrayContent(bytes);
+            fileContent.Headers.ContentType =
+                new System.Net.Http.Headers.MediaTypeHeaderValue(
+                    string.IsNullOrWhiteSpace(contentType) ? "application/octet-stream" : contentType);
+            content.Add(fileContent, "file", fileName);
+
+            var response = await _httpClient.PostAsync("api/Affiliate/upload-sample", content);
+            return await HttpResponseReader.ReadAsync<string>(response);
+        }
+        catch (Exception ex)
+        {
+            return Response<string>.Fail($"Error: {ex.Message}");
+        }
+    }
+
     public async Task<Response<AffiliateStatusModel>> GetStatus()
     {
         try

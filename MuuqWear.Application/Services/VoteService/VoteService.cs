@@ -186,4 +186,13 @@ public class VoteService : IVoteService
             };
         }
     }
+
+    public Task<Response<VoteItemModel>> UpsertItem(VoteItemModel item) =>
+        Task.FromResult(Response<VoteItemModel>.Fail("Vote admin writes are only available on the admin server."));
+
+    public Task<Response<VoteItemModel>> UpdateItemStatus(Guid voteItemId, string status, string? tag = null) =>
+        Task.FromResult(Response<VoteItemModel>.Fail("Vote admin writes are only available on the admin server."));
+
+    public Task<Response<bool>> DeleteItem(Guid voteItemId) =>
+        Task.FromResult(Response<bool>.Fail("Vote admin writes are only available on the admin server."));
 }

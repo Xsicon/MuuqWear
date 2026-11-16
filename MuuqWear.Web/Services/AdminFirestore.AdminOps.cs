@@ -118,10 +118,12 @@ public sealed partial class AdminFirestore
             SocialHandles = request.SocialHandles,
             AudienceSize = request.AudienceSize,
             Status = "pending",
+            IsActive = true,
             SubmittedAt = DateTime.UtcNow
         };
         await _db.Collection("affiliateApplications").Document(id.ToString())
             .SetAsync(ToAffiliateFields(model), cancellationToken: cancellationToken);
+        _affiliates.Clear();
         return model;
     }
 
@@ -131,12 +133,16 @@ public sealed partial class AdminFirestore
         var doc = await _db.Collection("affiliateApplications").Document(id.ToString()).GetSnapshotAsync(cancellationToken);
         if (!doc.Exists)
             return null;
-        await doc.Reference.UpdateAsync(new Dictionary<string, object>
+        var fields = new Dictionary<string, object>
         {
             ["status"] = status,
             ["adminNotes"] = notes ?? "",
             ["reviewedAt"] = DateTime.UtcNow
-        }, cancellationToken: cancellationToken);
+        };
+        if (status.Equals("approved", StringComparison.OrdinalIgnoreCase))
+            fields["isActive"] = true;
+        await doc.Reference.UpdateAsync(fields, cancellationToken: cancellationToken);
+        _affiliates.Clear();
         return ToAffiliate(await doc.Reference.GetSnapshotAsync(cancellationToken));
     }
 
@@ -442,9 +448,11 @@ public sealed partial class AdminFirestore
     private static AffiliateApplicationModel ToAffiliate(DocumentSnapshot doc)
     {
         Guid.TryParse(doc.Id, out var id);
+        Guid.TryParse(Str(doc, "userId"), out var userId);
         return new AffiliateApplicationModel
         {
             Id = id,
+            UserId = userId,
             FullName = Str(doc, "fullName"),
             Email = Str(doc, "email"),
             ContentNiche = Str(doc, "contentNiche"),
@@ -453,12 +461,17 @@ public sealed partial class AdminFirestore
             Status = string.IsNullOrWhiteSpace(Str(doc, "status")) ? "pending" : Str(doc, "status"),
             SubmittedAt = ToDate(doc, "submittedAt") ?? DateTime.UtcNow,
             AdminNotes = Str(doc, "adminNotes"),
-            AudienceSize = int.TryParse(Str(doc, "audienceSize"), out var n) ? n : 0
+            AudienceSize = Int(doc, "audienceSize"),
+            SampleFiles = Strings(doc, "sampleFiles"),
+            SocialHandles = ReadSocialHandles(doc),
+            IsActive = Bool(doc, "isActive", defaultValue: true),
+            AffiliateTier = string.IsNullOrWhiteSpace(Str(doc, "affiliateTier")) ? "none" : Str(doc, "affiliateTier")
         };
     }
 
     private static Dictionary<string, object> ToAffiliateFields(AffiliateApplicationModel model) => new()
     {
+        ["userId"] = model.UserId == Guid.Empty ? "" : model.UserId.ToString(),
         ["fullName"] = model.FullName,
         ["email"] = model.Email,
         ["contentNiche"] = model.ContentNiche,
@@ -466,8 +479,66 @@ public sealed partial class AdminFirestore
         ["whyMuuqwear"] = model.WhyMuuqwear ?? "",
         ["status"] = model.Status,
         ["submittedAt"] = model.SubmittedAt,
-        ["audienceSize"] = model.AudienceSize
+        ["audienceSize"] = model.AudienceSize,
+        ["sampleFiles"] = model.SampleFiles ?? new List<string>(),
+        ["isActive"] = model.IsActive,
+        ["affiliateTier"] = model.AffiliateTier ?? "none",
+        ["socialHandles"] = (model.SocialHandles ?? new List<SocialHandleModel>())
+            .Select(h => new Dictionary<string, object>
+            {
+                ["platform"] = h.Platform ?? "",
+                ["handle"] = h.Handle ?? "",
+                ["followers"] = h.Followers
+            })
+            .ToList()
     };
+
+    public async Task<AffiliateApplicationModel?> UpdateAffiliateActiveAsync(
+        Guid idOrUserId, bool isActive, CancellationToken cancellationToken = default)
+    {
+        var all = await ListAffiliateApplicationsAsync(null, cancellationToken);
+        var app = all.FirstOrDefault(a => a.Id == idOrUserId)
+            ?? all.FirstOrDefault(a => a.UserId == idOrUserId && a.UserId != Guid.Empty);
+        if (app is null)
+            return null;
+
+        app.IsActive = isActive;
+        await _db.Collection("affiliateApplications").Document(app.Id.ToString())
+            .UpdateAsync(new Dictionary<string, object> { ["isActive"] = isActive }, cancellationToken: cancellationToken);
+        _affiliates.Clear();
+        return app;
+    }
+
+    private static List<SocialHandleModel> ReadSocialHandles(DocumentSnapshot doc)
+    {
+        var handles = new List<SocialHandleModel>();
+        if (!doc.ContainsField("socialHandles"))
+            return handles;
+
+        IEnumerable<object> rows;
+        try { rows = doc.GetValue<List<object>>("socialHandles") ?? []; }
+        catch { return handles; }
+
+        foreach (var rowObj in rows)
+        {
+            Dictionary<string, object> row;
+            if (rowObj is Dictionary<string, object> dict)
+                row = dict;
+            else if (rowObj is IDictionary<string, object> map)
+                row = map.ToDictionary(p => p.Key, p => p.Value);
+            else
+                continue;
+
+            handles.Add(new SocialHandleModel
+            {
+                Platform = StrObj(row, "platform"),
+                Handle = StrObj(row, "handle"),
+                Followers = ToInt(row, "followers")
+            });
+        }
+
+        return handles;
+    }
 
     private static ChatSessionModel ToChatSession(DocumentSnapshot doc)
     {
@@ -526,6 +597,11 @@ public sealed partial class AdminFirestore
             TechnicalAvailability = EmptyToNull(Str(doc, "technicalAvailability")),
             ProductId = productId == Guid.Empty ? null : productId,
             Views = Int(doc, "views"),
+            SeoTitle = EmptyToNull(Str(doc, "seoTitle")),
+            Tags = Strings(doc, "tags"),
+            IsFeatured = Bool(doc, "isFeatured"),
+            ScheduledAt = ToDate(doc, "scheduledAt"),
+            ReadTimeMinutes = doc.ContainsField("readTimeMinutes") ? Int(doc, "readTimeMinutes") : null,
             CreatedAt = ToDate(doc, "createdAt"),
             PublishedAt = ToDate(doc, "publishedAt")
         };
@@ -544,6 +620,9 @@ public sealed partial class AdminFirestore
             ["author"] = item.Author ?? "",
             ["excerpt"] = item.Excerpt ?? "",
             ["slug"] = item.Slug ?? "",
+            ["seoTitle"] = item.SeoTitle ?? "",
+            ["tags"] = item.Tags ?? new List<string>(),
+            ["isFeatured"] = item.IsFeatured,
             ["designer"] = item.Designer ?? "",
             ["year"] = item.Year ?? "",
             ["collection"] = item.Collection ?? "",
@@ -555,6 +634,10 @@ public sealed partial class AdminFirestore
             ["views"] = item.Views,
             ["createdAt"] = item.CreatedAt ?? DateTime.UtcNow
         };
+        if (item.ReadTimeMinutes.HasValue)
+            fields["readTimeMinutes"] = item.ReadTimeMinutes.Value;
+        if (item.ScheduledAt.HasValue)
+            fields["scheduledAt"] = item.ScheduledAt.Value;
         if (item.ProductId is Guid productId && productId != Guid.Empty)
             fields["productId"] = productId.ToString();
         if (item.PublishedAt.HasValue)

@@ -1,5 +1,6 @@
 ﻿@page "/affiliate"
 @using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Forms
 @using MuuqWear.Application.Services.AffiliateService
 @using MuuqWear.Model.AffiliateApplication
 @using MuuqWear.Model.Site
@@ -1040,17 +1041,40 @@
                         <textarea rows="4" @bind="model.WhyMuuqwear" placeholder="Tell us why you'd be a great fit..."></textarea>
                     </div>
 
-                    <!-- Sample Content Upload (Placeholder) -->
+                    <!-- Sample Content Upload -->
                     <div class="mw-form-field">
                         <label>Sample Content (max 5 files)</label>
-                        <div class="mw-file-upload-placeholder">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                <polyline points="17 8 12 3 7 8"></polyline>
-                                <line x1="12" x2="12" y1="3" y2="15"></line>
-                            </svg>
-                            <span>Click to upload images or videos</span>
-                        </div>
+                        @if (uploadedSamples.Count < 5)
+                        {
+                            <label class="mw-file-upload-placeholder @(isUploadingSample ? "mw-file-upload-placeholder--busy" : null)">
+                                <InputFile OnChange="HandleSampleUploadAsync"
+                                           accept="image/*,video/*"
+                                           multiple
+                                           class="mw-file-upload-input" />
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" x2="12" y1="3" y2="15"></line>
+                                </svg>
+                                <span>@(isUploadingSample ? "Uploading…" : "Click to upload images or videos")</span>
+                            </label>
+                        }
+                        @if (uploadedSamples.Count > 0)
+                        {
+                            <ul class="mw-file-upload-list">
+                                @foreach (var sample in uploadedSamples)
+                                {
+                                    <li>
+                                        <a href="@sample.Url" target="_blank" rel="noopener noreferrer">@sample.Name</a>
+                                        <button type="button" class="mw-file-upload-remove" @onclick="() => RemoveSample(sample.Url)" aria-label="Remove file">×</button>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                        @if (!string.IsNullOrEmpty(sampleUploadError))
+                        {
+                            <p class="mw-form-error">@sampleUploadError</p>
+                        }
                     </div>
 
                     <!-- Submit Button -->
@@ -1287,6 +1311,8 @@
                 new() { Platform = "YouTube" }
             }
             };
+            uploadedSamples.Clear();
+            sampleUploadError = "";
         }
     }
 
@@ -1347,8 +1373,7 @@
                 ContentNiche = model.ContentNiche,
                 PortfolioUrl = model.PortfolioUrl,
                 WhyMuuqwear = model.WhyMuuqwear,
-                SampleFiles = new List<string>
-                ()
+                SampleFiles = uploadedSamples.Select(s => s.Url).ToList()
             };
 
             var result = await AffiliateService.SubmitApplication(request);
@@ -1378,5 +1403,63 @@
         showAlertMessage = "";
     }
 
+    private List<(string Name, string Url)> uploadedSamples = new();
+    private bool isUploadingSample;
+    private string sampleUploadError = "";
+    private const long MaxSampleBytes = 15 * 1024 * 1024;
 
+    private async Task HandleSampleUploadAsync(InputFileChangeEventArgs e)
+    {
+        sampleUploadError = "";
+        var remaining = 5 - uploadedSamples.Count;
+        if (remaining <= 0)
+        {
+            sampleUploadError = "You can upload up to 5 sample files.";
+            return;
+        }
+
+        isUploadingSample = true;
+        try
+        {
+            foreach (var file in e.GetMultipleFiles(remaining))
+            {
+                if (uploadedSamples.Count >= 5)
+                    break;
+
+                if (file.Size > MaxSampleBytes)
+                {
+                    sampleUploadError = $"{file.Name} must be 15MB or smaller.";
+                    continue;
+                }
+
+                if (!file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase)
+                    && !file.ContentType.StartsWith("video/", StringComparison.OrdinalIgnoreCase))
+                {
+                    sampleUploadError = $"{file.Name} must be an image or video.";
+                    continue;
+                }
+
+                await using var stream = file.OpenReadStream(MaxSampleBytes);
+                await using var ms = new MemoryStream();
+                await stream.CopyToAsync(ms);
+
+                var result = await AffiliateService.UploadSampleFile(file.Name, ms.ToArray(), file.ContentType);
+                if (result.Success && !string.IsNullOrWhiteSpace(result.Data))
+                    uploadedSamples.Add((file.Name, result.Data));
+                else
+                    sampleUploadError = result.Message ?? $"Failed to upload {file.Name}.";
+            }
+        }
+        catch (Exception ex)
+        {
+            sampleUploadError = "Upload failed: " + ex.Message;
+        }
+        finally
+        {
+            isUploadingSample = false;
+        }
+    }
+
+    private void RemoveSample(string url) =>
+        uploadedSamples.RemoveAll(s => s.Url == url);
 }

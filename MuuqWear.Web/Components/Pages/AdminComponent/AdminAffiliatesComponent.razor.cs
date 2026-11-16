@@ -1008,7 +1008,7 @@ public partial class AdminAffiliatesComponent : IDisposable
         {
             var app = activeApplications.FirstOrDefault(a => a.Id == applicationId);
             if (app != null)
-                await ToggleAffiliateActiveAsync(app.UserId, !app.IsActive);
+                await ToggleAffiliateActiveAsync(app.Id, !app.IsActive);
             return;
         }
 

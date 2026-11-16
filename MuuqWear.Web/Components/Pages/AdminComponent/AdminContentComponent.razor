@@ -496,9 +496,79 @@
         }
         else if (activeView == "vote")
         {
-            <div class="content-readonly-banner">
-                <p>Vote campaigns are read-only here. Create, edit, and status changes require admin write APIs.</p>
+            <div class="content-toolbar" style="margin-bottom: 16px;">
+                <button type="button" class="btn-primary" @onclick="() => OpenVoteCampaignPanel()">New Campaign</button>
             </div>
+
+            @if (showVoteEditor)
+            {
+                <div class="form-panel form-panel--journal" style="margin-bottom: 20px;">
+                    <div class="form-panel__header">
+                        <div>
+                            <p class="form-panel__eyebrow">Vote</p>
+                            <h2 class="form-panel__title">@(voteForm.Id == Guid.Empty ? "New Campaign" : "Edit Campaign")</h2>
+                        </div>
+                        <button type="button" class="form-panel__close" @onclick="CloseVoteEditor" aria-label="Close">×</button>
+                    </div>
+                    @if (!string.IsNullOrEmpty(formError))
+                    {
+                        <p class="form-error form-error--inset">@formError</p>
+                    }
+                    <div class="form-fields form-fields--ref">
+                        <div class="form-field">
+                            <label class="form-label">Style name</label>
+                            <input @bind="voteForm.StyleName" class="form-input form-input--ref" placeholder="Campaign title" />
+                        </div>
+                        <div class="form-grid-2">
+                            <div class="form-field">
+                                <label class="form-label">Subtitle</label>
+                                <input @bind="voteForm.Subtitle" class="form-input form-input--ref" placeholder="Apparel" />
+                            </div>
+                            <div class="form-field">
+                                <label class="form-label">Season</label>
+                                <input @bind="voteForm.Season" class="form-input form-input--ref" placeholder="2026" />
+                            </div>
+                        </div>
+                        <div class="form-field">
+                            <label class="form-label">Image URL</label>
+                            <input @bind="voteForm.ImageUrl" class="form-input form-input--ref" placeholder="https://..." />
+                        </div>
+                        <div class="form-field">
+                            <label class="form-label">Description</label>
+                            <textarea @bind="voteForm.Description" rows="3" class="form-textarea form-textarea--ref"></textarea>
+                        </div>
+                        <div class="form-grid-2">
+                            <div class="form-field">
+                                <label class="form-label">Status</label>
+                                <select @bind="voteForm.Status" class="form-input form-input--ref">
+                                    <option value="draft">Draft</option>
+                                    <option value="active">Active</option>
+                                    <option value="pre-order ready">Pre-Order Ready</option>
+                                    <option value="in production">In Production</option>
+                                    <option value="completed">Completed</option>
+                                </select>
+                            </div>
+                            <div class="form-field">
+                                <label class="form-label">Tag</label>
+                                <input @bind="voteForm.Tag" class="form-input form-input--ref" placeholder="ACTIVE" />
+                            </div>
+                        </div>
+                        <div class="form-field">
+                            <label class="form-label">Colors (semicolon-separated)</label>
+                            <input value="@(string.Join(';', voteForm.ColorOptions ?? new List<string>()))"
+                                   @onchange="OnVoteColorsChanged"
+                                   class="form-input form-input--ref"
+                                   placeholder="#111;#eee" />
+                        </div>
+                    </div>
+                    <div class="form-footer">
+                        <button type="button" class="form-footer-btn form-footer-btn--outline" @onclick="CloseVoteEditor">Cancel</button>
+                        <button type="button" class="form-footer-btn form-footer-btn--primary" @onclick="SaveVoteCampaignAsync" disabled="@isSavingVote">
+                            @(isSavingVote ? "Saving…" : "Save Campaign")
+                        </button>
+                    </div>
+                </div>
+            }
 
             <div class="content-stats-grid content-stats-grid--4">
                 <div class="content-stat-card">
@@ -616,7 +686,7 @@
                                     {
                                         <button type="button" class="content-vote-card__btn content-vote-card__btn--primary" @onclick="() => AdvanceVoteCampaign(campaign)">Close Vote</button>
                                     }
-                                    <button type="button" class="content-vote-card__btn content-vote-card__btn--icon" title="Delete" @onclick='() => ShowToast("Campaign delete requires admin write APIs.")'>
+                                    <button type="button" class="content-vote-card__btn content-vote-card__btn--icon" title="Delete" @onclick="() => DeleteVoteCampaignAsync(campaign)">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
                                     </button>
                                 </div>
@@ -737,10 +807,15 @@
 
             @if (ActiveCategory == ContentCategory.JournalArticles)
             {
-                <div class="form-image-drop">
+                <label class="form-image-drop @(isUploading ? "form-image-drop--busy" : null)">
+                    <InputFile OnChange="HandleImageUpload" accept="image/*" class="form-image-drop__input" />
                     @if (!string.IsNullOrEmpty(form.ImageUrl))
                     {
                         <img src="@form.ImageUrl" alt="" class="form-image-drop__preview" />
+                    }
+                    else if (isUploading)
+                    {
+                        <p class="form-image-drop__title">Uploading…</p>
                     }
                     else
                     {
@@ -748,7 +823,7 @@
                         <p class="form-image-drop__title">Drop image or click to upload</p>
                         <p class="form-image-drop__hint">1200 × 800 px recommended</p>
                     }
-                </div>
+                </label>
 
                 <div class="form-grid-2">
                     <div class="form-field form-field--span-2">
@@ -798,7 +873,7 @@
                     <div class="form-editor-toolbar">
                         @foreach (var tool in new[] { "B", "I", "H2", "H3", "Link" })
                         {
-                            <button type="button" class="form-editor-toolbar__btn">@tool</button>
+                            <button type="button" class="form-editor-toolbar__btn" @onclick="() => ApplyJournalFormat(tool)">@tool</button>
                         }
                     </div>
                     <textarea @bind="form.Content" @bind:after="OnJournalFormFieldChanged" rows="8" placeholder="Write the full article body here..." class="form-textarea form-textarea--ref form-textarea--toolbar"></textarea>
@@ -907,17 +982,22 @@
                 <div class="form-grid-2">
                     <div class="form-field">
                         <label class="form-label">Inspiration Image</label>
-                        <div class="form-image-drop form-image-drop--compact">
+                        <label class="form-image-drop form-image-drop--compact @(isUploading ? "form-image-drop--busy" : null)">
+                            <InputFile OnChange="HandleImageUpload" accept="image/*" class="form-image-drop__input" />
                             @if (!string.IsNullOrEmpty(form.ImageUrl))
                             {
                                 <img src="@form.ImageUrl" alt="" class="form-image-drop__preview" />
+                            }
+                            else if (isUploading)
+                            {
+                                <p class="form-image-drop__hint">Uploading…</p>
                             }
                             else
                             {
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
                                 <p class="form-image-drop__hint">Upload Inspiration Image</p>
                             }
-                        </div>
+                        </label>
                         <div class="form-segment-tabs">
                             <button type="button" class="form-segment-tab @(imageTab == "url" ? "active" : "")" @onclick='() => imageTab = "url"'>URL</button>
                             <button type="button" class="form-segment-tab @(imageTab == "upload" ? "active" : "")" @onclick='() => imageTab = "upload"'>Upload</button>
@@ -934,17 +1014,22 @@
                     </div>
                     <div class="form-field">
                         <label class="form-label">Product Image</label>
-                        <div class="form-image-drop form-image-drop--compact">
+                        <label class="form-image-drop form-image-drop--compact @(isSecondImageUploading ? "form-image-drop--busy" : null)">
+                            <InputFile OnChange="HandleSecondImageUpload" accept="image/*" class="form-image-drop__input" />
                             @if (!string.IsNullOrEmpty(form.SecondImageUrl))
                             {
                                 <img src="@form.SecondImageUrl" alt="" class="form-image-drop__preview" />
+                            }
+                            else if (isSecondImageUploading)
+                            {
+                                <p class="form-image-drop__hint">Uploading…</p>
                             }
                             else
                             {
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
                                 <p class="form-image-drop__hint">Upload Product Image</p>
                             }
-                        </div>
+                        </label>
                         <div class="form-segment-tabs">
                             <button type="button" class="form-segment-tab @(secondImageTab == "url" ? "active" : "")" @onclick='() => secondImageTab = "url"'>URL</button>
                             <button type="button" class="form-segment-tab @(secondImageTab == "upload" ? "active" : "")" @onclick='() => secondImageTab = "upload"'>Upload</button>

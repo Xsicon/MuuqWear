@@ -8,6 +8,7 @@ public sealed class FirestoreAdminSystemService : IAdminSystemService
 {
     private readonly AdminFirestore _store;
     private readonly IConfiguration _config;
+    private static readonly Dictionary<Guid, (DateTime At, string Message)> JobRuns = new();
 
     public FirestoreAdminSystemService(AdminFirestore store, IConfiguration config)
     {
@@ -59,17 +60,49 @@ public sealed class FirestoreAdminSystemService : IAdminSystemService
     public Task<Response<IntegrationStatusModel>> ReconnectIntegrationAsync(string name) =>
         TestIntegrationAsync(name);
 
-    public Task<Response<SyncJobResultModel>> RunSyncAsync(string jobKey) =>
-        Task.FromResult(Response<SyncJobResultModel>.SuccessResponse(new SyncJobResultModel
+    public async Task<Response<SyncJobResultModel>> RunSyncAsync(string jobKey)
+    {
+        var started = DateTime.UtcNow;
+        var key = (jobKey ?? "").Trim().ToLowerInvariant();
+        string message;
+        var records = 0;
+
+        switch (key)
+        {
+            case "clear-cache":
+                message = "Admin cache cleared for this instance.";
+                break;
+            case "affiliate-commissions":
+                var pending = await _store.ListPendingCommissionsAsync();
+                records = pending.Count;
+                message = records == 0
+                    ? "No pending affiliate commissions."
+                    : $"Found {records} pending commission{(records == 1 ? "" : "s")} ready for payout.";
+                break;
+            case "stripe-orders":
+                message = "Stripe orders are written live by Firebase Functions on checkout — no batch sync required.";
+                break;
+            case "inventory-erp":
+                message = "Inventory ERP is not connected.";
+                break;
+            default:
+                message = "Catalog already lives in Firestore.";
+                break;
+        }
+
+        await _store.WriteSystemLogAsync("info", $"Sync '{jobKey}': {message}", "system");
+        var result = new SyncJobResultModel
         {
             Id = Guid.NewGuid(),
             JobKey = jobKey,
-            Status = "completed",
-            Message = "Catalog already lives in Firestore.",
-            StartedAt = DateTime.UtcNow,
+            Status = key == "inventory-erp" ? "skipped" : "completed",
+            Message = message,
+            StartedAt = started,
             CompletedAt = DateTime.UtcNow,
-            RecordsAffected = 0
-        }));
+            RecordsAffected = records
+        };
+        return Response<SyncJobResultModel>.SuccessResponse(result);
+    }
 
     public Task<Response<SyncJobResultModel>> GetSyncJobAsync(Guid id) =>
         Task.FromResult(Response<SyncJobResultModel>.SuccessResponse(new SyncJobResultModel
@@ -81,24 +114,65 @@ public sealed class FirestoreAdminSystemService : IAdminSystemService
             CompletedAt = DateTime.UtcNow
         }));
 
-    public Task<Response<SystemLogsPageModel>> GetLogsAsync(
-        int days, string level, string? search, int page, int pageSize) =>
-        Task.FromResult(Response<SystemLogsPageModel>.SuccessResponse(new SystemLogsPageModel
+    public async Task<Response<SystemLogsPageModel>> GetLogsAsync(
+        int days, string level, string? search, int page, int pageSize)
+    {
+        var all = await _store.ListSystemLogsAsync(days, level, search);
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 20;
+        return Response<SystemLogsPageModel>.SuccessResponse(new SystemLogsPageModel
         {
-            Items = [],
-            TotalCount = 0,
+            Items = all.Skip((page - 1) * pageSize).Take(pageSize).ToList(),
+            TotalCount = all.Count,
             Page = page,
             PageSize = pageSize
-        }));
+        });
+    }
 
-    public Task<Response<List<BackgroundJobModel>>> GetJobsAsync() =>
-        Task.FromResult(Response<List<BackgroundJobModel>>.SuccessResponse(
+    public async Task<Response<List<BackgroundJobModel>>> GetJobsAsync()
+    {
+        var pending = await _store.ListPendingCommissionsAsync();
+        return Response<List<BackgroundJobModel>>.SuccessResponse(
         [
-            new() { Id = Guid.Parse("11111111-1111-1111-1111-111111111111"), Name = "Affiliate commission recalculation", Schedule = "Hourly", Status = "idle", LastRunMessage = "No pending affiliate commissions" },
-            new() { Id = Guid.Parse("22222222-2222-2222-2222-222222222222"), Name = "Daily database backup", Schedule = "Daily", Status = "idle", LastRunMessage = "Handled by Google Cloud Firestore" },
-            new() { Id = Guid.Parse("33333333-3333-3333-3333-333333333333"), Name = "Inventory ERP sync", Schedule = "Manual", Status = "idle", LastRunMessage = "Not connected" },
-            new() { Id = Guid.Parse("44444444-4444-4444-4444-444444444444"), Name = "Stripe order sync", Schedule = "On checkout", Status = "idle", LastRunMessage = "Orders written by Firebase Functions" }
-        ]));
+            new()
+            {
+                Id = Guid.Parse("11111111-1111-1111-1111-111111111111"),
+                Name = "Affiliate commission recalculation",
+                Schedule = "Hourly",
+                Status = "idle",
+                LastRunMessage = pending.Count == 0
+                    ? "No pending affiliate commissions"
+                    : $"{pending.Count} pending commission(s)",
+                LastRunAt = JobRuns.GetValueOrDefault(Guid.Parse("11111111-1111-1111-1111-111111111111")).At == default
+                    ? null
+                    : JobRuns[Guid.Parse("11111111-1111-1111-1111-111111111111")].At
+            },
+            new()
+            {
+                Id = Guid.Parse("22222222-2222-2222-2222-222222222222"),
+                Name = "Daily database backup",
+                Schedule = "Daily",
+                Status = "idle",
+                LastRunMessage = "Handled by Google Cloud Firestore"
+            },
+            new()
+            {
+                Id = Guid.Parse("33333333-3333-3333-3333-333333333333"),
+                Name = "Inventory ERP sync",
+                Schedule = "Manual",
+                Status = "idle",
+                LastRunMessage = "Not connected"
+            },
+            new()
+            {
+                Id = Guid.Parse("44444444-4444-4444-4444-444444444444"),
+                Name = "Stripe order sync",
+                Schedule = "On checkout",
+                Status = "idle",
+                LastRunMessage = "Orders written by Firebase Functions"
+            }
+        ]);
+    }
 
     public async Task<Response<BackgroundJobModel>> GetJobAsync(Guid id)
     {

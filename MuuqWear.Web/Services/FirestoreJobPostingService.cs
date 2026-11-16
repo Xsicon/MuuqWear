@@ -8,8 +8,13 @@ namespace MuuqWear.Web.Services;
 public sealed class FirestoreJobPostingService : IJobPostingService
 {
     private readonly AdminFirestore _store;
+    private readonly IConfiguration _config;
 
-    public FirestoreJobPostingService(AdminFirestore store) => _store = store;
+    public FirestoreJobPostingService(AdminFirestore store, IConfiguration config)
+    {
+        _store = store;
+        _config = config;
+    }
 
     public async Task<Response<List<JobPostingModel>>> GetAll() =>
         Response<List<JobPostingModel>>.SuccessResponse(await _store.ListJobPostingsAsync());
@@ -106,7 +111,13 @@ public sealed class FirestoreJobPostingService : IJobPostingService
     }
 
     public Task<Response<string>> UploadResume(string fileName, byte[] bytes, string contentType) =>
-        Task.FromResult(Response<string>.Fail("Resume upload is not available in admin Firestore yet."));
+        FirebaseStorageImages.UploadAsync(
+            _config,
+            "resumes",
+            fileName,
+            bytes,
+            contentType,
+            FirebaseStorageImages.AllowResume);
 
     private async Task<Response<JobPostingModel>> SetStatus(Guid id, string status)
     {

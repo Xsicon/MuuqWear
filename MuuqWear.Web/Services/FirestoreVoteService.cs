@@ -9,12 +9,14 @@ namespace MuuqWear.Web.Services;
 public sealed class FirestoreVoteService : IVoteService
 {
     private readonly FirestoreDb _db;
+    private readonly AdminFirestore _store;
     private readonly IHttpContextAccessor _http;
 
-    public FirestoreVoteService(IConfiguration config, IHttpContextAccessor http)
+    public FirestoreVoteService(IConfiguration config, IHttpContextAccessor http, AdminFirestore store)
     {
         _db = FirestoreDb.Create(config["Firebase:ProjectId"] ?? "muuqwear-6e2e0");
         _http = http;
+        _store = store;
     }
 
     public async Task<Response<List<VoteItemModel>>> GetActiveItems() =>
@@ -48,20 +50,45 @@ public sealed class FirestoreVoteService : IVoteService
             });
         }
         var snap = await doc.GetSnapshotAsync();
-        return Response<VoteItemModel>.SuccessResponse(ToVote(snap));
+        return Response<VoteItemModel>.SuccessResponse(AdminFirestore.ToVoteItem(snap));
     }
 
     public Task<Response<bool>> RegisterPreOrder(Guid voteItemId) =>
         Task.FromResult(Response<bool>.SuccessResponse(true));
+
+    public async Task<Response<VoteItemModel>> UpsertItem(VoteItemModel item) =>
+        Response<VoteItemModel>.SuccessResponse(await _store.UpsertVoteAsync(item));
+
+    public async Task<Response<VoteItemModel>> UpdateItemStatus(Guid voteItemId, string status, string? tag = null)
+    {
+        var updated = await _store.UpdateVoteStatusAsync(voteItemId, status, tag);
+        return updated is null
+            ? Response<VoteItemModel>.Fail("Campaign not found")
+            : Response<VoteItemModel>.SuccessResponse(updated);
+    }
+
+    public async Task<Response<bool>> DeleteItem(Guid voteItemId) =>
+        Response<bool>.SuccessResponse(await _store.DeleteVoteAsync(voteItemId));
 
     private async Task<List<VoteItemModel>> List(string status)
     {
         try
         {
             var snap = await _db.Collection("communityVotes").GetSnapshotAsync();
-            return snap.Documents.Select(ToVote)
-                .Where(v => string.Equals(v.Status, status, StringComparison.OrdinalIgnoreCase)
-                            || (status == "active" && string.IsNullOrWhiteSpace(v.Status)))
+            return snap.Documents.Select(AdminFirestore.ToVoteItem)
+                .Where(v =>
+                {
+                    var display = (v.Status ?? "").ToLowerInvariant();
+                    if (status == "active")
+                        return string.IsNullOrWhiteSpace(display)
+                            || display.Contains("active")
+                            || display.Contains("draft")
+                            || display.Contains("pre-order")
+                            || display.Contains("production");
+                    return display.Contains("complete")
+                        || display.Contains("finished")
+                        || display.Contains("closed");
+                })
                 .ToList();
         }
         catch (Exception)
@@ -69,24 +96,4 @@ public sealed class FirestoreVoteService : IVoteService
             return [];
         }
     }
-
-    private static VoteItemModel ToVote(DocumentSnapshot doc)
-    {
-        Guid.TryParse(doc.Id, out var id);
-        return new VoteItemModel
-        {
-            Id = id,
-            StyleName = Str(doc, "styleName"),
-            Subtitle = Str(doc, "subtitle"),
-            Description = Str(doc, "description"),
-            ImageUrl = Str(doc, "imageUrl"),
-            Tag = Str(doc, "tag"),
-            VoteCount = doc.ContainsField("voteCount") ? Convert.ToInt32(doc.GetValue<object>("voteCount")) : 0,
-            Status = Str(doc, "status"),
-            Season = Str(doc, "season")
-        };
-    }
-
-    private static string Str(DocumentSnapshot doc, string field) =>
-        doc.ContainsField(field) ? doc.GetValue<string>(field) ?? "" : "";
 }

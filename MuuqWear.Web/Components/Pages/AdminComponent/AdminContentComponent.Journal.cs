@@ -364,6 +364,21 @@ public partial class AdminContentComponent
         OnJournalFormFieldChanged();
     }
 
+    private void ApplyJournalFormat(string tool)
+    {
+        form.Content ??= "";
+        form.Content = tool switch
+        {
+            "B" => form.Content + "**bold text**",
+            "I" => form.Content + "*italic text*",
+            "H2" => form.Content + (form.Content.EndsWith('\n') || form.Content.Length == 0 ? "" : "\n") + "## Heading\n",
+            "H3" => form.Content + (form.Content.EndsWith('\n') || form.Content.Length == 0 ? "" : "\n") + "### Heading\n",
+            "Link" => form.Content + "[link text](https://)",
+            _ => form.Content
+        };
+        OnJournalFormFieldChanged();
+    }
+
     private string GetJournalSlugPreview()
     {
         var slug = !string.IsNullOrWhiteSpace(form.Slug)

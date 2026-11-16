@@ -8,6 +8,7 @@ namespace MuuqWear.Application.Services.AffiliateService;
 public interface IAffiliateService
 {
     Task<Response<AffiliateApplicationModel>> SubmitApplication(SubmitAffiliateApplicationModel request);
+    Task<Response<string>> UploadSampleFile(string fileName, byte[] bytes, string contentType);
     Task<Response<AffiliateStatusModel>> GetStatus();
     Task<Response<AffiliateApplicationModel?>> GetMyApplication();
 

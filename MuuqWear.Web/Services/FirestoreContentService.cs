@@ -7,8 +7,13 @@ namespace MuuqWear.Web.Services;
 public sealed class FirestoreContentService : IContentService
 {
     private readonly AdminFirestore _store;
+    private readonly IConfiguration _config;
 
-    public FirestoreContentService(AdminFirestore store) => _store = store;
+    public FirestoreContentService(AdminFirestore store, IConfiguration config)
+    {
+        _store = store;
+        _config = config;
+    }
 
     public async Task<Response<List<ContentItemModel>>> GetAll(ContentCategory type) =>
         Response<List<ContentItemModel>>.SuccessResponse(await _store.ListContentAsync(type));
@@ -45,6 +50,15 @@ public sealed class FirestoreContentService : IContentService
         existing.TechnicalProduction = request.TechnicalProduction ?? existing.TechnicalProduction;
         existing.TechnicalAvailability = request.TechnicalAvailability ?? existing.TechnicalAvailability;
         existing.ProductId = request.ProductId ?? existing.ProductId;
+        existing.SeoTitle = request.SeoTitle ?? existing.SeoTitle;
+        existing.Tags = request.Tags ?? existing.Tags;
+        if (request.IsFeatured.HasValue)
+            existing.IsFeatured = request.IsFeatured.Value;
+        existing.ScheduledAt = request.ScheduledAt ?? existing.ScheduledAt;
+        if (request.ReadTimeMinutes.HasValue)
+            existing.ReadTimeMinutes = request.ReadTimeMinutes;
+        if (!string.IsNullOrWhiteSpace(request.Category))
+            existing.Category = request.Category;
         return await Upsert(type, existing);
     }
 
@@ -71,7 +85,7 @@ public sealed class FirestoreContentService : IContentService
     }
 
     public Task<Response<string>> UploadImage(string fileName, byte[] bytes, string contentType) =>
-        Task.FromResult(Response<string>.Fail("Upload images from the product editor for now."));
+        FirebaseStorageImages.UploadAsync(_config, "content", fileName, bytes, contentType);
 
     public async Task<Response<List<ContentItemModel>>> GetPublishedDesignHistory() =>
         Response<List<ContentItemModel>>.SuccessResponse(
@@ -93,6 +107,11 @@ public sealed class FirestoreContentService : IContentService
         Author = request.Author,
         Excerpt = request.Excerpt,
         Slug = request.Slug,
+        SeoTitle = request.SeoTitle,
+        Tags = request.Tags,
+        IsFeatured = request.IsFeatured ?? false,
+        ScheduledAt = request.ScheduledAt,
+        ReadTimeMinutes = request.ReadTimeMinutes,
         Designer = request.Designer,
         Year = request.Year,
         Inspiration = request.Inspiration,

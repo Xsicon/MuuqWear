@@ -605,6 +605,21 @@ else
                     </div>
                 }
 
+                @if (selectedApplication.SampleFiles?.Count > 0)
+                {
+                    <div class="affiliates-modal__section">
+                        <h3>Sample Content</h3>
+                        @foreach (var sample in selectedApplication.SampleFiles)
+                        {
+                            <p>
+                                <a href="@sample" target="_blank" rel="noopener noreferrer">
+                                    @(Uri.TryCreate(sample, UriKind.Absolute, out var uri) ? Path.GetFileName(uri.LocalPath) : sample)
+                                </a>
+                            </p>
+                        }
+                    </div>
+                }
+
                 @if (!string.IsNullOrEmpty(selectedApplication.AdminNotes))
                 {
                     <div class="affiliates-modal__section">

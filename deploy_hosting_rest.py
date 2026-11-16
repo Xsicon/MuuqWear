@@ -102,6 +102,7 @@ def main() -> int:
                     {"glob": "/_blazor/**", "run": run},
                     {"glob": "/_framework/blazor.web.js", "run": run},
                     {"glob": "/MuuqWear.Web.styles.css", "run": run},
+                    {"glob": "/*.bundle.scp.css", "run": run},
                     {"glob": "/auth/**", "run": run},
                     {"glob": "/__/auth/**", "run": run},
                     {"glob": "/logout", "run": run},
