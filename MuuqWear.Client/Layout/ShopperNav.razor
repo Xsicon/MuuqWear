@@ -147,10 +147,6 @@
                 {
                     <div class="mw-mobile-nav__user mw-header-member">
                         <p class="mw-mobile-nav__user-name">Account</p>
-                        @if (!string.IsNullOrEmpty(_email))
-                        {
-                            <p class="mw-mobile-nav__user-email">@_email</p>
-                        }
                         <button type="button" class="mw-mobile-nav__signout" @onclick="HandleSignOut">Sign Out</button>
                     </div>
                 }

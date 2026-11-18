@@ -369,6 +369,10 @@ button.mw-mobile-nav__close:hover {
 }
 
 .mw-mobile-nav__user {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
     padding: 16px 21px;
     border-bottom: 1px solid var(--mw-border);
     background: #F3F4F6;
@@ -379,23 +383,14 @@ button.mw-mobile-nav__close:hover {
     font-size: 14px;
     font-weight: 600;
     color: var(--mw-navy);
-    margin: 0 0 2px;
-}
-
-.mw-mobile-nav__user-email {
-    font-size: 12px;
-    color: var(--mw-slate);
     margin: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
 .mw-mobile-nav__signout {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-top: 10px;
+    margin: 0;
     padding: 0;
     border: none;
     background: none;
@@ -403,6 +398,7 @@ button.mw-mobile-nav__close:hover {
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
+    flex-shrink: 0;
 }
 
 .mw-mobile-nav__auth {
