@@ -14,11 +14,13 @@ public static class VerifiedAuthSession
         string role,
         string? returnUrl,
         bool rememberMe,
-        string? refreshToken = null)
+        string? refreshToken = null,
+        string? mfa = null)
     {
         var safeRole = string.IsNullOrWhiteSpace(role) ? "user" : role.Trim();
         return new CookieAuthSession
         {
+            Mfa = string.IsNullOrWhiteSpace(mfa) ? null : mfa,
             Token = token,
             RefreshToken = string.IsNullOrWhiteSpace(refreshToken) ? null : refreshToken,
             UserId = userId,

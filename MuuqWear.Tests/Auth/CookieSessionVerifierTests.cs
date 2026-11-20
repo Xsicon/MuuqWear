@@ -21,7 +21,7 @@ public class CookieSessionVerifierTests
     public async Task StaffJwtWinsAndIgnoresClientRoleAndUserId()
     {
         var (verifier, jwt) = CreateWithJwt();
-        var token = jwt.Create("staff-uid", "ops@muuqwear.com", "admin", "Ops");
+        var token = jwt.Create("staff-uid", "ops@muuqwear.com", "admin", "Ops", "totp");
 
         var session = await verifier.CreateAsync(token, "https://evil.example/phish", true);
 
@@ -30,6 +30,38 @@ public class CookieSessionVerifierTests
         Assert.Equal("admin", session.Role);
         Assert.Equal("ops@muuqwear.com", session.Email);
         Assert.Equal("/admin", session.ReturnUrl);
+        Assert.Equal("totp", session.Mfa);
+    }
+
+    [Fact]
+    public async Task StaffJwtWithoutSecondFactorIsRejected()
+    {
+        var (verifier, jwt) = CreateWithJwt();
+        var token = jwt.Create("staff-uid", "ops@muuqwear.com", "admin", "Ops");
+
+        Assert.Null(await verifier.CreateAsync(token, "/admin", true));
+    }
+
+    [Fact]
+    public async Task FirebaseAdminWithoutSecondFactorGetsShopperAccessOnly()
+    {
+        var firebase = new StubFirebaseVerifier(new FirebaseIdTokenClaims(
+            "admin-uid",
+            "info@kobneti.com",
+            "Ops",
+            new Dictionary<string, object>
+            {
+                ["admin"] = true,
+                ["firebase"] = new Dictionary<string, object> { ["sign_in_provider"] = "password" }
+            }));
+        var verifier = Create(firebase);
+
+        var session = await verifier.CreateAsync("verified-id-token", "/admin/products", true);
+
+        Assert.NotNull(session);
+        Assert.Equal("user", session!.Role);
+        Assert.Equal("/profile", session.ReturnUrl);
+        Assert.Null(session.Mfa);
     }
 
     [Fact]
@@ -58,12 +90,17 @@ public class CookieSessionVerifierTests
             "admin-uid",
             "info@kobneti.com",
             "Ops",
-            new Dictionary<string, object> { ["admin"] = true }));
+            new Dictionary<string, object>
+            {
+                ["admin"] = true,
+                ["firebase"] = new Dictionary<string, object> { ["sign_in_second_factor"] = "totp" }
+            }));
         var verifier = Create(firebase);
 
         var session = await verifier.CreateAsync("verified-id-token", "/admin/products", true);
 
         Assert.NotNull(session);
+        Assert.Equal("totp", session!.Mfa);
         Assert.Equal("admin", session!.Role);
         Assert.Equal("admin-uid", session.UserId);
         Assert.Equal("/admin/products", session.ReturnUrl);

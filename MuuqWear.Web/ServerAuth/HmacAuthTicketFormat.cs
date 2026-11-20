@@ -21,7 +21,8 @@ public sealed class HmacAuthTicketFormat : ISecureDataFormat<AuthenticationTicke
         var email = data.Principal.FindFirst(ClaimTypes.Email)?.Value ?? "";
         var role = MuuqWear.Web.Helpers.AdminPortalUserContext.GetRole(data.Principal) ?? "user";
         var name = data.Principal.FindFirst(ClaimTypes.Name)?.Value;
-        return _jwt.Create(uid, email, role, name);
+        var mfa = data.Principal.FindFirst(MuuqWear.Web.ServerAuth.StaffMfaPolicy.ClaimType)?.Value;
+        return _jwt.Create(uid, email, role, name, mfa);
     }
 
     public AuthenticationTicket? Unprotect(string? protectedText) => Unprotect(protectedText, null);

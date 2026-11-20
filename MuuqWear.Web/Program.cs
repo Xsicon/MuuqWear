@@ -81,6 +81,8 @@ if (FirebaseApp.DefaultInstance is null)
 builder.Services.AddSingleton<StaffSessionJwt>();
 builder.Services.AddSingleton<IFirebaseIdTokenVerifier, FirebaseIdTokenVerifier>();
 builder.Services.AddSingleton<CookieSessionVerifier>();
+builder.Services.AddHttpClient<StaffMfaService>();
+builder.Services.AddSingleton<StaffMfaTicket>();
 builder.Services.AddSingleton<AdminFirestore>();
 builder.Services.AddSingleton<StaffWelcomeMail>();
 builder.Services.AddSingleton<IShopperResetMail>(sp => sp.GetRequiredService<StaffWelcomeMail>());

@@ -10,7 +10,7 @@ public sealed class FirebaseBearerMiddleware
 
     public FirebaseBearerMiddleware(RequestDelegate next) => _next = next;
 
-    public async Task InvokeAsync(HttpContext context)
+    public async Task InvokeAsync(HttpContext context, MuuqWear.Application.Shared.StaffSessionJwt staffJwt)
     {
         var header = context.Request.Headers.Authorization.ToString();
         if (header.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
@@ -23,16 +23,21 @@ public sealed class FirebaseBearerMiddleware
                     var decoded = await FirebaseAuth.DefaultInstance.VerifyIdTokenAsync(token);
                     var email = Claim(decoded, "email");
                     var name = Claim(decoded, "name");
-                    var role = VerifiedAuthSession.RoleFromClaims(decoded.Claims);
+                    var secondFactor = StaffMfaPolicy.FirebaseHasSecondFactor(decoded.Claims);
+                    var role = CookieSessionVerifier.RoleFor(decoded.Claims, secondFactor, staffJwt.RequireStaffMfa);
+                    List<Claim> claims =
+                    [
+                        new Claim("UserId", decoded.Uid),
+                        new Claim(ClaimTypes.NameIdentifier, decoded.Uid),
+                        new Claim(ClaimTypes.Email, email),
+                        new Claim(ClaimTypes.Name, string.IsNullOrWhiteSpace(name) ? email : name),
+                        new Claim(ClaimTypes.Role, role),
+                        new Claim("role", role)
+                    ];
+                    if (secondFactor)
+                        claims.Add(new Claim(StaffMfaPolicy.ClaimType, StaffMfaPolicy.Totp));
                     var identity = new ClaimsIdentity(
-                        [
-                            new Claim("UserId", decoded.Uid),
-                            new Claim(ClaimTypes.NameIdentifier, decoded.Uid),
-                            new Claim(ClaimTypes.Email, email),
-                            new Claim(ClaimTypes.Name, string.IsNullOrWhiteSpace(name) ? email : name),
-                            new Claim(ClaimTypes.Role, role),
-                            new Claim("role", role)
-                        ],
+                        claims,
                         CookieAuthenticationDefaults.AuthenticationScheme,
                         ClaimTypes.Name,
                         ClaimTypes.Role);

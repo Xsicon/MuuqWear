@@ -172,7 +172,9 @@ public class AuthenticatedHttpHandler : DelegatingHandler
             var identity = (ClaimsIdentity)context.User.Identity!;
             ReplaceOrAdd(identity, "AccessToken", data.AccessToken!);
             ReplaceOrAdd(identity, "RefreshToken", data.RefreshToken!);
-            if (!string.IsNullOrEmpty(data.Role))
+            if (!string.IsNullOrEmpty(data.Role)
+                && MuuqWear.Web.ServerAuth.StaffMfaPolicy.MayAssignRole(
+                    context.User, data.Role, MuuqWear.Web.ServerAuth.StaffMfaPolicy.IsRequired(_configuration)))
                 ReplaceOrAdd(identity, ClaimTypes.Role, data.Role);
 
             var props = await context.AuthenticateAsync(

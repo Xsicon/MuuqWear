@@ -41,21 +41,34 @@ public sealed class CookieSessionVerifier
                 staff.FindFirst(ClaimTypes.Name)?.Value,
                 role,
                 returnUrl,
-                rememberMe);
+                rememberMe,
+                mfa: staff.FindFirst(StaffMfaPolicy.ClaimType)?.Value);
         }
 
         var firebase = await _firebase.VerifyAsync(token, cancellationToken);
         if (firebase is null || string.IsNullOrWhiteSpace(firebase.Uid))
             return null;
 
+        var secondFactor = StaffMfaPolicy.FirebaseHasSecondFactor(firebase.Claims);
         return VerifiedAuthSession.Create(
             token,
             firebase.Uid,
             firebase.Email,
             firebase.Name,
-            VerifiedAuthSession.RoleFromClaims(firebase.Claims),
+            RoleFor(firebase.Claims, secondFactor, _staffJwt.RequireStaffMfa),
             returnUrl,
             rememberMe,
-            refreshToken);
+            refreshToken,
+            secondFactor ? StaffMfaPolicy.Totp : null);
+    }
+
+    // Staff accounts that signed in without their authenticator keep shopper access only.
+    public static string RoleFor(
+        IReadOnlyDictionary<string, object> claims,
+        bool secondFactor,
+        bool requireStaffMfa)
+    {
+        var role = VerifiedAuthSession.RoleFromClaims(claims);
+        return requireStaffMfa && !secondFactor && AdminPortalRoles.IsAllowed(role) ? "user" : role;
     }
 }

@@ -1,10 +1,10 @@
 ﻿@page "/admin/f8e2a947-3c1b-4d9e-b562-7a0f1e8d3c92/login"
 @rendermode InteractiveServer
-@using MuuqWear.Model.Authentication
 @layout Components.Layout.AuthLayoutComponent.AuthLayoutComponent
-@using Microsoft.AspNetCore.Hosting
 @inject NavigationManager NavigationManager
-@inject IWebHostEnvironment HostEnvironment
+@inject MuuqWear.Web.ServerAuth.StaffMfaTicket Tickets
+@using MuuqWear.Web.ServerAuth
+@using MuuqWear.Web.Constants
 
 
 <section class="mw-auth">
@@ -31,6 +31,66 @@
                             </p>
                         </div>
 
+                        @if (step is not null)
+                        {
+                            <form method="post" action="/auth/staff-login/verify" data-enhance="false">
+                                <input type="hidden" name="t" value="@ticket" />
+
+                                @if (step.Kind == StaffMfaStep.Enroll)
+                                {
+                                    <h2 class="mw-admin-login__step-title">Set up your authenticator app</h2>
+                                    <p class="mw-admin-login__step-help">
+                                        Admin access needs a code from an authenticator app such as Google Authenticator,
+                                        Microsoft Authenticator or 1Password. Scan this code with the app, then enter the
+                                        6-digit code it shows.
+                                    </p>
+                                    @if (qrDataUri is not null)
+                                    {
+                                        <img class="mw-admin-login__qr" src="@qrDataUri" width="200" height="200"
+                                             alt="QR code to add MuuqWear Admin to your authenticator app" />
+                                    }
+                                    <p class="mw-admin-login__step-help mb-1">Can't scan it? Enter this key instead:</p>
+                                    <code class="mw-admin-login__secret">@FormatSecret(step.SecretKey)</code>
+                                }
+                                else
+                                {
+                                    <h2 class="mw-admin-login__step-title">Enter your authenticator code</h2>
+                                    <p class="mw-admin-login__step-help">
+                                        Open your authenticator app and enter the 6-digit code for MuuqWear Admin.
+                                    </p>
+                                }
+
+                                <div class="mb-4 mt-3">
+                                    <label class="mw-admin-login__label" for="admin-code">6-digit code</label>
+                                    <input id="admin-code"
+                                           class="mw-admin-login__input"
+                                           name="code"
+                                           type="text"
+                                           inputmode="numeric"
+                                           pattern="[0-9 ]{6,7}"
+                                           maxlength="7"
+                                           autocomplete="one-time-code"
+                                           autofocus
+                                           required
+                                           placeholder="123456" />
+                                </div>
+
+                                @if (!string.IsNullOrEmpty(message))
+                                {
+                                    <div class="@messageCssClass mb-3 small">@message</div>
+                                }
+
+                                <button type="submit" class="mw-admin-login__btn w-100">
+                                    <span>@(step.Kind == StaffMfaStep.Enroll ? "Finish setup and sign in" : "Verify and sign in")</span>
+                                </button>
+                            </form>
+
+                            <div class="text-center mt-4">
+                                <a href="@AdminPortalPaths.Login" class="mw-admin-login__back">← Start over</a>
+                            </div>
+                        }
+                        else
+                        {
                         <!-- FORM -->
                         <form method="post" action="/auth/staff-login" data-enhance="false">
                             <div class="mb-4">
@@ -40,8 +100,7 @@
                                        name="email"
                                        type="email"
                                        autocomplete="username"
-                                       placeholder="admin@muuqwear.com"
-                                       value="@loginModel.Email" />
+                                       placeholder="you@muuqwear.com" />
                             </div>
 
                             <div class="mb-4">
@@ -51,8 +110,7 @@
                                        name="password"
                                        type="password"
                                        autocomplete="current-password"
-                                       placeholder="••••••••"
-                                       value="@loginModel.Password" />
+                                       placeholder="••••••••" />
                             </div>
 
                             @if (!string.IsNullOrEmpty(message))
@@ -73,46 +131,10 @@
                                 ← Back to User Login
                             </a>
                         </div>
+                        }
 
                     </div>
 
-                    @if (ShowDemoAccounts)
-                    {
-                    <div class="mw-admin-login__demo">
-                        <div class="mw-admin-login__demo-header">
-                            <h2 class="mw-admin-login__demo-title">Demo accounts</h2>
-                            <p class="mw-admin-login__demo-subtitle">Click a row to fill the login form. Authorization is enforced by your assigned role after sign-in.</p>
-                        </div>
-
-                        <div class="mw-admin-login__demo-table-wrap">
-                            <table class="mw-admin-login__demo-table">
-                                <thead>
-                                    <tr>
-                                        <th>Email</th>
-                                        <th>Password</th>
-                                        <th>Role (profile)</th>
-                                        <th>Display name</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var account in DemoAccounts)
-                                    {
-                                        <tr class="mw-admin-login__demo-row"
-                                            tabindex="0"
-                                            role="button"
-                                            @onclick="() => UseDemoAccount(account)"
-                                            @onkeydown="(e) => HandleDemoRowKeyDown(e, account)">
-                                            <td>@account.Email</td>
-                                            <td><code>@account.Password</code></td>
-                                            <td><span class="mw-admin-login__role-tag">@account.Role</span></td>
-                                            <td>@account.DisplayName</td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    }
                     </div>
                 </div>
             </div>
@@ -121,47 +143,51 @@
 </section>
 
 @code {
-    private sealed record AdminDemoAccount(
-        string Email,
-        string Password,
-        string Role,
-        string DisplayName);
-
-    private static readonly AdminDemoAccount[] DemoAccounts =
-    [
-        new("admin@muuqwear.com", "admin123", "admin", "Admin"),
-        new("ops@muuqwear.com", "ops123", "operations_manager", "Operations Manager"),
-        new("support@muuqwear.com", "support123", "support_team", "Customer Support"),
-        new("merch@muuqwear.com", "merch123", "merchandising", "Merchandising"),
-        new("creative@muuqwear.com", "creative123", "content_team", "Creative & Content"),
-        new("tech@muuqwear.com", "tech123", "technology_systems", "Technology & Systems")
-    ];
-
-    private LoginModel loginModel = new();
     private string message = string.Empty;
     private string messageCssClass = string.Empty;
-    private bool ShowDemoAccounts => HostEnvironment.IsDevelopment();
+
+    private StaffMfaStep? step;
+    private string? ticket;
+    private string? qrDataUri;
 
     protected override void OnInitialized()
     {
         var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
-        if (!Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query).TryGetValue("error", out var error))
+        var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+
+        string? error = query.TryGetValue("error", out var errorValue) ? errorValue.ToString() : null;
+        if (query.ContainsKey("step"))
+        {
+            ticket = query.TryGetValue("t", out var t) ? t.ToString() : null;
+            step = Tickets.Unprotect(ticket);
+            if (step is null)
+                error = "expired";
+            else if (step.Kind == StaffMfaStep.Enroll && !string.IsNullOrWhiteSpace(step.SecretKey))
+                qrDataUri = QrDataUri(StaffMfaService.OtpAuthUri(step.Email, step.SecretKey));
+        }
+
+        if (string.IsNullOrEmpty(error))
             return;
 
         messageCssClass = "text-danger";
-        message = error == "denied" ? "Access denied." : "Invalid email or password.";
+        message = error switch
+        {
+            "denied" => "Access denied.",
+            "expired" => "That sign-in step expired. Enter your email and password again.",
+            "code" => "That code didn't match. Enter the current code from your app.",
+            "too-many" => "Too many attempts. Wait a few minutes, then try again.",
+            "unverified" => "Verify this account's email address before setting up the authenticator app.",
+            "mfa-disabled" => "Authenticator sign-in isn't turned on for this Firebase project yet.",
+            _ => "Invalid email or password."
+        };
     }
 
-    private void UseDemoAccount(AdminDemoAccount account)
+    private static string QrDataUri(string text)
     {
-        loginModel.Email = account.Email;
-        loginModel.Password = account.Password;
-        message = string.Empty;
+        var png = QRCoder.PngByteQRCodeHelper.GetQRCode(text, QRCoder.QRCodeGenerator.ECCLevel.M, 6);
+        return "data:image/png;base64," + Convert.ToBase64String(png);
     }
 
-    private void HandleDemoRowKeyDown(KeyboardEventArgs e, AdminDemoAccount account)
-    {
-        if (e.Key is "Enter" or " ")
-            UseDemoAccount(account);
-    }
+    private static string FormatSecret(string? secret) =>
+        string.Join(' ', (secret ?? "").Chunk(4).Select(chunk => new string(chunk)));
 }

@@ -23,6 +23,8 @@ public static class CookieAuthHelper
             claims.Add(new("AccessToken", session.Token));
         if (!string.IsNullOrEmpty(session.RefreshToken))
             claims.Add(new("RefreshToken", session.RefreshToken));
+        if (!string.IsNullOrEmpty(session.Mfa))
+            claims.Add(new(MuuqWear.Web.ServerAuth.StaffMfaPolicy.ClaimType, session.Mfa));
 
         var identity = new ClaimsIdentity(
             claims,

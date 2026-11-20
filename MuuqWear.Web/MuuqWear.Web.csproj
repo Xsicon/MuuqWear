@@ -17,6 +17,7 @@
     <PackageReference Include="Google.Cloud.Storage.V1" Version="4.13.0" />
     <PackageReference Include="ClosedXML" Version="0.105.0" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.0.32" />
+    <PackageReference Include="QRCoder" Version="1.6.0" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.17.0" />
     <PackageReference Include="Supabase.Realtime" Version="7.2.0" />
   </ItemGroup>

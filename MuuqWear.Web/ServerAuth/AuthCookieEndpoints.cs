@@ -101,27 +101,124 @@ public static class AuthCookieEndpoints
 
         // Firebase Hosting forwards only the __session cookie, so the Blazor
         // antiforgery cookie never arrives and the login form POST returns 400.
-        app.MapPost("/auth/staff-login", async (HttpContext ctx, IAuthService auth) =>
+        app.MapPost("/auth/staff-login", async (
+            HttpContext ctx,
+            StaffMfaService mfa,
+            StaffMfaTicket tickets,
+            StaffSessionJwt staffJwt) =>
         {
             if (!ctx.Request.HasFormContentType)
-                return Results.Redirect(AdminPortalPaths.Login + "?error=invalid");
+                return LoginError("invalid");
 
             var form = await ctx.Request.ReadFormAsync();
-            var result = await auth.Login(new LoginModel
+            var result = await mfa.SignInWithPasswordAsync(
+                form["email"].ToString().Trim(),
+                form["password"].ToString(),
+                ctx.RequestAborted);
+
+            switch (result.Outcome)
             {
-                Email = form["email"].ToString(),
-                Password = form["password"].ToString()
-            });
-            if (result.Success && result.Data is not null && AdminPortalRoles.IsAllowed(result.Data.Role))
+                case StaffPasswordOutcome.MfaRequired:
+                    return StepRedirect("code", tickets.Protect(new StaffMfaStep(
+                        StaffMfaStep.SignIn,
+                        result.Email ?? "",
+                        PendingCredential: result.PendingCredential,
+                        EnrollmentId: result.EnrollmentId)));
+
+                case StaffPasswordOutcome.SignedIn:
+                    var identity = StaffIdentity.FromIdToken(result.IdToken);
+                    if (!AdminPortalRoles.IsAllowed(identity.Role))
+                        return LoginError("denied");
+
+                    if (!staffJwt.RequireStaffMfa)
+                        return await CompleteStaffSignInAsync(ctx, staffJwt, identity, mfa: null);
+
+                    // No authenticator yet: enrollment is part of signing in.
+                    var enroll = await mfa.StartEnrollAsync(result.IdToken!, ctx.RequestAborted);
+                    if (!enroll.Ok)
+                        return LoginError(enroll.Error ?? "invalid");
+
+                    return StepRedirect("enroll", tickets.Protect(new StaffMfaStep(
+                        StaffMfaStep.Enroll,
+                        identity.Email,
+                        IdToken: result.IdToken,
+                        SessionInfo: enroll.SessionInfo,
+                        SecretKey: enroll.SecretKey)));
+
+                default:
+                    return LoginError("invalid");
+            }
+        }).AddEndpointFilter(AuthOrigins.RequireSameOrigin).DisableAntiforgery();
+
+        app.MapPost("/auth/staff-login/verify", async (
+            HttpContext ctx,
+            StaffMfaService mfa,
+            StaffMfaTicket tickets,
+            StaffSessionJwt staffJwt) =>
+        {
+            if (!ctx.Request.HasFormContentType)
+                return LoginError("expired");
+
+            var form = await ctx.Request.ReadFormAsync();
+            var ticket = form["t"].ToString();
+            var step = tickets.Unprotect(ticket);
+            if (step is null)
+                return LoginError("expired");
+
+            var stepName = step.Kind == StaffMfaStep.Enroll ? "enroll" : "code";
+            var code = new string(form["code"].ToString().Where(char.IsDigit).ToArray());
+            if (code.Length != 6)
+                return StepRedirect(stepName, ticket, "code");
+
+            var verified = step.Kind == StaffMfaStep.Enroll
+                ? await mfa.FinalizeEnrollAsync(step.IdToken ?? "", step.SessionInfo ?? "", code, ctx.RequestAborted)
+                : await mfa.FinalizeSignInAsync(step.PendingCredential ?? "", step.EnrollmentId ?? "", code, ctx.RequestAborted);
+
+            if (!verified.Ok)
             {
-                var home = AdminPortalRoles.GetDefaultHome(result.Data.Role);
-                await SignInAsync(ctx, CookieAuthHelper.FromAuthResponse(result.Data, home, rememberMe: true));
-                return Results.Redirect(home);
+                return verified.Error is "expired" or "config"
+                    ? LoginError("expired")
+                    : StepRedirect(stepName, ticket, verified.Error ?? "code");
             }
 
-            var error = result.Success ? "denied" : "invalid";
-            return Results.Redirect(AdminPortalPaths.Login + "?error=" + error);
+            var identity = StaffIdentity.FromIdToken(verified.IdToken);
+            if (!AdminPortalRoles.IsAllowed(identity.Role))
+                return LoginError("denied");
+
+            return await CompleteStaffSignInAsync(ctx, staffJwt, identity, StaffMfaPolicy.Totp);
         }).AddEndpointFilter(AuthOrigins.RequireSameOrigin).DisableAntiforgery();
+    }
+
+    private static IResult LoginError(string error) =>
+        Results.Redirect(AdminPortalPaths.Login + "?error=" + Uri.EscapeDataString(error));
+
+    private static IResult StepRedirect(string step, string ticket, string? error = null) =>
+        Results.Redirect(
+            $"{AdminPortalPaths.Login}?step={step}&t={Uri.EscapeDataString(ticket)}" +
+            (error is null ? "" : "&error=" + Uri.EscapeDataString(error)));
+
+    private static async Task<IResult> CompleteStaffSignInAsync(
+        HttpContext ctx,
+        StaffSessionJwt staffJwt,
+        StaffIdentity identity,
+        string? mfa)
+    {
+        if (string.IsNullOrWhiteSpace(identity.Uid))
+            return LoginError("invalid");
+
+        var home = AdminPortalRoles.GetDefaultHome(identity.Role);
+        await SignInAsync(ctx, new CookieAuthSession
+        {
+            Token = staffJwt.Create(identity.Uid, identity.Email, identity.Role, identity.Name, mfa),
+            Username = identity.Name,
+            Email = identity.Email,
+            Role = identity.Role,
+            UserId = identity.Uid,
+            ReturnUrl = home,
+            RememberMe = true,
+            Mfa = mfa
+        });
+        return Results.Redirect(home);
     }
 
     private static Task SignInAsync(HttpContext ctx, CookieAuthSession session) =>

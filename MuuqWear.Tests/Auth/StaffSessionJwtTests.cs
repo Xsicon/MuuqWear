@@ -52,6 +52,7 @@ public class StaffSessionJwtTests
             },
             "/admin",
             true);
+        session.Mfa = "totp";
         var ticket = format.Protect(new AuthenticationTicket(
             CookieAuthHelper.CreatePrincipal(session),
             CookieAuthenticationDefaults.AuthenticationScheme));
@@ -71,11 +72,59 @@ public class StaffSessionJwtTests
             })
             .Build());
 
-        var principal = jwt.Validate(jwt.Create("uid-1", "info@kobneti.com", "admin", "Ops"));
+        var principal = jwt.Validate(jwt.Create("uid-1", "info@kobneti.com", "admin", "Ops", "totp"));
 
         Assert.NotNull(principal);
         Assert.Equal("admin", principal!.FindFirst(ClaimTypes.Role)?.Value);
         Assert.Equal("admin", principal.FindFirst("app_role")?.Value);
         Assert.True(principal.IsInRole("admin"));
+        Assert.Equal("totp", principal.FindFirst("mfa")?.Value);
     }
+
+    [Theory]
+    [InlineData("admin")]
+    [InlineData("support_team")]
+    public void StaffTokenWithoutSecondFactorIsDowngradedToShopper(string role)
+    {
+        var jwt = Jwt();
+
+        var principal = jwt.Validate(jwt.Create("uid-1", "ops@muuqwear.com", role, "Ops"));
+
+        Assert.NotNull(principal);
+        Assert.False(principal!.IsInRole(role));
+        Assert.Equal("user", principal.FindFirst("app_role")?.Value);
+        Assert.Equal("user", principal.FindFirst(ClaimTypes.Role)?.Value);
+        Assert.DoesNotContain(principal.Claims, c => c.Type == "role" && c.Value == role);
+    }
+
+    [Fact]
+    public void OldAdminCookieWithoutSecondFactorLosesAdminAccess()
+    {
+        var jwt = Jwt();
+        var format = new HmacAuthTicketFormat(jwt);
+
+        var restored = format.Unprotect(jwt.Create("uid-1", "ops@muuqwear.com", "admin", "Ops"));
+
+        Assert.NotNull(restored);
+        Assert.Equal("user", MuuqWear.Web.Helpers.AdminPortalUserContext.GetRole(restored!.Principal));
+    }
+
+    [Fact]
+    public void FlagOffKeepsPasswordOnlyStaffSessions()
+    {
+        var jwt = Jwt(requireMfa: false);
+
+        var principal = jwt.Validate(jwt.Create("uid-1", "ops@muuqwear.com", "admin", "Ops"));
+
+        Assert.True(principal!.IsInRole("admin"));
+    }
+
+    private static StaffSessionJwt Jwt(bool? requireMfa = null) =>
+        new(new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Authentication:JwtSecret"] = "local-dev-jwt-secret-not-for-production-32",
+                ["Authentication:RequireStaffMfa"] = requireMfa?.ToString()
+            })
+            .Build());
 }

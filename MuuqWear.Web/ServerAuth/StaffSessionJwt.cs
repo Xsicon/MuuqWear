@@ -3,6 +3,8 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
+using MuuqWear.Web.Constants;
+using MuuqWear.Web.ServerAuth;
 
 namespace MuuqWear.Application.Shared;
 
@@ -16,9 +18,12 @@ public sealed class StaffSessionJwt
     {
         _secret = configuration["Authentication:JwtSecret"]
             ?? throw new InvalidOperationException("Authentication:JwtSecret is not configured.");
+        RequireStaffMfa = StaffMfaPolicy.IsRequired(configuration);
     }
 
-    public string Create(string firebaseUid, string email, string role, string? userName)
+    public bool RequireStaffMfa { get; }
+
+    public string Create(string firebaseUid, string email, string role, string? userName, string? mfa = null)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secret));
         var now = DateTime.UtcNow;
@@ -36,6 +41,8 @@ public sealed class StaffSessionJwt
         var displayName = string.IsNullOrWhiteSpace(userName) ? email : userName;
         if (!string.IsNullOrWhiteSpace(displayName))
             claims.Add(new Claim(ClaimTypes.Name, displayName));
+        if (!string.IsNullOrWhiteSpace(mfa))
+            claims.Add(new Claim(StaffMfaPolicy.ClaimType, mfa));
 
         var token = new JwtSecurityToken(
             claims: claims,
@@ -74,6 +81,19 @@ public sealed class StaffSessionJwt
                 ?? identity.FindFirst(ClaimTypes.Role)?.Value;
             if (!string.IsNullOrWhiteSpace(role) && identity.FindFirst(ClaimTypes.Role) is null)
                 identity.AddClaim(new Claim(ClaimTypes.Role, role));
+
+            // A staff role without a verified second factor never reaches the admin portal.
+            if (RequireStaffMfa
+                && AdminPortalRoles.IsAllowed(role)
+                && identity.FindFirst(StaffMfaPolicy.ClaimType)?.Value != StaffMfaPolicy.Totp)
+            {
+                foreach (var claim in identity.Claims
+                             .Where(c => c.Type is RoleClaimType or "role" or ClaimTypes.Role)
+                             .ToList())
+                    identity.RemoveClaim(claim);
+                identity.AddClaim(new Claim(RoleClaimType, "user"));
+                identity.AddClaim(new Claim(ClaimTypes.Role, "user"));
+            }
 
             var email = identity.FindFirst(JwtRegisteredClaimNames.Email)?.Value
                 ?? identity.FindFirst("email")?.Value;

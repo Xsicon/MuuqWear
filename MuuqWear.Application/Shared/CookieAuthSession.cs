@@ -9,4 +9,5 @@ public class CookieAuthSession
     public string? UserId { get; set; }
     public string? ReturnUrl { get; set; }
     public bool? RememberMe { get; set; }
+    public string? Mfa { get; set; }
 }
